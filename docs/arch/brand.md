@@ -64,9 +64,13 @@ Use assets/brand/github-avatar.png as the avatar.
 Use the face crop rather than the full body at small sizes.
 Keep central facial features inside circular crops.
 
-Use assets/brand/github-banner.png inside the repository README.
+Use assets/brand/github-banner-overhang.png inside the repository README.
+The torso ends at the dark rectangle's bottom edge.
+Complete arms and claws overhang into transparent space below it.
+Keep transparent padding around every fingertip and wing.
 Use assets/brand/github-social-preview.jpg in repository Social preview settings.
-Both banner exports share the same composition.
+The social preview keeps the full-body rectangular composition.
+The README uses the waist-up composition with transparent overhang.
 Use assets/brand/character-sheet.png for reference when making future poses.
 
 ## Asset authority

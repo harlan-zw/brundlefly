@@ -78,5 +78,20 @@
     "path": "assets/previews/avatar-96.png",
     "bytes": 13832,
     "sha256": "84eb16e91eab9c89a58ba54a05131956252a7c033ea2a2901e4f40ef8a55cb50"
+  },
+  {
+    "path": "assets/source/banner-overhang-master.png",
+    "bytes": 1594959,
+    "sha256": "620758cdaa07343e9ef77aa110696801bcee2a50caaaa4e55211665903de974d"
+  },
+  {
+    "path": "assets/brand/github-banner-overhang.png",
+    "bytes": 1081472,
+    "sha256": "f7d15e71e6d58ddd93c45da461e9a209e4f6a8c6bd7a2ae3b7a70e7dc07ebdde"
+  },
+  {
+    "path": "assets/prompts/banner-overhang.txt",
+    "bytes": 3177,
+    "sha256": "caaca07ca2693b91fea1e86c7c760b51a5542c05715256ea0c64ad9e3bc26a99"
   }
 ]
