@@ -12,12 +12,6 @@ Edit generated-sounding prose in two passes: surface wording, then structure. Pr
 
 Given text or a file path, run both passes below, report what you flagged, then rewrite. Don't silently rewrite, show the user *which* tells you found so they learn to avoid them.
 
-Edit only where a change solves a reading problem. Leave clear, natural sentences alone.
-Keep distinctive vocabulary and compressed phrasing when their meaning is clear. Do not add filler to smooth them out.
-Preserve claim scope, uncertainty, dates, units, attribution, and prerequisites in every genre.
-Never invent an actor, experience, example, or supporting detail.
-If the text needs no changes, return it unchanged and say so. Do not invent tells to justify a rewrite.
-
 ## Pass 1: Surface tells (fast, lexical)
 
 These are the well-known signatures. Fix them, but know they are the easy half.
@@ -36,7 +30,7 @@ These are the well-known signatures. Fix them, but know they are the easy half.
 
 ## Pass 2: Structural tells (the durable ones)
 
-Structural habits can survive a wording pass. Change them when they weaken the draft.
+This is what actually separates human from AI prose. Editing these requires real rewrites, not find-and-replace.
 
 - **Over-explains the takeaway.** AI spells out the moral far more than humans do. Cut the sentence that says "the lesson here is...". Trust the reader to infer it from the example.
 - **Progressive disclosure.** Keep information light by default. Lead with what the reader needs now. Add detail only when it helps the next question or decision. Go deep only when the text explicitly intends a deep dive.
@@ -45,7 +39,7 @@ Structural habits can survive a wording pass. Change them when they weaken the d
 - **Tidy, single-track structure.** AI marches clue to reveal in a straight line with no loose ends. Humans digress, backtrack, leave threads open. Allow an aside or a non-linear jump.
 - **Narrow repertoire / over-determination.** AI converges on safe defaults and resolves everything neatly. Let tension stay unresolved; admit what you don't know; allow an opinion that isn't perfectly balanced.
 - **Elegant variation.** AI swaps synonyms for the same thing to sound sophisticated ("the tool... the utility... the solution"). Humans repeat the term. Use the same word for the same thing throughout.
-- **Uniform sentence rhythm.** Change repeated sentence shapes when they make the draft hard to read. Keep clear fragments and deliberate cadence. Do not add filler or replace distinctive wording to force variety.
+- **Uniform sentence rhythm.** AI writes evenly weighted, medium-length sentences, one point each. Humans are bursty: a two-word punch, then a long rambling clause. Vary sentence length deliberately.
 
 ## Adapt to content type
 
@@ -76,7 +70,7 @@ Do not require another skill to complete this step.
 
 1. List the tells you found, grouped by pass, quoting the offending phrase.
 2. Provide the rewritten text.
-3. Compare the rewrite with the source. Undo unsupported additions, lost claims, and needless voice changes. If a meaning change is required, explain it and ask for the missing information.
+3. If rewriting changed meaning anywhere, flag it explicitly rather than assuming the user's intent.
 
 ## Guardrail
 

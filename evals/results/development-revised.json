@@ -1,0 +1,660 @@
+{
+  "phase": "development",
+  "variantMode": "revised",
+  "generator": "zai-coding-plan/glm-5.3-flash",
+  "judge": "zai-coding-plan/glm-5.2",
+  "nodeVersion": "v24.18.0",
+  "opencodeVersion": "1.18.32",
+  "date": "2026-10-02T08:48:55.910Z",
+  "casesHash": "e0468950cd2c77fed63b3a04f046fd2d53d354966990e50ebc9e37726a4fa8a4",
+  "rubricHash": "8ad8d83ed1abe7fc054ad74966bfca64fc182bc71f59d701b24b962c39d11ad7",
+  "checks": [
+    "Does the edit preserve the user's point without adding claims, examples, stats, quotes, or opinions?",
+    "Does it preserve the writer's distinctive vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish?",
+    "Does it leave strong human sentences alone instead of rewriting them for consistency or making every paragraph equally tidy?",
+    "Are genuinely tangled sentences fixed while clear spoken cadence, fragments, and changes in pace remain intact?",
+    "Would the edited draft sound natural if read to a sharp colleague?"
+  ],
+  "instructionHashes": {
+    "write-human-v1": "775553fcdc2fd55138ba5a719495689a9a65c96b23d3c65ebc756dfcac7933f1"
+  },
+  "results": [
+    {
+      "id": "published-1",
+      "source": "The update may reduce duplicate alerts",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "The update may reduce duplicate alerts",
+          "promptHash": "71e55951a704c2165fc70d3297e6ccc8ff480bb7b5e0bacdf24b9f518e32cc7a"
+        },
+        {
+          "variant": "no-skill",
+          "text": "The update may reduce duplicate alerts",
+          "promptHash": "bd08e671f8e163fc28c679eee99e7ccf0a7521bc92e9688ac9fc187b265232ca"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "The update may reduce duplicate alerts",
+          "promptHash": "b4de38a7d2c3c3fff60d07f69635ae763e84cb1465a23ecdeb15b299283b743a"
+        },
+        {
+          "variant": "humanizer",
+          "text": "The update may reduce duplicate alerts",
+          "promptHash": "fd5589605cbfa1b1bd96e23ac0dc0e81ceb39468de23cd76ae7d242c5c616724"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "You may see fewer duplicate alerts after the update.",
+          "promptHash": "104a653ce95637a45d9b7be6c5c974dea7fe58b49810667dbbcbf56722278de6"
+        }
+      ],
+      "mapping": {
+        "A": "humanizer",
+        "B": "write-human-v1",
+        "C": "write-human-v0",
+        "D": "no-skill",
+        "E": "stop-slop"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "A"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "B"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "D"
+        },
+        {
+          "checks": [
+            false,
+            false,
+            true,
+            true,
+            true
+          ],
+          "issues": [
+            "Changed attribution: the source attributes the possible change to the update itself ('The update may reduce duplicate alerts'), while the edit shifts the agent to the reader's perception ('You may see fewer'), adding an experiential claim about what the user will observe that the source never made.",
+            "Changed voice/register: the terse, impersonal release-note cadence ('The update may reduce...') is rewritten into conversational second-person guidance ('You may see... after the update'), altering the writer's bluntness and level of polish rather than preserving it."
+          ],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "2c3ad70550bc37a6d38465bba8505595540165610742e9d6fd226772f8f57a98",
+        "B": "2c3ad70550bc37a6d38465bba8505595540165610742e9d6fd226772f8f57a98",
+        "C": "2c3ad70550bc37a6d38465bba8505595540165610742e9d6fd226772f8f57a98",
+        "D": "2c3ad70550bc37a6d38465bba8505595540165610742e9d6fd226772f8f57a98",
+        "E": "6a87f58427f29667b6c5001f1897b4f2030bb65761b65381767f67ffb6c00706"
+      }
+    },
+    {
+      "id": "published-2",
+      "source": "The vendor says the export is complete",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "The vendor says the export is complete",
+          "promptHash": "c6acdacc555281acffaf2e6c6883e06248264711e3d26232f3377ed23df21597"
+        },
+        {
+          "variant": "no-skill",
+          "text": "The vendor says the export is complete.",
+          "promptHash": "7fa09f6507c19262ed78e9aca550d87818f0e3315f45adbd50fbbc5dcc9034e7"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "The vendor says the export is complete",
+          "promptHash": "7b1f591dd609088c40edd9b4d84b5aa256aae15364db526ea5128b1c4b156b62"
+        },
+        {
+          "variant": "humanizer",
+          "text": "The vendor says the export is complete",
+          "promptHash": "8fe2a67cfb5168b6ebf4de5b9774047f9deabeb92aefc300ab34771cb98e564c"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "The vendor says the export is complete",
+          "promptHash": "0fb4a2be3a8518db569c6f5b65fbfe681306549614fc96f4f6c322ad3c4b1dbe"
+        }
+      ],
+      "mapping": {
+        "A": "stop-slop",
+        "B": "no-skill",
+        "C": "write-human-v0",
+        "D": "humanizer",
+        "E": "write-human-v1"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "A"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "B"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "D"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "e7920185b7299251d3fe9b7c12e84d1aeb6cf842090dfbfd2def38a571f2e3e6",
+        "B": "ff1a8b212c9b8ac26e4c4478d6bdcb68b8cd26917ec8df2fd99d86acca7b9299",
+        "C": "e7920185b7299251d3fe9b7c12e84d1aeb6cf842090dfbfd2def38a571f2e3e6",
+        "D": "e7920185b7299251d3fe9b7c12e84d1aeb6cf842090dfbfd2def38a571f2e3e6",
+        "E": "e7920185b7299251d3fe9b7c12e84d1aeb6cf842090dfbfd2def38a571f2e3e6"
+      }
+    },
+    {
+      "id": "published-3",
+      "source": "Some teams skip this step in urgent cases",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "Some teams skip this step in urgent cases",
+          "promptHash": "2cba0b2f917842a2aa7dc433f5286cb6152f3c504eef587a1c96bec10b2f7209"
+        },
+        {
+          "variant": "no-skill",
+          "text": "Some teams skip this step in urgent cases",
+          "promptHash": "252759b9d0e93449e06c41914cfb5f7b9694d54f436ad616e24b83aa5dee2891"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "Some teams skip this step in urgent cases",
+          "promptHash": "4b4aa4c73194ed86e3fb722f1e81bb9207027ceb55b831b007ab8408eb5590f3"
+        },
+        {
+          "variant": "humanizer",
+          "text": "Some teams skip this step in urgent cases.",
+          "promptHash": "b7acc4adcadc08333749b9920adf87122a076280fbceca3fb231e89b242b8b7a"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "Some teams skip this step in urgent cases",
+          "promptHash": "80a0fb23936ff452cebd4df05d43ea5066c22741d394a6d76f81eb29da96572f"
+        }
+      ],
+      "mapping": {
+        "A": "write-human-v1",
+        "B": "write-human-v0",
+        "C": "stop-slop",
+        "D": "humanizer",
+        "E": "no-skill"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "A"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "B"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "D"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "e1089b9620e94ec03805c8539d06470d97df74a0b54dc4b4d58b4ed656fe4457",
+        "B": "e1089b9620e94ec03805c8539d06470d97df74a0b54dc4b4d58b4ed656fe4457",
+        "C": "e1089b9620e94ec03805c8539d06470d97df74a0b54dc4b4d58b4ed656fe4457",
+        "D": "ff0355e80b24d931a0bd5610980d7371e2bac4887b33993288746928b9aafde1",
+        "E": "e1089b9620e94ec03805c8539d06470d97df74a0b54dc4b4d58b4ed656fe4457"
+      }
+    },
+    {
+      "id": "published-4",
+      "source": "The term does real work. It names a pattern that was floating unnamed",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "The term does real work. It names a pattern that was floating unnamed",
+          "promptHash": "3d1e6e7a9eeb09dde717fe4414fe9d7efd8633f982f99a950f7a512544b209fe"
+        },
+        {
+          "variant": "no-skill",
+          "text": "The term does real work. It names a pattern that had been floating around unnamed.",
+          "promptHash": "e7278954ed98a9d1852be1e02d1e3fe2c3ea83d1b9aed9b566167cc105468e7b"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "The term does real work. It names a pattern that was floating around unnamed.",
+          "promptHash": "6181ef538272acefd66b2c945a9f58043771607b6555a75641f493f25e7060e7"
+        },
+        {
+          "variant": "humanizer",
+          "text": "The term earns its keep. It names a pattern that was floating unnamed",
+          "promptHash": "6652a104b4ab5a376929ab2b2c661f9b26d5e977841fbfc581daf5abd825a71b"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "The term earns its keep. It names a pattern that had gone unnamed.",
+          "promptHash": "c6c72daea6c76357e7627f2c53a1561f9ff3ca537f5a3db663fd1419940fb800"
+        }
+      ],
+      "mapping": {
+        "A": "no-skill",
+        "B": "stop-slop",
+        "C": "write-human-v0",
+        "D": "write-human-v1",
+        "E": "humanizer"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2: The source's compressed, distinctive phrase 'was floating unnamed' is padded to 'had been floating around unnamed' — the filler 'around' and shift from simple past to past perfect flatten the writer's terse, evocative cadence into a more generic conversational register.",
+            "Check 3: 'It names a pattern that was floating unnamed' is already a strong, polished human sentence; the editor rewrote it anyway rather than leaving it alone, with the tense change ('was' to 'had been') also subtly altering the temporal framing.",
+            "Check 4: The original sentence was not tangled, so there was nothing to fix; the edit instead disturbs the clear spoken cadence and clipped rhythm of the original ending."
+          ],
+          "id": "A"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2: The edit swaps the writer's own phrasing for different idioms — 'does real work' becomes 'earns its keep' and 'was floating unnamed' becomes 'had gone unnamed' — discarding the distinctive word 'floating' and flattening the writer's voice.",
+            "Check 3: 'The term does real work.' was already a strong, blunt human sentence; rewriting it as 'earns its keep' is unnecessary tidying rather than leaving well-made prose alone.",
+            "Check 4: There were no tangled sentences to fix, yet the edit still altered clear cadence — the lingering participle rhythm of 'floating unnamed' is replaced by the flatter, more formal 'had gone unnamed'."
+          ],
+          "id": "B"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            true,
+            true,
+            true
+          ],
+          "issues": [
+            "Check 2: inserting the filler 'around' pads the writer's spare, distinctive 'floating unnamed' into the more generic 'floating around unnamed,' softening the compressed cadence and economy of the original phrasing without adding meaning"
+          ],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "D"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            true,
+            true
+          ],
+          "issues": [
+            "Check 2 failed: the edit swaps the writer's chosen idiom 'does real work' for a different idiom 'earns its keep,' replacing distinctive vocabulary and subtly shifting register without need.",
+            "Check 3 failed: 'The term does real work' is already a strong, punchy human sentence; the edit rewrites it anyway rather than leaving it alone, which is exactly the unnecessary tinkering the rubric warns against."
+          ],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "afc486b3b35679bbe4d8204f87cdfb4923373e619d49f666e56d8dec1b7e14d1",
+        "B": "82e62e1d1aede49d1ab3a7e0cc144328a83bc741d5cc3c7c8a04e95576eb935a",
+        "C": "cde037f08f989d28585527c030ce28c2bc2042a7f5101acf31a8bdcdbefdf35b",
+        "D": "3c142fd15e98171f3e03c220d78000fd8a00ae93cc96d4cd0511a3162741be2c",
+        "E": "b3eda907d792fb36e6149fc228538fcf9dbdfa4ccd097e99811aa20376ef5cdb"
+      }
+    },
+    {
+      "id": "published-5",
+      "source": "The catch? The faster workflow creates more review work",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "The catch? The faster workflow creates more review work",
+          "promptHash": "1a78ea6aed0445dab2586d43238534d2757c8d71f1ed78be4ccec8d48d6de798"
+        },
+        {
+          "variant": "no-skill",
+          "text": "The catch? The faster workflow creates more review work.",
+          "promptHash": "816cf7e9233601d8ed22a0738cbe12abcf106b39f3abeb713402403019c974cc"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "The catch? Speed up the workflow and you create more review work.",
+          "promptHash": "0f217f4e3a3ed0268bb1e4aafa763ef071555d764b762932e61d7b1cf67406b7"
+        },
+        {
+          "variant": "humanizer",
+          "text": "The catch is that the faster workflow creates more review work.",
+          "promptHash": "6efeead17a2f8db9087466e57f099cd6d4646881397507b45f92ff604dda5400"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "You review more work when the workflow speeds up.",
+          "promptHash": "988b1eb26adeb0e26ee64aad26515490ec0d4981de99853068cf5a18950407ab"
+        }
+      ],
+      "mapping": {
+        "A": "write-human-v1",
+        "B": "write-human-v0",
+        "C": "humanizer",
+        "D": "no-skill",
+        "E": "stop-slop"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "A"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "B"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2: Converting the punchy rhetorical fragment 'The catch?' into the flat declarative 'The catch is that' drains the writer's blunt, snappy cadence and the conversational hook that gives the line its punch.",
+            "Check 3: 'The catch?' is a strong, deliberate human construction; rewriting it into a grammatically complete sentence is exactly the kind of tidying-for-consistency the rubric says to leave alone.",
+            "Check 4: The clear spoken-cadence fragment was eliminated rather than preserved, smoothing the change of pace instead of keeping it intact."
+          ],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "D"
+        },
+        {
+          "checks": [
+            false,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 1: Changed attribution and scope — the impersonal 'creates more review work' becomes 'You review more work,' assigning the action to the reader without support, and the specific 'the faster workflow' becomes a general conditional 'when the workflow speeds up'; dropping 'The catch?' also strips the tradeoff framing that is part of the point.",
+            "Check 2: Deletes the distinctive rhetorical question 'The catch?' and the punchy setup-punchline cadence, flattening the writer's bluntness and ironic voice into a plain declarative.",
+            "Check 3: Rewrites a strong, human, punchy sentence into a generic flat one instead of leaving it alone.",
+            "Check 4: Removes the clear spoken fragment 'The catch?' rather than preserving it; the source had no tangle needing repair."
+          ],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "460ecaa62b06df704b36c1bf4eef7b51f14fb2fbe6df618b165719e6f3f93fe1",
+        "B": "62d52674c7a606748dedab3591aa63316f5944d0503abba553652c9af685b8d3",
+        "C": "90a085cf5ba433fa98fa98a519badab33b10b0e369e26fa72f22509d5fdb6101",
+        "D": "e9f75adea3cdcae89131e0c7546094348c85cc0479794e0ca7fb852e0107fa4c",
+        "E": "97e9e701cdfb631780778c8dec291160ce95a27f7e4f7e44d7750af22c57ef1a"
+      }
+    },
+    {
+      "id": "published-6",
+      "source": "The outage started after the certificate expired",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "The outage started after the certificate expired",
+          "promptHash": "96a576b9e0c100b54a82f4d989fcb7575fbc457b0d5953a9d84267d1014245d2"
+        },
+        {
+          "variant": "no-skill",
+          "text": "The outage started after the certificate expired",
+          "promptHash": "f2f31ec0f27295a4dbe6639240bde4f51be564e3251814eefc77a5380ad18482"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "The outage started after the certificate expired",
+          "promptHash": "a41a73577c19d536ff6e16f3f2f1ce8945851635a795d0687cf9b54cdf409a82"
+        },
+        {
+          "variant": "humanizer",
+          "text": "The outage started after the certificate expired.",
+          "promptHash": "ff17ae5fa950198c4ee8998bda8828eb5b38bbfbc394c9f156d0c05d38439d94"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "The outage started after the certificate expired",
+          "promptHash": "3b4de7032532be3690f1f52ef65cfc125b6a6776eeb6b45b1136bf75d03e8194"
+        }
+      ],
+      "mapping": {
+        "A": "write-human-v1",
+        "B": "write-human-v0",
+        "C": "no-skill",
+        "D": "stop-slop",
+        "E": "humanizer"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "A"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "B"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "D"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "813c44aea580dc039c446b60b79564fa1b494ab32603ee24e708f3d81ee6c673",
+        "B": "813c44aea580dc039c446b60b79564fa1b494ab32603ee24e708f3d81ee6c673",
+        "C": "813c44aea580dc039c446b60b79564fa1b494ab32603ee24e708f3d81ee6c673",
+        "D": "813c44aea580dc039c446b60b79564fa1b494ab32603ee24e708f3d81ee6c673",
+        "E": "ec739ecc5a5aa3d452754bb47a86483036d5ab4b0a62499b6ad2cd1ffc046009"
+      }
+    }
+  ]
+}

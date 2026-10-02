@@ -1,0 +1,72 @@
+[
+  {
+    "id": "examples",
+    "repo": "anbeeld/writing.md",
+    "commit": "0c127ca4a4e51debec5adf4816f2bf464d83438b",
+    "path": "skills/writing/references/examples.md",
+    "file": "sources/examples.md",
+    "url": "https://github.com/anbeeld/writing.md/blob/0c127ca4a4e51debec5adf4816f2bf464d83438b/skills/writing/references/examples.md",
+    "license": "MIT",
+    "sha256": "66909f8f0199979e63c1fd56a9ccac625958b2d445bc83ef5d7ee12c01c86930"
+  },
+  {
+    "id": "rubric",
+    "repo": "petergyang/no-ai-slop",
+    "commit": "000650b156983f5159695b441477f4e63b25dc85",
+    "path": "skills/no-ai-slop/eval.md",
+    "file": "sources/rubric.md",
+    "url": "https://github.com/petergyang/no-ai-slop/blob/000650b156983f5159695b441477f4e63b25dc85/skills/no-ai-slop/eval.md",
+    "license": "MIT",
+    "sha256": "8ad8d83ed1abe7fc054ad74966bfca64fc182bc71f59d701b24b962c39d11ad7"
+  },
+  {
+    "id": "humanizer",
+    "repo": "blader/humanizer",
+    "commit": "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8",
+    "path": "SKILL.md",
+    "file": "sources/humanizer.md",
+    "url": "https://github.com/blader/humanizer/blob/225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8/SKILL.md",
+    "license": "MIT",
+    "sha256": "0612f1dfb1672b0ea9b97e139bf1f06cabe98d8b27424fe8ff01e1fb4cc99cad"
+  },
+  {
+    "id": "stop-slop",
+    "repo": "hardikpandya/stop-slop",
+    "commit": "8da1f030185bdfe8471220585162991eaeb970e9",
+    "path": "SKILL.md",
+    "file": "sources/stop-slop.md",
+    "url": "https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/SKILL.md",
+    "license": "MIT",
+    "sha256": "7432a1d9ebdd42b27666da8458af252edf549f723fb14bcd4791425103930310"
+  },
+  {
+    "id": "sources/stop-slop-phrases.md",
+    "repo": "hardikpandya/stop-slop",
+    "commit": "8da1f030185bdfe8471220585162991eaeb970e9",
+    "path": "references/phrases.md",
+    "file": "sources/stop-slop-phrases.md",
+    "url": "https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/references/phrases.md",
+    "license": "MIT",
+    "sha256": "4ca1b7e97123b5c67eff3dc97e5e977332e0b24021265c1553888a93ec33fa93"
+  },
+  {
+    "id": "sources/stop-slop-structures.md",
+    "repo": "hardikpandya/stop-slop",
+    "commit": "8da1f030185bdfe8471220585162991eaeb970e9",
+    "path": "references/structures.md",
+    "file": "sources/stop-slop-structures.md",
+    "url": "https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/references/structures.md",
+    "license": "MIT",
+    "sha256": "ffbf1316c7fb5aaf552de005609a64a9639b546ecd76bfb0e482864d5bbe6f58"
+  },
+  {
+    "id": "sources/stop-slop-examples.md",
+    "repo": "hardikpandya/stop-slop",
+    "commit": "8da1f030185bdfe8471220585162991eaeb970e9",
+    "path": "references/examples.md",
+    "file": "sources/stop-slop-examples.md",
+    "url": "https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/references/examples.md",
+    "license": "MIT",
+    "sha256": "49c592899eb4457f95d0767e15e3143569e2cef50f2927c3174e62432984cd3d"
+  }
+]

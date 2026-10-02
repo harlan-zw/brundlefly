@@ -44,6 +44,10 @@ High-resolution originals live in assets/source.
 Earlier concepts live in assets/archive.
 Generation prompts live in assets/prompts.
 
+## Writing comparisons
+
+See the [published-case pilot](evals/README.md) for sources and reproducible comparisons.
+
 ## Contribute
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md).
