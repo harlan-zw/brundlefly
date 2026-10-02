@@ -1,0 +1,82 @@
+[
+  {
+    "path": "assets/brand/github-avatar.png",
+    "bytes": 327536,
+    "sha256": "7ecd4b0747bac3b58f56ab151e3f52f1a881119d257ebb7639355667f61bbc6f"
+  },
+  {
+    "path": "assets/brand/github-banner.png",
+    "bytes": 1387432,
+    "sha256": "51dfb70f90f345b4927b1cc7003a26aa626142e69857ae4a44ba12209ce94800"
+  },
+  {
+    "path": "assets/brand/github-social-preview.jpg",
+    "bytes": 339937,
+    "sha256": "2cf150c10640195fcd85e0693717f32f56ea14ab3585c92f0b3e1b9d8f03cb4c"
+  },
+  {
+    "path": "assets/brand/character-sheet.png",
+    "bytes": 1710026,
+    "sha256": "17c0b2e2da09ababb64be93e320e941e360ac387f54839e5b6e092c6b10cd045"
+  },
+  {
+    "path": "assets/brand/character.png",
+    "bytes": 1248021,
+    "sha256": "895f729c76c73cf56f097f52c0bbb92f526742e327c9901260f6275a2fc49192"
+  },
+  {
+    "path": "assets/source/avatar-master.png",
+    "bytes": 983880,
+    "sha256": "f27303841fd8b910978a4c40131f3247cada877fad505d15f0d29eddc2903c72"
+  },
+  {
+    "path": "assets/source/banner-master.png",
+    "bytes": 2295584,
+    "sha256": "f9723af63943af6765ceacdf3a3a3973ca6e1a76c2d3ff6560ea8bc212f5a634"
+  },
+  {
+    "path": "assets/prompts/generation-prompts.json",
+    "bytes": 4777,
+    "sha256": "f1b8c812b217e1cf8fe834b989cb895f37129c0992d292d535a879e259619096"
+  },
+  {
+    "path": "assets/prompts/avatar-refinement.txt",
+    "bytes": 1388,
+    "sha256": "6bb9b6c6129623bc09928ab26b71aa9e4fbb592fcd7d311e1462081f7509edbb"
+  },
+  {
+    "path": "assets/prompts/banner-arm-fix.txt",
+    "bytes": 1389,
+    "sha256": "dede71bbfc603653c846a4b5518618b069094d431c276a27011257380a3a422d"
+  },
+  {
+    "path": "assets/prompts/character.txt",
+    "bytes": 2583,
+    "sha256": "a70e6c23e9292cefdf94b9e4fee62389afc04dcbb5e12856c11605be56bb5738"
+  },
+  {
+    "path": "assets/prompts/splashes.json",
+    "bytes": 6960,
+    "sha256": "3b42fd4133265378672cb0bca2eb21e9d76ac5ecd62fb6c3f7d37a1afce22e73"
+  },
+  {
+    "path": "assets/prompts/initial-concepts.json",
+    "bytes": 12594,
+    "sha256": "ff5c6104a4df581d29444bfbe429f0c2affff7ddc26dbc785990af94461e948d"
+  },
+  {
+    "path": "assets/previews/avatar-32.png",
+    "bytes": 2023,
+    "sha256": "b1fe362ba6d620ba9e62d51fd905d8e5ee7ba645653d3b9a4e118ed651057eca"
+  },
+  {
+    "path": "assets/previews/avatar-48.png",
+    "bytes": 3767,
+    "sha256": "183fcee33324e84711ded12d9390652d457a23ddca335db6947e0a6592bb7833"
+  },
+  {
+    "path": "assets/previews/avatar-96.png",
+    "bytes": 13832,
+    "sha256": "84eb16e91eab9c89a58ba54a05131956252a7c033ea2a2901e4f40ef8a55cb50"
+  }
+]
