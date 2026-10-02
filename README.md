@@ -1,4 +1,4 @@
-![BRUNDLEFLY with its mascot's claws hanging below the banner](assets/brand/github-banner-overhang.png)
+![BRUNDLEFLY with its mascot's claws hanging below the banner](assets/brand/github-banner-overhang-gross.png)
 
 # Brundlefly
 
@@ -35,8 +35,7 @@ Use write-human to edit this draft. Preserve its facts, uncertainty, and voice.
 ## Brand assets
 
 - [GitHub avatar](assets/brand/github-avatar.png)
-- [README banner](assets/brand/github-banner-overhang.png)
-- [Grosser banner variant](assets/brand/github-banner-overhang-gross.png)
+- [README banner](assets/brand/github-banner-overhang-gross.png)
 - [Repository social preview](assets/brand/github-social-preview.jpg)
 - [Character sheet](assets/brand/character-sheet.png)
 - [Brand rules](docs/arch/brand.md)

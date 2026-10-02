@@ -55,7 +55,7 @@ Raster artwork includes shaded variations around them.
 
 Cream and rust carry the brand.
 Teal highlights are sparse.
-Keep olive biological textures at outer edges.
+Use visible olive biological texture around the banner edges and across its background.
 Preserve clean dark space around the wordmark and face.
 
 ## GitHub usage
@@ -64,7 +64,8 @@ Use assets/brand/github-avatar.png as the avatar.
 Use the face crop rather than the full body at small sizes.
 Keep central facial features inside circular crops.
 
-Use assets/brand/github-banner-overhang.png inside the repository README.
+Use assets/brand/github-banner-overhang-gross.png as the canonical README banner.
+Keep its swollen flesh folds, bruising, wet highlights, and viscous slime.
 The torso ends at the dark rectangle's bottom edge.
 Complete arms and claws overhang into transparent space below it.
 Keep transparent padding around every fingertip and wing.
