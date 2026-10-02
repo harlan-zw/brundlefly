@@ -93,5 +93,20 @@
     "path": "assets/prompts/banner-overhang.txt",
     "bytes": 3177,
     "sha256": "caaca07ca2693b91fea1e86c7c760b51a5542c05715256ea0c64ad9e3bc26a99"
+  },
+  {
+    "path": "assets/source/banner-overhang-gross-master.png",
+    "bytes": 1759780,
+    "sha256": "110be6b0973f53c9ca917e90bdd4dd792734b99fdb0a8588ae63f87ce7339b16"
+  },
+  {
+    "path": "assets/brand/github-banner-overhang-gross.png",
+    "bytes": 1194030,
+    "sha256": "12001b98af31abdb75515f72b72d1ca49cc99d538dc88dcb52cbca434abab20c"
+  },
+  {
+    "path": "assets/prompts/banner-overhang-gross.txt",
+    "bytes": 2471,
+    "sha256": "a242b5fdb6fe34c646cb4d25201f372ad395324c0bd30d69ca0aa6456137ed67"
   }
 ]
