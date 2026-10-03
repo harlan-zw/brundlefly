@@ -22,8 +22,8 @@ Never add promises or offers that commit the author without their agreement.
 Before delivery, ask whether the reader needs this text and can find the useful point quickly.
 Cut repetition, reflex flattery, and unsolicited lectures. An unnecessary message may need no rewrite or delivery.
 Use people's exact names and stated pronouns. Otherwise use their username or singular they.
-For public posting, include an early plain sentence naming the operator and actual human review state.
-If either is unknown, ask before publication. Never assume a human reviewed the draft.
+Do not add an agent disclosure by default. Follow explicit user and destination requirements for disclosure.
+Preserve required disclosures. Never assume a human reviewed the draft.
 
 ## Pass 1: Surface tells (fast, lexical)
 
