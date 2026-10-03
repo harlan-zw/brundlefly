@@ -278,6 +278,75 @@ footer {
 [hidden] {
   display: none !important;
 }
+.sample-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 12px 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.sample-toolbar label {
+  margin: 0;
+}
+.sample-toolbar select {
+  max-width: 100%;
+  min-width: 0;
+}
+.sample-reader {
+  max-width: 760px;
+  margin: 28px auto;
+}
+.samples-mode header {
+  padding-block: 14px;
+}
+.samples-mode header img {
+  width: 64px;
+  height: 64px;
+}
+.samples-mode h1 {
+  font-size: 28px;
+}
+.samples-mode header p {
+  margin-block: 5px;
+}
+.samples-mode main {
+  padding-top: 16px;
+}
+.samples-mode nav {
+  margin-bottom: 10px;
+}
+.samples-mode .sample-reader {
+  margin-top: 16px;
+}
+.sample-reader > h2 {
+  font-size: 28px;
+  scroll-margin-top: 100px;
+}
+#sample-content {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 17px;
+  line-height: 1.85;
+  padding: 24px 32px;
+}
+.sample-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+#sample-approve {
+  color: #182010;
+  background: var(--accent);
+}
+.sample-decision {
+  margin-top: 24px;
+}
 @media (max-width: 800px) {
   header,
   main,
@@ -308,5 +377,8 @@ footer {
   }
   .prose {
     padding: 14px;
+  }
+  #sample-content {
+    padding: 16px;
   }
 }

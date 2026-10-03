@@ -18,10 +18,54 @@
     </header>
     <main>
       <nav aria-label="Review mode">
+        <button id="samples" aria-pressed="false" hidden>
+          Proposed samples
+        </button>
         <button id="writing" aria-pressed="true">Writing pairs</button
         ><button id="guides" aria-pressed="false">Guide demo</button
         ><span id="progress"></span>
       </nav>
+      <section id="sample-review" hidden>
+        <div class="sample-toolbar">
+          <label for="sample-picker">Sample</label>
+          <select id="sample-picker"></select>
+          <button id="sample-previous">Previous sample</button>
+          <button id="sample-next">Next sample</button>
+          <span id="sample-progress" class="muted"></span>
+        </div>
+        <div class="sample-reader">
+          <p class="eyebrow">PROPOSED INPUT</p>
+          <h2 id="sample-title"></h2>
+          <p id="sample-size" class="muted"></p>
+          <p>
+            Review whether this is useful to compare. Generated outputs come
+            after approval.
+          </p>
+          <details>
+            <summary>Editing instructions</summary>
+            <p id="sample-instructions"></p>
+          </details>
+          <article
+            id="sample-content"
+            class="prose"
+            data-candidate="sample"
+          ></article>
+          <section class="sample-decision">
+            <label for="sample-reason">Anything to change? Optional.</label>
+            <textarea id="sample-reason" rows="2"></textarea>
+            <div class="sample-actions">
+              <button id="sample-approve">Approve sample</button>
+              <button id="sample-revise">Needs changes</button>
+              <button id="sample-skip">Skip sample</button>
+            </div>
+            <p id="sample-status" role="status" aria-live="polite"></p>
+            <p class="muted">
+              Decisions stay in this browser. Export reviews to share them.
+              Approval does not start generation.
+            </p>
+          </section>
+        </div>
+      </section>
       <section id="generator" hidden>
         <h2>Generate a guide comparison</h2>
         <label for="prompt">Guide prompt</label

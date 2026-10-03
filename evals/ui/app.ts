@@ -1,6 +1,7 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import mermaid from "mermaid";
+import type { Sample } from "./core.ts";
 type Pair = {
   id: string;
   kind: "writing" | "guide";
@@ -16,13 +17,23 @@ type Vote = {
   date: string;
   revealed?: Record<string, string>;
 };
+type SampleDecision = {
+  sample: Sample;
+  choice: "approved" | "revise" | "skip";
+  reason: string;
+  date: string;
+};
 const el = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 const key = "brundlefly-reviews-v1";
+const sampleKey = "brundlefly-sample-decisions-v1";
+let samples: Sample[] = [];
+let sampleDecisions: Record<string, SampleDecision> = {};
+let sampleIndex = 0;
 let votes: Record<string, Vote> = {},
   pairs: Pair[] = [],
   checks: string[][] = [],
-  mode: "writing" | "guide" = "writing",
+  mode: "writing" | "guide" | "samples" = "writing",
   current = "",
   renderId = 0;
 mermaid.initialize({
@@ -47,21 +58,24 @@ async function load() {
   const data = await api("/api/pairs");
   pairs = data.pairs;
   checks = data.guideChecks;
+  samples = data.proposedSamples;
+  el("samples").hidden = !samples.length;
   if (!el<HTMLTextAreaElement>("prompt").value)
     el<HTMLTextAreaElement>("prompt").value = data.guidePrompt;
   el("evidence").textContent = data.guideEvidence;
   el("progress").textContent = `${Object.keys(votes).length} saved reviews`;
 }
 async function markdown(text: string, target: HTMLElement, token: number) {
-  target.innerHTML = DOMPurify.sanitize(await marked.parse(text), {
+  const fragment = document.createElement("template");
+  fragment.innerHTML = DOMPurify.sanitize(await marked.parse(text), {
     FORBID_TAGS: ["style", "iframe", "form", "input", "button"],
     FORBID_ATTR: ["style"],
   });
-  target.querySelectorAll("a").forEach((link) => {
+  fragment.content.querySelectorAll("a").forEach((link) => {
     link.target = "_blank";
     link.rel = "noopener noreferrer";
   });
-  target.querySelectorAll("img").forEach((img) => {
+  fragment.content.querySelectorAll("img").forEach((img) => {
     const url = new URL(img.getAttribute("src") ?? "", location.href);
     if (
       url.origin !== location.origin ||
@@ -72,6 +86,7 @@ async function markdown(text: string, target: HTMLElement, token: number) {
       img.replaceWith(note);
     }
   });
+  target.replaceChildren(fragment.content);
   for (const code of target.querySelectorAll("code.language-mermaid")) {
     if (token !== renderId) return;
     const source = code.textContent ?? "";
@@ -104,6 +119,18 @@ async function markdown(text: string, target: HTMLElement, token: number) {
 async function render() {
   const token = ++renderId,
     list = filtered();
+  document.body.classList.toggle("samples-mode", mode === "samples");
+  el("sample-review").hidden = mode !== "samples";
+  el("samples").setAttribute("aria-pressed", String(mode === "samples"));
+  el("writing").setAttribute("aria-pressed", String(mode === "writing"));
+  el("guides").setAttribute("aria-pressed", String(mode === "guide"));
+  if (mode === "samples") {
+    el("generator").hidden = true;
+    el("review").hidden = true;
+    el("empty").hidden = true;
+    await renderSample(token);
+    return;
+  }
   if (!list.some((pair) => pair.id === current)) current = list[0]?.id ?? "";
   el("generator").hidden = mode !== "guide";
   el("review").hidden = !current;
@@ -213,6 +240,93 @@ async function render() {
   el<HTMLButtonElement>("previous").disabled = list[0]?.id === current;
   el<HTMLButtonElement>("next").disabled = list.at(-1)?.id === current;
 }
+async function renderSample(token: number) {
+  const sample = samples[sampleIndex];
+  if (!sample) return;
+  const decision = sampleDecisions[sample.id];
+  const saved =
+    decision?.sample.contentHash === sample.contentHash ? decision : undefined;
+  const picker = el<HTMLSelectElement>("sample-picker");
+  picker.replaceChildren(
+    ...samples.map((item, index) => {
+      const option = document.createElement("option");
+      option.value = String(index);
+      const choice = sampleDecisions[item.id];
+      const status =
+        choice?.sample.contentHash === item.contentHash
+          ? ` · ${choice.choice}`
+          : "";
+      option.textContent = `${index + 1}. ${item.label}${status}`;
+      return option;
+    }),
+  );
+  picker.value = String(sampleIndex);
+  el("sample-title").textContent = sample.label;
+  el("sample-size").textContent =
+    `${sample.words} words, including code and markup`;
+  el("sample-instructions").textContent = sample.instructions;
+  el<HTMLTextAreaElement>("sample-reason").value = saved?.reason ?? "";
+  el("sample-status").textContent = saved
+    ? `Saved: ${saved.choice}. You can change this decision.`
+    : "";
+  el("sample-progress").textContent = `${sampleIndex + 1} of ${samples.length}`;
+  el<HTMLButtonElement>("sample-previous").disabled = sampleIndex === 0;
+  el<HTMLButtonElement>("sample-next").disabled =
+    sampleIndex === samples.length - 1;
+  const preview = sample.input
+    .replace(
+      /^:prose-img\{src="[^"]+" alt="([^"]+)"[^}]*\}$/gm,
+      (_, alt) => `*Image placeholder: ${alt}.*`,
+    )
+    .replace(/<iframe[^>]*><\/iframe>/g, "*Video placeholder.*")
+    .replace(/\{(?:height|width|max-height)="[^}]+\}/g, "");
+  await markdown(preview, el("sample-content"), token);
+}
+el("samples").onclick = () => {
+  mode = "samples";
+  void render().catch(fail);
+};
+el("sample-picker").onchange = () => {
+  sampleIndex = Number(el<HTMLSelectElement>("sample-picker").value);
+  void render().catch(fail);
+};
+for (const [id, direction] of [
+  ["sample-previous", -1],
+  ["sample-next", 1],
+] as const) {
+  el(id).onclick = () => {
+    sampleIndex = Math.max(
+      0,
+      Math.min(samples.length - 1, sampleIndex + direction),
+    );
+    void render()
+      .then(() => el("sample-title").scrollIntoView({ block: "start" }))
+      .catch(fail);
+  };
+}
+for (const [id, choice] of [
+  ["sample-approve", "approved"],
+  ["sample-revise", "revise"],
+  ["sample-skip", "skip"],
+] as const) {
+  el(id).onclick = () => {
+    const sample = samples[sampleIndex];
+    sampleDecisions[sample.id] = {
+      sample,
+      choice,
+      reason: el<HTMLTextAreaElement>("sample-reason").value,
+      date: new Date().toISOString(),
+    };
+    try {
+      localStorage.setItem(sampleKey, JSON.stringify(sampleDecisions));
+      void render().catch(fail);
+    } catch (error) {
+      fail(error);
+      el("sample-status").textContent =
+        "Storage failed. Export reviews before closing.";
+    }
+  };
+}
 el("writing").onclick = () => {
   mode = "writing";
   void render().catch(fail);
@@ -286,6 +400,7 @@ el("export").onclick = () => {
           schemaVersion: 1,
           exportedAt: new Date().toISOString(),
           reviews: Object.values(votes),
+          sampleDecisions: Object.values(sampleDecisions),
         },
         null,
         2,
@@ -365,6 +480,9 @@ async function start() {
   const stored = localStorage.getItem(key);
   if (stored) votes = JSON.parse(stored);
   await load();
+  const sampleStored = localStorage.getItem(sampleKey);
+  if (sampleStored) sampleDecisions = JSON.parse(sampleStored);
+  if (samples.length) mode = "samples";
   await render();
   const job = await api("/api/job");
   if (job._tag === "Running") await watch();

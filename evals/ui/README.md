@@ -16,6 +16,19 @@ Set PORT for another loopback port. Set EVAL_SCRATCH to a directory outside the 
 The default output directory is ~/scratch/brundlefly-review-ui.
 This directory contains prompts, generated drafts, private attribution, and the browser bundle.
 
+## Proposed samples
+
+Place proposed-samples.json in EVAL_SCRATCH to review longer inputs before generation.
+Each entry has id, label, input, and instructions fields.
+The server counts words and hashes the exact input and instructions together.
+A changed hash requires a fresh decision.
+The UI opens these samples first when the file exists.
+Read one formatted passage at a time. Approve, request changes, or skip each sample.
+Decisions stay in browser storage and are included in Export reviews.
+Approval does not start OpenCode. Share the export before requesting generation.
+Image and video placeholders appear in the preview. Exported inputs preserve the original source.
+Keep personal source content outside the repository.
+
 ## Writing pairs
 
 Pairs reuse five published pilot inputs with historical write-human-v1 and Humanizer outputs.

@@ -18,6 +18,7 @@ import {
   guidePrompt,
   guideEvidence,
   guideChecks,
+  parseSamples,
 } from "./core.ts";
 import type { Pair } from "./core.ts";
 import { generate } from "./opencode.ts";
@@ -50,6 +51,13 @@ const reviewInputs = [...existing.results, ...heldAside.results].filter(
     ].includes(item.id),
 );
 const savedFiles = await readdir(scratch);
+const proposedSamples = savedFiles.includes("proposed-samples.json")
+  ? parseSamples(
+      JSON.parse(
+        await readFile(join(scratch, "proposed-samples.json"), "utf8"),
+      ),
+    )
+  : [];
 const writingPath = join(scratch, "writing-pairs.json");
 const pairs: Pair[] = savedFiles.includes("writing-pairs.json")
   ? JSON.parse(await readFile(writingPath, "utf8"))
@@ -126,6 +134,7 @@ const server = createServer((request, response) => {
         guideEvidence,
         guideChecks,
         model,
+        proposedSamples,
       });
     if (request.method === "GET" && url.pathname === "/api/job")
       return json(response, 200, job ?? { _tag: "Idle" });
@@ -214,7 +223,11 @@ const server = createServer((request, response) => {
             instructionHash: hash(instructions),
             evidenceHash: hash(guideEvidence),
             nodeVersion: process.version,
-            opencodeVersion: execFileSync(process.env.OPENCODE_BIN ?? "opencode", ["--version"], { encoding: "utf8" }).trim(),
+            opencodeVersion: execFileSync(
+              process.env.OPENCODE_BIN ?? "opencode",
+              ["--version"],
+              { encoding: "utf8" },
+            ).trim(),
           },
         };
         await writeFile(

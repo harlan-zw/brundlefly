@@ -1,3 +1,37 @@
+import { hash } from "../core.ts";
+export type Sample = {
+  id: string;
+  contentHash: string;
+  label: string;
+  input: string;
+  instructions: string;
+  words: number;
+};
+export function parseSamples(value: unknown): Sample[] {
+  const invalid = () =>
+    Error(
+      "Use unique sample ids and nonempty text fields in proposed-samples.json.",
+    );
+  if (!Array.isArray(value)) throw invalid();
+  const ids = new Set<string>();
+  return value.map((entry) => {
+    if (!entry || typeof entry !== "object") throw invalid();
+    const { id, label, input, instructions } = entry;
+    for (const field of [id, label, input, instructions]) {
+      if (typeof field !== "string" || !field.trim()) throw invalid();
+    }
+    if (ids.has(id)) throw invalid();
+    ids.add(id);
+    return {
+      id,
+      label,
+      input,
+      instructions,
+      words: input.match(/\S+/g)?.length ?? 0,
+      contentHash: hash(JSON.stringify([input, instructions])),
+    };
+  });
+}
 export type Pair = {
   id: string;
   original: string;
