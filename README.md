@@ -9,6 +9,12 @@ A collection of self-contained [Agent Skills](https://agentskills.io/specificati
 | Skill | Use |
 | --- | --- |
 | [write-human](skills/write-human/SKILL.md) | Remove generated-sounding writing habits while preserving meaning and voice. |
+| [technical-guide](skills/technical-guide/SKILL.md) | Research, write, verify, or refresh technical guides with working examples. |
+| [pr](skills/pr/SKILL.md) | Prepare, open, or update PRs using the target repository's rules and contributor conventions. |
+
+Choose the skill that owns your task. Each skill works alone.
+Use write-human for prose edits, technical-guide for a verified reader workflow, and pr for review submission.
+Keep personal stories in their author's voice, rather than forcing a guide structure.
 
 ## Use locally
 
@@ -31,6 +37,22 @@ Example request:
 ```text
 Use write-human to edit this draft. Preserve its facts, uncertainty, and voice.
 ```
+
+For the other workflows:
+
+```text
+Use technical-guide to refresh this tutorial against the supported release. Verify its examples.
+Use pr to submit these changes. Follow the repository template and recent maintainer conventions.
+```
+
+GitHub publication through pr needs an authorized GitHub integration.
+Technical-guide uses the target's tools to verify examples and reports unavailable checks.
+Each skill works without another Brundlefly skill or personal infrastructure.
+
+## Quality
+
+Read the [comparison and improvement plan](docs/ideas/skill-quality.md).
+Quality claims need task-matched comparisons and human review.
 
 ## Brand assets
 

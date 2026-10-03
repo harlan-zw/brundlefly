@@ -10,6 +10,7 @@ Skills are Markdown instructions. There is no runtime build step.
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) before adding a skill.
 - Read [brand rules](docs/arch/brand.md) before changing visual assets.
 - Read [repository conventions](docs/arch/conventions.md) before changing structure.
+- Read [quality comparisons](docs/ideas/skill-quality.md) before proposing evaluations or competitor claims.
 
 ## Skill boundaries
 
