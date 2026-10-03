@@ -66,8 +66,8 @@
           </section>
         </div>
       </section>
-      <section id="generator" hidden>
-        <h2>Generate a guide comparison</h2>
+      <details id="generator" hidden>
+        <summary>Generate another comparison</summary>
         <label for="prompt">Guide prompt</label
         ><textarea id="prompt" rows="5"></textarea>
         <details>
@@ -83,19 +83,27 @@
           new evaluation and consent to two OpenCode requests.</label
         ><button id="generate" disabled>Generate with OpenCode</button>
         <p id="generation-status" role="status" aria-live="polite"></p>
-      </section>
+      </details>
       <section id="review">
+        <p id="guide-help" hidden>
+          Choose a comparison, then read the two complete guides below.
+          Pick A, B, Tie, or Neither. Leave checks you cannot judge unreviewed.
+          Save your choice before revealing the sources.
+        </p>
         <div class="review-top">
           <label for="pair">Comparison</label
           ><select id="pair"></select
           ><button id="previous">Previous</button
           ><button id="next">Next</button>
         </div>
-        <details open>
+        <details>
           <summary id="source-title">Original</summary>
           <p id="original"></p>
         </details>
-        <p id="context" class="muted"></p>
+        <details>
+          <summary>Run details and verification limits</summary>
+          <p id="context" class="muted"></p>
+        </details>
         <div id="outputs" class="outputs"></div>
         <section class="decision">
           <h2>Which would you keep?</h2>
@@ -113,7 +121,7 @@
         </section>
       </section>
       <p id="empty" hidden>
-        No guide comparisons yet. Approve a prompt above to generate two drafts.
+        No guide comparisons yet. Open Generate another comparison to approve a prompt and create two drafts.
       </p>
       <p id="error" role="alert"></p>
     </main>
