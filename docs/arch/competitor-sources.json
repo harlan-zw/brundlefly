@@ -199,53 +199,5 @@
         "url": "https://github.com/getsentry/skills/blob/d18b7aa8ba878354e5c348310230e652f7690f9c/skills/blog-writing-guide/SKILL.md"
       }
     ]
-  },
-  {
-    "repository": "cloudflare/agents",
-    "commit": "2f3176b9fa03c6429c805b560c8dc14371c15f64",
-    "requestedSkills": [
-      "release-notes"
-    ],
-    "files": [
-      {
-        "path": "LICENSE",
-        "sha256": "b33ae783f02478cd31787cd07cbf61cd3a6fbee1a50b2baf832b8f0fb7c600f7",
-        "url": "https://github.com/cloudflare/agents/blob/2f3176b9fa03c6429c805b560c8dc14371c15f64/LICENSE"
-      },
-      {
-        "path": "examples/agent-skills/src/skills/release-notes/SKILL.md",
-        "sha256": "ed89cfed62df5ad5193e4f541381d872f7d0a8c594f463a558ec675f5f71e8c7",
-        "url": "https://github.com/cloudflare/agents/blob/2f3176b9fa03c6429c805b560c8dc14371c15f64/examples/agent-skills/src/skills/release-notes/SKILL.md"
-      },
-      {
-        "path": "examples/agent-skills/src/skills/release-notes/references/style-guide.md",
-        "sha256": "ca6be63c324e7401f475c8e96b4ca249958edb37f90429ca18acc08588010c51",
-        "url": "https://github.com/cloudflare/agents/blob/2f3176b9fa03c6429c805b560c8dc14371c15f64/examples/agent-skills/src/skills/release-notes/references/style-guide.md"
-      }
-    ]
-  },
-  {
-    "repository": "remix-run/react-router",
-    "commit": "a6090382ed467b5a2d46c8de1a13b331f14959f8",
-    "requestedSkills": [
-      "prepare-release-notes"
-    ],
-    "files": [
-      {
-        "path": ".agents/skills/prepare-release-notes/SKILL.md",
-        "sha256": "c2476870304a67f41cdc46faf7e55590b40567eb1857282561cee9ee908e708e",
-        "url": "https://github.com/remix-run/react-router/blob/a6090382ed467b5a2d46c8de1a13b331f14959f8/.agents/skills/prepare-release-notes/SKILL.md"
-      },
-      {
-        "path": ".agents/skills/prepare-release-notes/references/whats-changed.md",
-        "sha256": "ce08e5319fa95f8c075e9e051c35af0b2feca3dd63b73e3bea7a081bd9c7a96c",
-        "url": "https://github.com/remix-run/react-router/blob/a6090382ed467b5a2d46c8de1a13b331f14959f8/.agents/skills/prepare-release-notes/references/whats-changed.md"
-      },
-      {
-        "path": "LICENSE.md",
-        "sha256": "77c9ee6a9c5d5782fb0c50b50d101189116314c14f7df0a1b0d385fc96a7ba49",
-        "url": "https://github.com/remix-run/react-router/blob/a6090382ed467b5a2d46c8de1a13b331f14959f8/LICENSE.md"
-      }
-    ]
   }
 ]

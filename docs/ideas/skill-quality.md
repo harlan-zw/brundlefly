@@ -10,7 +10,6 @@ Keep each skill standalone and directly usable.
 | --- | --- | --- |
 | write-human | General prose editing | Preserve facts and supplied voice; avoid unnecessary rewriting |
 | technical-guide | Technical tutorials, task guides, reference, explanations, and supported decision guides | Personal narratives keep their author-led structure |
-| release-notes | Verified release changes and migration guidance | Drafting does not authorize releasing software |
 | pr | Repository conventions, checks, and PR creation or updates | Submission does not authorize merging or reviewer replies |
 
 Classify content by its reader goal, then its subject and voice.
@@ -34,8 +33,6 @@ Instructions are authored for Brundlefly; source copies stay outside installable
 | [Next.js create-pr](https://github.com/vercel/next.js/blob/596443802d3f8616b46dca2007a8c5393110f6fb/.agents/skills/create-pr/SKILL.md) | Preserve unrelated changes and follow repository submission policy | Resolve base and head; do not assume canary or a branch prefix |
 | [OpenAI yeet](https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/yeet/SKILL.md) | Find templates and preserve existing PR state | Stage owned files; fix access errors without unrelated history changes |
 | [n8n create-pr](https://github.com/n8n-io/n8n/blob/f0ca6b24f4d2caf9e731b6c6c1d55341fdc07089/.agents/skills/create-pr/SKILL.md) | Respect title validation and human attestations | Discover each target's rules rather than copy n8n's format |
-| [Cloudflare release-notes](https://github.com/cloudflare/agents/blob/2f3176b9fa03c6429c805b560c8dc14371c15f64/examples/agent-skills/src/skills/release-notes/SKILL.md) | Explain user outcomes concisely | Add explicit release-range and compatibility verification |
-| [React Router prepare-release-notes](https://github.com/remix-run/react-router/blob/a6090382ed467b5a2d46c8de1a13b331f14959f8/.agents/skills/prepare-release-notes/SKILL.md) | Edit authoritative change inputs and inspect generated previews | Discover release machinery; scale narrative to the actual change |
 
 Source revisions and file hashes are recorded in [competitor provenance](../arch/competitor-sources.json).
 Inspect a source's applicable license before copying instructions or cases. Research access does not grant reuse rights.
@@ -66,7 +63,6 @@ Do not duplicate or silently merge that separate change into this one.
 | --- | --- | --- |
 | write-human | Meaning, qualifiers, names, and supplied facts survive | Useful improvement, naturalness, and retained voice |
 | technical-guide | Supported claims; complete prerequisites; correct examples and reader outcomes | Can the intended reader act or understand without missing steps? |
-| release-notes | Correct included-change range, versions, public impact, and migration advice | Can users identify what matters and what to do? |
 | pr | Correct template, conventions, owned diff, branch relationship, publication, and current head | Can maintainers review the change efficiently and trust the description? |
 
 Score fidelity separately from improvement. An unchanged weak draft must not win merely by preserving every word.
