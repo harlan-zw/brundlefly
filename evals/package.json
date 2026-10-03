@@ -1,1 +1,19 @@
-{"private":true,"type":"module"}
+{
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "dompurify": "^3.4.16",
+    "marked": "^18.0.14",
+    "mermaid": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "review": "node ui/server.ts",
+    "test": "node --test core.test.ts ui/core.test.ts",
+    "typecheck": "tsc --noEmit"
+  }
+}
