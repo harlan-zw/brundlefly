@@ -12,6 +12,7 @@ Run the full delivery workflow when authorized. For prose-only requests, draft t
 ## 1. Identify the repository and scope
 
 Read applicable Agent instructions and contribution rules.
+Check whether the target prohibits AI contributions. If it does, stop submission and tell the operator.
 Inspect the checkout root, working tree, current branch, remotes, and intended base.
 Preserve unrelated changes. Stage only task-owned paths.
 If unrelated changes are already staged, use repository-approved isolation or stop before committing them.
@@ -48,6 +49,7 @@ Look for an existing PR with the same base, head repository, and head branch.
 Treat permission or network errors as errors, rather than evidence that no PR exists.
 Update an existing matching PR in place. Preserve its draft state unless changing it was requested.
 Check relevant open work to avoid duplicates. Flag meaningful overlap without silently rebasing onto someone else's work.
+Do not submit an unsolicited expansion or duplicate that spends maintainers' attention without a clear benefit.
 
 Ground the motivation in the user's request, issue, or recorded intent.
 Ask when missing intent materially changes the description.
@@ -72,6 +74,14 @@ Re-read the remote body before replacing it. If it changed during drafting, reco
 Rewrite obsolete generated content around the final diff.
 
 Keep the prose concise and concrete. Use first-person experience only when the author supplied it.
+Never claim human identity, team membership, or an anecdote as the agent's own.
+Name the operator and actual human review state in an early plain sentence inside the PR body.
+Ask before publication if either is unknown. A planned review is not a completed review.
+For example: "Prepared by an AI agent for @owner. Human review is pending."
+Preserve this disclosure when updating the body, alongside required repository disclosures.
+Use exact names and stated pronouns. Otherwise use a username or singular they.
+Propose decisions without assigning others work, setting deadlines, or declaring consensus.
+Avoid promises of follow-up, meetings, or changes unless the operator explicitly agreed to fulfil them.
 Use measured figures only when the work produced them.
 Report verification where the template or contribution rules require it.
 Avoid adding a ceremonial results list when the repository has no need for one.
@@ -102,4 +112,6 @@ If local work advances, repeat affected checks and update the PR for the new hea
 
 Return the PR URL or prose draft, meaningful verification, and any decision still required.
 Opening a PR does not authorize merging, deploying, posting reviewer replies, or changing repository settings.
+If responding is authorized, bring a precise answer or verified change. Skip redundant acknowledgements and flattery.
+Take criticism seriously. Give at most one calm reply to hostility, then hand back to the operator.
 Optional review bots and factory integrations follow target rules. None is required by this skill.

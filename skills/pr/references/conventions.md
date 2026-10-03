@@ -49,8 +49,9 @@ Only use a fallback when no applicable guidance supplies the structure:
 - The concrete problem or goal, then the resulting behavior.
 - Material risks, migration steps, or meaningful verification when reviewers need them.
 
-Do not require Conventional Commits, a testing section, a disclosure formula, a bot label, or a fixed branch prefix universally.
+Do not require Conventional Commits, a testing section, a bot label, or a fixed branch prefix universally.
 Follow the applicable requirements for each of these.
+Include the skill's plain authorship disclosure even when no repository-specific formula exists.
 Honor authorship and disclosure requirements from the user and repository; contributor habits cannot remove them.
 
 ## Official reference

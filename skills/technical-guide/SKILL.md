@@ -16,6 +16,7 @@ Use established rules and filenames. A missing editorial framework does not requ
 Read an existing page in full before editing it.
 
 Identify the reader, starting knowledge, desired outcome, supported version, and destination.
+Respect their time and knowledge. Do not explain prerequisites they already meet or blame them for unclear instructions.
 Infer these from the request and repository when clear.
 Ask only when a missing choice changes the procedure or audience materially.
 
@@ -72,6 +73,9 @@ Use consistent terms. Leave strong sentences unchanged.
 Use passive voice when the actor is irrelevant or the object deserves emphasis.
 Add diagrams or screenshots when they answer a reader question, rather than to decorate the page.
 Use supplied experience and measurements. Missing evidence stays missing; never invent it for personality.
+Preserve the author's supplied voice without claiming their experience as the agent's own.
+Never use the mascot or an agent persona to imply human authorship.
+Use exact names and stated pronouns; otherwise use a username or singular they.
 
 **Done:** the draft covers the supported task without assuming hidden setup.
 
@@ -103,6 +107,10 @@ Do not label that procedure verified.
 
 Repository edits, publication, deployment, and external messages follow the user's requested delivery scope.
 Writing a guide does not grant permission to publish it or operate a production service.
+If publication is authorized, check contribution rules for restrictions on AI-authored content.
+If those rules prohibit the contribution, stop publication and tell the operator.
+Include an early plain authorship sentence naming the operator and actual human review state in a public artifact.
+Ask before publication if either is unknown. Never claim review from an intention to review later.
 This skill needs no sibling skills or private infrastructure.
 
 ## Background
