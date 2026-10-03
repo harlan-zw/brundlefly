@@ -1,0 +1,82 @@
+[
+  {
+    "id": "published-1",
+    "label": "Certainty inflation",
+    "split": "development",
+    "text": "The update may reduce duplicate alerts",
+    "source": "examples",
+    "sourceLine": 20
+  },
+  {
+    "id": "published-2",
+    "label": "Attribution loss",
+    "split": "development",
+    "text": "The vendor says the export is complete",
+    "source": "examples",
+    "sourceLine": 21
+  },
+  {
+    "id": "published-3",
+    "label": "Scope inflation",
+    "split": "development",
+    "text": "Some teams skip this step in urgent cases",
+    "source": "examples",
+    "sourceLine": 22
+  },
+  {
+    "id": "published-4",
+    "label": "Choppy",
+    "split": "development",
+    "text": "The term does real work. It names a pattern that was floating unnamed",
+    "source": "examples",
+    "sourceLine": 16
+  },
+  {
+    "id": "published-5",
+    "label": "Manufactured hook",
+    "split": "development",
+    "text": "The catch? The faster workflow creates more review work",
+    "source": "examples",
+    "sourceLine": 25
+  },
+  {
+    "id": "published-6",
+    "label": "Over-editing",
+    "split": "development",
+    "text": "The outage started after the certificate expired",
+    "source": "examples",
+    "sourceLine": 28
+  },
+  {
+    "id": "published-7",
+    "label": "False crispness",
+    "split": "holdout",
+    "text": "The uncertainty is real. The confident register wrapping it is a default",
+    "source": "examples",
+    "sourceLine": 17
+  },
+  {
+    "id": "published-8",
+    "label": "Period-as-dash replacement",
+    "split": "holdout",
+    "text": "The post would land harder. It should stop at the number and draw the consequence directly",
+    "source": "examples",
+    "sourceLine": 18
+  },
+  {
+    "id": "published-9",
+    "label": "Default em dash",
+    "split": "holdout",
+    "text": "The launch slipped—the migration exposed a schema mismatch",
+    "source": "examples",
+    "sourceLine": 19
+  },
+  {
+    "id": "published-10",
+    "label": "Fabricated human presence",
+    "split": "holdout",
+    "text": "We've all stared at an empty dashboard and felt that sinking feeling",
+    "source": "examples",
+    "sourceLine": 24
+  }
+]

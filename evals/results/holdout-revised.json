@@ -1,0 +1,485 @@
+{
+  "phase": "holdout",
+  "variantMode": "revised",
+  "generator": "zai-coding-plan/glm-5.3-flash",
+  "judge": "zai-coding-plan/glm-5.2",
+  "nodeVersion": "v24.18.0",
+  "opencodeVersion": "1.18.32",
+  "date": "2026-10-02T08:53:16.014Z",
+  "casesHash": "e0468950cd2c77fed63b3a04f046fd2d53d354966990e50ebc9e37726a4fa8a4",
+  "rubricHash": "8ad8d83ed1abe7fc054ad74966bfca64fc182bc71f59d701b24b962c39d11ad7",
+  "checks": [
+    "Does the edit preserve the user's point without adding claims, examples, stats, quotes, or opinions?",
+    "Does it preserve the writer's distinctive vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish?",
+    "Does it leave strong human sentences alone instead of rewriting them for consistency or making every paragraph equally tidy?",
+    "Are genuinely tangled sentences fixed while clear spoken cadence, fragments, and changes in pace remain intact?",
+    "Would the edited draft sound natural if read to a sharp colleague?"
+  ],
+  "instructionHashes": {
+    "write-human-v1": "775553fcdc2fd55138ba5a719495689a9a65c96b23d3c65ebc756dfcac7933f1"
+  },
+  "results": [
+    {
+      "id": "published-7",
+      "source": "The uncertainty is real. The confident register wrapping it is a default",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "The uncertainty is real. The confident register wrapping it is a default",
+          "promptHash": "64f73aaea7612f7a059d608a5f3b4faa22209aba7d753d956da3bd3636892065"
+        },
+        {
+          "variant": "no-skill",
+          "text": "The uncertainty is real. The confident register wrapping it is just a default.",
+          "promptHash": "371cda805398f7fbf3a81726677294cffa893987141727629386eebeb637ae87"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "The uncertainty is real. The confident register wrapping it is just a default.",
+          "promptHash": "6884cac287a8772b1f1366fa5f7a6a5cd7e1403b80ee3852f8946609daa82cc7"
+        },
+        {
+          "variant": "humanizer",
+          "text": "The uncertainty is real. The confident register around it is just a default.",
+          "promptHash": "1c5ce9c502654c4af824edbf702ee6b5d3d15838d234c190e65860be803adbf6"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "The uncertainty is real. The confident register you wrap around it is a default.",
+          "promptHash": "cb5bebb032da29faff6bfa2d1ad666ac72fc3070a685be7922b665d1078370f0"
+        }
+      ],
+      "mapping": {
+        "A": "stop-slop",
+        "B": "no-skill",
+        "C": "write-human-v1",
+        "D": "humanizer",
+        "E": "write-human-v0"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            false,
+            true,
+            false,
+            true,
+            true
+          ],
+          "issues": [
+            "Check 1: the rewrite changes attribution — the source's 'the confident register wrapping it' is an impersonal description, but 'the confident register you wrap around it' inserts a second-person agent, claiming the reader is the one doing the wrapping, a stance the original never takes.",
+            "Check 3: the edit rewrites a strong, deliberately abrupt sentence — the source's clipped participle construction without a terminal period is normalized into a tidier 'you wrap around it' relative clause with a final period, grammaticalizing a fragment that carried the punch."
+          ],
+          "id": "A"
+        },
+        {
+          "checks": [
+            false,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [
+            "Check 1 failed: the edit inserts 'just' before 'a default,' adding a minimizing qualifier that changes the claim's scope — the source states the confident register is a default (neutral), while the edit asserts it is merely a default, an added judgment not present in the original."
+          ],
+          "id": "B"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            true,
+            true
+          ],
+          "issues": [
+            "Check 2 failed: replaced the distinctive verb 'wrapping' with the generic preposition 'around' and inserted the filler word 'just', flattening vocabulary and softening the abrupt, blunt cadence of the original.",
+            "Check 3 failed: rewrote a strong, punchy human sentence that needed no change — swapping 'wrapping' for 'around', adding 'just', and appending a period — smoothing it toward more conventional, tidier prose."
+          ],
+          "id": "D"
+        },
+        {
+          "checks": [
+            false,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [
+            "Check 1 failed: the edit inserts 'just' before 'a default,' adding a minimizing qualifier that changes the claim's scope — the source states the confident register is a default (neutral), while the edit asserts it is merely a default, an added judgment not present in the original."
+          ],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "4250f34dcf3d40453b96a8f1e19ee629f0e8b79c626de7e17c46bec2c9152e66",
+        "B": "1d0ff1143d9300af76e1289e062254d3d1ba46c6c502c7fea059124601f994ba",
+        "C": "1217c36b6250c6bb66c877a93d6e0bf7732371481cb0ee989d6e0ca5a67fbd81",
+        "D": "8816ed32bdfbaf07dcbb2b13739a376cead51d5badcccdfb63b876f45423a6b7",
+        "E": "1d0ff1143d9300af76e1289e062254d3d1ba46c6c502c7fea059124601f994ba"
+      }
+    },
+    {
+      "id": "published-8",
+      "source": "The post would land harder. It should stop at the number and draw the consequence directly",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "The post would land harder if it stopped at the number and drew the consequence directly.",
+          "promptHash": "04fdcc89c24164f1bd17320d83a80dbe79c4218f024c133c90436b7dba7208b2"
+        },
+        {
+          "variant": "no-skill",
+          "text": "The post would land harder if it stopped at the number and drew the consequence directly.",
+          "promptHash": "8fa3a556777bf91ceeb8e1664c76a637746bf40969c2344aaa3f2b9229208ddd"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "The post would land harder if it stopped at the number and drew the consequence directly.",
+          "promptHash": "59392a4ddfc484f5a52ff3ace069692132b456167ee2c5a2f752835fcc8a91f4"
+        },
+        {
+          "variant": "humanizer",
+          "text": "The post would land harder if it stopped at the number and drew the consequence directly.",
+          "promptHash": "5f760b45eef5e732cd7885a010c2afce5bdba5e1b64632543549b5992dc41307"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "The post would land harder. Stop at the number and draw the consequence.",
+          "promptHash": "37d758ff7d6bb6f4a9de1fdf75efaba891161607a1a1afd1af8ed43cdcfbf671"
+        }
+      ],
+      "mapping": {
+        "A": "write-human-v0",
+        "B": "stop-slop",
+        "C": "write-human-v1",
+        "D": "no-skill",
+        "E": "humanizer"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2: The writer's blunt, directive voice ('It should stop at the number and draw the consequence directly') is softened into a conditional clause, trading the two-beat punchy cadence for a single smoothed sentence.",
+            "Check 3: Both source sentences were already strong and clear; merging them into one tidy conditional rewrites them for smoothness rather than leaving them alone.",
+            "Check 4: The abrupt change of pace from observation ('The post would land harder.') to direct command ('It should stop...') is flattened into one evenly structured sentence, removing the deliberate shift in rhythm."
+          ],
+          "id": "A"
+        },
+        {
+          "checks": [
+            false,
+            false,
+            false,
+            true,
+            true
+          ],
+          "issues": [
+            "Check 1: 'It should stop at the number and draw the consequence directly' was converted from a statement about the post into an imperative command to the writer, changing attribution; dropping the modal 'should' changes the force/uncertainty of the claim; deleting 'directly' changes the stated manner of drawing the consequence.",
+            "Check 2: The writer's advisory register ('It should...') is flattened into a bare command, and the writer's word 'directly' is removed, shifting the voice from tempered recommendation to directive.",
+            "Check 3: The second sentence was already strong, blunt, and clear; the edit rewrites it (mode shift, word deletion, added period) instead of leaving it alone."
+          ],
+          "id": "B"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2: The writer's blunt, directive voice ('It should stop at the number and draw the consequence directly') is softened into a conditional clause, trading the two-beat punchy cadence for a single smoothed sentence.",
+            "Check 3: Both source sentences were already strong and clear; merging them into one tidy conditional rewrites them for smoothness rather than leaving them alone.",
+            "Check 4: The abrupt change of pace from observation ('The post would land harder.') to direct command ('It should stop...') is flattened into one evenly structured sentence, removing the deliberate shift in rhythm."
+          ],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2: The writer's blunt, directive voice ('It should stop at the number and draw the consequence directly') is softened into a conditional clause, trading the two-beat punchy cadence for a single smoothed sentence.",
+            "Check 3: Both source sentences were already strong and clear; merging them into one tidy conditional rewrites them for smoothness rather than leaving them alone.",
+            "Check 4: The abrupt change of pace from observation ('The post would land harder.') to direct command ('It should stop...') is flattened into one evenly structured sentence, removing the deliberate shift in rhythm."
+          ],
+          "id": "D"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2: The writer's blunt, directive voice ('It should stop at the number and draw the consequence directly') is softened into a conditional clause, trading the two-beat punchy cadence for a single smoothed sentence.",
+            "Check 3: Both source sentences were already strong and clear; merging them into one tidy conditional rewrites them for smoothness rather than leaving them alone.",
+            "Check 4: The abrupt change of pace from observation ('The post would land harder.') to direct command ('It should stop...') is flattened into one evenly structured sentence, removing the deliberate shift in rhythm."
+          ],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "b9ba6aff91fc943f4d7cc4ebe5c54f71e55a774391b02ba727118c9da5ec723d",
+        "B": "159dbb578176a3c46feb2d1bdd2f0442a80aef18ce7dc729a1e137bc787a617e",
+        "C": "b9ba6aff91fc943f4d7cc4ebe5c54f71e55a774391b02ba727118c9da5ec723d",
+        "D": "b9ba6aff91fc943f4d7cc4ebe5c54f71e55a774391b02ba727118c9da5ec723d",
+        "E": "b9ba6aff91fc943f4d7cc4ebe5c54f71e55a774391b02ba727118c9da5ec723d"
+      }
+    },
+    {
+      "id": "published-9",
+      "source": "The launch slipped—the migration exposed a schema mismatch",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "The launch slipped: the migration exposed a schema mismatch.",
+          "promptHash": "1d7724bddb166d24afbc86534eac75a59db056801a7275b0f014622fab5d461a"
+        },
+        {
+          "variant": "no-skill",
+          "text": "The launch slipped—the migration exposed a schema mismatch.",
+          "promptHash": "dde6193da2fee39828206415888b7fd3fd417bbcc558daafdd75b8d99bef26b9"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "The launch slipped. The migration had exposed a schema mismatch.",
+          "promptHash": "166374366001ef6001f3a1e693913cdffb5d50232df75ec4a4a0e972e01f3417"
+        },
+        {
+          "variant": "humanizer",
+          "text": "The launch slipped after the migration exposed a schema mismatch.",
+          "promptHash": "74f7acb44a4fa7722b24939e4c53718151dd8c22d6a6ce6fc7236e7ca451189e"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "The launch slipped: we hit a schema mismatch during the migration.",
+          "promptHash": "981652f9237bd200b94090f89a40df1f10d78b593891ca805fc2ee0bcccda674"
+        }
+      ],
+      "mapping": {
+        "A": "write-human-v0",
+        "B": "humanizer",
+        "C": "stop-slop",
+        "D": "no-skill",
+        "E": "write-human-v1"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2: The original's clipped, dash-driven cadence (one breathless connected line) is replaced with more formal polish — 'had exposed' is a step up in edited-formal register from the plain 'exposed'.",
+            "Check 3: The source was already a strong, punchy human sentence; the edit rewrites it anyway, normalizing the em dash into a period and smoothing the verb tense for conventional tidiness rather than leaving it alone.",
+            "Check 4: Nothing was tangled, so no fix was needed; instead the clear spoken cadence of the dash-linked single sentence is broken into two measured sentences with tense sequencing, altering the pace."
+          ],
+          "id": "A"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2 failed: swapping the em dash for 'after' and adding a period flattens the clipped, punchy cadence of the original; the abrupt juxtaposition that conveyed bluntness is smoothed into a conventional, softer connective.",
+            "Check 3 failed: the source was already a strong, clear human sentence; the edit rewrites it for conventional tidiness rather than leaving it alone.",
+            "Check 4 failed: nothing was tangled, so nothing needed fixing; the em dash's abrupt change of pace was a deliberate rhythm choice that the edit removes."
+          ],
+          "id": "B"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 2: Replaces the writer's precise verb 'exposed' with the generic 'hit,' converts the em dash to a colon, and pads the terse clause with 'we... during the...,' softening the clipped, note-like voice.",
+            "Check 3: Rewrites an already-clear, punchy sentence for conventional tidiness (normalizing punctuation, inserting a subject) instead of leaving a strong human sentence alone.",
+            "Check 4: Nothing was tangled to fix, yet the edit alters the crisp two-beat cadence — 'the migration exposed a schema mismatch' becomes a wordier construction trailing off on 'during the migration.'"
+          ],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "D"
+        },
+        {
+          "checks": [
+            true,
+            false,
+            false,
+            true,
+            true
+          ],
+          "issues": [
+            "Check 2: swapping the writer's abrupt em dash for a formal colon (and adding terminal punctuation to a casual, unpunctuated status line) shifts the cadence and raises the level of polish/formality of the original terse register.",
+            "Check 3: the sentence was already strong, clear, and human; the edit rewrites its punctuation for formal consistency and tidiness rather than leaving it alone."
+          ],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "7b06475b412009f3406b0be8724970abe774ae0f3d15f166f9959383a6f59489",
+        "B": "490c32076b71d543f04e3500ca4321cadc950daa88c3efd46520d5553ff210a7",
+        "C": "df16bc3741a53a8adbe2fb649694acc2e12b75597f1e221d80c702ee17667a8b",
+        "D": "953f50366f9773e8f9dbd8ffc7a543800541b1a98f5e931634b02f4615175669",
+        "E": "9e0e2d0c9b5df73a6ca4f5836f6756824c1bbbb522552144c95f7f241b9ef4da"
+      }
+    },
+    {
+      "id": "published-10",
+      "source": "We've all stared at an empty dashboard and felt that sinking feeling",
+      "candidates": [
+        {
+          "variant": "write-human-v1",
+          "text": "We've all stared at an empty dashboard and felt that sinking feeling",
+          "promptHash": "1e40631a00886546c60330703c80ff758db5f2d5d0c3f3c6f0da11e94675e530"
+        },
+        {
+          "variant": "no-skill",
+          "text": "We've all stared at an empty dashboard and felt that sinking feeling",
+          "promptHash": "cc8fc2b450ed16842c182df3a9479917e1d8bdd5dbf2fc2e562bede15b06f697"
+        },
+        {
+          "variant": "write-human-v0",
+          "text": "You've probably stared at an empty dashboard and felt your stomach drop.",
+          "promptHash": "14f0c4df95f9dfd098ad11f5d33039a6524d549064e021d02e87aceb2b72f222"
+        },
+        {
+          "variant": "humanizer",
+          "text": "We've all stared at an empty dashboard and felt that sinking feeling.",
+          "promptHash": "a056c3984fabbc31210571d3b134f5b5c4d34d5d1afb6e0d4105b51e9957cc57"
+        },
+        {
+          "variant": "stop-slop",
+          "text": "You've stared at an empty dashboard and felt that sinking feeling",
+          "promptHash": "0dfbdfcd74c3457747592cca187b325ba23f6b54c9e15958bb3812666fe6116c"
+        }
+      ],
+      "mapping": {
+        "A": "no-skill",
+        "B": "stop-slop",
+        "C": "write-human-v0",
+        "D": "humanizer",
+        "E": "write-human-v1"
+      },
+      "verdicts": [
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "A"
+        },
+        {
+          "checks": [
+            false,
+            false,
+            false,
+            false,
+            true
+          ],
+          "issues": [
+            "Check 1: Changed attribution and scope — the communal 'we've all' (a universal, shared experience) was rewritten as a direct second-person assertion 'you've,' shifting whose experience is being claimed without justification.",
+            "Check 2: The inclusive 'we've all' opener carries the writer's warm, empathetic, communal voice and cadence; flattening it to 'you've' makes the tone more direct and slightly accusatory, losing that distinctive register.",
+            "Check 3: The original sentence was already strong and human — rewriting its opener is unjustified tidying of a sentence that should have been left alone.",
+            "Check 4: Nothing in the sentence was tangled or needed fixing, yet the clear spoken cadence of 'We've all stared...' (the natural conversational, inclusive rhythm) was altered rather than left intact."
+          ],
+          "id": "B"
+        },
+        {
+          "checks": [
+            false,
+            false,
+            false,
+            true,
+            true
+          ],
+          "issues": [
+            "Check 1: Changed attribution and uncertainty — \"We've all\" (inclusive, universal, certain) became \"You've probably\" (second-person, hedged), shifting the scope of the claim from everyone to a probabilistic \"you.\"",
+            "Check 2: Replaced the writer's idiom \"that sinking feeling\" with \"your stomach drop,\" losing the distinctive phrase, communal voice, and the original's flat, certain cadence.",
+            "Check 3: Rewrote a short, strong, idiomatic human sentence that needed no editing, rather than leaving it alone."
+          ],
+          "id": "C"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "D"
+        },
+        {
+          "checks": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "issues": [],
+          "id": "E"
+        }
+      ],
+      "judgmentHashes": {
+        "A": "1499cf8a7ab675fdb03639b3ac3ff534d71366b5e1b30f6b01e2a9c51e461539",
+        "B": "155734bed0299d73d0b0c5ccf1824e9fe0d69ccdbbd25870bb85a4395873f878",
+        "C": "43202bc2b7f723f5b25258a231f6947b142bcbf8169e8306b3d89c5673ca50a2",
+        "D": "c2c03fd45311634d24d9ff3f19604db4813b93d706eccd21e7d53fee4f8c41a8",
+        "E": "1499cf8a7ab675fdb03639b3ac3ff534d71366b5e1b30f6b01e2a9c51e461539"
+      }
+    }
+  ]
+}

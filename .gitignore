@@ -5,4 +5,6 @@ node_modules/
 .claude/
 .codex/
 scripts/scratchpad/
+
+# PR Lens writes its previews here. They are rebuilt on demand.
 .pr-lens/
