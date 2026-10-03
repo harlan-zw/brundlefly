@@ -101,6 +101,9 @@ Perform two distinct reviews:
 1. **Technical:** check behavior, versions, code, prerequisites, outcomes, and link destinations against evidence.
 2. **Editorial:** check task order, understandable concepts, useful detail, and preservation of meaning and voice.
 
+Review heading-to-paragraph density for fragmented explanations. Merge unnecessary divisions without padding prose or removing useful navigation.
+Use the guide primitives reference to distinguish needless headings from useful steps and lookup sections.
+
 After prose edits, recheck technical meaning and examples.
 For a refresh, search adjacent pages for repeated claims and links to changed anchors.
 Use the target's documented docs checks and preview when applicable.

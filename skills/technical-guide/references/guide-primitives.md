@@ -26,6 +26,15 @@ An explanation may use a worked scenario or a question that tests the reader's m
 Neither needs a forced sequence of installation steps.
 Do not invent rare failures or pad clear prose to fill the table.
 
+Review heading-to-paragraph density in the rendered page.
+Repeated headings with one short paragraph can break an explanation into disconnected fragments.
+Merge divisions that merely restate the following sentence or split one continuous idea.
+Keep headings that serve distinct reader questions, ordered steps, or reference lookup.
+Code blocks, tables, and figures may justify sections with little prose.
+Use density to locate review candidates, without a fixed ratio or automatic quality score.
+Do not add filler paragraphs to change the ratio.
+If removing a heading changes an anchor, check links and follow the destination's anchor conventions.
+
 ## Code and visuals
 
 Use code to demonstrate behavior. Explain inputs, outputs, and relevant limitations beside it.
