@@ -18,6 +18,19 @@ Preserve claim scope, uncertainty, dates, units, attribution, and prerequisites 
 Never invent an actor, experience, example, or supporting detail.
 If the text needs no changes, return it unchanged and say so. Do not invent tells to justify a rewrite.
 
+## Respect the reader and author
+
+Improve the prose without disguising who wrote it. Never pretend to be human or remove required agent disclosure.
+Preserve supplied personal experience as the author's words. Never invent anecdotes, credentials, feelings, or team membership.
+Drafting in an author's voice does not authorize signing their name or publishing unseen text for them.
+Keep claims about checks, measurements, effort, and human review tied to actual evidence.
+Never add promises or offers that commit the author without their agreement.
+Before delivery, ask whether the reader needs this text and can find the useful point quickly.
+Cut repetition, reflex flattery, and unsolicited lectures. An unnecessary message may need no rewrite or delivery.
+Use people's exact names and stated pronouns. Otherwise use their username or singular they.
+Do not add an agent disclosure by default. Follow explicit user and destination requirements for disclosure.
+Preserve required disclosures. Never assume a human reviewed the draft.
+
 ## Pass 1: Surface tells (fast, lexical)
 
 These are the well-known signatures. Fix them, but know they are the easy half.
@@ -79,5 +92,7 @@ Do not require another skill to complete this step.
 3. Compare the rewrite with the source. Undo unsupported additions, lost claims, and needless voice changes. If a meaning change is required, explain it and ask for the missing information.
 
 ## Guardrail
+
+Reader respect, truthful authorship, and evidence remain required even when a stylistic rule would suggest otherwise.
 
 Break any rule above sooner than write something stilted, except the ban on clichés in your own prose. Preserve clichés in direct quotes or when the user explicitly requires the wording. The goal is prose that reads human, and humans keep deliberate voice, rhythm, humor, and the occasional ornament. If a "tell" is doing real work (a fresh metaphor that lands, a triple with punch), keep it and say why. Preserve the user's meaning, tone, and explicit constraints; never sand text into flat sameness.

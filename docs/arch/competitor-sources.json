@@ -1,0 +1,203 @@
+[
+  {
+    "repository": "mcollina/skills",
+    "commit": "856efd268ae85482d882f3d0bed869fd020b5c06",
+    "requestedSkills": [
+      "documentation"
+    ],
+    "files": [
+      {
+        "path": "LICENSE",
+        "sha256": "55b21f8286eae11ad53f43c3e3ae5bc2797efbfda786087fb547b9a54655947e",
+        "url": "https://github.com/mcollina/skills/blob/856efd268ae85482d882f3d0bed869fd020b5c06/LICENSE"
+      },
+      {
+        "path": "skills/documentation/SKILL.md",
+        "sha256": "5c5a5a169459a5be92966c41e6128cc537990d647a495a7755ba72b10bc833ca",
+        "url": "https://github.com/mcollina/skills/blob/856efd268ae85482d882f3d0bed869fd020b5c06/skills/documentation/SKILL.md"
+      }
+    ]
+  },
+  {
+    "repository": "vercel/eve",
+    "commit": "7d346f8119355dc7dd8c36bd3f294d90934c9402",
+    "requestedSkills": [
+      "technical-writing"
+    ],
+    "files": [
+      {
+        "path": ".agents/skills/technical-writing/SKILL.md",
+        "sha256": "49f4cb8d65af4b97bb4a322a7a4ea93f45f3a526de3130f20fc970c535c0601c",
+        "url": "https://github.com/vercel/eve/blob/7d346f8119355dc7dd8c36bd3f294d90934c9402/.agents/skills/technical-writing/SKILL.md"
+      },
+      {
+        "path": ".agents/skills/technical-writing/references/content-types.md",
+        "sha256": "69107133273302c9aa545ed2a4233fccbe0584ab793eb8f07475339304b2f17f",
+        "url": "https://github.com/vercel/eve/blob/7d346f8119355dc7dd8c36bd3f294d90934c9402/.agents/skills/technical-writing/references/content-types.md"
+      },
+      {
+        "path": ".agents/skills/technical-writing/references/editing-workflow.md",
+        "sha256": "8cdd788b697dea045e6309e83d56edc0b8b8e59abe3d80d1076e684c27f6643a",
+        "url": "https://github.com/vercel/eve/blob/7d346f8119355dc7dd8c36bd3f294d90934c9402/.agents/skills/technical-writing/references/editing-workflow.md"
+      },
+      {
+        "path": ".agents/skills/technical-writing/references/prose-quality.md",
+        "sha256": "fa5f04ba666ea133d5cfb39a2e9c134182a68228d0a6cc2e10b3de88e4c123af",
+        "url": "https://github.com/vercel/eve/blob/7d346f8119355dc7dd8c36bd3f294d90934c9402/.agents/skills/technical-writing/references/prose-quality.md"
+      },
+      {
+        "path": ".agents/skills/technical-writing/references/review-framework.md",
+        "sha256": "17ecd4fbdd9a63302568b3d286092678f4c9c00616f09490734febc07e199c37",
+        "url": "https://github.com/vercel/eve/blob/7d346f8119355dc7dd8c36bd3f294d90934c9402/.agents/skills/technical-writing/references/review-framework.md"
+      },
+      {
+        "path": ".agents/skills/technical-writing/references/style-rules.md",
+        "sha256": "b3c742279b2f70b269a282ead8ed010f1178ad31e1a0ae43d468f0652b56b128",
+        "url": "https://github.com/vercel/eve/blob/7d346f8119355dc7dd8c36bd3f294d90934c9402/.agents/skills/technical-writing/references/style-rules.md"
+      },
+      {
+        "path": ".agents/skills/technical-writing/references/writing-workflow.md",
+        "sha256": "54769762c4f0bd9d028b51419257228ca145f229e8257c47ca2ead772d1c1779",
+        "url": "https://github.com/vercel/eve/blob/7d346f8119355dc7dd8c36bd3f294d90934c9402/.agents/skills/technical-writing/references/writing-workflow.md"
+      },
+      {
+        "path": "LICENSE",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "url": "https://github.com/vercel/eve/blob/7d346f8119355dc7dd8c36bd3f294d90934c9402/LICENSE"
+      }
+    ]
+  },
+  {
+    "repository": "tldraw/tldraw",
+    "commit": "db1c86ea7857483c47aa333cf4e92abf455a67cf",
+    "requestedSkills": [
+      "pr",
+      "write-pr",
+      "write-tbp"
+    ],
+    "files": [
+      {
+        "path": "LICENSE.md",
+        "sha256": "9578fcddc20e404b6a29f44b6fea81d8b331698c0e7e9be34132d6f4394fa533",
+        "url": "https://github.com/tldraw/tldraw/blob/db1c86ea7857483c47aa333cf4e92abf455a67cf/LICENSE.md"
+      },
+      {
+        "path": "skills/pr/SKILL.md",
+        "sha256": "62ee111839f2fc2300a98a0757350c6d721f8d906c037e6a484632e77975b4d4",
+        "url": "https://github.com/tldraw/tldraw/blob/db1c86ea7857483c47aa333cf4e92abf455a67cf/skills/pr/SKILL.md"
+      },
+      {
+        "path": "skills/write-pr/SKILL.md",
+        "sha256": "88a89683f22dad6991c2b9916c544a3f7d7416a1b636851601078fe8408355e1",
+        "url": "https://github.com/tldraw/tldraw/blob/db1c86ea7857483c47aa333cf4e92abf455a67cf/skills/write-pr/SKILL.md"
+      },
+      {
+        "path": "skills/write-tbp/SKILL.md",
+        "sha256": "dd44d103aca6e2989ced42f850279713210868658fd305c2955a6ef029dc5370",
+        "url": "https://github.com/tldraw/tldraw/blob/db1c86ea7857483c47aa333cf4e92abf455a67cf/skills/write-tbp/SKILL.md"
+      }
+    ]
+  },
+  {
+    "repository": "vercel/next.js",
+    "commit": "596443802d3f8616b46dca2007a8c5393110f6fb",
+    "requestedSkills": [
+      "create-pr"
+    ],
+    "files": [
+      {
+        "path": ".agents/skills/create-pr/SKILL.md",
+        "sha256": "56bd9a076cf84bad746d499bfa3805ad85ea01ed7374c5f6ca52877db26d7cc6",
+        "url": "https://github.com/vercel/next.js/blob/596443802d3f8616b46dca2007a8c5393110f6fb/.agents/skills/create-pr/SKILL.md"
+      }
+    ]
+  },
+  {
+    "repository": "openai/skills",
+    "commit": "49f948faa9258a0c61caceaf225e179651397431",
+    "requestedSkills": [
+      "yeet"
+    ],
+    "files": [
+      {
+        "path": "skills/.curated/yeet/SKILL.md",
+        "sha256": "4829d4909081e1abf91507fb581e6f566ce7064001892414f32191895b08a595",
+        "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/yeet/SKILL.md"
+      }
+    ]
+  },
+  {
+    "repository": "n8n-io/n8n",
+    "commit": "f0ca6b24f4d2caf9e731b6c6c1d55341fdc07089",
+    "requestedSkills": [
+      "create-pr"
+    ],
+    "files": [
+      {
+        "path": ".agents/skills/create-pr/SKILL.md",
+        "sha256": "6a9b2c72f13239f261d4fd6f4c701176b5977b9bf77130ce45cc8efd9da6c54d",
+        "url": "https://github.com/n8n-io/n8n/blob/f0ca6b24f4d2caf9e731b6c6c1d55341fdc07089/.agents/skills/create-pr/SKILL.md"
+      },
+      {
+        "path": "LICENSE.md",
+        "sha256": "d2f621f59aa4c10eab79b6333e59d9d3d5b53307dcfd16dbd75e40e679e84965",
+        "url": "https://github.com/n8n-io/n8n/blob/f0ca6b24f4d2caf9e731b6c6c1d55341fdc07089/LICENSE.md"
+      }
+    ]
+  },
+  {
+    "repository": "mattpocock/skills",
+    "commit": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
+    "requestedSkills": [
+      "writing-shape",
+      "writing-beats",
+      "writing-for-agents"
+    ],
+    "files": [
+      {
+        "path": "LICENSE",
+        "sha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
+        "url": "https://github.com/mattpocock/skills/blob/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/LICENSE"
+      },
+      {
+        "path": "skills/in-progress/writing-beats/SKILL.md",
+        "sha256": "a96abafa2372eede8267d770138b322d6125da8adaa7ccf0a5e08e4ee13ee71e",
+        "url": "https://github.com/mattpocock/skills/blob/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/in-progress/writing-beats/SKILL.md"
+      },
+      {
+        "path": "skills/in-progress/writing-shape/SKILL.md",
+        "sha256": "f5e6c57bdd85178ace4a260c92f46da6b64ddee18215b461d875739c68976f72",
+        "url": "https://github.com/mattpocock/skills/blob/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/in-progress/writing-shape/SKILL.md"
+      },
+      {
+        "path": "skills/productivity/writing-for-agents/SKILL-MECHANICS.md",
+        "sha256": "c768e6307c7c10728c401c213f2c4ba71c542127eeb7ad2956aabd15a0fa0059",
+        "url": "https://github.com/mattpocock/skills/blob/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/productivity/writing-for-agents/SKILL-MECHANICS.md"
+      },
+      {
+        "path": "skills/productivity/writing-for-agents/SKILL.md",
+        "sha256": "551adca942227b44192edba88acd4e8db911f0121ce58ad16944ccf6a896a74a",
+        "url": "https://github.com/mattpocock/skills/blob/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/productivity/writing-for-agents/SKILL.md"
+      }
+    ]
+  },
+  {
+    "repository": "getsentry/skills",
+    "commit": "d18b7aa8ba878354e5c348310230e652f7690f9c",
+    "requestedSkills": [
+      "blog-writing-guide"
+    ],
+    "files": [
+      {
+        "path": "LICENSE",
+        "sha256": "96e78a9ce85795b117c8929887bdb78f88bf23f7b85a31f0872cde4dff7e92cd",
+        "url": "https://github.com/getsentry/skills/blob/d18b7aa8ba878354e5c348310230e652f7690f9c/LICENSE"
+      },
+      {
+        "path": "skills/blog-writing-guide/SKILL.md",
+        "sha256": "8aba654d1af0820ee83370ddcbe51c24fb1c624c169931bd87f36247d181caa4",
+        "url": "https://github.com/getsentry/skills/blob/d18b7aa8ba878354e5c348310230e652f7690f9c/skills/blog-writing-guide/SKILL.md"
+      }
+    ]
+  }
+]
