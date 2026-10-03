@@ -71,6 +71,9 @@ Put supported warnings and failure explanations beside the affected step or clai
 Do not append generic "Common mistakes", "Best practices", or "Check your understanding" sections.
 Use a separate section only when the brief or reader task needs it.
 Let the narrative carry the explanation and result. Do not add a quiz or advice appendix for completeness.
+Prefer connected prose for explanations. Use lists when scanning parallel items or following ordered actions helps the reader.
+Keep items short and lists to five items or fewer by default.
+Group longer procedures into meaningful phases without omitting steps. Preserve required templates and complete reference entries.
 Provide complete imports, setup, configuration, and working-directory context for runnable examples.
 Distinguish runnable code from pseudocode and schematic output.
 Use the project's language and package manager. Preserve exact identifiers and units.
