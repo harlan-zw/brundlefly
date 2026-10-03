@@ -54,8 +54,8 @@ Newly authored or adapted evaluation cases require owner approval before inclusi
 Collection triage and source inspection are not writing-quality evaluations.
 Published examples are permissible research inputs under the owner's source policy; preserve their provenance and licenses.
 Public examples may already occur in model training data. Disclose this limitation.
-The existing writing pilot is proposed for reuse through [PR #4](https://github.com/harlan-zw/brundlefly/pull/4).
-Do not duplicate or silently merge that separate change into this one.
+Reuse the [existing writing pilot](../../evals/README.md) for initial human calibration.
+Keep its historical snapshots distinct from current skill revisions.
 
 ## What each comparison must establish
 

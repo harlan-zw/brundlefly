@@ -30,6 +30,8 @@ Choose the structure that serves the task:
 | Understand a design | Explanation with supported mechanisms and trade-offs |
 
 Keep one primary purpose. Link deeper background where it would interrupt the steps.
+Read [guide primitives](references/guide-primitives.md) and ensure the reader receives each applicable element.
+Treat these as a completeness check, rather than mandatory headings or a fixed page length.
 Read [content boundaries](references/content-types.md) when the page mixes guidance, comparison, research, or personal experience.
 For a refresh, prefer the smallest change that resolves the reader's problem.
 Preserve useful examples, routes, anchors, and deliberate voice.

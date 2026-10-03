@@ -77,3 +77,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md).
 ## License
 
 The skill instructions use the [MIT license](LICENSE.md).
+## Local review UI
+
+Compare existing writing outputs or generate an approved guide demo with OpenCode.
+See [setup and review instructions](evals/ui/README.md).
