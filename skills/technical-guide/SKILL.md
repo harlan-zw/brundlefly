@@ -73,6 +73,10 @@ Use a separate section only when the brief or reader task needs it.
 Let the narrative carry the explanation and result. Do not add a quiz or advice appendix for completeness.
 Prefer connected prose for explanations. Use lists when scanning parallel items or following ordered actions helps the reader.
 Keep items short and lists to five items or fewer by default.
+Watch for successive dense paragraphs after removing lists. Give each paragraph one clear job and cut repeated explanations.
+Lead with the rule needed now. Keep consequential conditions beside their use; link deeper background where appropriate.
+Use a compact table for parallel rules or a worked example for behavior when it helps comprehension.
+Do not add headings, visuals, or mechanical paragraph breaks merely to vary the page.
 Group longer procedures into meaningful phases without omitting steps. Preserve required templates and complete reference entries.
 Provide complete imports, setup, configuration, and working-directory context for runnable examples.
 Distinguish runnable code from pseudocode and schematic output.
@@ -111,6 +115,7 @@ Perform two distinct reviews:
 2. **Editorial:** check task order, understandable concepts, useful detail, and preservation of meaning and voice.
 
 Review heading-to-paragraph density for fragmented explanations. Merge unnecessary divisions without padding prose or removing useful navigation.
+Also inspect successive long paragraphs for buried actions, stacked exceptions, and repetition. Preserve technical conditions during any compression.
 Use the guide primitives reference to distinguish needless headings from useful steps and lookup sections.
 
 After prose edits, recheck technical meaning and examples.
