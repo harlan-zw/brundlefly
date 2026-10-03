@@ -9,7 +9,7 @@ Every guide gives the reader these elements, explicitly or through clear context
 | Scope | Which versions, conditions, and limits apply? |
 | Explanation | How does this work? Why does this choice follow? |
 | Evidence | What supports the claims and examples? |
-| Understanding | How can I tell whether I understood or succeeded? |
+| Understanding | What result or explanation should I take away? |
 
 A procedural guide also needs these elements:
 
@@ -22,9 +22,12 @@ A procedural guide also needs these elements:
 | Recovery | What likely failures can occur, and how do I recover? |
 
 Adapt the check to the page's purpose. A reference page may use a precise lookup example.
-An explanation may use a worked scenario or a question that tests the reader's mental model.
+An explanation may use a worked scenario to make the mechanism and its limits concrete.
 Neither needs a forced sequence of installation steps.
 Do not invent rare failures or pad clear prose to fill the table.
+These elements do not require a "Check your understanding" quiz or generic advice sections.
+Keep necessary warnings and recovery beside the action or concept they support.
+A separate troubleshooting section needs a reader problem that the narrative cannot handle clearly in place.
 
 Review heading-to-paragraph density in the rendered page.
 Repeated headings with one short paragraph can break an explanation into disconnected fragments.

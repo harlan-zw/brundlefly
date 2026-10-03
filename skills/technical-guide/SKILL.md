@@ -67,6 +67,10 @@ Introduce a concept before the reader must use it, unless it is an explicit prer
 Put version limits and consequential conditions beside the affected step.
 
 For each step, explain what to do and what success looks like.
+Put supported warnings and failure explanations beside the affected step or claim.
+Do not append generic "Common mistakes", "Best practices", or "Check your understanding" sections.
+Use a separate section only when the brief or reader task needs it.
+Let the narrative carry the explanation and result. Do not add a quiz or advice appendix for completeness.
 Provide complete imports, setup, configuration, and working-directory context for runnable examples.
 Distinguish runnable code from pseudocode and schematic output.
 Use the project's language and package manager. Preserve exact identifiers and units.
