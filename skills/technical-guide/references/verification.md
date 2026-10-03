@@ -13,6 +13,9 @@
 
 Read full supporting pages. Search snippets and existing prose are discovery aids.
 Cite the specific supporting page beside an external claim.
+Prefer authoritative links beside the claims they support, without a separate "Sources" section by default.
+Use a source list only when the destination requires it or it helps the reader's task.
+Keep detailed provenance and verification records in private working evidence.
 For code-backed claims, record a file and revision in the working ledger.
 Separate documented behavior, directly observed behavior, and assumptions.
 Recheck changeable claims before delivery.
