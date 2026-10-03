@@ -34,6 +34,36 @@ Repair incorrect prose and repeat the affected path.
 If the environment prevents execution, inspect the best available source and name what remains untested.
 Do not replace execution evidence with a successful lint or build.
 
+## Verify, repair, then repeat
+
+Before execution, map each material claim and selected primitive to a check and supporting evidence.
+Keep the original draft and the checked revision separately in private working files.
+
+| Primitive or claim | Check |
+| --- | --- |
+| Runnable example | Run documented setup, commands, and inputs; compare actual outputs with promised results |
+| Protocol behavior | Check applicable status, headers, body, and conditions against the governing specification |
+| Diagram | Render with the target engine; compare arrows, labels, and branches with verified behavior |
+| Screenshot | Inspect the real capture, interface, version, caption, and claimed observation |
+| Supplied fixture | State its origin and limits; do not imply it captures the newly written example |
+| Conceptual explanation | Trace its mechanism and qualifications to the supporting source |
+
+Derive conditions from the requested scope and authoritative sources.
+Do not invent a large edge-case suite or expand the task without authorization.
+A successful common path does not establish every protocol claim.
+A diagram's source text does not establish that it renders.
+Capture instructions do not establish that a screenshot exists.
+
+For each failure, record the expected behavior, actual observation, evidence, and affected passage or asset.
+Repair the smallest underlying mismatch. Update dependent prose, code, captions, and diagrams together.
+Repeat the failed check and any checks affected by the repair.
+If an editorial change alters a verified example or claim, repeat its affected checks too.
+Do not claim success from an earlier revision's results.
+
+When a tool or permission prevents verification, name that limit in the handoff.
+Do not fabricate a result, substitute a different interface, or remove a failure from the evidence.
+A blocked core reader path remains a draft until it can be supported.
+
 ## Review the final revision
 
 Compare the final prose with protected facts, qualifiers, identifiers, versions, and code.

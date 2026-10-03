@@ -32,6 +32,9 @@ Choose the structure that serves the task:
 Keep one primary purpose. Link deeper background where it would interrupt the steps.
 Read [guide primitives](references/guide-primitives.md) and ensure the reader receives each applicable element.
 Treat these as a completeness check, rather than mandatory headings or a fixed page length.
+During the initial sweep, identify which code examples, diagrams, captures, and supporting sources the destination can use.
+Record what exists, what needs creation, and what cannot be verified in this context.
+Follow the primitive selection procedure in that reference before proposing additional work.
 Read [content boundaries](references/content-types.md) when the page mixes guidance, comparison, research, or personal experience.
 For a refresh, prefer the smallest change that resolves the reader's problem.
 Preserve useful examples, routes, anchors, and deliberate voice.
@@ -87,6 +90,11 @@ For procedural content, run safe examples from the documented starting state whe
 Use the actual documented commands and record their results.
 For state-changing steps, respect the user's authorization and use an isolated environment where possible.
 Read the verification reference for limitations, failures, and publication checks.
+Turn material claims and promised outcomes into concrete checks before calling the guide verified.
+Check relevant conditions and response metadata, rather than only a successful command or visible result.
+Render diagrams with the destination's renderer when available. Inspect actual captures and their captions.
+If a check fails, repair the example, explanation, or visual, then repeat the affected checks.
+Keep the initial draft and observed failures in private evidence so the repair remains inspectable.
 
 Perform two distinct reviews:
 
@@ -97,7 +105,7 @@ After prose edits, recheck technical meaning and examples.
 For a refresh, search adjacent pages for repeated claims and links to changed anchors.
 Use the target's documented docs checks and preview when applicable.
 
-**Done:** every material claim is supported; each example has an execution result or a specific verification limit.
+**Done:** material claims are supported; repairs pass their affected checks; remaining limits appear in the handoff.
 
 ## 5. Deliver
 
