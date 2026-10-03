@@ -6,6 +6,9 @@
 | --- | --- | --- | --- |
 | Brundlefly | Repository | Contains skills and brand assets | Brundlefly |
 | write-human | skills/write-human | First skill candidate | write-human |
+| technical-guide | skills/technical-guide | Creates and refreshes verified technical guides | technical-guide |
+| pr | skills/pr | Delivers repository-conforming GitHub pull requests | pr |
+| release-notes | skills/release-notes | Explains verified version changes and migration steps | release-notes |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
 
 ## Terms
@@ -15,6 +18,15 @@ Use BRUNDLEFLY only for the uppercase wordmark.
 
 write-human is the writing skill candidate.
 It replaces the imported humanize-writing name in this collection.
+
+technical-guide owns research, writing, and verification for a reader's technical task.
+Use this name for both creation and refresh. Do not name a second skill content-refresh for the same workflow.
+
+pr owns the portable PR workflow, including repository conventions and publication verification.
+Use pr as the skill name. Pull request remains GitHub's name for the artifact.
+
+release-notes owns changelog and release-announcement drafting from verified changes.
+Release publication remains a separate authorized action.
 
 ## Banned
 
