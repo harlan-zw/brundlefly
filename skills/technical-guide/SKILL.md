@@ -32,6 +32,9 @@ Choose the structure that serves the task:
 Keep one primary purpose. Link deeper background where it would interrupt the steps.
 Read [guide primitives](references/guide-primitives.md) and ensure the reader receives each applicable element.
 Treat these as a completeness check, rather than mandatory headings or a fixed page length.
+During the initial sweep, identify which code examples, diagrams, captures, and supporting sources the destination can use.
+Record what exists, what needs creation, and what cannot be verified in this context.
+Follow the primitive selection procedure in that reference before proposing additional work.
 Read [content boundaries](references/content-types.md) when the page mixes guidance, comparison, research, or personal experience.
 For a refresh, prefer the smallest change that resolves the reader's problem.
 Preserve useful examples, routes, anchors, and deliberate voice.
@@ -64,12 +67,25 @@ Introduce a concept before the reader must use it, unless it is an explicit prer
 Put version limits and consequential conditions beside the affected step.
 
 For each step, explain what to do and what success looks like.
+Put supported warnings and failure explanations beside the affected step or claim.
+Do not append generic "Common mistakes", "Best practices", or "Check your understanding" sections.
+Use a separate section only when the brief or reader task needs it.
+Let the narrative carry the explanation and result. Do not add a quiz or advice appendix for completeness.
+Prefer connected prose for explanations. Use lists when scanning parallel items or following ordered actions helps the reader.
+Keep items short and lists to five items or fewer by default.
+Watch for successive dense paragraphs after removing lists. Give each paragraph one clear job and cut repeated explanations.
+Lead with the rule needed now. Keep consequential conditions beside their use; link deeper background where appropriate.
+Use a compact table for parallel rules or a worked example for behavior when it helps comprehension.
+Do not add headings, visuals, or mechanical paragraph breaks merely to vary the page.
+Group longer procedures into meaningful phases without omitting steps. Preserve required templates and complete reference entries.
 Provide complete imports, setup, configuration, and working-directory context for runnable examples.
 Distinguish runnable code from pseudocode and schematic output.
 Use the project's language and package manager. Preserve exact identifiers and units.
 Use placeholders that readers can recognize and replace. Keep credentials out of examples.
 
 Write direct, natural prose. Keep useful qualifications, uncertainty, and attribution.
+Do not use em dashes or hyphens as sentence punctuation.
+Use commas, semicolons, colons, or separate sentences. Keep this rule during editorial edits.
 Prefer a concrete explanation to hype or stock transitions.
 Use consistent terms. Leave strong sentences unchanged.
 Use passive voice when the actor is irrelevant or the object deserves emphasis.
@@ -87,17 +103,26 @@ For procedural content, run safe examples from the documented starting state whe
 Use the actual documented commands and record their results.
 For state-changing steps, respect the user's authorization and use an isolated environment where possible.
 Read the verification reference for limitations, failures, and publication checks.
+Turn material claims and promised outcomes into concrete checks before calling the guide verified.
+Check relevant conditions and response metadata, rather than only a successful command or visible result.
+Render diagrams with the destination's renderer when available. Inspect actual captures and their captions.
+If a check fails, repair the example, explanation, or visual, then repeat the affected checks.
+Keep the initial draft and observed failures in private evidence so the repair remains inspectable.
 
 Perform two distinct reviews:
 
 1. **Technical:** check behavior, versions, code, prerequisites, outcomes, and link destinations against evidence.
 2. **Editorial:** check task order, understandable concepts, useful detail, and preservation of meaning and voice.
 
+Review heading-to-paragraph density for fragmented explanations. Merge unnecessary divisions without padding prose or removing useful navigation.
+Also inspect successive long paragraphs for buried actions, stacked exceptions, and repetition. Preserve technical conditions during any compression.
+Use the guide primitives reference to distinguish needless headings from useful steps and lookup sections.
+
 After prose edits, recheck technical meaning and examples.
 For a refresh, search adjacent pages for repeated claims and links to changed anchors.
 Use the target's documented docs checks and preview when applicable.
 
-**Done:** every material claim is supported; each example has an execution result or a specific verification limit.
+**Done:** material claims are supported; repairs pass their affected checks; remaining limits appear in the handoff.
 
 ## 5. Deliver
 

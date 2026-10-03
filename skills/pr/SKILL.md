@@ -74,6 +74,10 @@ Re-read the remote body before replacing it. If it changed during drafting, reco
 Rewrite obsolete generated content around the final diff.
 
 Keep the prose concise and concrete. Use first-person experience only when the author supplied it.
+Use lists only when they help review. Keep authored items short, with five items or fewer by default.
+Preserve mandatory template checklists rather than dropping required items to meet that limit.
+Do not use em dashes or hyphens as sentence punctuation.
+Use commas, semicolons, colons, or separate sentences. Keep this rule during editorial edits.
 Never claim human identity, team membership, or an anecdote as the agent's own.
 Name the operator and actual human review state in an early plain sentence inside the PR body.
 Ask before publication if either is unknown. A planned review is not a completed review.
