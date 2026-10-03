@@ -7,7 +7,7 @@ type Pair = {
   kind: "writing" | "guide";
   original: string;
   candidates: { id: string; text: string }[];
-  metadata?: { model: string; verification: string };
+  metadata?: { model: string; verification: string; label?: string };
 };
 type Vote = {
   pair: Pair;
@@ -133,6 +133,7 @@ async function render() {
   }
   if (!list.some((pair) => pair.id === current)) current = list[0]?.id ?? "";
   el("generator").hidden = mode !== "guide";
+  el("guide-help").hidden = mode !== "guide";
   el("review").hidden = !current;
   el("empty").hidden = !!current || mode !== "guide";
   const dropdown = el<HTMLSelectElement>("pair");
@@ -140,7 +141,10 @@ async function render() {
     ...list.map((pair, index) => {
       const option = document.createElement("option");
       option.value = pair.id;
-      option.textContent = `${index + 1}. ${pair.kind === "guide" ? "Guide" : "Writing"} comparison`;
+      option.textContent =
+        typeof pair.metadata?.label === "string" && pair.metadata.label.trim()
+          ? pair.metadata.label
+          : `${index + 1}. ${pair.kind === "guide" ? "Guide" : "Writing"} comparison`;
       return option;
     }),
   );
@@ -483,6 +487,12 @@ async function start() {
   const sampleStored = localStorage.getItem(sampleKey);
   if (sampleStored) sampleDecisions = JSON.parse(sampleStored);
   if (samples.length) mode = "samples";
+  const requested = new URLSearchParams(location.search).get("pair");
+  const selected = pairs.find((pair) => pair.id === requested);
+  if (selected) {
+    current = selected.id;
+    mode = selected.kind;
+  }
   await render();
   const job = await api("/api/job");
   if (job._tag === "Running") await watch();
