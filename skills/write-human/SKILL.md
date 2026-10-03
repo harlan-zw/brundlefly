@@ -94,6 +94,6 @@ Do not require another skill to complete this step.
 
 ## Guardrail
 
-Reader respect, truthful authorship, and evidence remain required even when a stylistic rule would suggest otherwise.
+Reader respect, truthful authorship, evidence, and the ban on em dashes in new prose remain required during stylistic edits.
 
 Break any rule above sooner than write something stilted, except the ban on clichés in your own prose. Preserve clichés in direct quotes or when the user explicitly requires the wording. The goal is prose that reads human, and humans keep deliberate voice, rhythm, humor, and the occasional ornament. If a "tell" is doing real work (a fresh metaphor that lands, a triple with punch), keep it and say why. Preserve the user's meaning, tone, and explicit constraints; never sand text into flat sameness.

@@ -73,6 +73,8 @@ Use the project's language and package manager. Preserve exact identifiers and u
 Use placeholders that readers can recognize and replace. Keep credentials out of examples.
 
 Write direct, natural prose. Keep useful qualifications, uncertainty, and attribution.
+Do not use em dashes or hyphens as sentence punctuation.
+Use commas, semicolons, colons, or separate sentences. Keep this rule during editorial edits.
 Prefer a concrete explanation to hype or stock transitions.
 Use consistent terms. Leave strong sentences unchanged.
 Use passive voice when the actor is irrelevant or the object deserves emphasis.
