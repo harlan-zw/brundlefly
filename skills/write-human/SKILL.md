@@ -33,7 +33,9 @@ Preserve required disclosures. Never assume a human reviewed the draft.
 
 ## Pass 1: Surface tells (fast, lexical)
 
-These are the well-known signatures. Fix them, but know they are the easy half.
+Treat recurring wording as a review signal. Change it only when it weakens this passage.
+Read [the Graphite research note](references/graphite-ai-tells-2026.md) when reviewing model-dependent patterns or explaining their evidence.
+Corpus frequency does not identify an author or measure prose quality. Do not turn research examples into a word blacklist.
 
 - **Em-dashes and hyphens-as-dashes** -- restructure with commas, semicolons, colons, or separate sentences.
 - **"It's not X, it's Y"** contrast pattern -- banned. State Y directly.
@@ -43,6 +45,8 @@ These are the well-known signatures. Fix them, but know they are the easy half.
 - **Agentless passive** -- "it was decided", "mistakes can be made", "improvements were introduced". Name the actor when the actor matters.
 - **Padding constructions** -- "the fact that", "there is/are ... that", nominalizations ("perform an installation of" instead of "install"). If a word can be cut, cut it.
 - **Hedging filler** -- "it's worth noting", "it's important to", "that said", "moreover", "furthermore" as paragraph openers.
+- **Generic praise, importance, and helpfulness.** Flag unsupported ratings and superlatives, ceremonial transitions, and promises to help without a stated benefit. Cut repetition or state the supported result. Keep specific claims and useful connections between ideas. Never invent evidence to replace vague wording.
+- **Qualification and comparison.** Keep words such as "may" and "not necessarily" when they preserve uncertainty or scope. Keep meaningful contrasts. Cut only padding that leaves the same claim, conditions, and emphasis.
 - **False-sincerity openers** -- "honestly", "to be honest", "frankly", "in all honesty", "let's be real". They signal nothing and pad the sentence. Just state the point.
 - **Rule-of-three everywhere** -- AI defaults to triples ("fast, reliable, and scalable"). Vary list length; use two or four.
 - **Tidy closing summary** -- the "In conclusion" / "Ultimately" wrap-up that restates what was just said.
@@ -98,5 +102,6 @@ Do not require another skill to complete this step.
 ## Guardrail
 
 Reader respect, truthful authorship, evidence, and the ban on em dashes in new prose remain required during stylistic edits.
+The punctuation ban is a style requirement. Punctuation alone cannot establish authorship or writing quality.
 
 Break any rule above sooner than write something stilted, except the ban on clichés in your own prose. Preserve clichés in direct quotes or when the user explicitly requires the wording. The goal is prose that reads human, and humans keep deliberate voice, rhythm, humor, and the occasional ornament. If a "tell" is doing real work (a fresh metaphor that lands, a triple with punch), keep it and say why. Preserve the user's meaning, tone, and explicit constraints; never sand text into flat sameness.
