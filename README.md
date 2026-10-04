@@ -11,6 +11,7 @@ A collection of self-contained [Agent Skills](https://agentskills.io/specificati
 | [write-human](skills/write-human/SKILL.md) | Remove generated-sounding writing habits while preserving meaning and voice. |
 | [technical-guide](skills/technical-guide/SKILL.md) | Research, write, verify, or refresh technical guides with working examples. |
 | [pr](skills/pr/SKILL.md) | Prepare, open, or update PRs using the target repository's rules and contributor conventions. |
+| [agentify-text](skills/agentify-text/SKILL.md) | Compress text and Markdown for agents while preserving facts, constraints, and structure. |
 
 Choose the skill that owns your task. Each skill works alone.
 Use write-human for prose edits, technical-guide for a verified reader workflow, and pr for review submission.
@@ -43,6 +44,7 @@ For the other workflows:
 ```text
 Use technical-guide to refresh this tutorial against the supported release. Verify its examples.
 Use pr to submit these changes. Follow the repository template and recent maintainer conventions.
+Use agentify-text to reduce tokens in this Markdown file. Preserve its facts, rules, exceptions, and working links.
 ```
 
 GitHub publication through pr needs an authorized GitHub integration.
