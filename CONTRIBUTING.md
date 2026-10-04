@@ -16,13 +16,3 @@ Prefer real before-and-after examples over word-count or file-shape assertions.
 Read the brand rules before changing images.
 Keep exploration assets separate from canonical assets.
 Preserve authorship and license notices when adapting an existing skill.
-
-If you change write-human, regenerate the readme bundle:
-
-```sh
-node scripts/sync-readme-bundle.mts
-node scripts/sync-readme-bundle.mts --check
-```
-
-Use Node 24 or newer. Commit the generated files with the source change.
-Read [repository conventions](docs/arch/conventions.md) for the source of truth and bundle checks.

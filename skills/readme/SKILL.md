@@ -7,8 +7,9 @@ license: MIT
 # README
 
 Help a reader decide whether the project fits, then complete its first useful task.
-This skill extends write-human. Read [the bundled writing rules](references/write-human/rules.md) before drafting.
-The bundle works without a sibling skill or personal checkout.
+This skill works without a sibling skill or personal checkout.
+If write-human is available, use it for the final prose review.
+It is optional; do not install it automatically.
 
 ## Inspect the project
 
@@ -67,7 +68,9 @@ Keep concise discovery links, contribution rules, attribution, and licenses wher
 
 ## Review and verify
 
-Apply both bundled writing passes. Preserve required sections and the chosen feature presentation.
+Use plain words and direct sentences. Preserve required sections and the chosen feature presentation.
+Keep product names, approved copy, commands, and links exact unless evidence supports a correction.
+Preserve facts, qualifications, attribution, and voice. Cut repetition and unsupported claims.
 Keep clear sentences unchanged. Remove unsupported claims rather than replacing them with invented evidence.
 Keep review commentary outside README.md.
 

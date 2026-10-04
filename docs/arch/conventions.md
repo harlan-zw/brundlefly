@@ -18,20 +18,7 @@ write-human adapts the owner's humanize-writing instructions.
 Its personal skill links are replaced by self-contained source and copy-review rules.
 It preserves the upstream MIT notice in its own directory.
 
-readme extends write-human through a generated directory in references/write-human.
-skills/write-human is the source of truth. Edit shared writing rules there.
-The generator copies the complete directory, preserving relative links and license notices.
-It names the bundled SKILL.md rules.md to avoid discovery as a second installed skill.
-Never edit the generated directory directly.
-
-From the repository root, run these commands with Node 24 or newer:
-
-```sh
-node scripts/sync-readme-bundle.mts
-node scripts/sync-readme-bundle.mts --check
-```
-
-The first command updates the bundle. The second reports drift without writing files.
-If the bundle differs, the check exits with code 1.
-CI runs the check when either skill or its generator changes.
-Installed skills need no generation command or Node runtime.
+readme owns README structure, positioning, and reader-path checks.
+It carries its own positioning reference and a short writing checklist.
+It can use an available write-human skill for a prose review, without requiring it.
+Keep readme's positioning reference separate from write-human's instructions and references.
