@@ -1,20 +1,25 @@
-![BRUNDLEFLY with its mascot's claws hanging below the banner](assets/brand/github-banner-overhang-gross.png)
+# ![Brundlefly, with its mascot's claws hanging below the banner](https://github.com/harlan-zw/brundlefly/raw/main/assets/brand/github-banner-overhang-gross.png)
 
-# Brundlefly
+> Agent skills for human mutations
 
-A collection of self-contained Agent Skills for writing and repository work.
+<a href="https://skilld.dev/gh/harlan-zw/brundlefly">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://skilld.dev/b/harlan-zw/brundlefly?theme=dark">
+    <source media="(prefers-color-scheme: light)" srcset="https://skilld.dev/b/harlan-zw/brundlefly?theme=light">
+    <img alt="Skill repository on skilld.dev" src="https://skilld.dev/b/harlan-zw/brundlefly?theme=light">
+  </picture>
+</a>
 
 ## Why Brundlefly
 
-A tutorial can read well and still give you a broken command.
-A PR can sound natural and still miss the target repository's conventions.
+Brundlefly combines approaches from existing skills to shape writing for people and agents.
+Edit prose for meaning and voice. Compress instructions while preserving their rules.
+For guides and repository work, check examples and follow the target project's conventions.
 
+The [writing evaluation](evals/REPORT.md) compares prose edits with
 [Humanizer](https://github.com/blader/humanizer/blob/225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8/SKILL.md)
-and [Stop Slop](https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/SKILL.md) focus on prose editing.
-Brundlefly combines that work with checking guide examples and preparing submissions for the repository you're working in.
-
-Install it when your agent needs to carry developer writing through to a usable guide or review submission.
-The skills preserve facts and voice, inspect the target project's rules, and report checks they could not run.
+and [Stop Slop](https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/SKILL.md).
+It records observed results and measurement limits.
 Each skill carries its own references, so the workflows travel between repositories without a personal checkout or private services.
 
 ## Features
