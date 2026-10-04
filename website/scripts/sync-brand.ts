@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { copyFile, cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { zipSync } from 'fflate'
 import { skills } from '../shared/content.ts'
 
@@ -8,6 +8,7 @@ await mkdir(target, { recursive: true })
 await Promise.all(['github-banner-overhang-gross.png', 'github-avatar.png'].map(name =>
   copyFile(new URL(name, source), new URL(name, target)),
 ))
+await cp(new URL('kit/', source), new URL('kit/', target), { recursive: true })
 
 async function collectFiles(directory: URL, prefix: string): Promise<Record<string, Uint8Array>> {
   const files: Record<string, Uint8Array> = {}

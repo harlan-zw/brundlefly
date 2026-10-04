@@ -50,3 +50,7 @@ Cloudflare's [Vite asset packaging](https://developers.cloudflare.com/cf/project
 
 The build also creates ZIP downloads with each complete skill directory and its license.
 Visitors can download the skills without GitHub access.
+
+The [brand kit](../docs/brand/kit.md) lists all artwork and selects the living instrument layout.
+The [generation prompts](../assets/prompts/brand-kit.json) record references and exact prompts for the three new artifacts.
+The sync script also copies these materials into the static site.

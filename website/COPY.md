@@ -54,3 +54,11 @@ Additional slogans or decorative text need the owner’s review before publicati
 Download actions use “Download” followed by the exact skill name.
 Read actions use “Read the full” followed by the exact skill name and “skill”.
 ZIP downloads contain the complete skill directory, including references and license.
+
+## Instrument page
+
+The visible page title is “Brundlefly”. Skill controls use the exact skill names above.
+The local-input note is “Your input stays in this browser.”
+The scope disclosure label is “Demo limits”. The idle output label is “Ready.”
+Utility actions use “Download”, “Instructions”, “GitHub”, and “Brand kit”.
+The aperture is decorative. It carries no invented persona or slogan.

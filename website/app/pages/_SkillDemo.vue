@@ -60,8 +60,8 @@ function resetDemo() {
     <form class="demo-input" @submit.prevent="runDemo">
       <template v-if="skill === 'write-human'">
         <label for="writing-input">Your text</label>
-        <UTextarea id="writing-input" v-model="text" :rows="8" class="demo-textarea" :maxlength="6000" :aria-invalid="Boolean(error)" :aria-describedby="error ? 'demo-error' : 'demo-limit'" />
-        <p id="demo-limit" class="field-note">Wording signals invite review. They do not identify an author.</p>
+        <UTextarea id="writing-input" v-model="text" :rows="7" class="demo-textarea" :maxlength="6000" :aria-invalid="Boolean(error)" :aria-describedby="error ? 'demo-error' : 'demo-limit'" />
+        <details id="demo-limit" class="field-note"><summary>Demo limits</summary><p>Wording signals invite review. They do not identify an author.</p></details>
       </template>
       <template v-else-if="skill === 'technical-guide'">
         <label for="guide-task">Reader’s task</label>
@@ -75,7 +75,7 @@ function resetDemo() {
           <option value="reference">Look up exact behavior</option>
           <option value="explanation">Understand a design</option>
         </select>
-        <p class="field-note">This demo builds a structure. The full skill researches and verifies the guide.</p>
+        <details class="field-note"><summary>Demo limits</summary><p>This demo builds a structure. The full skill researches and verifies the guide.</p></details>
       </template>
       <template v-else>
         <div class="field-pair">
@@ -86,7 +86,7 @@ function resetDemo() {
         <UInput id="pr-change" v-model="change" :maxlength="69" />
         <label for="pr-reason">Reason</label>
         <UTextarea id="pr-reason" v-model="reason" :rows="3" :maxlength="2000" />
-        <p class="field-note">This demo formats a draft. The full skill follows the target repository’s rules.</p>
+        <details class="field-note"><summary>Demo limits</summary><p>This demo formats a draft. The full skill follows the target repository’s rules.</p></details>
       </template>
       <p v-if="error" id="demo-error" class="form-error" role="alert">{{ error }}</p>
       <div class="form-actions">
@@ -105,10 +105,9 @@ function resetDemo() {
       </template>
       <pre v-else-if="output" class="markdown-output">{{ output }}</pre>
       <div v-else class="result-placeholder">
-        <div class="output-organism" aria-hidden="true"><span /><span /><span /></div>
-        <p>{{ skill === 'write-human' ? 'Review your text to see wording signals and suggestions.' : skill === 'technical-guide' ? 'Build an outline for your reader’s task.' : 'Format a draft from the change and its reason.' }}</p>
+        <img class="output-organism" src="/brand/kit/aperture.png" alt="" width="1254" height="1254" aria-hidden="true">
+        <p>Ready.</p>
       </div>
-      <a class="full-skill-link" :href="`/skills/${skill}.md`">Read the full {{ skill }} skill <span aria-hidden="true">↗</span></a>
     </div>
   </div>
 </template>

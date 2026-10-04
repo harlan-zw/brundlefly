@@ -118,3 +118,13 @@ Do not add blood spray, exposed organs, or background effects over controls.
 
 main.css owns the membrane, wet-sheen, and slime brand effects.
 All effects use the brand palette. Panels use semantic Nuxt UI tokens.
+
+## Instrument revision
+
+[The brand kit](../docs/brand/kit.md) supersedes the earlier landing-page spatial rules.
+Use the living instrument layout selected there.
+One sparse utility header, one asymmetric organic work area, one utility footer.
+Use the generated surround and aperture directly. Do not imitate them with generic gradients.
+Keep the canonical banner small enough to leave the task immediately visible.
+Skill buttons float along the upper edge. Two work surfaces occupy the opening.
+Put scope notes in accessible disclosure controls. Preserve readable input and output.
