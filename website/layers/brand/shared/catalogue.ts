@@ -22,6 +22,9 @@ export const compositions: { name: string, preset: Preset }[] = [
   { name: 'Stack', preset: { version: 1, material: 'membrane', edges: 'wing', layout: 'stack', density: 0.35 } },
 ]
 export const parts = [
+  { name: 'Chitin clasp', file: '/brand/kit/lair/clasp.png', component: 'BrandChoice', role: 'Small selection marker. Keep it beside the label.' },
+  { name: 'Mucus bead', file: '/brand/kit/lair/bead.png', component: 'BrandAction', role: 'Wet status and action detail. Keep its original alpha.' },
+  { name: 'Membrane suture', file: '/brand/kit/lair/suture.png', component: 'BrandDivider', role: 'Thin boundary beneath navigation. Never cover text.' },
   { name: 'Flesh corner', file: '/brand/kit/modular/flesh-corner.png', component: 'BrandSurface', role: 'Corner cap. Rotate, do not stretch. Keep outside the content-safe zone.' },
   { name: 'Membrane divider', file: '/brand/kit/modular/membrane-divider.png', component: 'BrandDivider', role: 'Separate sections. Preserve aspect ratio. Never place text over the membrane.' },
   { name: 'Tendon connector', file: '/brand/kit/modular/tendon-connector.png', component: 'BrandDivider', role: 'Connect related surfaces. Keep both anchors visible.' },
@@ -46,5 +49,5 @@ export function parsePreset(raw: string): PresetResult {
   return { _tag: 'Ok', preset: { version: 1, material: data.material as Material, edges: data.edges as Edges, layout: data.layout as Layout, density: data.density } }
 }
 export function vueForPreset(preset: Preset): string {
-  return `<script setup lang="ts">\nimport { ref } from 'vue'\nconst text = ref('')\nconst result = ref('')\n</script>\n\n<template>\n  <BrandComposition layout="${preset.layout}">\n    <BrandSurface material="${preset.material}" edges="${preset.edges}" :density="${preset.density}">\n      <form class="brand-example" @submit.prevent="result = text">\n        <label for="your-text">Your text</label>\n        <UTextarea id="your-text" v-model="text" :rows="5" />\n        <BrandAction type="submit" material="${preset.material}">Preview result</BrandAction>\n      </form>\n    </BrandSurface>\n    <BrandSurface material="chitin">\n      <h2>Input preview</h2>\n      <p>{{ result || 'Enter text to preview a result.' }}</p>\n    </BrandSurface>\n  </BrandComposition>\n</template>`
+  return `<script setup lang="ts">\nimport { ref } from 'vue'\nconst text = ref('')\nconst result = ref('')\nconst motionOff = ref(false)\n</script>\n\n<template>\n  <BrandLair :motion-off="motionOff">\n    <UButton variant="ghost" @click="motionOff = !motionOff">{{ motionOff ? 'Motion off' : 'Motion on' }}</UButton>\n  <BrandComposition layout="${preset.layout}">\n    <BrandSurface material="${preset.material}" edges="${preset.edges}" :density="${preset.density}">\n      <form class="brand-example" @submit.prevent="result = text">\n        <label for="your-text">Your text</label>\n        <UTextarea id="your-text" v-model="text" :rows="5" />\n        <BrandAction type="submit" material="${preset.material}">Preview result</BrandAction>\n      </form>\n    </BrandSurface>\n    <BrandSurface material="chitin">\n      <h2>Input preview</h2>\n      <p>{{ result || 'Enter text to preview a result.' }}</p>\n    </BrandSurface>\n  </BrandComposition>\n  </BrandLair>\n</template>`
 }

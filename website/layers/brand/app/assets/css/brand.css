@@ -88,3 +88,26 @@ button, a, input, textarea, select, summary { -webkit-tap-highlight-color: trans
  .brand-composition[data-layout="workbench"] { grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); }
  .brand-composition[data-layout="split"] { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
 }
+
+/* The chamber surrounds the task. It never intercepts a control or focus outline. */
+.brand-lair { position: relative; isolation: isolate; min-height: 100svh; background: var(--color-night); }
+.brand-lair-depth { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: clip; }
+.brand-lair-depth > div, .brand-lair-depth .brand-organism { height: 100%; width: 100%; min-height: 0; aspect-ratio: auto; background: transparent; }
+.brand-lair-depth::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 55% at 55% 50%, var(--color-night) 30%, transparent 95%); }
+.brand-lair-depth .brand-organism-status { display: none; }
+.brand-lair-depth .brand-organism-fallback { width: 100%; height: 100%; object-fit: cover; opacity: .35; }
+.brand-lair-content { position: relative; }
+.brand-lair .brand-choice { position: relative; background: color-mix(in srgb, var(--color-night) 90%, transparent); }
+.brand-choice::before { content: ''; position: absolute; left: -17px; top: 0; width: 36px; height: 100%; background: url('/brand/kit/lair/clasp.png') center / 48px auto no-repeat; image-rendering: pixelated; pointer-events: none; opacity: 0; transform: rotate(-15deg) scale(.8); transition: opacity .2s, transform .25s; }
+.brand-choice[aria-pressed="true"]::before { opacity: 1; transform: none; }
+.brand-action::before { content: ''; position: absolute; right: 8px; top: calc(100% - 8px); width: 24px; height: 32px; background: url('/brand/kit/lair/bead.png') center / contain no-repeat; image-rendering: pixelated; pointer-events: none; opacity: 0; transform: scaleY(.5); transform-origin: top; transition: transform .25s, opacity .2s; }
+.brand-action:hover::before, .brand-action:focus-visible::before { opacity: 1; transform: scaleY(1); }
+.brand-divider[data-part="suture"] { height: 64px; }
+@media (max-width: 767px) {
+ .brand-choice::before { left: -12px; width: 24px; background-size: 32px auto; }
+ .brand-lair-depth::after { background: radial-gradient(ellipse 80% 48% at 50% 48%, var(--color-night) 40%, transparent 95%); }
+}
+
+.brand-lair-depth > div { opacity: .58; filter: brightness(.8); }
+.brand-choice::before { background-size: 72px auto; }
+@media (max-width: 767px) { .brand-choice::before { background-size: 48px auto; } }

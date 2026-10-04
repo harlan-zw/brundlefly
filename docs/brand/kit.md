@@ -30,8 +30,9 @@ The layout responds to its container, so a nested preview behaves like a standal
 | BrandSurface | flesh, chitin, membrane; edges; density 0–1 | Quiet content area with interchangeable biological edges |
 | BrandAction | material, native type and disabled state | Clear action with a small slime reaction |
 | BrandChoice | label, detail, selected | Native choice with visible selection |
-| BrandDivider | tendon or membrane | Connect or separate sections |
-| LazyBrandOrganism | wetness, viscosity, pressure, motionOff, exportable | Optional deformable material outside the task area |
+| BrandDivider | tendon, membrane, suture | Connect or separate sections |
+| BrandLair | motionOff, opening, wetness; arbitrary slotted content | Nonblocking full-page chamber with receding 3D ribs |
+| LazyBrandOrganism | presentation, transform, opening, wetness, viscosity, pressure, motionOff, exportable | Inspectable specimen or lair geometry |
 
 The app exports versioned presets. Imports parse values before generating Vue.
 The copied Vue runs an explicit component preview. Replace its handler with the page’s real task.
@@ -125,14 +126,21 @@ On mobile, task choices precede input and results. No material can obscure a con
 ## Motion and interaction
 
 The primary action grows a small slime drip on hover.
-The tool page offers an optional 3D specimen in its margin. It starts closed.
+The tool page sits inside a 3D chamber. It starts without an entrance gate or extra click.
+The chamber responds to pointer movement and scroll. Native button presses produce a small compression response.
+It never intercepts a form event. Reduced motion disables ambient camera and button reactions.
+The kit Motion section offers separate aperture and lair scenes, with squeeze, twist, and unfurl controls.
 Motion off and system reduced motion stop idle motion. Pointer pressure remains an explicit interaction.
 Hidden and offscreen specimens stop their animation loop. Teardown disposes GPU resources.
 If WebGL or the texture fails, use the static aperture with a clear status.
 
 ## 3D construction
 
-Three procedural torus folds form the aperture. Chitin plates, bristles, and mucus surround it.
+Three procedural folds form the aperture. Six receding elliptical ribs form the lair.
+Both share a shader and material system. Chitin plates pivot on a lightweight Group hierarchy.
+Opening moves the folds, plates, bristles, and slime together. Unfurl opens the hinges further.
+Twist produces radial torsion. Squeeze compresses the folds and follows the captured pointer.
+The pressure spring uses viscosity. Dragging keeps pointer capture until release.
 GLSL adds pressure displacement, pulse, cool rim light, and wet highlights.
 Viscosity sets pressure response speed. Wetness sets the highlight strength.
 The diffuse texture uses mirrored repeat. The supplied color image is not a normal map.
@@ -146,7 +154,8 @@ Blender import was not exercised on this host.
 
 ## Portability
 
-The downloadable layer bundles components, tokens, TypeScript, public artwork, and installation instructions.
+The downloadable layer bundles components, tokens, TypeScript, runtime artwork, and installation instructions.
+Concept boards and unused complete frames remain in the full archive, outside the runtime ZIP.
 It declares its Nuxt UI, fonts, VueUse, Three.js, and Three.js type dependencies.
 Both Nuxt apps extend that layer. They share one asset origin and deploy as one static Cloudflare Worker.
 Nuxt generates each app. Vite packages the combined output. cf deploy --prebuilt uses that verified package.
@@ -159,10 +168,27 @@ Writing signals invite review. They cannot identify an author.
 The guide demo produces a structure. The PR demo formats a draft.
 Keep these limits in an expandable disclosure near the work area.
 
+## Lair direction
+
+![Lair exploration](../../assets/brand/kit/lair/lair-direction.png)
+
+The canonical banner and modular concept seeded this image before the 3D revision.
+The implemented chamber keeps readable controls within quiet surfaces.
+New small details use separate PNGs, rather than cutting the concept into a sprite sheet.
+[Exact prompts and seeds](../../assets/prompts/lair-kit.json) record the built-in imagegen work.
+The generated concept never replaces the supplied wordmark.
+
 ## Complete file inventory
 
 | File | Dimensions or type | Role |
 | --- | --- | --- |
+| [Lair direction](../../assets/brand/kit/lair/lair-direction.png) | 1536 × 1024, PNG | Exploration |
+| [Chitin clasp](../../assets/brand/kit/lair/clasp.png) | 1254 × 1254, PNG | Small selection marker |
+| [Mucus bead](../../assets/brand/kit/lair/bead.png) | 1254 × 1254, PNG | Small status and action detail |
+| [Membrane suture](../../assets/brand/kit/lair/suture.png) | 1536 × 1024, PNG | Thin divider |
+| [Lair prompts](../../assets/prompts/lair-kit.json) | JSON | Prompt |
+| [Aperture rest model v2](../../assets/brand/kit/lair/aperture-rest-v2.glb) | GLB 2.0, 4,441,080 bytes | Current fold and hinge geometry |
+| [Lair rest model](../../assets/brand/kit/lair/lair-rest.glb) | GLB 2.0, 4,664,944 bytes | Receding ribs and chitin hinge hierarchy |
 | [Modular design concept](../../assets/brand/kit/modular/design-direction.png) | 1536 × 1024 | Exploration |
 | [Flesh corner](../../assets/brand/kit/modular/flesh-corner.png) | 1254 × 1254, RGBA | Current part |
 | [Membrane divider](../../assets/brand/kit/modular/membrane-divider.png) | 1536 × 1024, RGBA | Current part |

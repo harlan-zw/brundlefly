@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "mode": "built-in imagegen",
+  "date": "2026-10-05",
+  "assets": [
+    {
+      "file": "assets/brand/kit/lair/lair-direction.png",
+      "prompt": "Use case: ui-mockup. Asset type: Brundlefly lair website design direction, landscape 1536x1024. Input image 1 is canonical identity and palette; image 2 is existing modular material craft, not layout to copy. Design a usable minimal skill-tool interface that feels like entering a wet insect lair, rather than a flat component dashboard. Deep nearly black chamber, layered chitin ribs and rusty flesh threshold at the extreme left/right and top edges. Center contains a large dimensional elliptical aperture with a recessed dark tunnel beyond it, unequal chitin shutters that open outward, hanging thin olive mucus, sparse bristles. This doorway is a reusable WebGL material, not a mouth or new mascot. Inside the opening, a quiet readable task surface with label 'Your text', empty input, cream 'Review text' action. Short task choices run along the left: 'Review wording', 'Build a guide outline', 'Format a PR draft'. Small separate material details make controls tactile: a tiny chitin clasp at the selected tab, an olive wet bead beside a status, a thin membrane suture along a divider. Artwork must not enter labels, inputs, button text, or focus outlines. Header retains small supplied banner rather than regenerating the wordmark. Palette #080B08 #E8D4A6 #AA604B #69404B #343C3B #418B90 #A4B5A0 #777648. Intense grotesque material, slick skin folds, chitin, mucus; sparse cold glints. Crisp pixel clusters for raster details, dimensional lit geometry for doorway. Minimal text, no slogans, no horror game menu, no blood, organs, bones, teeth, faces, new creature, extra anatomy, rainbow neon, big marketing headline, or illegible control areas. Show depth with foreground ribs, middle aperture, background darkness. Under the main preview, show three small isolated UI parts: chitin clasp, mucus bead, membrane suture. Sophisticated asymmetry and clear end-user action.",
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png",
+        "assets/brand/kit/modular/design-direction.png"
+      ],
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/kit/lair/clasp.png",
+      "prompt": "Use case: stylized-concept. Asset type: production Brundlefly small UI selection clasp. Reference is canonical Brundlefly material and pixel craft, not a creature to redraw. One compact curved blue-black chitin clasp, slightly swollen rusty flesh wrapping its outer edge, three sparse bristles, one tiny olive mucus droplet hanging at bottom. True transparent background. Square canvas 1024x1024, object isolated and centered with generous transparent margins. Strong simple vertical crescent silhouette that remains recognizable at 32px high, broad hard square pixel clusters, four or five main material planes, restrained cream and cold teal glints. Palette #AA604B #69404B #343C3B #777648 #E8D4A6 sparse #418B90. Grotesque wet material, no eye, face, creature, limb, tooth, bone, letter, logo, border, shadowed backdrop, checkerboard or gore. This is a tiny selection marker beside clear native control text. Crisp silhouette, useful as a reusable part.",
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png"
+      ],
+      "transparent": true
+    },
+    {
+      "file": "assets/brand/kit/lair/bead.png",
+      "prompt": "Use case: stylized-concept. Asset type: production Brundlefly small wet status indicator. One isolated olive mucus bead on true transparent background. Square 1024x1024 canvas with generous margins. Thick short hanging filament and asymmetrical swollen drop, dark olive #777648 with cream #E8D4A6 wet highlights, one tiny cold #418B90 reflection and bruised #69404B shadow. Seeded by canonical Brundlefly material palette and hard-edged pixel craft. Deliberately SIMPLE chunky pixel clusters, clear at 18 to 24 pixels high, not hundreds of microscopic details. Wet tactile biological slime, not emoji cartoon. No eye, face, creature, organ, blood, text, symbol, logo, drawn checkerboard, background or shadow outside the subject. One object only, fully contained. Original alpha for reusable live status detail.",
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png"
+      ],
+      "transparent": true
+    },
+    {
+      "file": "assets/brand/kit/lair/suture.png",
+      "prompt": "Use case: stylized-concept. Asset type: production Brundlefly small membrane suture divider. One thin horizontal biological strip isolated on true transparent background, wide landscape 1536x1024 canvas, subject centered in middle quarter, generous transparent space above and below. Sparse grey-green #A4B5A0 translucent membrane stretched between two very small blue-black #343C3B anchor clasps, branching rusty #AA604B veins, three thin olive #777648 mucus threads beneath. Match reference's gross wet hard pixel-cluster craft. A simple tapered asymmetric silhouette legible at 160 to 240px wide, NOT a whole wing or feather. Short open holes with real alpha, restrained cream wet highlights. No letters, symbols, logo, border, creature, limb, gore, teeth, bone, background, checkerboard or glow. Keep all ends contained. It marks a boundary beneath navigation without touching text.",
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png"
+      ],
+      "transparent": true
+    }
+  ]
+}

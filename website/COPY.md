@@ -113,5 +113,10 @@ Model download labels: “Download GLB”, “Download rest GLB”.
 Model error: “Model export failed. Use the layer source to rebuild the model.”
 
 Material export note: “GLB rest pose. Runtime shader adds deformation.”
+Transform controls: “Transform”, “Squeeze”, “Twist”, “Unfurl”, “Opening”.
+Scene controls: “Scene”, “Aperture”, “Lair”.
+Interaction hint: “Drag to deform. Space to press.”
+Shared detail names: “Chitin clasp”, “Mucus bead”, “Membrane suture”.
+Lair component label: “Lair”. It describes a composition, not a mascot persona.
 Part download label: “Download”.
 Material swatches use the role labels in the shared catalogue: Background, Text and focus, Organic edges, Review highlights, Structure, Active glints, Secondary text, Slime.

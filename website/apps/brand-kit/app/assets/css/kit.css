@@ -88,3 +88,9 @@ select { min-height: 44px; padding: .5rem .75rem; width: 100%; font: 14px var(--
  .kit-code { font-size: 12px; padding: 1rem; }
  .motion-lab .brand-organism { min-height: 280px; }
 }
+
+.kit-header, .kit-section-title { background: color-mix(in srgb, var(--color-night) 88%, transparent); }
+.transform-choices { display: flex; gap: .5rem; }
+.transform-choices .brand-choice { flex: 1; min-height: 44px; padding: .75rem; }
+.kit-navigation, .motion-controls, .parts-gallery article, .material-gallery .palette-grid { background: color-mix(in srgb, var(--color-night) 95%, transparent); }
+.motion-controls { padding: 2rem 1.5rem; }

@@ -13,11 +13,11 @@ const activeSkill = ref<SkillName>('write-human')
 const selected = computed(() => tasks.find(task => task.name === activeSkill.value)!)
 const reducedMotion = usePreferredReducedMotion()
 const motionOff = ref(false)
-const showMaterial = ref(false)
 const motionPaused = computed(() => motionOff.value || reducedMotion.value === 'reduce')
 </script>
 
 <template>
+  <BrandLair :motion-off="motionPaused">
   <div class="site-shell" :data-motion="motionPaused ? 'off' : 'on'">
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
@@ -27,7 +27,7 @@ const motionPaused = computed(() => motionOff.value || reducedMotion.value === '
       <div class="header-actions">
         <a href="/brand-kit/">Brand kit ↗</a>
         <button class="motion-toggle" :aria-pressed="motionPaused" @click="motionOff = !motionOff">
-          <span class="motion-light" aria-hidden="true" />{{ motionPaused ? 'Motion off' : 'Motion on' }}
+          <img class="motion-bead" :src="'/brand/kit/lair/bead.png'" alt="" width="1254" height="1254" aria-hidden="true">{{ motionPaused ? 'Motion off' : 'Motion on' }}
         </button>
       </div>
     </header>
@@ -37,11 +37,7 @@ const motionPaused = computed(() => motionOff.value || reducedMotion.value === '
         <div class="task-choices" role="group" aria-label="Choose a task">
           <BrandChoice v-for="task in tasks" :key="task.name" :selected="activeSkill === task.name" :label="task.title" :detail="task.name" @click="activeSkill = task.name" />
         </div>
-        <BrandDivider part="tendon" />
-        <div class="tool-material">
-          <UButton variant="ghost" :aria-pressed="showMaterial" @click="showMaterial = !showMaterial">{{ showMaterial ? 'Hide material' : 'Animate material' }}</UButton>
-          <LazyBrandOrganism v-if="showMaterial" :motion-off="motionPaused" />
-        </div>
+        <BrandDivider part="suture" />
       </aside>
       <main id="main" class="workspace">
         <div class="task-heading">
@@ -59,4 +55,5 @@ const motionPaused = computed(() => motionOff.value || reducedMotion.value === '
       </main>
     </div>
   </div>
+  </BrandLair>
 </template>

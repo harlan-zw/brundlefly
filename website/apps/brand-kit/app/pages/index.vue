@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 import { useClipboard, usePreferredReducedMotion } from '@vueuse/core'
 import { defaultPreset, materials, palette, parts } from '@brundlefly/brand/shared/catalogue'
 import type { Material } from '@brundlefly/brand/shared/catalogue'
+import { transforms } from '@brundlefly/brand/shared/organism'
+import type { Presentation, Transform } from '@brundlefly/brand/shared/organism'
 import Composer from './_Composer.vue'
 const { copy } = useClipboard({ legacy: true })
 const copyFeedback = ref('')
@@ -16,12 +18,16 @@ const section = ref<typeof sections[number]>('Compose')
 const wetness = ref(0.75)
 const viscosity = ref(0.6)
 const pressure = ref(0)
+const opening = ref(0.5)
+const transform = ref<Transform>('squeeze')
+const scene = ref<Presentation>('specimen')
 const motionOff = ref(false)
 const reduced = usePreferredReducedMotion()
 const paused = computed(() => motionOff.value || reduced.value === 'reduce')
 </script>
 
 <template>
+  <BrandLair :motion-off="paused || section === 'Motion'">
   <div class="kit-shell" :data-motion="paused ? 'off' : 'on'">
     <a class="kit-skip" href="#kit-main">Skip to content</a>
     <header class="kit-header">
@@ -49,21 +55,28 @@ const paused = computed(() => motionOff.value || reduced.value === 'reduce')
           <article v-for="part in parts" :key="part.name"><div class="part-image"><img :src="part.file" :alt="part.name"></div><h3>{{ part.name }}</h3><p>{{ part.role }}</p><code>{{ part.component }}</code><a :href="part.file" download>Download ↓</a></article>
         </section>
         <section v-if="section === 'Motion'" class="motion-lab" aria-label="Motion">
-          <div><LazyBrandOrganism :wetness="wetness" :viscosity="viscosity" :pressure="pressure" :motion-off="paused" exportable /><p class="kit-note">Press to deform</p></div>
+          <div><LazyBrandOrganism :key="scene" :presentation="scene" :wetness="wetness" :viscosity="viscosity" :pressure="pressure" :opening="opening" :transform="transform" :motion-off="paused" exportable /><p class="kit-note">Drag to deform. Space to press.</p></div>
           <div class="motion-controls">
+            <div class="transform-choices" role="group" aria-label="Scene"><BrandChoice label="Aperture" :selected="scene === 'specimen'" @click="scene = 'specimen'" /><BrandChoice label="Lair" :selected="scene === 'lair'" @click="scene = 'lair'" /></div>
+            <div class="transform-choices" role="group" aria-label="Transform"><BrandChoice v-for="value in transforms" :key="value" :label="value.charAt(0).toUpperCase() + value.slice(1)" :selected="transform === value" @click="transform = value" /></div>
+            <label for="opening">Opening <output>{{ opening }}</output></label><input id="opening" v-model.number="opening" type="range" min="0" max="1" step="0.05">
             <label for="wetness">Wetness <output>{{ wetness }}</output></label><input id="wetness" v-model.number="wetness" type="range" min="0" max="1" step="0.05">
             <label for="viscosity">Viscosity <output>{{ viscosity }}</output></label><input id="viscosity" v-model.number="viscosity" type="range" min="0" max="1" step="0.05">
             <label for="pressure">Pressure <output>{{ pressure }}</output></label><input id="pressure" v-model.number="pressure" type="range" min="0" max="1" step="0.05">
             <p class="kit-note">GLB rest pose. Runtime shader adds deformation.</p>
-            <a class="rest-download" href="/brand/kit/modular/aperture-rest.glb" download>Download rest GLB</a>
+            <a class="rest-download" :href="scene === 'lair' ? '/brand/kit/lair/lair-rest.glb' : '/brand/kit/lair/aperture-rest-v2.glb'" download>Download rest GLB</a>
             <pre class="kit-code">&lt;LazyBrandOrganism
+  presentation="{{ scene }}"
   :wetness="{{ wetness }}"
   :viscosity="{{ viscosity }}"
   :pressure="{{ pressure }}"
+  :opening="{{ opening }}"
+  transform="{{ transform }}"
 /&gt;</pre>
           </div>
         </section>
       </main>
     </div>
   </div>
+  </BrandLair>
 </template>

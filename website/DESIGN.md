@@ -69,7 +69,8 @@ Use cream for text and primary actions, wing for secondary text, and chitin for 
 Flesh marks the selected task and the work surface edge. Bruise highlights wording signals.
 Use the existing banner and generated material assets. Never recreate the raster wordmark.
 Use BrandSurface, BrandChoice, and BrandAction from the shared layer.
-The full surround remains a reference artifact. The optional organism belongs in the margin.
+The full surround remains a reference artifact. BrandLair supplies receding geometry behind the page.
+Small clasps mark choices. Beads mark motion and actions. Sutures mark boundaries.
 Preserve canonical anatomy and the original alpha. Use pixelated rendering without stretching artwork.
 
 ## Typography
@@ -82,7 +83,7 @@ Controls use 14px text. Secondary skill identifiers may use 12px text.
 
 Keep targets at least 44px high. Use visible cream focus outlines and native labels.
 No artwork crosses text, inputs, or focus outlines. The interface stays dark under either system preference.
-The wet action hover and optional specimen share the motion control. Reduced motion stops idle animation.
+The wet action hover and chamber share the motion control. Reduced motion stops idle animation and camera parallax.
 At 375px, task choices precede the selected task. Keep inputs and results in reading order.
 
 ## Voice
@@ -101,3 +102,11 @@ The kit app demonstrates composition without owning task logic.
 The tool app owns real local demos and reuses the same pieces.
 Use container queries for compositions. Keep artwork within the 20px edge zone.
 Do not cover content or focus outlines with material art.
+
+## Lair
+
+The chamber has no entry gate. The task is available immediately.
+Layered ribs and hinged chitin establish depth around the page.
+The canvas sits behind content and never intercepts pointer events.
+Keep readable surfaces quiet. Dim ambient materials before dimming text.
+The Motion lab isolates transform controls from the atmosphere.

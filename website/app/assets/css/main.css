@@ -119,3 +119,9 @@ mark { background: var(--color-bruise); color: var(--color-cream); padding: .1em
 .tool-material { margin-top: .5rem; }
 .tool-material .brand-organism { min-height: 240px; }
 @media (max-width: 767px) { .task-rail > .brand-divider, .tool-material { display: none; } }
+
+.motion-bead { width: 18px; height: 30px; object-fit: contain; image-rendering: pixelated; }
+[data-motion="off"] .motion-bead { filter: grayscale(1); opacity: .45; }
+.site-shell .task-heading, .site-shell .skill-use { background: color-mix(in srgb, var(--color-night) 92%, transparent); }
+.site-header { background: color-mix(in srgb, var(--color-night) 90%, transparent); }
+.task-rail h2 { background: color-mix(in srgb, var(--color-night) 92%, transparent); }
