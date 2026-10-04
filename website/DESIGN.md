@@ -107,6 +107,9 @@ Do not cover content or focus outlines with material art.
 
 The chamber has no entry gate. The task is available immediately.
 Layered ribs and hinged chitin establish depth around the page.
+Ribs have uneven lobes and thickness. Tendons and translucent membranes connect their depths.
+Avoid repeated circular silhouettes. Organic seams connect quiet panel edges to the surrounding tissue.
+Typing produces a brief contraction. Field focus holds a mild response without moving the field.
 The canvas sits behind content and never intercepts pointer events.
 Keep readable surfaces quiet. Dim ambient materials before dimming text.
 The Motion lab isolates transform controls from the atmosphere.

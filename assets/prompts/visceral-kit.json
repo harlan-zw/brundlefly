@@ -1,0 +1,22 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-05",
+  "assets": [
+    {
+      "file": "assets/brand/kit/lair/visceral-direction.png",
+      "prompt": "Use case: stylized-concept. Asset type: Brundlefly website visceral design direction. Reference 1 is canonical brand artwork, preserve palette and pixel material identity, do not redraw mascot or wordmark. Reference 2 shows existing flesh texture. Design a dark usable website embedded inside an organically grown lair: irregular asymmetrical muscular walls curling inward, layered bruised folds, thin translucent olive membranes stretching between folds, tiny wet beads and bristles, restrained cold teal reflection. The central dark working surface looks like a smooth chitin pocket grown into the tissue, with a broad quiet blank input area and minimal cream controls. The edge of the work surface connects to tendons in the environment. Avoid concentric circles and smooth repeated rings; uneven lobes with depth and shadow. Rust and bruise not bright pink. Extreme tactile wet biological texture but no blood spray or exposed organs. The image should be an atmospheric high quality UI environment concept, minimal functional text only, no slogans, no new characters, no logo lettering. Rectangular wide composition, dark central 60 percent, visceral at the margins, actual controls readable.",
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png",
+        "assets/brand/kit/modular/flesh-diffuse.png"
+      ]
+    },
+    {
+      "file": "assets/brand/kit/lair/tissue-seam.png",
+      "prompt": "Use case: stylized-concept. Asset type: reusable transparent Brundlefly UI border piece. Reference 1 establishes palette and grotesque pixel texture. Reference 2 is the lair concept. Generate ONE irregular horizontal biological seam, a thin asymmetric strip spanning 85 percent of a wide canvas. Rusty swollen flesh folds snake around blue-black chitin patches, thin olive translucent membrane stretches between folds, sparse bristles, sticky droplet highlights. Uneven profile and varied thickness, darkest on its lower edge. This is an isolated cutout for a website panel's top and bottom borders. Actual transparent background around all edges. No dark rectangle, no frame, no UI, no text, no characters, no eyes, no blood, no exposed organs. Crisp pixel detail, match branding. Mostly thin low silhouette with two swollen lobes, not a straight repeated tubular line. Leave generous transparent padding.",
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png",
+        "assets/brand/kit/lair/visceral-direction.png"
+      ]
+    }
+  ]
+}

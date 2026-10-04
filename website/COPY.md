@@ -117,6 +117,8 @@ Transform controls: “Transform”, “Squeeze”, “Twist”, “Unfurl”, �
 Scene controls: “Scene”, “Aperture”, “Lair”.
 Interaction hint: “Drag to deform. Space to press.”
 Shared detail names: “Chitin clasp”, “Mucus bead”, “Membrane suture”.
+The continuous surface variant uses “Membrane suture (surface)”.
+Its description is “Continuous flesh and membrane edge. Keep it outside editable content.”
 Lair component label: “Lair”. It describes a composition, not a mascot persona.
 Part download label: “Download”.
 Material swatches use the role labels in the shared catalogue: Background, Text and focus, Organic edges, Review highlights, Structure, Active glints, Secondary text, Slime.

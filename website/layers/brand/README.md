@@ -24,7 +24,7 @@ Use standard Nuxt UI controls inside surfaces. They share the layer tokens.
 Keep content 32px inward on desktop and 24px inward on mobile.
 Artwork is masked into the edge zone. It must never enter editable content.
 
-The 3D aperture uses Three.js torus folds, chitin plates, bristles, slime, and GLSL deformation.
+The 3D aperture uses uneven tissue meshes, connected membranes, chitin plates, bristles, slime, and GLSL deformation.
 No skeleton is needed because there is no articulated character.
 The GLB export stores a PBR rest mesh and diffuse texture for Blender.
 The runtime shader remains in shared/organism.ts. GLB does not contain that shader.
@@ -37,5 +37,6 @@ Ambient parallax follows the pointer and scroll. Motion off and reduced motion f
 Concept images remain in the full archive. The ZIP contains the runtime parts.
 
 Native button presses produce a small compression response. No native event is prevented.
+Field focus holds light pressure. Typing produces a brief contraction and moves the decorative surface seam.
 Reduced motion disables that ambient response. The lab remains explicitly interactive.
 The ZIP includes current rest GLBs. Earlier model snapshots remain in the full archive.

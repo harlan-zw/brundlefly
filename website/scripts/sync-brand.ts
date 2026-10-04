@@ -46,7 +46,7 @@ for (const directory of ['app', 'shared', 'public']) {
 }
 // The portable layer needs runtime parts. Concept boards remain in the full brand archive.
 for (const path of Object.keys(bundle)) {
-  if (['design-direction.png', 'lair-direction.png', 'material-board.png', 'instrument-surround.png', 'aperture-rest.glb'].some(name => path.endsWith(`/${name}`))) delete bundle[path]
+  if (['design-direction.png', 'lair-direction.png', 'visceral-direction.png', 'material-board.png', 'instrument-surround.png', 'aperture-rest.glb', 'aperture-rest-v2.glb', 'lair-rest.glb'].some(name => path.endsWith(`/${name}`))) delete bundle[path]
 }
 await writeFile(new URL('brand-layer.zip', kit), zipSync(bundle))
 await writeFile(new URL('catalogue.json', kit), JSON.stringify({ palette, parts, preset: defaultPreset }, null, 2))

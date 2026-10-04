@@ -64,7 +64,7 @@ const paused = computed(() => motionOff.value || reduced.value === 'reduce')
             <label for="viscosity">Viscosity <output>{{ viscosity }}</output></label><input id="viscosity" v-model.number="viscosity" type="range" min="0" max="1" step="0.05">
             <label for="pressure">Pressure <output>{{ pressure }}</output></label><input id="pressure" v-model.number="pressure" type="range" min="0" max="1" step="0.05">
             <p class="kit-note">GLB rest pose. Runtime shader adds deformation.</p>
-            <a class="rest-download" :href="scene === 'lair' ? '/brand/kit/lair/lair-rest.glb' : '/brand/kit/lair/aperture-rest-v2.glb'" download>Download rest GLB</a>
+            <a class="rest-download" :href="scene === 'lair' ? '/brand/kit/lair/lair-organic-rest.glb' : '/brand/kit/lair/aperture-organic-rest.glb'" download>Download rest GLB</a>
             <pre class="kit-code">&lt;LazyBrandOrganism
   presentation="{{ scene }}"
   :wetness="{{ wetness }}"

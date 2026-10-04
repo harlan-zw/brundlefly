@@ -6,6 +6,7 @@ const { material = 'chitin', edges = 'none', density = 0.5 } = defineProps<{ mat
 <template>
   <div class="brand-surface" :data-material="material" :data-edges="edges" :style="{ '--brand-density': density }">
     <div v-if="edges !== 'none'" class="brand-surface-art" aria-hidden="true">
+      <img v-if="material === 'flesh'" class="brand-tissue-seam" src="/brand/kit/lair/tissue-seam.png" alt="" width="2172" height="724">
       <template v-if="edges === 'corners' || edges === 'both'">
         <img class="brand-cap brand-cap-first" :src="'/brand/kit/modular/flesh-corner.png'" alt="" width="1254" height="1254">
         <img class="brand-cap brand-cap-last" :src="'/brand/kit/modular/flesh-corner.png'" alt="" width="1254" height="1254">

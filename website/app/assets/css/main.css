@@ -122,6 +122,6 @@ mark { background: var(--color-bruise); color: var(--color-cream); padding: .1em
 
 .motion-bead { width: 18px; height: 30px; object-fit: contain; image-rendering: pixelated; }
 [data-motion="off"] .motion-bead { filter: grayscale(1); opacity: .45; }
-.site-shell .task-heading, .site-shell .skill-use { background: color-mix(in srgb, var(--color-night) 92%, transparent); }
-.site-header { background: color-mix(in srgb, var(--color-night) 90%, transparent); }
-.task-rail h2 { background: color-mix(in srgb, var(--color-night) 92%, transparent); }
+.site-shell .task-heading, .site-shell .skill-use { background: radial-gradient(ellipse at center, var(--color-night) 45%, transparent 100%); text-shadow: 0 2px 6px var(--color-night), 0 0 12px var(--color-night); }
+.site-header { background: linear-gradient(var(--color-night), color-mix(in srgb, var(--color-night) 80%, transparent) 75%, transparent); }
+.task-rail h2 { text-shadow: 0 2px 6px var(--color-night); }

@@ -136,7 +136,8 @@ If WebGL or the texture fails, use the static aperture with a clear status.
 
 ## 3D construction
 
-Three procedural folds form the aperture. Six receding elliptical ribs form the lair.
+Three uneven procedural folds form the aperture. Six receding, lobed ribs form the lair.
+Fold thickness varies around each contour. Tendons and translucent membranes connect the layers.
 Both share a shader and material system. Chitin plates pivot on a lightweight Group hierarchy.
 Opening moves the folds, plates, bristles, and slime together. Unfurl opens the hinges further.
 Twist produces radial torsion. Squeeze compresses the folds and follows the captured pointer.
@@ -182,13 +183,18 @@ The generated concept never replaces the supplied wordmark.
 
 | File | Dimensions or type | Role |
 | --- | --- | --- |
+| [Visceral direction](../../assets/brand/kit/lair/visceral-direction.png) | 1774 × 887, PNG | Organic surface exploration |
+| [Surface seam](../../assets/brand/kit/lair/tissue-seam.png) | 2172 × 724, RGBA | Continuous reusable panel edge |
+| [Visceral prompts](../../assets/prompts/visceral-kit.json) | JSON | Exact prompts and references |
+| [Organic aperture](../../assets/brand/kit/lair/aperture-organic-rest.glb) | GLB 2.0, 4,571,824 bytes | Uneven folds and connected membranes |
+| [Organic lair](../../assets/brand/kit/lair/lair-organic-rest.glb) | GLB 2.0, 4,968,444 bytes | Lobed chamber and connective tissue |
 | [Lair direction](../../assets/brand/kit/lair/lair-direction.png) | 1536 × 1024, PNG | Exploration |
 | [Chitin clasp](../../assets/brand/kit/lair/clasp.png) | 1254 × 1254, PNG | Small selection marker |
 | [Mucus bead](../../assets/brand/kit/lair/bead.png) | 1254 × 1254, PNG | Small status and action detail |
 | [Membrane suture](../../assets/brand/kit/lair/suture.png) | 1536 × 1024, PNG | Thin divider |
 | [Lair prompts](../../assets/prompts/lair-kit.json) | JSON | Prompt |
-| [Aperture rest model v2](../../assets/brand/kit/lair/aperture-rest-v2.glb) | GLB 2.0, 4,441,080 bytes | Current fold and hinge geometry |
-| [Lair rest model](../../assets/brand/kit/lair/lair-rest.glb) | GLB 2.0, 4,664,944 bytes | Receding ribs and chitin hinge hierarchy |
+| [Aperture rest model v2](../../assets/brand/kit/lair/aperture-rest-v2.glb) | GLB 2.0, 4,441,080 bytes | Earlier fold and hinge snapshot |
+| [Lair rest model](../../assets/brand/kit/lair/lair-rest.glb) | GLB 2.0, 4,664,944 bytes | Earlier elliptical chamber snapshot |
 | [Modular design concept](../../assets/brand/kit/modular/design-direction.png) | 1536 × 1024 | Exploration |
 | [Flesh corner](../../assets/brand/kit/modular/flesh-corner.png) | 1254 × 1254, RGBA | Current part |
 | [Membrane divider](../../assets/brand/kit/modular/membrane-divider.png) | 1536 × 1024, RGBA | Current part |
@@ -254,3 +260,18 @@ The generated concept never replaces the supplied wordmark.
 | [assets/source/banner-master.png](../../assets/source/banner-master.png) | 1774 × 887 | Master |
 | [assets/source/banner-overhang-gross-master.png](../../assets/source/banner-overhang-gross-master.png) | 1774 × 887 | Master |
 | [assets/source/banner-overhang-master.png](../../assets/source/banner-overhang-master.png) | 1774 × 887 | Master |
+
+## Organic integration
+
+![Visceral direction](../../assets/brand/kit/lair/visceral-direction.png)
+
+The banner and diffuse texture seeded this exploration before the organic mesh revision.
+[Exact prompts](../../assets/prompts/visceral-kit.json) record both built-in imagegen assets.
+The surface seam remains a separate transparent file. The concept supplies direction rather than UI pixels.
+Flesh surfaces use the seam when they have decorative edges.
+The edge mask keeps it away from text, fields, and focus outlines.
+Typing briefly contracts the chamber and seam. Field focus holds light pressure.
+Button presses apply a stronger response. No native form events are intercepted.
+Motion off and reduced motion stop these ambient reactions.
+The new GLBs include uneven fold geometry, connective tendons, membranes, and textures.
+Earlier rest snapshots remain available as historical construction references.

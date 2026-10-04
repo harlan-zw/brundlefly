@@ -108,6 +108,23 @@ button, a, input, textarea, select, summary { -webkit-tap-highlight-color: trans
  .brand-lair-depth::after { background: radial-gradient(ellipse 80% 48% at 50% 48%, var(--color-night) 40%, transparent 95%); }
 }
 
-.brand-lair-depth > div { opacity: .58; filter: brightness(.8); }
+.brand-lair-depth > div { opacity: .76; filter: brightness(.85); }
 .brand-choice::before { background-size: 72px auto; }
 @media (max-width: 767px) { .brand-choice::before { background-size: 48px auto; } }
+
+/* Grown edges connect the quiet working surface to the surrounding tissue. */
+.brand-lair .brand-surface { border-radius: 28px 8px 24px 6px; background: color-mix(in srgb, var(--ui-bg-muted) 97%, transparent); }
+.brand-lair .brand-surface[data-material="flesh"] { border-color: color-mix(in srgb, var(--color-flesh) 55%, var(--color-chitin)); box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-night) 85%, transparent), 0 10px 40px var(--color-night); }
+.brand-lair .brand-surface::before { display: none; }
+.brand-lair .brand-surface-art { inset: -18px; }
+.brand-tissue-seam { position: absolute; top: -22px; left: 3%; width: 94%; height: 80px; object-fit: cover; object-position: center; image-rendering: pixelated; pointer-events: none; transform-origin: center 66%; transition: transform .55s ease; }
+.brand-lair[data-feeding="true"] .brand-tissue-seam { transform: scaleY(1.09) translateY(2px); }
+.brand-lair .brand-choice { border-radius: 18px 5px 14px 4px; }
+.brand-lair .brand-choice[aria-pressed="true"] { box-shadow: inset 3px 0 var(--color-flesh), inset 0 1px 12px color-mix(in srgb, var(--color-flesh) 15%, transparent); }
+.brand-lair .brand-action { border-radius: 8px 3px 12px 3px; box-shadow: inset 0 -3px color-mix(in srgb, var(--color-olive) 40%, transparent); }
+.brand-lair textarea, .brand-lair input, .brand-lair select { border-radius: 10px 3px 14px 3px; }
+.brand-lair .brand-surface:focus-within { border-color: var(--color-olive); }
+@media (max-width: 767px) {
+ .brand-tissue-seam { top: -22px; left: -5%; width: 110%; }
+ .brand-lair .brand-surface-art { inset: -10px; }
+}

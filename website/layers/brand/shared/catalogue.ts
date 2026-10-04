@@ -22,6 +22,7 @@ export const compositions: { name: string, preset: Preset }[] = [
   { name: 'Stack', preset: { version: 1, material: 'membrane', edges: 'wing', layout: 'stack', density: 0.35 } },
 ]
 export const parts = [
+  { name: 'Membrane suture (surface)', file: '/brand/kit/lair/tissue-seam.png', component: 'BrandSurface', role: 'Continuous flesh and membrane edge. Keep it outside editable content.' },
   { name: 'Chitin clasp', file: '/brand/kit/lair/clasp.png', component: 'BrandChoice', role: 'Small selection marker. Keep it beside the label.' },
   { name: 'Mucus bead', file: '/brand/kit/lair/bead.png', component: 'BrandAction', role: 'Wet status and action detail. Keep its original alpha.' },
   { name: 'Membrane suture', file: '/brand/kit/lair/suture.png', component: 'BrandDivider', role: 'Thin boundary beneath navigation. Never cover text.' },
