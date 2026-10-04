@@ -45,6 +45,11 @@ Honor required AI disclosure. Preserve it during edits.
 If disclosure rules require unknown facts, return that gap to the caller.
 
 Use concrete words and short sentences. Cut prose that only shows effort.
+Use sentence case for authored prose. Start sentences with a capital letter unless exact reference casing requires otherwise.
+If a lowercase identifier starts a sentence, rephrase: "The `write-human` skill...". Never change the identifier's casing.
+Format exact skill names, identifiers, commands, and file paths as inline code.
+Use descriptive Markdown links when readers should open a referenced file, PR, issue, document, or source.
+Keep ordinary product names in plain text. Preserve required wording, quoted text, and existing author material outside the edit.
 Use lists when they help review. Preserve required template checklists.
 Do not use em dashes or hyphens as sentence punctuation.
 Use exact names and stated pronouns. Otherwise use a username or singular they.
@@ -54,6 +59,8 @@ Use exact names and stated pronouns. Otherwise use a username or singular they.
 Compare every factual claim with the diff and supplied evidence.
 Check that motivation, scope, consequences, and migration match the final change.
 Check the template, caller policy, disclosure, preserved material, and unsupported claims.
+Check sentence starts for unnecessary lowercase. Preserve exact casing inside code, links, and quotations.
+Check that technical references use inline code or useful links. Check link destinations against supplied or inspected evidence.
 Revise the body until it passes these checks.
 
 Return the final description text separately from any unresolved gaps.
