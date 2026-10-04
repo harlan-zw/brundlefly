@@ -62,3 +62,28 @@ The local-input note is “Your input stays in this browser.”
 The scope disclosure label is “Demo limits”. The idle output label is “Ready.”
 Utility actions use “Download”, “Instructions”, “GitHub”, and “Brand kit”.
 The aperture is decorative. It carries no invented persona or slogan.
+
+## Task-first revision
+
+| Surface | Canonical text |
+| --- | --- |
+| Task choice, writing | Review wording |
+| Task choice, guide | Build a guide outline |
+| Task choice, PR | Format a PR draft |
+| Writing instruction | Paste your text to get wording suggestions. |
+| Guide instruction | Set the reader and task to get a guide structure. |
+| PR instruction | Describe the change to get a title and description. |
+| Example action | Use example |
+| Output action | Copy result |
+| Writing output action | Copy review |
+| Result empty, writing | Paste your text or use the example. |
+| Result empty, guide | Add a task and reader, or use the example. |
+| Result empty, PR | Describe a change, or use the example. |
+| Clipboard error | Clipboard access failed. Select and copy the result. |
+| Task selection label | Choose a task |
+
+Forms begin empty. Examples appear only after the user selects “Use example”.
+Keep the local-input note visible beside the task. Retain each task's input during skill changes.
+
+Writing input placeholder: “Paste your text here.”
+The example action appears above the fields, before the user enters input.

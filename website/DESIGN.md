@@ -48,83 +48,47 @@ components:
 
 # Design
 
-## Aesthetic direction
+## Principle
 
-The devtool theme supplies clear controls and mono annotations.
-Brundlefly’s canonical banner and archived brand board supply the visual identity.
-We prioritize grotesque brand texture over clean ornament, while keeping task controls readable.
-Use the corrected banner’s four arms, slime, and transparent overhang intact.
-The canonical anatomy and palette supersede the archived concept’s orange eyes and slogans.
+Start with the user's task. Make input, action, and result the strongest visual elements.
+The brand kit supplies materials. It does not override task clarity.
 
-## Color decisions
+## Layout
 
-Use the fixed brand palette above.
-Cream carries headings and action buttons. Rust carries hover surfaces.
-Wing membrane carries secondary text. Chitin defines panel boundaries.
-Olive texture stays at outer edges. Sparse teal indicates active controls.
-The interface stays dark in either operating system color scheme.
+Use a task rail beside a quiet workspace. Task choices name outcomes and exact skill names.
+The canonical banner anchors the header. Organic artwork stays below navigation, outside the work surface.
+Forms begin empty. A deliberate example action supplies sample data.
+Retain each task's work when selection changes. Show output only after a successful run.
+At wide widths, input and output share the surface. On smaller screens, output follows input.
+Focus the result heading after success. Focus the error after invalid submission.
+Provide a copy action beside generated content, and complete skill downloads below the form.
 
-## Contrast and accessibility
+## Materials
 
-Use cream or wing membrane for body text on the dark background.
-Do not place body text in olive, teal, or bruise colors.
-Keep mobile controls at least 44 pixels tall and body text at least 16 pixels.
-Use visible cream focus outlines. All controls work with a keyboard.
+Use cream for text and primary actions, wing for secondary text, and chitin for boundaries.
+Flesh marks the selected task and the work surface edge. Bruise highlights wording signals.
+Use the existing banner and generated material assets. Never recreate the raster wordmark.
+The full surround and aperture remain reusable kit artifacts. The tool page needs no idle organism.
+Preserve canonical anatomy and the original alpha. Use pixelated rendering without stretching artwork.
 
 ## Typography
 
-Barlow Condensed supplies large functional headings, never a replacement raster wordmark.
-IBM Plex Sans supplies readable descriptions.
-IBM Plex Mono supplies controls, skill names, and generated Markdown.
-Use fluid display type and fixed body type.
+Barlow Condensed carries the selected task heading. IBM Plex Sans carries editable text and task choices.
+IBM Plex Mono carries labels and generated Markdown. Inputs use 16px text.
+Controls use 14px text. Secondary skill identifiers may use 12px text.
 
-## Icons
+## Accessibility and motion
 
-No ornamental icon collection is required.
-Use text actions. Arrow characters indicate navigation only.
-
-## Component rules
-
-Nuxt UI owns buttons, inputs, and page containers.
-Keep panels square, with fine chitin boundaries and corner cuts.
-Use irregular olive edge textures as registered brand ornament.
-The wet hover sheen and slime drips are registered brand effects.
-Do not layer slime over text, inputs, or focus outlines.
-
-## Spatial and motion
-
-Use a wide banner followed by an asymmetric heading and three skill choices.
-The demo spans the page in two columns, input and result.
-Use slow ambient membrane movement and short wet hover transitions.
-The motion control and reduced-motion preference stop all ambient effects.
-
-## Responsive strategy
-
-Use one column below 768 pixels. Inputs and results remain in reading order.
-Allow navigation to wrap. Keep every destination visible without a menu.
-At 375 pixels, wrap code and maintain 44 pixel controls.
+Keep targets at least 44px high. Use visible cream focus outlines and native labels.
+No artwork crosses text, inputs, or focus outlines. The interface stays dark under either system preference.
+The wet action hover is the only material motion. Motion off and reduced motion stop it.
+At 375px, task choices precede the selected task. Keep inputs and results in reading order.
 
 ## Voice
 
-COPY.md owns every user-facing string.
+COPY.md owns every website string. Root GLOSSARY.md owns product names.
 
-## Avoid
+## Authority
 
-Do not add invented slogans, personas, fake usage metrics, or model result simulations.
-Do not regenerate the wordmark or modify canonical anatomy.
-Do not add blood spray, exposed organs, or background effects over controls.
-
-## Custom utilities
-
-main.css owns the membrane, wet-sheen, and slime brand effects.
-All effects use the brand palette. Panels use semantic Nuxt UI tokens.
-
-## Instrument revision
-
-[The brand kit](../docs/brand/kit.md) supersedes the earlier landing-page spatial rules.
-Use the living instrument layout selected there.
-One sparse utility header, one asymmetric organic work area, one utility footer.
-Use the generated surround and aperture directly. Do not imitate them with generic gradients.
-Keep the canonical banner small enough to leave the task immediately visible.
-Skill buttons float along the upper edge. Two work surfaces occupy the opening.
-Put scope notes in accessible disclosure controls. Preserve readable input and output.
+[Brand kit](../docs/brand/kit.md) lists artwork, provenance, palette, and layout decisions.
+This task-first revision supersedes the artwork-led instrument layout.

@@ -66,26 +66,26 @@ Keep artwork outside editable areas. Leave more darkness than ornament.
 
 | Direction | Composition | Decision |
 | --- | --- | --- |
-| Living instrument | Asymmetric surround; controls attach to its edge; input and output occupy the opening | Selected, immediate work and a strong physical identity |
+| Living instrument | Asymmetric surround; controls attach to its edge; input and output occupy the opening | Rejected after owner review, artwork competed with task clarity |
 | Specimen drawer | Separate specimens open vertically into work surfaces | Reserve, adds navigation before the task |
 | Wing map | Skill controls sit on a branching membrane with floating input | Reserve, impressive but weaker mobile reading order |
+| Task-first workspace | Outcome choices beside an unobstructed form; results follow submission | Selected after owner review, user workflow comes first |
 
 ## Tool page contract
 
-One instrument, three skills. No hero pitch, feature cards, testimonials, or decorative slogans.
-Show the exact skill names. Keep the selected skill, editable input, and action immediately visible.
-The empty output displays the aperture. A real result replaces it.
-Skill changes reset the work area. Editing input clears stale output.
-Downloads and instructions remain secondary, beneath the instrument.
-On mobile, retain the surrounding artwork but stack input above output.
+Three task choices name outcomes and retain exact skill names.
+The canonical banner anchors identity. Artwork stays outside the work surface.
+Forms begin empty. Use example fills sample data only on request.
+Task changes retain input and results. Editing input clears stale output.
+Show results after submission. Focus the result or error. Offer a copy action beside the result.
+Place full skill downloads and instructions below the form.
+On mobile, task choices precede input and results. No material can obscure a control.
 
 ## Motion and interaction
 
-The aperture breathes slowly when idle. Hover compresses its tissue.
-The surround stays still. Active skill controls acquire a teal glint and a cream underline.
-Slime grows below the primary action on hover, outside its text.
-Motion off and system reduced motion stop animations and transitions.
-The organic silhouette never changes focus order or blocks clicks.
+The primary action grows a small slime drip on hover. No idle animation occupies the work area.
+Motion off and system reduced motion stop the hover transition.
+The surround and aperture remain available production artifacts in the kit.
 
 ## Limits
 
