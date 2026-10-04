@@ -81,3 +81,8 @@ The skill instructions use the [MIT license](LICENSE.md).
 
 Compare existing writing outputs or generate an approved guide demo with OpenCode.
 See [setup and review instructions](evals/ui/README.md).
+
+## Website
+
+The [Nuxt website](website/README.md) uses the canonical artwork and browser-local skill demos.
+Each skill download includes its required references and license.

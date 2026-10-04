@@ -8,3 +8,13 @@ scripts/scratchpad/
 
 # PR Lens writes its previews here. They are rebuilt on demand.
 .pr-lens/
+
+# Website build and local Cloudflare state.
+website/.nuxt/
+website/.output/
+website/.cloudflare/
+website/.wrangler/
+website/dist
+website/.env*
+website/public/brand/
+website/public/skills/

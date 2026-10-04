@@ -17,3 +17,8 @@ Provider-specific plugin packaging can be added when a consumer requires it.
 write-human adapts the owner's humanize-writing instructions.
 Its personal skill links are replaced by self-contained source and copy-review rules.
 It preserves the upstream MIT notice in its own directory.
+
+The optional Nuxt website lives in website, outside the installable skill directories.
+It has its own dependency graph and Cloudflare deployment workflow.
+Its browser-local demos illustrate workflow parts rather than executing the full skills.
+Build scripts copy canonical assets and complete skills from the collection.
