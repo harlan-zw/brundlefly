@@ -14,6 +14,9 @@ It is optional; do not install it automatically.
 ## Inspect the project
 
 Read the existing README, repository instructions, glossary, vision, contribution rules, and supplied copy rules.
+Use the glossary's established product names and casing. Do not substitute synonyms for them.
+Apply supplied wording bans within their stated scope. Preserve commands, identifiers, quotes, and required qualifications.
+Existing prose shows vocabulary; it does not prove every sentence deserves reuse.
 Inspect nearby READMEs when the user asks for collection conventions.
 Local requirements and the user's requested structure take precedence over stylistic defaults.
 
@@ -39,6 +42,8 @@ Use this order by default. Keep existing anchors when they remain useful.
 
 Splash describes the opening block. Do not add a literal Splash heading.
 Name the Why heading after the project, such as "Why Brundlefly".
+Keep Why on the problem that motivates adoption. Put capabilities in Features and usage details in Setup or Guides.
+If the owner requests only the problem, omit solution details, comparisons, and evaluation commentary from Why.
 Reuse approved assets and text. If artwork is absent, use a plain title and description.
 If an approved banner carries the project name, it can serve as the H1 image with meaningful alt text.
 Use the owner's approved tagline exactly. A blockquote can place it below the banner.
@@ -76,6 +81,8 @@ Keep product names, approved copy, commands, and links exact unless evidence sup
 Preserve facts, qualifications, attribution, and voice. Cut repetition and unsupported claims.
 Keep clear sentences unchanged. Remove unsupported claims rather than replacing them with invented evidence.
 Keep review commentary outside README.md.
+Apply the [Why review](references/positioning.md#review-why) before delivery, even when the prose sounds natural.
+Judge generic wording by the sentence's purpose. Do not create a blacklist of ordinary words.
 
 Compare the result with inspected evidence for names, conditions, claims, commands, and links.
 Run safe setup examples from an isolated starting state when possible.
