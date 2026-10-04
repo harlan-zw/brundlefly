@@ -45,7 +45,10 @@ Do not turn an unanswered hypothesis into an established adoption reason.
 
 Lead with the reader's problem and its consequence. Use research to establish why this project addresses that problem.
 Keep the opening brief. Put mechanisms, feature lists, competitor walkthroughs, and evaluation methods in their relevant sections.
-If the owner requests problem-only positioning, describe the failure without explaining the implementation or listing capabilities.
+If the owner requests problem-only positioning, lead with the failure and omit implementation detail and capability lists.
+Before trimming, identify the approved problems, adoption reasons, audience, qualifications, and evidence links.
+Map each point to retained wording or a useful destination. Remove a point only when the requested scope excludes it.
+An instruction to remove generic prose does not authorize dropping supported facts, comparisons, or approved positioning.
 Support the adoption reason with inspected behavior, a working example, or measured evidence in the research record.
 Name competitors only when the comparison helps the reader choose. Link sources beside published comparative claims.
 Keep scope clear: an observed gap in inspected alternatives does not prove absence across the entire market.
@@ -59,8 +62,9 @@ Keep research commentary outside the published README.
 
 ## Review Why
 
-Ask what each sentence tells the reader about the problem and its cost.
+Ask what each sentence adds: the problem, its cost, the adoption reason, or evidence supporting that reason.
 If another unrelated project could use the sentence unchanged, cut it or identify the actual failure.
+Use this as a review question. Do not automatically delete approved positioning or evidence links because they share ordinary wording.
 Shared format properties and routine repository practices do not establish an adoption reason.
 Do not invent an exclusive problem or a superiority claim when the evidence supports only a particular fit.
 Keep necessary qualifications beside any claim they limit. Remove the whole claim when it does not belong here.

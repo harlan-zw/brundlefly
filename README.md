@@ -13,8 +13,14 @@
 ## Why Brundlefly
 
 AI prose edits can replace your voice with stock phrases or add words where none were needed.
-
 Text shortened for agents can lose the conditions and exceptions that control what they do.
+
+Writing can read well while its examples fail or its instructions conflict with the target project's rules.
+
+Brundlefly combines approaches from existing skills to shape writing for people and agents.
+The [writing evaluation](evals/REPORT.md) compares prose edits with
+[Humanizer](https://github.com/blader/humanizer/blob/225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8/SKILL.md)
+and [Stop Slop](https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/SKILL.md).
 
 ## Features
 

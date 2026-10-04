@@ -42,8 +42,9 @@ Use this order by default. Keep existing anchors when they remain useful.
 
 Splash describes the opening block. Do not add a literal Splash heading.
 Name the Why heading after the project, such as "Why Brundlefly".
-Keep Why on the problem that motivates adoption. Put capabilities in Features and usage details in Setup or Guides.
-If the owner requests only the problem, omit solution details, comparisons, and evaluation commentary from Why.
+Lead Why with the problem that motivates adoption. Put capability lists in Features and usage details in Setup or Guides.
+Keep approved adoption reasons and useful evidence links. Removing filler must not erase their information.
+If the owner requests only the problem, omit implementation detail and feature inventories. Preserve other approved points unless excluded.
 Reuse approved assets and text. If artwork is absent, use a plain title and description.
 If an approved banner carries the project name, it can serve as the H1 image with meaningful alt text.
 Use the owner's approved tagline exactly. A blockquote can place it below the banner.
