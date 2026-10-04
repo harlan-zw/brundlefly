@@ -10,7 +10,7 @@ Keep each skill standalone and directly usable.
 | --- | --- | --- |
 | write-human | General prose editing | Preserve facts and supplied voice; avoid unnecessary rewriting |
 | technical-guide | Technical tutorials, task guides, reference, explanations, and supported decision guides | Personal narratives keep their author-led structure |
-| pr | Repository conventions, checks, and PR creation or updates | Submission does not authorize merging or reviewer replies |
+| pull-request-summary | PR description text and repository conventions | Delivery belongs to the caller |
 
 Classify content by its reader goal, then its subject and voice.
 Technical subjects appear in personal stories too. A blog path does not imply a single workflow.
@@ -63,7 +63,7 @@ Keep its historical snapshots distinct from current skill revisions.
 | --- | --- | --- |
 | write-human | Meaning, qualifiers, names, and supplied facts survive | Useful improvement, naturalness, and retained voice |
 | technical-guide | Supported claims; complete prerequisites; correct examples and reader outcomes | Can the intended reader act or understand without missing steps? |
-| pr | Correct template, conventions, owned diff, branch relationship, publication, and current head | Can maintainers review the change efficiently and trust the description? |
+| pull-request-summary | Correct template, conventions, supported claims, preserved notes, and caller policy | Can maintainers review the change efficiently and trust the description? |
 
 Score fidelity separately from improvement. An unchanged weak draft must not win merely by preserving every word.
 Allow ties, unchanged strong prose, and rejection of both candidates.

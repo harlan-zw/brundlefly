@@ -10,11 +10,11 @@ A collection of self-contained [Agent Skills](https://agentskills.io/specificati
 | --- | --- |
 | [write-human](skills/write-human/SKILL.md) | Remove generated-sounding writing habits while preserving meaning and voice. |
 | [technical-guide](skills/technical-guide/SKILL.md) | Research, write, verify, or refresh technical guides with working examples. |
-| [pr](skills/pr/SKILL.md) | Prepare, open, or update PRs using the target repository's rules and contributor conventions. |
+| [pull-request-summary](skills/pull-request-summary/SKILL.md) | Draft or check PR descriptions against the change and repository conventions. |
 | [agentify-text](skills/agentify-text/SKILL.md) | Compress text and Markdown for agents while preserving facts, constraints, and structure. |
 
 Choose the skill that owns your task. Each skill works alone.
-Use write-human for prose edits, technical-guide for a verified reader workflow, and pr for review submission.
+Use write-human for prose edits, technical-guide for a verified reader workflow, and pull-request-summary for PR description text.
 Keep personal stories in their author's voice, rather than forcing a guide structure.
 
 ## Use locally
@@ -43,11 +43,12 @@ For the other workflows:
 
 ```text
 Use technical-guide to refresh this tutorial against the supported release. Verify its examples.
-Use pr to submit these changes. Follow the repository template and recent maintainer conventions.
+Use pull-request-summary to check this PR description against the diff and repository template. Return the revised text.
 Use agentify-text to reduce tokens in this Markdown file. Preserve its facts, rules, exceptions, and working links.
 ```
 
-GitHub publication through pr needs an authorized GitHub integration.
+A delivery Skill can call pull-request-summary and supply its own description policy.
+The caller owns publication. Supplied inputs need no GitHub integration.
 Technical-guide uses the target's tools to verify examples and reports unavailable checks.
 Each skill works without another Brundlefly skill or personal infrastructure.
 
