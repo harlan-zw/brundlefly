@@ -22,3 +22,7 @@ The optional Nuxt website lives in website, outside the installable skill direct
 It has its own dependency graph and Cloudflare deployment workflow.
 Its browser-local demos illustrate workflow parts rather than executing the full skills.
 Build scripts copy canonical assets and complete skills from the collection.
+
+The website contains a standalone brand-kit Nuxt app under website/apps/brand-kit.
+Both apps extend website/layers/brand. The downloadable layer includes its own public assets.
+The combined static build mounts the kit under /brand-kit/.

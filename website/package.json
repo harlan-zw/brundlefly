@@ -5,9 +5,11 @@
   "packageManager": "pnpm@11.20.0",
   "scripts": {
     "dev": "node scripts/sync-brand.ts && nuxt dev",
-    "build": "node scripts/sync-brand.ts && nuxt generate && cf build",
+    "build": "node scripts/sync-brand.ts && nuxt generate && pnpm kit:build && node scripts/assemble-kit.ts && vite build && cf deploy --prebuilt --dry-run",
+    "kit:dev": "node scripts/sync-brand.ts && nuxt dev apps/brand-kit",
+    "kit:build": "NUXT_APP_BASE_URL=/brand-kit/ nuxt generate apps/brand-kit",
     "postinstall": "nuxt prepare",
-    "typecheck": "nuxt typecheck",
+    "typecheck": "nuxt typecheck && nuxt typecheck apps/brand-kit",
     "test": "node --test test/*.test.ts",
     "preview:cloudflare": "vite --host 127.0.0.1",
     "check": "pnpm test && pnpm typecheck && pnpm build"
@@ -17,11 +19,13 @@
     "@nuxt/ui": "^4.0.0",
     "@vueuse/core": "^14.0.0",
     "nuxt": "^4.0.0",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^4.0.0",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "2.0.0-beta.sha-52b0dc0e9",
     "@types/node": "^24.0.0",
+    "@types/three": "^0.186.0",
     "cf": "1.0.0-beta.5",
     "fflate": "^0.8.3",
     "typescript": "^5.9.0",

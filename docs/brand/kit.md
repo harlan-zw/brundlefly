@@ -1,6 +1,9 @@
 # Brundlefly brand kit
 
-This kit translates the canonical mascot into an interactive material system.
+This kit supplies composable Nuxt parts, material artwork, and an interactive 3D specimen.
+
+Open the website’s /brand-kit/ app to compose parts and copy Vue or JSON presets.
+Download the complete Nuxt layer there. [Layer source](../../website/layers/brand/README.md) defines installation and component APIs.
 [Brand rules](../arch/brand.md) control anatomy and identity.
 [COPY.md](../../website/COPY.md) controls public language.
 
@@ -13,6 +16,34 @@ Keep folded rusty flesh, dark chitin, bristles, and blue-black eyes with tiny te
 Use the supplied raster wordmark. Never recreate its lettering.
 No cute proportions, orange eyes, blood spray, clothing, or exposed organs.
 Materials may exist alone. They must never imply a different mascot anatomy.
+
+## Composition grammar
+
+Choose a layout. Add surfaces. Attach edge parts. Place labelled controls inside each surface.
+Use darkness between pieces. Keep dense flesh, bristles, and slime at the edges.
+Scale the composition by changing layout and density, rather than stretching artwork.
+The layout responds to its container, so a nested preview behaves like a standalone page.
+
+| Piece | Inputs | Purpose |
+| --- | --- | --- |
+| BrandComposition | workbench, split, stack | Arrange any slotted content |
+| BrandSurface | flesh, chitin, membrane; edges; density 0–1 | Quiet content area with interchangeable biological edges |
+| BrandAction | material, native type and disabled state | Clear action with a small slime reaction |
+| BrandChoice | label, detail, selected | Native choice with visible selection |
+| BrandDivider | tendon or membrane | Connect or separate sections |
+| LazyBrandOrganism | wetness, viscosity, pressure, motionOff, exportable | Optional deformable material outside the task area |
+
+The app exports versioned presets. Imports parse values before generating Vue.
+The copied Vue runs an explicit component preview. Replace its handler with the page’s real task.
+Parts have no task logic. The tool page owns its input, results, and skill downloads.
+
+## Design direction
+
+![Image-generated modular concept](../../assets/brand/kit/modular/design-direction.png)
+
+The concept seeded implementation before code. Its generated decorative text has no copy authority.
+The canonical banner and material board seeded the new production pieces.
+[Exact prompts and references](../../assets/prompts/modular-kit.json) record each generation.
 
 ## Artifact register
 
@@ -34,7 +65,17 @@ Paths below are relative to the repository root.
 | Historical concepts | assets/archive/* | Inspiration only; no authority over anatomy or copy |
 | Generation prompts | assets/prompts/* | Reproduction and provenance |
 | Design tokens and rules | website/DESIGN.md | Code-facing implementation contract |
-| Interface materials and motion | website/app/assets/css/main.css | Live layout, tendons, hover slime, focus and reduced motion |
+| Shared materials and motion | website/layers/brand/app/assets/css/brand.css | Palette, pieces, edge zones, focus and reduced motion |
+| Page layout | website/app/assets/css/main.css | Task-specific composition |
+| Modular concept | assets/brand/kit/modular/design-direction.png | Design exploration, never public copy |
+| Flesh corner | assets/brand/kit/modular/flesh-corner.png | RGBA 1254 × 1254, interchangeable corner cap |
+| Membrane divider | assets/brand/kit/modular/membrane-divider.png | RGBA 1536 × 1024, ragged wing strip |
+| Tendon connector | assets/brand/kit/modular/tendon-connector.png | RGBA 1536 × 1024, tensioned connection |
+| Flesh diffuse | assets/brand/kit/modular/flesh-diffuse.png | RGB 1254 × 1254, mirrored-repeat color texture |
+| Rest model | assets/brand/kit/modular/aperture-rest.glb | GLB 2.0 mesh and texture, imports into Blender |
+| Procedural model and shader | website/layers/brand/shared/organism.ts | Source of geometry, deformation, and wet lighting |
+| Model lifecycle | website/layers/brand/app/components/BrandOrganism.client.vue | Lazy WebGL, controls, disposal, fallback, GLB export |
+| Component catalogue | website/layers/brand/shared/catalogue.ts | Palette, parts, composition presets, validated import |
 
 New kit images were generated from canonical artwork with image generation.
 They extend materials, not the mascot or wordmark.
@@ -74,7 +115,7 @@ Keep artwork outside editable areas. Leave more darkness than ornament.
 ## Tool page contract
 
 Three task choices name outcomes and retain exact skill names.
-The canonical banner anchors identity. Artwork stays outside the work surface.
+The canonical banner anchors identity. Edge artwork stays outside the readable content zone.
 Forms begin empty. Use example fills sample data only on request.
 Task changes retain input and results. Editing input clears stale output.
 Show results after submission. Focus the result or error. Offer a copy action beside the result.
@@ -83,9 +124,33 @@ On mobile, task choices precede input and results. No material can obscure a con
 
 ## Motion and interaction
 
-The primary action grows a small slime drip on hover. No idle animation occupies the work area.
-Motion off and system reduced motion stop the hover transition.
-The surround and aperture remain available production artifacts in the kit.
+The primary action grows a small slime drip on hover.
+The tool page offers an optional 3D specimen in its margin. It starts closed.
+Motion off and system reduced motion stop idle motion. Pointer pressure remains an explicit interaction.
+Hidden and offscreen specimens stop their animation loop. Teardown disposes GPU resources.
+If WebGL or the texture fails, use the static aperture with a clear status.
+
+## 3D construction
+
+Three procedural torus folds form the aperture. Chitin plates, bristles, and mucus surround it.
+GLSL adds pressure displacement, pulse, cool rim light, and wet highlights.
+Viscosity sets pressure response speed. Wetness sets the highlight strength.
+The diffuse texture uses mirrored repeat. The supplied color image is not a normal map.
+Geometry normals and shader deformation supply depth. No bone skeleton is required for this material specimen.
+The canonical mascot has no invented rig or new anatomy.
+
+The GLB contains rest geometry and a PBR texture. Runtime GLSL remains in the layer source.
+The kit can export its current model. The checked-in rest model provides a fixed interchange artifact.
+Blender can edit that GLB. A .blend file is unnecessary for this procedural source.
+Blender import was not exercised on this host.
+
+## Portability
+
+The downloadable layer bundles components, tokens, TypeScript, public artwork, and installation instructions.
+It declares its Nuxt UI, fonts, VueUse, Three.js, and Three.js type dependencies.
+Both Nuxt apps extend that layer. They share one asset origin and deploy as one static Cloudflare Worker.
+Nuxt generates each app. Vite packages the combined output. cf deploy --prebuilt uses that verified package.
+This explicit build avoids Cloudflare CLI framework guessing across the monorepo.
 
 ## Limits
 
@@ -98,6 +163,13 @@ Keep these limits in an expandable disclosure near the work area.
 
 | File | Dimensions or type | Role |
 | --- | --- | --- |
+| [Modular design concept](../../assets/brand/kit/modular/design-direction.png) | 1536 × 1024 | Exploration |
+| [Flesh corner](../../assets/brand/kit/modular/flesh-corner.png) | 1254 × 1254, RGBA | Current part |
+| [Membrane divider](../../assets/brand/kit/modular/membrane-divider.png) | 1536 × 1024, RGBA | Current part |
+| [Tendon connector](../../assets/brand/kit/modular/tendon-connector.png) | 1536 × 1024, RGBA | Current part |
+| [Flesh diffuse](../../assets/brand/kit/modular/flesh-diffuse.png) | 1254 × 1254, RGB | Current texture |
+| [Rest model](../../assets/brand/kit/modular/aperture-rest.glb) | GLB 2.0 | Current model |
+| [Modular prompts](../../assets/prompts/modular-kit.json) | JSON | Prompt |
 | [assets/archive/brand-kit/avatar-master-v2.png](../../assets/archive/brand-kit/avatar-master-v2.png) | 1254 × 1254 | Historical |
 | [assets/archive/brand-kit/avatar-master.png](../../assets/archive/brand-kit/avatar-master.png) | 1254 × 1254 | Historical |
 | [assets/archive/brand-kit/avatar-preview-32.png](../../assets/archive/brand-kit/avatar-preview-32.png) | 32 × 32 | Historical |

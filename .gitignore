@@ -18,3 +18,9 @@ website/dist
 website/.env*
 website/public/brand/
 website/public/skills/
+website/public/kit/
+website/layers/brand/public/
+website/apps/brand-kit/.nuxt/
+website/apps/brand-kit/.output/
+website/apps/brand-kit/node_modules/
+website/apps/brand-kit/dist

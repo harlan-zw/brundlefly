@@ -68,7 +68,8 @@ Provide a copy action beside generated content, and complete skill downloads bel
 Use cream for text and primary actions, wing for secondary text, and chitin for boundaries.
 Flesh marks the selected task and the work surface edge. Bruise highlights wording signals.
 Use the existing banner and generated material assets. Never recreate the raster wordmark.
-The full surround and aperture remain reusable kit artifacts. The tool page needs no idle organism.
+Use BrandSurface, BrandChoice, and BrandAction from the shared layer.
+The full surround remains a reference artifact. The optional organism belongs in the margin.
 Preserve canonical anatomy and the original alpha. Use pixelated rendering without stretching artwork.
 
 ## Typography
@@ -81,7 +82,7 @@ Controls use 14px text. Secondary skill identifiers may use 12px text.
 
 Keep targets at least 44px high. Use visible cream focus outlines and native labels.
 No artwork crosses text, inputs, or focus outlines. The interface stays dark under either system preference.
-The wet action hover is the only material motion. Motion off and reduced motion stop it.
+The wet action hover and optional specimen share the motion control. Reduced motion stops idle animation.
 At 375px, task choices precede the selected task. Keep inputs and results in reading order.
 
 ## Voice
@@ -92,3 +93,11 @@ COPY.md owns every website string. Root GLOSSARY.md owns product names.
 
 [Brand kit](../docs/brand/kit.md) lists artwork, provenance, palette, and layout decisions.
 This task-first revision supersedes the artwork-led instrument layout.
+
+## Shared layer
+
+The layer owns tokens, material pieces, safe zones, and 3D rendering.
+The kit app demonstrates composition without owning task logic.
+The tool app owns real local demos and reuses the same pieces.
+Use container queries for compositions. Keep artwork within the 20px edge zone.
+Do not cover content or focus outlines with material art.

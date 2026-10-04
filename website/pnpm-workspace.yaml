@@ -1,5 +1,7 @@
 packages:
   - .
+  - apps/*
+  - layers/*
 allowBuilds:
   esbuild: true
   vue-demi: true

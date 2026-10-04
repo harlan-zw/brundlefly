@@ -1,0 +1,7 @@
+{
+  "name": "@brundlefly/brand-kit",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "nuxt dev", "build": "nuxt generate", "typecheck": "nuxt typecheck" },
+  "dependencies": { "@brundlefly/brand": "workspace:*", "@vueuse/core": "^14.0.0", "nuxt": "^4.0.0", "@nuxt/ui": "^4.0.0" }
+}

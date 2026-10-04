@@ -13,6 +13,7 @@ const activeSkill = ref<SkillName>('write-human')
 const selected = computed(() => tasks.find(task => task.name === activeSkill.value)!)
 const reducedMotion = usePreferredReducedMotion()
 const motionOff = ref(false)
+const showMaterial = ref(false)
 const motionPaused = computed(() => motionOff.value || reducedMotion.value === 'reduce')
 </script>
 
@@ -24,7 +25,7 @@ const motionPaused = computed(() => motionOff.value || reducedMotion.value === '
         <img src="/brand/github-banner-overhang-gross.png" alt="Brundlefly" width="1280" height="610" fetchpriority="high">
       </a>
       <div class="header-actions">
-        <a href="https://github.com/harlan-zw/brundlefly">GitHub ↗</a>
+        <a href="/brand-kit/">Brand kit ↗</a>
         <button class="motion-toggle" :aria-pressed="motionPaused" @click="motionOff = !motionOff">
           <span class="motion-light" aria-hidden="true" />{{ motionPaused ? 'Motion off' : 'Motion on' }}
         </button>
@@ -34,19 +35,22 @@ const motionPaused = computed(() => motionOff.value || reducedMotion.value === '
       <aside class="task-rail">
         <h2>Choose a task</h2>
         <div class="task-choices" role="group" aria-label="Choose a task">
-          <button v-for="task in tasks" :key="task.name" :aria-pressed="activeSkill === task.name"
-            @click="activeSkill = task.name"><span>{{ task.title }}</span><small>{{ task.name }}</small><span class="task-arrow" aria-hidden="true">↗</span></button>
+          <BrandChoice v-for="task in tasks" :key="task.name" :selected="activeSkill === task.name" :label="task.title" :detail="task.name" @click="activeSkill = task.name" />
         </div>
-        <img class="rail-art" src="/brand/kit/instrument-surround.png" alt="" width="1536" height="1024" aria-hidden="true">
+        <BrandDivider part="tendon" />
+        <div class="tool-material">
+          <UButton variant="ghost" :aria-pressed="showMaterial" @click="showMaterial = !showMaterial">{{ showMaterial ? 'Hide material' : 'Animate material' }}</UButton>
+          <LazyBrandOrganism v-if="showMaterial" :motion-off="motionPaused" />
+        </div>
       </aside>
       <main id="main" class="workspace">
         <div class="task-heading">
           <div><h1>{{ selected.title }}</h1><p>{{ selected.instruction }}</p></div>
           <span class="local-note">Your input stays in this browser.</span>
         </div>
-        <div class="task-surface">
+        <BrandSurface class="task-surface" material="flesh" edges="corners" :density="0.65">
           <SkillDemo v-for="task in tasks" v-show="activeSkill === task.name" :key="task.name" :skill="task.name" />
-        </div>
+        </BrandSurface>
         <div class="skill-use">
           <div><h2>Use a skill</h2><p>Copy the complete skill directory into your agent’s supported skills directory.</p></div>
           <a class="download-link" :href="`/skills/${activeSkill}.zip`" download>Download {{ activeSkill }} ↓</a>

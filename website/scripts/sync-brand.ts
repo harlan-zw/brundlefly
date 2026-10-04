@@ -1,6 +1,7 @@
 import { copyFile, cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { zipSync } from 'fflate'
 import { skills } from '../shared/content.ts'
+import { defaultPreset, parts, palette } from '../layers/brand/shared/catalogue.ts'
 
 const source = new URL('../../assets/brand/', import.meta.url)
 const target = new URL('../public/brand/', import.meta.url)
@@ -9,6 +10,10 @@ await Promise.all(['github-banner-overhang-gross.png', 'github-avatar.png'].map(
   copyFile(new URL(name, source), new URL(name, target)),
 ))
 await cp(new URL('kit/', source), new URL('kit/', target), { recursive: true })
+const layer = new URL('../layers/brand/', import.meta.url)
+const layerArt = new URL('public/brand/', layer)
+await mkdir(layerArt, { recursive: true })
+await cp(target, layerArt, { recursive: true })
 
 async function collectFiles(directory: URL, prefix: string): Promise<Record<string, Uint8Array>> {
   const files: Record<string, Uint8Array> = {}
@@ -29,3 +34,15 @@ for (const { name } of skills) {
   await writeFile(new URL(`${name}.zip`, downloads), zipSync(files))
   await writeFile(new URL(`${name}.md`, downloads), await readFile(new URL('SKILL.md', directory)))
 }
+
+const kit = new URL('../public/kit/', import.meta.url)
+await mkdir(kit, { recursive: true })
+const bundle: Record<string, Uint8Array> = {}
+for (const name of ['nuxt.config.ts', 'package.json', 'README.md']) {
+  bundle[`brundlefly-brand/${name}`] = await readFile(new URL(name, layer))
+}
+for (const directory of ['app', 'shared', 'public']) {
+  Object.assign(bundle, await collectFiles(new URL(`${directory}/`, layer), `brundlefly-brand/${directory}`))
+}
+await writeFile(new URL('brand-layer.zip', kit), zipSync(bundle))
+await writeFile(new URL('catalogue.json', kit), JSON.stringify({ palette, parts, preset: defaultPreset }, null, 2))

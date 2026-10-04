@@ -1,17 +1,10 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-04',
-  modules: ['@nuxt/ui', '@nuxt/fonts'],
+  extends: ['./layers/brand'],
   css: ['~/assets/css/main.css'],
   devtools: { enabled: false },
   ignore: ['**/_*.vue'],
   colorMode: { preference: 'dark', fallback: 'dark' },
-  fonts: {
-    families: [
-      { name: 'Barlow Condensed', provider: 'google', weights: [600, 700, 800] },
-      { name: 'IBM Plex Mono', provider: 'google', weights: [400, 500] },
-      { name: 'IBM Plex Sans', provider: 'google', weights: [400, 500, 600] },
-    ],
-  },
   app: {
     head: {
       htmlAttrs: { lang: 'en', class: 'dark' },
@@ -26,5 +19,6 @@ export default defineNuxtConfig({
       link: [{ rel: 'icon', type: 'image/png', href: '/brand/github-avatar.png' }],
     },
   },
-  nitro: { prerender: { crawlLinks: true, failOnError: true } },
+  // The standalone kit is generated separately and assembled after this export.
+  nitro: { prerender: { crawlLinks: true, failOnError: true, ignore: ['/brand-kit/'] } },
 })

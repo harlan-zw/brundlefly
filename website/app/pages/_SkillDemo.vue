@@ -126,7 +126,7 @@ function resetDemo() {
       </template>
       <p v-if="error" :id="`${skill}-error`" ref="errorElement" tabindex="-1" class="form-error" role="alert">{{ error }}</p>
       <div class="form-actions">
-        <UButton type="submit" class="wet-button">{{ skill === 'write-human' ? 'Review text' : skill === 'technical-guide' ? 'Build an outline' : 'Format a PR' }} <span aria-hidden="true">↗</span></UButton>
+        <BrandAction type="submit">{{ skill === 'write-human' ? 'Review text' : skill === 'technical-guide' ? 'Build an outline' : 'Format a PR' }} <span aria-hidden="true">↗</span></BrandAction>
         <UButton variant="ghost" type="button" @click="resetDemo">Clear</UButton>
       </div>
     </form>

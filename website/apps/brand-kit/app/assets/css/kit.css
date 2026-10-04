@@ -1,0 +1,90 @@
+@source "../../../../../layers/brand/app";
+.kit-shell { max-width: 1600px; margin: auto; padding: 0 2.5rem 3rem; }
+.kit-skip { position: absolute; top: -100px; z-index: 20; background: var(--color-cream); color: var(--color-night); padding: 1rem; }
+.kit-skip:focus { top: 8px; }
+.kit-header { min-height: 140px; display: flex; align-items: center; gap: 2rem; border-bottom: 1px solid var(--color-chitin); }
+.kit-header > a { width: 200px; flex-shrink: 0; }
+.kit-header img { width: 100%; height: auto; image-rendering: pixelated; }
+.kit-header h1 { font: 600 36px var(--font-display); }
+.kit-header nav { margin-left: auto; display: flex; gap: 1.5rem; align-items: center; }
+.kit-header nav a, .kit-header nav button, .layer-source { display: flex; align-items: center; min-height: 44px; font: 14px var(--font-mono); }
+.kit-layout { display: grid; grid-template-columns: 170px minmax(0,1fr); gap: 2rem; padding-top: 2rem; }
+.kit-navigation .brand-choice { width: 100%; min-height: 56px; }
+.layer-source { font-size: 12px; color: var(--color-wing); margin-top: 1.5rem; }
+.kit-layout main { min-width: 0; }
+.kit-section-title { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.kit-section-title h2 { font: 600 36px var(--font-display); }
+.kit-section-title p, .kit-note { color: var(--color-wing); font-size: 14px; line-height: 1.6; }
+.composition-choices { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
+.composition-choices .brand-choice { min-height: 44px; padding: .75rem 1rem; }
+.compose-workspace { display: grid; grid-template-columns: minmax(0,1fr) 210px; gap: 2rem; }
+.composition-preview { min-width: 0; }
+.composition-preview > .kit-note { margin-bottom: 1.5rem; }
+.composition-preview h2 { font: 600 18px var(--font-sans); margin-bottom: 1rem; }
+.preview-result { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 16px; line-height: 1.6; }
+.composition-controls, .motion-controls { display: flex; flex-direction: column; gap: .75rem; align-items: stretch; }
+.composition-controls { border-left: 1px solid var(--color-chitin); padding-left: 1.5rem; }
+.composition-controls label, .motion-controls label { font: 14px var(--font-mono); display: flex; justify-content: space-between; }
+input[type="range"] { min-height: 44px; width: 100%; accent-color: var(--color-cream); cursor: pointer; }
+select { min-height: 44px; padding: .5rem .75rem; width: 100%; font: 14px var(--font-mono); background: var(--ui-bg-muted); color: var(--ui-text); border: 1px solid var(--ui-border); }
+.composition-controls summary { min-height: 44px; padding-block: .75rem; font: 14px var(--font-mono); cursor: pointer; }
+.composition-controls details label { margin-bottom: .75rem; }
+.composition-controls details > div { width: 100%; }
+.composition-controls details button { margin-top: .75rem; }
+.code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 1.5rem; }
+.code-header h2 { font: 600 18px var(--font-sans); }
+.code-header > div { display: flex; gap: .5rem; }
+.kit-code { max-height: 380px; overflow: auto; background: var(--ui-bg-muted); border: 1px solid var(--ui-border); padding: 1.5rem; margin-top: 1rem; font: 13px/1.7 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.material-gallery { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 2rem; }
+.material-gallery h3, .parts-gallery h3 { font: 600 20px var(--font-sans); margin-bottom: 1rem; }
+.material-sample { height: 160px; margin: 1rem 0; border: 1px solid var(--ui-border); background: var(--color-chitin); }
+.material-sample[data-material="flesh"] { background: url('/brand/kit/modular/flesh-diffuse.png') center / 200px; image-rendering: pixelated; }
+.material-sample[data-material="chitin"] { background: repeating-linear-gradient(135deg, var(--color-chitin) 0 14px, var(--color-night) 14px 16px); }
+.material-sample[data-material="membrane"] { background: var(--color-night) url('/brand/kit/modular/membrane-divider.png') center / cover; image-rendering: pixelated; }
+.palette-grid { grid-column: 1/-1; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 1.5rem; margin-top: 1rem; }
+.palette-grid > div { display: flex; flex-direction: column; gap: .5rem; }
+.palette-grid span { display: block; height: 52px; border: 1px solid var(--color-chitin); }
+.palette-grid strong { font-weight: 500; }
+.palette-grid code { font: 12px var(--font-mono); }
+.palette-grid small { color: var(--color-wing); font-size: 14px; }
+.parts-gallery { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 2rem; }
+.part-image { height: 220px; display: grid; place-items: center; margin-bottom: 1.25rem; background: var(--ui-bg-muted); }
+.part-image img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.parts-gallery p { font-size: 14px; line-height: 1.6; color: var(--color-wing); }
+.parts-gallery code { display: block; font: 12px var(--font-mono); margin-top: .75rem; }
+.parts-gallery a { display: inline-flex; min-height: 44px; align-items: center; font: 14px var(--font-mono); }
+.motion-lab { display: grid; grid-template-columns: minmax(0, 560px) minmax(200px,1fr); gap: 3rem; }
+.motion-lab .brand-organism { min-height: 400px; }
+.motion-lab > div > .kit-note { margin-top: 1rem; }
+.motion-controls { padding-top: 2rem; }
+.rest-download { display: inline-flex; align-items: center; min-height: 44px; font: 14px var(--font-mono); }
+@media (max-width: 1100px) {
+ .kit-shell { padding-inline: 1.5rem; }
+ .kit-header { gap: 1rem; }
+ .kit-header nav { gap: .75rem; }
+ .compose-workspace { grid-template-columns: 1fr; }
+ .composition-controls { display: grid; grid-template-columns: 1fr 1fr; border-left: none; border-top: 1px solid var(--ui-border); padding: 1.5rem 0 0; }
+ .composition-controls details { grid-column: 1/-1; }
+ .material-gallery, .parts-gallery { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .motion-lab { grid-template-columns: 1fr; }
+ .motion-lab > div:first-child { max-width: 500px; }
+}
+@media (max-width: 767px) {
+ .kit-shell { padding-inline: 1rem; }
+ .kit-header { flex-wrap: wrap; gap: .5rem 1rem; padding-block: .5rem 1rem; }
+ .kit-header > a { width: 160px; }
+ .kit-header h1 { font-size: 28px; }
+ .kit-header nav { width: 100%; justify-content: space-between; margin: 0; }
+ .kit-header nav a, .kit-header nav button { font-size: 12px; }
+ .kit-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+ .kit-navigation > div { display: flex; }
+ .kit-navigation .brand-choice { align-items: center; padding: .5rem .75rem; min-height: 44px; }
+ .layer-source { display: none; }
+ .kit-section-title { align-items: start; flex-direction: column; gap: .5rem; }
+ .kit-section-title h2 { font-size: 30px; }
+ .material-gallery, .parts-gallery { grid-template-columns: 1fr; }
+ .palette-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .composition-controls { grid-template-columns: 1fr; }
+ .kit-code { font-size: 12px; padding: 1rem; }
+ .motion-lab .brand-organism { min-height: 280px; }
+}

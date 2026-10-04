@@ -87,3 +87,31 @@ Keep the local-input note visible beside the task. Retain each task's input duri
 
 Writing input placeholder: “Paste your text here.”
 The example action appears above the fields, before the user enters input.
+
+## Modular brand kit
+
+The kit uses these functional navigation labels: “Compose”, “Materials”, “Parts”, and “Motion”.
+Composer controls: “Material”, “Edges”, “Density”, “Layout”, “Action”, “Corners”, “Wing”, “None”.
+Composer actions: “Copy Vue”, “Copy preset”, “Import preset”, “Reset”, “Download kit”.
+Preset input label: “Preset JSON”.
+Preset error: “Use a preset exported from this kit. Check its material, edges, layout, and density.”
+Import success: “Preset loaded.”
+Clipboard error: “Clipboard access failed. Select and copy the code.”
+Material controls: “Wetness”, “Viscosity”, “Pressure”, “Animate material”, “Hide material”, “Press to deform”, “Motion off”, “Motion on”.
+3D status: “3D loading.”, “3D material”, “Static material. WebGL is unavailable.”, “Static material. The texture could not load.”
+Generic composition label: “Your text”. Its action defaults to “Review text”.
+Composition instructions: “Combine parts. Copy the Vue.”
+Source link label: “Layer source”. Task page link label: “Try the skills”.
+Shared part names: “Flesh corner”, “Membrane divider”, “Tendon connector”, “Flesh diffuse”, “Aperture”.
+Material names: “Flesh”, “Chitin”, “Membrane”.
+Layout names: “Workbench”, “Split”, “Stack”.
+These are functional part descriptions, not new product names or slogans.
+
+Component-preview labels: “Component preview”, “Input preview”, “Preview result”, “Enter text to preview a result.”
+The component preview echoes input to demonstrate layout. Its note is “Component preview. No skill runs here.”
+Model download labels: “Download GLB”, “Download rest GLB”.
+Model error: “Model export failed. Use the layer source to rebuild the model.”
+
+Material export note: “GLB rest pose. Runtime shader adds deformation.”
+Part download label: “Download”.
+Material swatches use the role labels in the shared catalogue: Background, Text and focus, Organic edges, Review highlights, Structure, Active glints, Secondary text, Slime.

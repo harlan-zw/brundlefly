@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "date": "2026-10-04",
+  "assets": [
+    {
+      "file": "assets/brand/kit/modular/design-direction.png",
+      "prompt": "Use case: design-exploration. Design a production Brundlefly modular brand-kit application and reusable website parts, seeded by reference 1 canonical grotesque pixel banner and reference 2 existing material specimens. Landscape 1536x1024 presentation. This is a refined software design concept sheet, not another illustration atlas. Near-black #080B08 with cream #E8D4A6 text, rusty flesh #AA604B, bruised #69404B, chitin #343C3B, pale wing #A4B5A0, olive slime #777648 and sparse cold teal #418B90. At top small plain functional title 'Brand kit', no invented logo or slogan. Three precisely aligned areas: left narrow list 'Materials', 'Parts', 'Compose', 'Motion'; center large modular composition preview and below it separated small scalable parts; right interactive wet biological aperture specimen with three plain slider controls below. Center preview contains a quiet dark input surface and a clearly legible cream button labeled 'Review text'. Organic pixel flesh corner caps clamp two opposite corners, a thin ragged veined wing strip marks one side, tiny olive mucus drops hang BELOW the action, all outside readable control areas. The space is minimal and mature, while tactile grossness is intense where concentrated: slick folded bruised skin, black insect plates, bristles, mucus. Beneath preview show isolated corner cap, tendon connector, veined divider and chitin tile as separate reusable objects with ample spacing, never complete giant frames. The right aperture is a realistic 3D living material object made from the same folds and chitin, designed to squish under a pointer and react to viscosity. Show tiny code area at bottom with legible conceptual Vue tags '<BrandSurface>' and '<BrandAction>'. Strong compositional hierarchy, practical clear controls, few words. No human or new mascot, no modified anatomy, no decorative slogans, no gore, no rainbow colors, no large hero art, no conventional marketing cards. Preserve the references' material craft and identity but invent a flexible compositional system. Clean editable zones must never be covered by artwork.",
+      "mode": "built-in imagegen",
+      "transparent": false,
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png",
+        "assets/brand/kit/material-board.png"
+      ]
+    },
+    {
+      "file": "assets/brand/kit/modular/flesh-corner.png",
+      "prompt": "Production Brundlefly modular UI part. One isolated L-shaped FLESH CORNER CAP on actual transparent background, square 1024x1024. Reference 1 controls swollen rusty bruised wet skin and blue-black chitin. A compact asymmetrical elbow of folded rusty skin extends two short tapering branches to the right and downward, wrapping only the upper-left corner of an imaginary panel. The INNER lower-right quadrant is entirely empty transparent, so content can sit there. Raised black chitin plates, bristles, thin olive mucus drops hang downward outside the imaginary content region. Satisfy hand-crafted square pixel-cluster art, dark palette #AA604B #69404B #343C3B #418B90 #777648 #E8D4A6 restrained highlights. Dense revolting tactile detail, no gore. This is an interchangeable edge component, NOT a complete frame, NOT a limb, NOT a creature. One object only, no text, no logo, no shadowed background, no drawn checkerboard. Keep transparent breathing room at every outer tip.",
+      "mode": "built-in imagegen",
+      "transparent": true,
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png"
+      ]
+    },
+    {
+      "file": "assets/brand/kit/modular/membrane-divider.png",
+      "prompt": "Production Brundlefly modular UI part, isolated long slender WING MEMBRANE DIVIDER on true transparency. Wide landscape 1536x1024 canvas, but the subject itself is a narrow horizontal ragged band running left to right through the middle third with plenty of transparent air above and below. A stretched pale grey-green #A4B5A0 insect wing membrane, rusty #AA604B branching veins, bruised #69404B at torn edges, sparse rotten olive #777648 mucus strands and drops, thin blue-black chitin spine along the upper edge. It resembles a torn material strip, NOT a whole wing or butterfly, NOT anatomy attached to a creature. No thick full frame, no flesh limb, no text. Hand-crafted dark pixel clusters with tiny wet highlights, subtle holes with real transparent alpha. Match the canonical image's veined unequal developing wings and grotesque craftsmanship. One horizontal object, every tip contained with transparent margins. No background, no checkerboard, no gore.",
+      "mode": "built-in imagegen",
+      "transparent": true,
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png",
+        "assets/brand/kit/material-board.png"
+      ]
+    },
+    {
+      "file": "assets/brand/kit/modular/flesh-diffuse.png",
+      "prompt": "Production tileable Brundlefly FLESH MATERIAL TEXTURE for a Three.js biological aperture model and restrained UI surface accents. Reference controls rusty folded skin, bruising, pores, mucus and pixel clusters. Square 1024x1024 filled edge-to-edge with seamless repeatable rusty flesh microfolds, dark bruised creases, tiny olive wet beads, scattered blue-black chitin islands. Macro top-down orthographic material scan, NO scene perspective, NO vignette, NO directional shadow, NO central subject, NO borders. The left/right and top/bottom edges must visually join as a seamless repeating material. Dense handcrafted hard-edged pixel cluster details rather than smooth photo noise. Limit tones to #AA604B #69404B #343C3B #777648 with cream #E8D4A6 tiny specular hints and #418B90 sparse cold reflections. Gross tactile swollen skin without blood, exposed organs, eyes, faces, limbs or text. Opaque image, this is a diffuse color texture, not a normal-map fake. Even texture scale and lighting across the entire tile.",
+      "mode": "built-in imagegen",
+      "transparent": false,
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png"
+      ]
+    },
+    {
+      "file": "assets/brand/kit/modular/tendon-connector.png",
+      "prompt": "Production Brundlefly reusable TENDON CONNECTOR part on true transparent background. Wide landscape 1536x1024 canvas. A thin elongated horizontal connection made of three separated rusty wet tendon strands running between two small blue-black chitin anchor nodules. The entire object lies through the middle third of the canvas, with transparent air above and below. One olive mucus thread and several sparse bristles hang below the connector. Rusty #AA604B flesh, bruising #69404B, chitin #343C3B, mucus #777648, tiny cream #E8D4A6 highlights and cold #418B90 glints. Hard hand-crafted pixel clusters seeded by supplied canonical Brundlefly material board. Anatomical material without gore, no blood, no organs, no creature or limbs, no eye, no rectangle, no frame, no lettering. The connection has a slight asymmetric sag so it feels tensioned and organic. Real alpha, no checkerboard or background glow. Every end contained with generous transparent margin. This is one small edge connector for compositions, not a full illustration.",
+      "mode": "built-in imagegen",
+      "transparent": true,
+      "references": [
+        "assets/brand/kit/material-board.png"
+      ]
+    }
+  ]
+}
