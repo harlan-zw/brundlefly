@@ -40,6 +40,9 @@ Use this order by default. Keep existing anchors when they remain useful.
 Splash describes the opening block. Do not add a literal Splash heading.
 Name the Why heading after the project, such as "Why Brundlefly".
 Reuse approved assets and text. If artwork is absent, use a plain title and description.
+If an approved banner carries the project name, it can serve as the H1 image with meaningful alt text.
+Use the owner's approved tagline exactly. A blockquote can place it below the banner.
+Use requested badges from the provider's documented embed. Include alt text and the intended destination.
 Do not invent badges, slogans, support channels, measurements, or compatibility claims.
 
 Write each feature as `- <emoji> **<feature>:** <why the feature is useful>`.
