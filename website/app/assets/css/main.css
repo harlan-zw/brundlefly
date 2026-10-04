@@ -161,7 +161,7 @@ mark { background: var(--color-bruise); color: var(--color-cream); padding: .1em
   .section-heading { gap: 1rem; align-items: start; }
   .section-heading a { max-width: 18ch; font-size: .875rem; }
   .current-skill { display: none; }
-  .demo-switcher button { flex: 1; padding: .9rem .4rem; font-size: .75rem; }
+  .demo-switcher button { flex: 1; padding: .9rem .4rem; font-size: .875rem; }
   .demo-body { grid-template-columns: 1fr; }
   .demo-output { border-left: none; border-top: 1px solid var(--ui-border); min-height: 340px; }
   .demo-input, .demo-output { padding: 1.25rem; }
