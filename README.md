@@ -4,7 +4,7 @@
 
 A collection of self-contained Agent Skills for writing and repository work.
 
-## Why
+## Why Brundlefly
 
 Your agent needs different instructions for editing prose, verifying a guide, and submitting a PR.
 Choose the skill for your task. Each directory includes the instructions and references it needs.

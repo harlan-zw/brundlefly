@@ -37,7 +37,7 @@ Preserve required disclosures. Never assume a human reviewed the draft.
 ## Pass 1: Surface tells (fast, lexical)
 
 Treat recurring wording as a review signal. Change it only when it weakens this passage.
-Read [the Graphite research note](graphite-ai-tells-2026.md) when reviewing model-dependent patterns or explaining their evidence.
+Read [the Graphite research note](references/graphite-ai-tells-2026.md) when reviewing model-dependent patterns or explaining their evidence.
 Corpus frequency does not identify an author or measure prose quality. Do not turn research examples into a word blacklist.
 
 - **Em-dashes and hyphens-as-dashes** -- restructure with commas, semicolons, colons, or separate sentences.

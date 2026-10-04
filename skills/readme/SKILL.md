@@ -7,7 +7,7 @@ license: MIT
 # README
 
 Help a reader decide whether the project fits, then complete its first useful task.
-This skill extends write-human. Read [the bundled writing rules](references/write-human.md) before drafting.
+This skill extends write-human. Read [the bundled writing rules](references/write-human/rules.md) before drafting.
 The bundle works without a sibling skill or personal checkout.
 
 ## Inspect the project
@@ -36,6 +36,7 @@ Use this order by default. Keep existing anchors when they remain useful.
 | API | Inline public reference when dedicated API docs do not cover it |
 
 Splash describes the opening block. Do not add a literal Splash heading.
+Name the Why heading after the project, such as "Why Brundlefly".
 Reuse approved assets and text. If artwork is absent, use a plain title and description.
 Do not invent badges, slogans, support channels, measurements, or compatibility claims.
 

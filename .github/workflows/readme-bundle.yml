@@ -1,0 +1,29 @@
+name: README bundle
+
+on:
+  push:
+    paths:
+      - 'skills/write-human/**'
+      - 'skills/readme/**'
+      - 'scripts/sync-readme-bundle*'
+      - '.github/workflows/readme-bundle.yml'
+  pull_request:
+    paths:
+      - 'skills/write-human/**'
+      - 'skills/readme/**'
+      - 'scripts/sync-readme-bundle*'
+      - '.github/workflows/readme-bundle.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+      - run: node --test scripts/sync-readme-bundle.test.mts
+      - run: node scripts/sync-readme-bundle.mts --check
