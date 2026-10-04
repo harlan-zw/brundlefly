@@ -19,11 +19,11 @@ Each skill carries its own references, so the workflows travel between repositor
 
 ## Features
 
-- ✍️ **[write-human](skills/write-human/SKILL.md):** edit generated-sounding prose while preserving facts, uncertainty, and voice.
-- 📖 **[technical-guide](skills/technical-guide/SKILL.md):** give readers supported instructions with checked examples and stated verification limits.
-- 🔀 **[pr](skills/pr/SKILL.md):** prepare review submissions that follow the target repository's rules and templates.
-- 🗜️ **[agentify-text](skills/agentify-text/SKILL.md):** reduce tokens while preserving facts, constraints, and working links.
-- 🧾 **[readme](skills/readme/SKILL.md):** explain a project's value and setup using bundled write-human rules.
+- ✍️ **Facts and voice:** edit prose while preserving claim scope, uncertainty, and the author's voice.
+- 🔍 **Checked guide examples:** inspect current code and run safe examples, with unavailable checks called out.
+- 🔀 **Repository conventions:** prepare review submissions using the target project's rules and templates.
+- 🗜️ **Smaller agent context:** reduce tokens while preserving facts, constraints, and working links.
+- 📦 **Self-contained workflows:** carry each skill's required references with it, without a sibling skill dependency.
 
 ## Setup
 
@@ -72,6 +72,14 @@ Pass the instructions to your agent and read the references they name.
 
 Describe the outcome you want. Your agent selects a skill from its description.
 You can name a skill when you want to request it explicitly.
+
+| Skill | Task described in its trigger |
+| --- | --- |
+| [write-human](skills/write-human/SKILL.md) | Edit prose for meaning and voice |
+| [technical-guide](skills/technical-guide/SKILL.md) | Research, verify, or refresh technical guides |
+| [pr](skills/pr/SKILL.md) | Prepare, open, or update a pull request |
+| [agentify-text](skills/agentify-text/SKILL.md) | Compress text for agents |
+| [readme](skills/readme/SKILL.md) | Write a README and establish its adoption case |
 
 ```text
 Edit this draft. Preserve its facts, uncertainty, and voice.

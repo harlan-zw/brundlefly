@@ -17,7 +17,7 @@ Inspect nearby READMEs when the user asks for collection conventions.
 Local requirements and the user's requested structure take precedence over stylistic defaults.
 
 Find approved splash assets, package metadata, supported tools, public entry points, examples, and documentation.
-Inspect relevant alternatives before claiming differentiation. Read [positioning guidance](references/positioning.md) for evidence and comparison boundaries.
+Research the adoption reason before drafting Why. Read [positioning guidance](references/positioning.md) for research and interview decisions.
 Check the actual source and CLI help before describing behavior or choosing setup commands.
 Distinguish the checkout from a published release. Do not claim registry availability from a package name alone.
 Keep an evidence ledger outside the repository for uncertain claims and checks.
@@ -43,7 +43,11 @@ Do not invent badges, slogans, support channels, measurements, or compatibility 
 
 Write each feature as `- <emoji> **<feature>:** <why the feature is useful>`.
 Keep the benefit concrete and supported. Preserve exact product terms.
-Use one feature per bullet. Do not turn the features into prose during the writing pass.
+Lead with reader-visible capabilities and outcomes. A list of skills, modules, or exports is an inventory, not necessarily Features.
+Keep useful inventory in a separate discovery or reference section.
+Use one capability per bullet by default. Follow an explicitly required format.
+If bullets distort the project, use a short prose overview or a compact comparison table, or omit Features.
+Explain that choice briefly in the handoff. Do not invent abstract benefits or ask merely to change the presentation.
 
 Give setup commands a working directory and explain their expected result.
 Use the project's package manager and documented runtime.
@@ -63,7 +67,7 @@ Keep concise discovery links, contribution rules, attribution, and licenses wher
 
 ## Review and verify
 
-Apply both bundled writing passes. Preserve required sections and feature syntax.
+Apply both bundled writing passes. Preserve required sections and the chosen feature presentation.
 Keep clear sentences unchanged. Remove unsupported claims rather than replacing them with invented evidence.
 Keep review commentary outside README.md.
 
