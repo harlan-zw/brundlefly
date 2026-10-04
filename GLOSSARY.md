@@ -9,6 +9,7 @@
 | technical-guide | skills/technical-guide | Creates and refreshes verified technical guides | technical-guide |
 | pr | skills/pr | Delivers repository-conforming GitHub pull requests | pr |
 | agentify-text | skills/agentify-text | Compresses text for agents while preserving substantial meaning | agentify-text |
+| readme | skills/readme | Writes repository READMEs with researched positioning and working setup | readme |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
 
 ## Terms
@@ -27,6 +28,10 @@ Use pr as the skill name. Pull request remains GitHub's name for the artifact.
 
 agentify-text owns meaning-preserving text compression for agents, including Markdown files.
 Use the owner's requested name for this skill.
+
+readme owns README creation and refresh, including setup and documentation routing.
+It works alone and can use write-human as an optional prose review.
+Use readme for this skill, rather than readme-writer or readme-guide.
 
 ## Banned
 
