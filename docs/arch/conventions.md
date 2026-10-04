@@ -17,3 +17,8 @@ Provider-specific plugin packaging can be added when a consumer requires it.
 write-human adapts the owner's humanize-writing instructions.
 Its personal skill links are replaced by self-contained source and copy-review rules.
 It preserves the upstream MIT notice in its own directory.
+
+readme extends write-human through a bundled copy in references/write-human.md.
+The bundle includes its research reference and MIT notice.
+When changing shared writing rules, update the bundled copy in the same change.
+Keep the copy identical apart from its relative research link.
