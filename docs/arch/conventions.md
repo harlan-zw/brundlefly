@@ -17,3 +17,8 @@ Provider-specific plugin packaging can be added when a consumer requires it.
 write-human adapts the owner's humanize-writing instructions.
 Its personal skill links are replaced by self-contained source and copy-review rules.
 It preserves the upstream MIT notice in its own directory.
+
+readme owns README structure, positioning, and reader-path checks.
+It carries its own positioning reference and a short writing checklist.
+It can use an available write-human skill for a prose review, without requiring it.
+Keep readme's positioning reference separate from write-human's instructions and references.

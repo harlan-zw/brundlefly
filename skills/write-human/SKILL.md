@@ -12,6 +12,9 @@ Edit generated-sounding prose in two passes: surface wording, then structure. Pr
 
 Given text or a file path, run both passes below, report what you flagged, then rewrite. Don't silently rewrite, show the user *which* tells you found so they learn to avoid them.
 
+For a file edit, keep review notes in the handoff, outside the published text.
+For a requested output format, follow that format and omit review notes when it excludes them.
+
 Edit only where a change solves a reading problem. Leave clear, natural sentences alone.
 Keep distinctive vocabulary and compressed phrasing when their meaning is clear. Do not add filler to smooth them out.
 Preserve claim scope, uncertainty, dates, units, attribution, and prerequisites in every genre.
@@ -74,6 +77,10 @@ Not every tell applies everywhere. Weight by genre:
 
 - **Tweets / social:** surface tells + specificity + direct address matter most. Skip structural nonlinearity.
 - **Release notes / docs:** specificity (real version numbers, PR links) and cutting the over-explained takeaway matter most. Keep structure clear, drop the moralizing.
+- **READMEs:** preserve requested section order, useful lookup headings, and parallel feature lists. Keep setup before deeper reference.
+  Treat commands, code, URLs, identifiers, and approved brand text as exact material, outside the prose pass.
+  Change them only when inspected evidence supports a technical correction. Recheck the reader's path afterward.
+  Apply digressions and unresolved tension only to genres that benefit from them. Keep instructions direct and complete.
 - **Blog posts / essays:** all of Pass 2 applies. This is where structure shows the most.
 - **Email:** direct address and dropping hedging filler matter most.
 
