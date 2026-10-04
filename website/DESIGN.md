@@ -1,6 +1,6 @@
 ---
 name: Brundlefly
-description: Grotesque pixel artwork in a readable dark biological interface.
+description: Organic 3D chamber with the canonical walking mascot and local conversation.
 colors:
   primary: "#E8D4A6"
   neutral: "#080B08"
@@ -50,41 +50,50 @@ components:
 
 ## Principle
 
-Start with the user's task. Make input, action, and result the strongest visual elements.
-The brand kit supplies materials. It does not override task clarity.
+The world and Brundlefly carry the homepage. Conversation appears only when the visitor chooses the mascot.
+The separate brand kit demonstrates reusable parts and their controls.
 
-## Layout
+## Homepage
 
-Use a task rail beside a quiet workspace. Task choices name outcomes and exact skill names.
-The canonical banner anchors the header. Organic artwork stays below navigation, outside the work surface.
-Forms begin empty. A deliberate example action supplies sample data.
-Retain each task's work when selection changes. Show output only after a successful run.
-At wide widths, input and output share the surface. On smaller screens, output follows input.
-Focus the result heading after success. Focus the error after invalid submission.
-Provide a copy action beside generated content, and complete skill downloads below the form.
+Fill the viewport with one continuous 3D chamber. Show no navigation, banner, tool pocket, or transform controls.
+Frame the complete rear tunnel with room around its rim. Place Brundlefly inside the chamber, ahead of the tunnel.
+Keep the walkable foreground clear. Show the ground, walls, and ceiling as connected biological surfaces.
+Brundlefly walks slowly across the ground and pauses. Keep his four arms, two legs, and unequal wings readable.
+Use the canonical character pixels on the 23-joint volumetric relief. Preserve its silhouette during walking.
+Keep the scene within the viewport at desktop and mobile sizes. Do not add page scrolling for decorative geometry.
+
+## Conversation
+
+Clicking Brundlefly opens a native dialog. The dialog pauses walking and sits over the scene.
+Use canonical local replies about the collection, skills, installation, and brand kit.
+State that replies are local. User text stays in the browser.
+Keep the dialog compact and readable. Separate visitor text and replies in reading order.
+Use native text input, submit, close, and Escape behavior. Return focus to the mascot after closing.
+The dialog does not run skills or simulate remote agent execution.
 
 ## Materials
 
-Use cream for text and primary actions, wing for secondary text, and chitin for boundaries.
-Flesh marks the selected task and the work surface edge. Bruise highlights wording signals.
-Use the existing banner and generated material assets. Never recreate the raster wordmark.
-Use BrandSurface, BrandChoice, and BrandAction from the shared layer.
-The full surround remains a reference artifact. BrandLair supplies receding geometry behind the page.
-Small clasps mark choices. Beads mark motion and actions. Sutures mark boundaries.
-Preserve canonical anatomy and the original alpha. Use pixelated rendering without stretching artwork.
+Use rust flesh, bruised folds, dark chitin, olive slime, and sparse teal reflections.
+Uneven ribs, connected tendons, membranes, puddles, and bristles establish a complete lair.
+Warm light reveals the mascot and folds. Sparse cold light separates the chamber depth.
+Use the supplied artwork and textures. Never recreate the raster wordmark or invent mascot anatomy.
+Cream carries dialog text and focus. Wing carries secondary text. Chitin supports quiet boundaries.
+Keep all generated seams outside editable dialog content.
 
 ## Typography
 
-Barlow Condensed carries the selected task heading. IBM Plex Sans carries editable text and task choices.
-IBM Plex Mono carries labels and generated Markdown. Inputs use 16px text.
-Controls use 14px text. Secondary skill identifiers may use 12px text.
+IBM Plex Sans carries editable text and conversation. Inputs use 16px text.
+Barlow Condensed carries functional dialog headings. IBM Plex Mono carries kit labels and generated code.
+Kit controls use 14px text and at least 44px targets.
 
 ## Accessibility and motion
 
-Keep targets at least 44px high. Use visible cream focus outlines and native labels.
-No artwork crosses text, inputs, or focus outlines. The interface stays dark under either system preference.
-The wet action hover and chamber share the motion control. Reduced motion stops idle animation and camera parallax.
-At 375px, task choices precede the selected task. Keep inputs and results in reading order.
+The mascot has a named keyboard target. Enter or Space opens the same dialog as a pointer click.
+Keep visible cream focus outlines. Do not place artwork over text, inputs, or focus outlines.
+System reduced motion stops walking, idle deformation, and camera movement.
+Pause scene animation while the dialog is open or the document is hidden.
+If WebGL fails, provide the canonical static mascot with the same conversation action.
+Keep the dialog within a 375px viewport. Conversation content may scroll inside the dialog.
 
 ## Voice
 
@@ -92,24 +101,23 @@ COPY.md owns every website string. Root GLOSSARY.md owns product names.
 
 ## Authority
 
-[Brand kit](../docs/brand/kit.md) lists artwork, provenance, palette, and layout decisions.
-This task-first revision supersedes the artwork-led instrument layout.
+[Brand kit](../docs/brand/kit.md) lists artwork, provenance, palette, and scene construction.
+The world-only homepage replaces the earlier tool-pocket composition.
 
 ## Shared layer
 
-The layer owns tokens, material pieces, safe zones, and 3D rendering.
-The kit app demonstrates composition without owning task logic.
-The tool app owns real local demos and reuses the same pieces.
-Use container queries for compositions. Keep artwork within the 20px edge zone.
-Do not cover content or focus outlines with material art.
+The layer owns tokens, material pieces, safe zones, and reusable 3D model sources.
+The separate /brand-kit/ app demonstrates composition, presets, materials, parts, and motion.
+Use container queries for kit compositions. Keep artwork within the 20px edge zone.
+BrandSurface, BrandChoice, BrandAction, and BrandDivider remain reusable kit pieces.
+The homepage consumes shared/world.ts and shared/mascot.ts through its local world renderer.
+The speech dialog uses the local conversation provider. It keeps task logic outside the shared visual layer.
 
-## Lair
+## Scene construction
 
-The chamber has no entry gate. The task is available immediately.
-Layered ribs and hinged chitin establish depth around the page.
-Ribs have uneven lobes and thickness. Tendons and translucent membranes connect their depths.
-Avoid repeated circular silhouettes. Organic seams connect quiet panel edges to the surrounding tissue.
-Typing produces a brief contraction. Field focus holds a mild response without moving the field.
-The canvas sits behind content and never intercepts pointer events.
-Keep readable surfaces quiet. Dim ambient materials before dimming text.
-The Motion lab isolates transform controls from the atmosphere.
+The world combines receding tunnel ribs, asymmetric tissue flanks, overhead arches, and a chitin floor.
+Place the tunnel behind Brundlefly. Leave space for his walk and contact shadow in the foreground.
+Slime, thin membranes, and bristles stay near the chamber perimeter.
+Use modest mesh resolution, instanced perimeter plates, and soft ground shading.
+The mascot GLB carries skin weights, skeleton, canonical texture, and idle and walk clips.
+Runtime GLSL remains in the layer source. The relief does not supply a full sculpted back or side.

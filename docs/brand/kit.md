@@ -1,6 +1,6 @@
 # Brundlefly brand kit
 
-This kit supplies composable Nuxt parts, material artwork, and an interactive 3D specimen.
+This kit supplies composable Nuxt parts, material artwork, a complete 3D lair, and the articulated Brundlefly relief.
 
 Open the website’s /brand-kit/ app to compose parts and copy Vue or JSON presets.
 Download the complete Nuxt layer there. [Layer source](../../website/layers/brand/README.md) defines installation and component APIs.
@@ -36,7 +36,7 @@ The layout responds to its container, so a nested preview behaves like a standal
 
 The app exports versioned presets. Imports parse values before generating Vue.
 The copied Vue runs an explicit component preview. Replace its handler with the page’s real task.
-Parts have no task logic. The tool page owns its input, results, and skill downloads.
+Parts have no task logic. The separate kit demonstrates controls. The homepage owns the world and local conversation.
 
 ## Design direction
 
@@ -58,7 +58,7 @@ Paths below are relative to the repository root.
 | Character sheet | assets/brand/character-sheet.png | Pose and material reference |
 | Social preview | assets/brand/github-social-preview.jpg | Link previews |
 | Earlier banner | assets/brand/github-banner.png | Existing alternate, canonical gross banner takes priority |
-| Earlier overhang | assets/brand/github-banner-overhang.png | Existing alternate, do not substitute on the tool page |
+| Earlier overhang | assets/brand/github-banner-overhang.png | Existing alternate, canonical gross banner takes priority |
 | Material board, 1536 × 1024 | assets/brand/kit/material-board.png | Flesh rim, wing, mucus, chitin, tendon, aperture reference |
 | Instrument surround, 1536 × 1024, RGBA | assets/brand/kit/instrument-surround.png | Irregular outer boundary of the work area |
 | Aperture, 1254 × 1254, RGBA | assets/brand/kit/aperture.png | Idle output and interaction feedback |
@@ -67,7 +67,7 @@ Paths below are relative to the repository root.
 | Generation prompts | assets/prompts/* | Reproduction and provenance |
 | Design tokens and rules | website/DESIGN.md | Code-facing implementation contract |
 | Shared materials and motion | website/layers/brand/app/assets/css/brand.css | Palette, pieces, edge zones, focus and reduced motion |
-| Page layout | website/app/assets/css/main.css | Task-specific composition |
+| Page layout | website/app/assets/css/main.css | Full-viewport world and conversation |
 | Modular concept | assets/brand/kit/modular/design-direction.png | Design exploration, never public copy |
 | Flesh corner | assets/brand/kit/modular/flesh-corner.png | RGBA 1254 × 1254, interchangeable corner cap |
 | Membrane divider | assets/brand/kit/modular/membrane-divider.png | RGBA 1536 × 1024, ragged wing strip |
@@ -111,28 +111,30 @@ Keep artwork outside editable areas. Leave more darkness than ornament.
 | Living instrument | Asymmetric surround; controls attach to its edge; input and output occupy the opening | Rejected after owner review, artwork competed with task clarity |
 | Specimen drawer | Separate specimens open vertically into work surfaces | Reserve, adds navigation before the task |
 | Wing map | Skill controls sit on a branching membrane with floating input | Reserve, impressive but weaker mobile reading order |
-| Task-first workspace | Outcome choices beside an unobstructed form; results follow submission | Selected after owner review, user workflow comes first |
+| Task-first workspace | Outcome choices beside an unobstructed form; results follow submission | Earlier workflow exploration |
+| World and conversation | Complete 3D chamber, walking mascot, conversation on click | Current homepage contract |
 
-## Tool page contract
+## Homepage contract
 
-Three task choices name outcomes and retain exact skill names.
-The canonical banner anchors identity. Edge artwork stays outside the readable content zone.
-Forms begin empty. Use example fills sample data only on request.
-Task changes retain input and results. Editing input clears stale output.
-Show results after submission. Focus the result or error. Offer a copy action beside the result.
-Place full skill downloads and instructions below the form.
-On mobile, task choices precede input and results. No material can obscure a control.
+The homepage shows one complete 3D world with Brundlefly. It has no visible navigation, banner, or tool panels.
+The tunnel sits behind the mascot. A clear foreground gives him room to walk.
+Clicking the mascot opens a native speech dialog. Keyboard activation opens the same dialog.
+The dialog accepts local text and explains the skills, installation, or brand kit using canonical replies.
+It states the local reply boundary. It does not execute skills or claim remote AI responses.
+Closing the dialog returns focus to the mascot and resumes motion when allowed.
+The brand kit remains a separate /brand-kit/ route with its composition and material controls.
 
 ## Motion and interaction
 
-The primary action grows a small slime drip on hover.
-The tool page sits inside a 3D chamber. It starts without an entrance gate or extra click.
-The chamber responds to pointer movement and scroll. Native button presses produce a small compression response.
-It never intercepts a form event. Reduced motion disables ambient camera and button reactions.
-The kit Motion section offers separate aperture and lair scenes, with squeeze, twist, and unfurl controls.
-Motion off and system reduced motion stop idle motion. Pointer pressure remains an explicit interaction.
+Brundlefly walks slowly within the foreground and pauses between movements.
+The world breathes through small tissue and tendon changes. Keep the mascot silhouette readable.
+Opening the conversation pauses the walk. System reduced motion freezes the walk and ambient deformation.
+The mascot remains clickable and keyboard accessible when motion stops.
+The kit Motion section offers aperture and lair specimens with squeeze, twist, and unfurl controls.
+Its Brundlefly toggle adds the canonical rig. Explicit pressure remains available when idle motion stops.
 Hidden and offscreen specimens stop their animation loop. Teardown disposes GPU resources.
-If WebGL or the texture fails, use the static aperture with a clear status.
+If WebGL fails on the homepage, use the static canonical mascot with the same conversation action.
+Kit specimens use the static aperture fallback with a clear status.
 
 ## 3D construction
 
@@ -146,12 +148,12 @@ GLSL adds pressure displacement, pulse, cool rim light, and wet highlights.
 Viscosity sets pressure response speed. Wetness sets the highlight strength.
 The diffuse texture uses mirrored repeat. The supplied color image is not a normal map.
 Geometry normals and shader deformation supply depth. No bone skeleton is required for this material specimen.
-The canonical mascot has no invented rig or new anatomy.
+The separate mascot rig preserves canonical anatomy with 23 joints and blended skin weights.
 
 The GLB contains rest geometry and a PBR texture. Runtime GLSL remains in the layer source.
 The kit can export its current model. The checked-in rest model provides a fixed interchange artifact.
 Blender can edit that GLB. A .blend file is unnecessary for this procedural source.
-Blender import was not exercised on this host.
+Import the GLB into Blender to inspect its geometry, texture, skeleton, and animation clips.
 
 ## Portability
 
@@ -164,17 +166,17 @@ This explicit build avoids Cloudflare CLI framework guessing across the monorepo
 
 ## Limits
 
-These are local workflow demos, not remote agent execution.
-Writing signals invite review. They cannot identify an author.
-The guide demo produces a structure. The PR demo formats a draft.
-Keep these limits in an expandable disclosure near the work area.
+Conversation uses local replies. Text stays in the browser.
+Replies cover the collection, skills, installation, and brand kit. They do not run skills.
+The kit component preview echoes input to demonstrate composition.
+The portable layer supplies visual pieces and model sources. The consuming app owns its task behavior.
 
 ## Lair direction
 
 ![Lair exploration](../../assets/brand/kit/lair/lair-direction.png)
 
 The canonical banner and modular concept seeded this image before the 3D revision.
-The implemented chamber keeps readable controls within quiet surfaces.
+The implemented chamber becomes the homepage world. The separate kit keeps controls within quiet surfaces.
 New small details use separate PNGs, rather than cutting the concept into a sprite sheet.
 [Exact prompts and seeds](../../assets/prompts/lair-kit.json) record the built-in imagegen work.
 The generated concept never replaces the supplied wordmark.
@@ -270,8 +272,43 @@ The banner and diffuse texture seeded this exploration before the organic mesh r
 The surface seam remains a separate transparent file. The concept supplies direction rather than UI pixels.
 Flesh surfaces use the seam when they have decorative edges.
 The edge mask keeps it away from text, fields, and focus outlines.
-Typing briefly contracts the chamber and seam. Field focus holds light pressure.
-Button presses apply a stronger response. No native form events are intercepted.
-Motion off and reduced motion stop these ambient reactions.
+Reusable BrandLair surfaces can respond to typing, focus, and native button presses.
+The world-only homepage uses slow ambient tissue movement and the walking mascot instead.
+Reduced motion stops the walk and ambient reactions.
 The new GLBs include uneven fold geometry, connective tendons, membranes, and textures.
 Earlier rest snapshots remain available as historical construction references.
+
+## World composition
+
+The homepage fills the viewport with the world. The scene has no rectangular panel boundary or visible tool controls.
+The rear tunnel, tissue walls, overhead arches, and ground form one chamber.
+Brundlefly walks through its clear foreground. His contact shadow anchors him to the floor.
+Clicking him opens the speech dialog. The dialog pauses walking and provides native local text conversation.
+Desktop and mobile use the same world. Frame the mascot and complete tunnel without adding page scrolling.
+The separate brand kit retains its functional layout controls and composition examples.
+
+## Mascot rig
+
+The canonical character pixels map onto an extruded silhouette with front, back, and edge geometry.
+A distance field supplies rounded depth. Dark background pixels define mesh occupancy without changing the source artwork.
+The rig has 23 joints and blended skin weights. It preserves four arms, two legs, and two unequal wings.
+The head follows the pointer. Pressure moves elbows and hands. Unfurl opens the wings.
+Idle motion breathes through the chest and shifts the knees and wings.
+The exported GLB includes the skinned mesh, canonical texture, skeleton, and idle and walk clips.
+The artifact is a volumetric relief. A full side and back sculpt needs additional modeling.
+The generated sculpt reference supplies that direction. Canonical anatomy remains authoritative.
+
+| File | Type | Role |
+| --- | --- | --- |
+| assets/brand/character.png | 1199 × 1312, PNG | Unchanged canonical texture |
+| assets/brand/kit/lair/mascot-sculpt-reference.png | 1199 × 1312, PNG | Generated sculpt direction |
+| assets/prompts/mascot-rig.json | JSON | Exact prompt and references |
+| assets/brand/kit/lair/brundlefly-rig.glb | GLB 2.0, 6,580,204 bytes | Rigged relief with idle and walk clips |
+| website/layers/brand/shared/mascot.ts | TypeScript | Geometry, skin weights, bones, idle and walk clips |
+| website/layers/brand/shared/world.ts | TypeScript | Chamber geometry, materials, lights, and ambient movement |
+| website/app/pages/_WorldScene.client.vue | Vue | World lifecycle, walking, raycast, and keyboard conversation target |
+| website/app/pages/_SpeechDialog.vue | Vue | Native local text conversation |
+| website/shared/conversation.ts | TypeScript | Canonical local replies and input boundary |
+
+The kit Motion section has a Brundlefly toggle. Download GLB exports the mascot when that toggle is active.
+The portable ZIP supplies runtime art and source. GLB interchange artifacts have separate download URLs.

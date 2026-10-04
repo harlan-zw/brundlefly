@@ -6,7 +6,7 @@ import { defaultPreset, parts, palette } from '../layers/brand/shared/catalogue.
 const source = new URL('../../assets/brand/', import.meta.url)
 const target = new URL('../public/brand/', import.meta.url)
 await mkdir(target, { recursive: true })
-await Promise.all(['github-banner-overhang-gross.png', 'github-avatar.png'].map(name =>
+await Promise.all(['github-banner-overhang-gross.png', 'github-avatar.png', 'character.png'].map(name =>
   copyFile(new URL(name, source), new URL(name, target)),
 ))
 await cp(new URL('kit/', source), new URL('kit/', target), { recursive: true })
@@ -44,9 +44,9 @@ for (const name of ['nuxt.config.ts', 'package.json', 'README.md']) {
 for (const directory of ['app', 'shared', 'public']) {
   Object.assign(bundle, await collectFiles(new URL(`${directory}/`, layer), `brundlefly-brand/${directory}`))
 }
-// The portable layer needs runtime parts. Concept boards remain in the full brand archive.
+// The portable layer needs runtime parts. Concepts and interchange models have separate download URLs.
 for (const path of Object.keys(bundle)) {
-  if (['design-direction.png', 'lair-direction.png', 'visceral-direction.png', 'material-board.png', 'instrument-surround.png', 'aperture-rest.glb', 'aperture-rest-v2.glb', 'lair-rest.glb'].some(name => path.endsWith(`/${name}`))) delete bundle[path]
+  if (path.endsWith('.glb') || ['design-direction.png', 'lair-direction.png', 'visceral-direction.png', 'mascot-sculpt-reference.png', 'material-board.png', 'instrument-surround.png'].some(name => path.endsWith(`/${name}`))) delete bundle[path]
 }
 await writeFile(new URL('brand-layer.zip', kit), zipSync(bundle))
 await writeFile(new URL('catalogue.json', kit), JSON.stringify({ palette, parts, preset: defaultPreset }, null, 2))

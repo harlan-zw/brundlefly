@@ -44,6 +44,7 @@ export const fragmentShader = `
 uniform sampler2D uTexture;
 uniform float uWetness;
 uniform float uChitin;
+uniform float uBrightness;
 varying vec2 vUv;
 varying vec3 vPosition;
 varying vec3 vNormal;
@@ -61,7 +62,7 @@ void main() {
   vec3 wet = vec3(0.8, 0.7, 0.45) * sheen * (0.12 + uWetness * 0.75) * (1.0 - uChitin * 0.45);
   vec3 cold = vec3(0.025, 0.08, 0.085) * rim * (0.3 + uChitin);
   float depth = exp(-max(0.0, -vPosition.z - 4.0) * 0.16);
-  gl_FragColor = vec4((skin * (0.25 + diffuse * 0.8) + wet + cold) * depth, 1.0);
+  gl_FragColor = vec4((skin * (0.25 + diffuse * 0.8) + wet + cold) * depth * uBrightness, 1.0);
   #include <colorspace_fragment>
 }`
 
@@ -105,12 +106,13 @@ function tissueFold(radius: number, thickness: number, depth: number, lair: bool
 }
 
 /** Shared material geometry. The lair is an environment, never mascot anatomy. */
-export function createOrganismModel(texture: Texture, presentation: Presentation = 'specimen') {
+export function createOrganismModel(texture: Texture, presentation: Presentation = 'specimen', brightness = 1) {
   const root = new Group()
   const uniforms = {
     uTexture: { value: texture }, uTime: { value: 0 }, uPressure: { value: 0 },
     uWetness: { value: 0.75 }, uPointer: { value: { x: 0, y: 0 } },
     uOpening: { value: 0.5 }, uTwist: { value: 0 },
+    uBrightness: { value: brightness },
   }
   const flesh = new ShaderMaterial({ uniforms: { ...uniforms, uChitin: { value: 0 } }, vertexShader, fragmentShader })
   const chitin = new ShaderMaterial({ uniforms: { ...uniforms, uChitin: { value: 1 } }, vertexShader, fragmentShader })

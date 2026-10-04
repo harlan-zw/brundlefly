@@ -1,59 +1,13 @@
 <script setup lang="ts">
-import { usePreferredReducedMotion } from '@vueuse/core'
-import { computed, ref } from 'vue'
-import SkillDemo from './_SkillDemo.vue'
-import type { SkillName } from '#shared/content'
-
-const tasks = [
-  { name: 'write-human', title: 'Review wording', instruction: 'Paste your text to get wording suggestions.' },
-  { name: 'technical-guide', title: 'Build a guide outline', instruction: 'Set the reader and task to get a guide structure.' },
-  { name: 'pr', title: 'Format a PR draft', instruction: 'Describe the change to get a title and description.' },
-] as const
-const activeSkill = ref<SkillName>('write-human')
-const selected = computed(() => tasks.find(task => task.name === activeSkill.value)!)
-const reducedMotion = usePreferredReducedMotion()
-const motionOff = ref(false)
-const motionPaused = computed(() => motionOff.value || reducedMotion.value === 'reduce')
+import { ref } from 'vue'
+import WorldScene from './_WorldScene.client.vue'
+import SpeechDialog from './_SpeechDialog.vue'
+const talking = ref(false)
 </script>
 
 <template>
-  <BrandLair :motion-off="motionPaused">
-  <div class="site-shell" :data-motion="motionPaused ? 'off' : 'on'">
-    <a class="skip-link" href="#main">Skip to content</a>
-    <header class="site-header">
-      <a href="#main" class="identity" aria-label="Brundlefly home">
-        <img src="/brand/github-banner-overhang-gross.png" alt="Brundlefly" width="1280" height="610" fetchpriority="high">
-      </a>
-      <div class="header-actions">
-        <a href="/brand-kit/">Brand kit ↗</a>
-        <button class="motion-toggle" :aria-pressed="motionPaused" @click="motionOff = !motionOff">
-          <img class="motion-bead" :src="'/brand/kit/lair/bead.png'" alt="" width="1254" height="1254" aria-hidden="true">{{ motionPaused ? 'Motion off' : 'Motion on' }}
-        </button>
-      </div>
-    </header>
-    <div class="workbench">
-      <aside class="task-rail">
-        <h2>Choose a task</h2>
-        <div class="task-choices" role="group" aria-label="Choose a task">
-          <BrandChoice v-for="task in tasks" :key="task.name" :selected="activeSkill === task.name" :label="task.title" :detail="task.name" @click="activeSkill = task.name" />
-        </div>
-        <BrandDivider part="suture" />
-      </aside>
-      <main id="main" class="workspace">
-        <div class="task-heading">
-          <div><h1>{{ selected.title }}</h1><p>{{ selected.instruction }}</p></div>
-          <span class="local-note">Your input stays in this browser.</span>
-        </div>
-        <BrandSurface class="task-surface" material="flesh" edges="corners" :density="0.65">
-          <SkillDemo v-for="task in tasks" v-show="activeSkill === task.name" :key="task.name" :skill="task.name" />
-        </BrandSurface>
-        <div class="skill-use">
-          <div><h2>Use a skill</h2><p>Copy the complete skill directory into your agent’s supported skills directory.</p></div>
-          <a class="download-link" :href="`/skills/${activeSkill}.zip`" download>Download {{ activeSkill }} ↓</a>
-          <a :href="`/skills/${activeSkill}.md`">Instructions ↗</a>
-        </div>
-      </main>
-    </div>
-  </div>
-  </BrandLair>
+  <main aria-label="Brundlefly">
+    <WorldScene :paused="talking" @talk="talking = true" />
+    <SpeechDialog :open="talking" @close="talking = false" />
+  </main>
 </template>
