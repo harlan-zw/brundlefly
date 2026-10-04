@@ -4,7 +4,7 @@ Use the target repository's evidence. The author's personal conventions are not 
 
 ## Written guidance
 
-Read the applicable Agent instructions, contribution guide, PR guidance, and title validation configuration.
+Read the applicable Agent instructions, contribution guide, and PR description guidance.
 Resolve the contribution target in fork workflows before choosing its rules.
 The target's default branch may differ from the checkout or selected PR base.
 
@@ -45,13 +45,11 @@ If examples disagree, follow written rules and report any material unresolved re
 
 Only use a fallback when no applicable guidance supplies the structure:
 
-- A short title describing the actual change.
 - The concrete problem or goal, then the resulting behavior.
 - Material risks, migration steps, or meaningful verification when reviewers need them.
 
-Do not require Conventional Commits, a testing section, a bot label, or a fixed branch prefix universally.
-Follow the applicable requirements for each of these.
-Include the skill's plain authorship disclosure even when no repository-specific formula exists.
+Do not require a testing section or a fixed disclosure formula universally.
+Follow the applicable description requirements from the caller, user, and repository.
 Honor authorship and disclosure requirements from the user and repository; contributor habits cannot remove them.
 
 ## Official reference

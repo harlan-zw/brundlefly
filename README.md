@@ -77,18 +77,19 @@ You can name a skill when you want to request it explicitly.
 | --- | --- |
 | [write-human](skills/write-human/SKILL.md) | Edit prose for meaning and voice |
 | [technical-guide](skills/technical-guide/SKILL.md) | Research, verify, or refresh technical guides |
-| [pr](skills/pr/SKILL.md) | Prepare, open, or update a pull request |
+| [pull-request-summary](skills/pull-request-summary/SKILL.md) | Draft or check PR descriptions against the change and repository conventions |
 | [agentify-text](skills/agentify-text/SKILL.md) | Compress text for agents |
 | [readme](skills/readme/SKILL.md) | Write a README and establish its adoption case |
 
 ```text
 Edit this draft. Preserve its facts, uncertainty, and voice.
 Refresh this tutorial against the supported release. Verify its examples.
-Submit these changes as a PR. Follow the repository template and recent maintainer conventions.
+Use pull-request-summary to check this PR description against the diff and repository template. Return the revised text.
 Reduce tokens in this Markdown file. Preserve its rules, exceptions, and working links.
 ```
 
-GitHub publication through pr needs an authorized GitHub integration.
+A delivery Skill can call pull-request-summary and supply its own description policy.
+The caller owns publication. Supplied inputs need no GitHub integration.
 Technical-guide uses the target project's tools and reports unavailable checks.
 Keep personal stories in their author's voice.
 
