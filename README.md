@@ -6,9 +6,16 @@ A collection of self-contained Agent Skills for writing and repository work.
 
 ## Why Brundlefly
 
-Your agent needs different instructions for editing prose, verifying a guide, and submitting a PR.
-Choose the skill for your task. Each directory includes the instructions and references it needs.
-Copy one skill without bringing a personal checkout or private services with it.
+A tutorial can read well and still give you a broken command.
+A PR can sound natural and still miss the target repository's conventions.
+
+[Humanizer](https://github.com/blader/humanizer/blob/225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8/SKILL.md)
+and [Stop Slop](https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/SKILL.md) focus on prose editing.
+Brundlefly combines that work with checking guide examples and preparing submissions for the repository you're working in.
+
+Install it when your agent needs to carry developer writing through to a usable guide or review submission.
+The skills preserve facts and voice, inspect the target project's rules, and report checks they could not run.
+Each skill carries its own references, so the workflows travel between repositories without a personal checkout or private services.
 
 ## Features
 
@@ -28,24 +35,26 @@ git clone https://github.com/harlan-zw/brundlefly.git
 cd brundlefly
 ```
 
-Copy a complete skill directory into your agent's supported skills directory.
+Copy the skill collection into your agent's supported skills directory.
 For Codex on Linux or macOS:
 
-If ~/.agents/skills/readme already exists, review it before replacing it.
-Run the copy command only when that destination is absent.
+If matching skill directories already exist in ~/.agents/skills, review them before replacing them.
+Run this copy command when those destinations are absent.
 
 ```sh
 mkdir -p ~/.agents/skills
-cp -R skills/readme ~/.agents/skills/readme
+cp -R skills/. ~/.agents/skills/
 ```
 
-The copy includes SKILL.md, bundled writing rules, the research reference, and the license.
-For another skill, replace readme in both paths with its directory name.
+The copy includes each skill's instructions, references, and license.
+Your agent reads the descriptions to find the skill that matches your request.
+It loads that skill's full instructions when the task calls for them.
+See [how Agent Skills work](https://agentskills.io/home#how-do-agent-skills-work).
 
 Ask your agent:
 
 ```text
-Use readme to refresh README.md. Follow this repository's conventions and verify the setup examples.
+Refresh README.md. Follow this repository's conventions and verify the setup examples.
 ```
 
 If you already have skilld, load the instructions without installing the skill:
@@ -61,14 +70,14 @@ Pass the instructions to your agent and read the references they name.
 
 ### Skills
 
-Use write-human for prose edits and technical-guide when the reader needs a verified technical workflow.
-Use pr for submission, agentify-text for compression, and readme for the repository's opening documentation.
+Describe the outcome you want. Your agent selects a skill from its description.
+You can name a skill when you want to request it explicitly.
 
 ```text
-Use write-human to edit this draft. Preserve its facts, uncertainty, and voice.
-Use technical-guide to refresh this tutorial against the supported release. Verify its examples.
-Use pr to submit these changes. Follow the repository template and recent maintainer conventions.
-Use agentify-text to reduce tokens in this Markdown file. Preserve its rules, exceptions, and working links.
+Edit this draft. Preserve its facts, uncertainty, and voice.
+Refresh this tutorial against the supported release. Verify its examples.
+Submit these changes as a PR. Follow the repository template and recent maintainer conventions.
+Reduce tokens in this Markdown file. Preserve its rules, exceptions, and working links.
 ```
 
 GitHub publication through pr needs an authorized GitHub integration.

@@ -1,6 +1,6 @@
 ---
 name: readme
-description: "Create or refresh a repository README with a splash, why, features, setup, and relevant guides or API reference. Use when writing a README or aligning it with repository conventions."
+description: "Create or refresh a repository README with a splash, competitive positioning, features, setup, and relevant guides or API reference. Use when writing a README, explaining why to adopt a package, or aligning its documentation with repository conventions."
 license: MIT
 ---
 
@@ -17,6 +17,7 @@ Inspect nearby READMEs when the user asks for collection conventions.
 Local requirements and the user's requested structure take precedence over stylistic defaults.
 
 Find approved splash assets, package metadata, supported tools, public entry points, examples, and documentation.
+Inspect relevant alternatives before claiming differentiation. Read [positioning guidance](references/positioning.md) for evidence and comparison boundaries.
 Check the actual source and CLI help before describing behavior or choosing setup commands.
 Distinguish the checkout from a published release. Do not claim registry availability from a package name alone.
 Keep an evidence ledger outside the repository for uncertain claims and checks.
@@ -29,7 +30,7 @@ Use this order by default. Keep existing anchors when they remain useful.
 | Section | Reader need |
 | --- | --- |
 | Splash | Approved banner or logo, project name, and a factual one-line description |
-| Why | The concrete problem and who benefits from solving it |
+| Why | Why adopt this package over relevant alternatives, and which unmet problem it addresses |
 | Features | Supported capabilities with a useful benefit for each |
 | Setup | Prerequisites, installation, and the smallest working example |
 | Guides | Inline task guidance when dedicated guides do not cover it |
@@ -48,6 +49,9 @@ Give setup commands a working directory and explain their expected result.
 Use the project's package manager and documented runtime.
 Show one common path before alternatives. Identify optional tools where they appear.
 For a skill collection, show how to load or copy a complete skill and give an example request.
+Lead with installing the collection, then asking for a task in natural language.
+Explain that the agent matches installed descriptions to the task. Keep explicit skill selection as an optional override.
+Check the host's discovery behavior before promising automatic activation. Do not present standard discovery as a unique feature.
 Check for an existing destination before copying. Avoid nesting or replacing an installed skill without the reader's choice.
 Do not invent a runtime API for a Markdown-only collection.
 
