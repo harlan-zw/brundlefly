@@ -32,6 +32,7 @@ const groups: { label: string; sliders: Slider[] }[] = [
     { key: 'inner', label: 'Inner light', min: 0, max: 15, step: 0.1 },
     { key: 'exposure', label: 'Exposure', min: 0.2, max: 2.5, step: 0.05 },
     { key: 'textureGlow', label: 'Texture glow', min: 0, max: 1, step: 0.01 },
+    { key: 'reflections', label: 'Reflections', min: 0, max: 2, step: 0.05 },
   ] },
   { label: 'Scene', sliders: [
     { key: 'fog', label: 'Fog', min: 0, max: 0.1, step: 0.001 },

@@ -47,7 +47,7 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   // Connected angular cave shoulders surround the clearing and both player camera positions.
   const enclosureGeometry = createCaveGeometry(textures.roomHeight.raster, [0, groundLevel + 4, 5])
   const enclosureSkin = createTissueMaterial({ surface: 'enclosure', texture: textures.room,
-    height: textures.roomHeight.texture, color: '#A09280',
+    height: textures.roomHeight.texture, shell: textures.chitin, color: '#A09280',
     bumpScale: 0.28, emissive: '#69404B', glow: 0.28, roughness: 0.92 })
   const enclosure = new Mesh(enclosureGeometry, enclosureSkin.material)
   enclosure.position.set(0, groundLevel + 4, 5)
@@ -61,10 +61,9 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     bumpScale: 0.1, roughness: 0.46, clearcoat: 0.7, clearcoatRoughness: 0.28 })
   const bruise = new MeshPhysicalMaterial({ color: '#69404B', map: texture, bumpMap: texture,
     bumpScale: 0.12, roughness: 0.55, clearcoat: 0.42 })
-  const chitin = new MeshPhysicalMaterial({ color: '#69716A', map: textures.chitin, bumpMap: textures.chitin,
-    bumpScale: 0.12, roughness: 0.72, clearcoat: 0.18, clearcoatRoughness: 0.6 })
-  const goo = createGooMaterial(gooTexture)
-  const slime = goo.material
+  // Glassy dark chitin. Its flat facets catch sharp glints from the wet environment.
+  const chitin = new MeshPhysicalMaterial({ color: '#4A4F44', map: textures.chitin, bumpMap: textures.chitin,
+    bumpScale: 0.12, roughness: 0.42, clearcoat: 1, clearcoatRoughness: 0.1 })
   const eggs = createEggSacs(textures.egg, textures.chitin)
   root.add(eggs.root)
 
@@ -156,39 +155,6 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     root.add(tendon)
   }
 
-  const puddleGeometry = new SphereGeometry(1, 24, 10)
-  const puddlePositions = puddleGeometry.getAttribute('position')
-  for (let index = 0; index < puddlePositions.count; index++) {
-    const x = puddlePositions.getX(index)
-    const z = puddlePositions.getZ(index)
-    const angle = Math.atan2(z, x)
-    const swelling = 1 + Math.sin(angle * 3 + 0.7) * 0.17 + Math.cos(angle * 7) * 0.07
-    const y = puddlePositions.getY(index)
-    const radial = Math.min(1, Math.hypot(x, z))
-    const meniscus = Math.exp(-(((radial - 0.86) / 0.14) ** 2)) * 0.65
-    puddlePositions.setXYZ(index, x * swelling, y > 0 ? y * 0.22 + meniscus : y, z * swelling)
-  }
-  puddleGeometry.computeVertexNormals()
-  for (let index = 0; index < 6; index++) {
-    const side = index % 2 === 0 ? -1 : 1
-    const puddle = new Mesh(puddleGeometry, slime)
-    puddle.position.set(side * (2.2 + Math.sin(index * 1.3) * 0.35), groundLevel + 0.012, 3.1 - Math.floor(index / 2) * 1.7)
-    puddle.scale.set(0.6 + index % 3 * 0.18, 0.022, 0.38 + index % 2 * 0.15)
-    puddle.rotation.y = index * 0.74
-    root.add(puddle)
-  }
-
-  // Shallow runoff leads away from the lips and along the edge of the walking apron.
-  for (const side of [-1, 1]) {
-    const runoff = new Mesh(new TubeGeometry(new CatmullRomCurve3([
-      new Vector3(side * 1.7, 0, -2.6), new Vector3(side * 2.3, 0.025, -1.3),
-      new Vector3(side * 2.1, 0, 0.4), new Vector3(side * 2.75, 0.015, 2.9),
-    ]), 40, 0.11, 8, false), slime)
-    runoff.position.y = groundLevel + 0.025
-    runoff.scale.y = 0.13
-    root.add(runoff)
-  }
-
   // Raycast actual carved shelves, so each wet drape starts on the cave instead of floating nearby.
   enclosure.updateMatrixWorld(true)
   const caveFilm = createGooMaterial(gooTexture)
@@ -263,8 +229,8 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
       const tissueMotion = { time, breath: settings.breath, flow: settings.flow }
       enclosureSkin.update(tissueMotion)
       floorSkin.update(tissueMotion)
+      floorSkin.material.roughness = 0.86 - settings.wetness * 0.75
       tissue.roughness = 0.78 - settings.wetness * 0.35
-      goo.update({ time, breath: settings.breath, flow: settings.flow, wetness: settings.wetness, key: settings.key, fill: settings.fill, rim: settings.rim })
       caveFilm.update({ time, breath: settings.breath, flow: settings.flow, wetness: settings.wetness, key: settings.key, fill: settings.fill, rim: settings.rim })
       caveSlime.update({ time, breath: settings.breath, flow: settings.flow })
       eggs.update({ time, breath: settings.breath, wetness: settings.wetness })

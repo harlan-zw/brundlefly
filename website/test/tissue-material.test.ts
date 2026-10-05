@@ -9,7 +9,7 @@ test('room tissue owns raw bump and roughness maps without disposing its caller 
   const height = new Texture({ name: 'Dedicated room height' })
   let sourceDisposals = 0
   artwork.addEventListener('dispose', () => { sourceDisposals++ })
-  const surface = createTissueMaterial({ surface: 'enclosure', texture: artwork, height, color: '#69404B',
+  const surface = createTissueMaterial({ surface: 'enclosure', texture: artwork, height, shell: new Texture(), color: '#69404B',
     bumpScale: 0.14, emissive: '#69404B', glow: 0.28, roughness: 0.84 })
   assert.ok(surface.material.roughnessMap)
   assert.equal(surface.material.roughnessMap, surface.material.bumpMap)
@@ -28,7 +28,7 @@ test('room tissue owns raw bump and roughness maps without disposing its caller 
 test('room motion keeps native material clocks frozen when flow and breath stop', () => {
   const artwork = new Texture()
   const height = new Texture()
-  const surface = createTissueMaterial({ surface: 'enclosure', texture: artwork, height, color: '#69404B',
+  const surface = createTissueMaterial({ surface: 'enclosure', texture: artwork, height, shell: new Texture(), color: '#69404B',
     bumpScale: 0.14, emissive: '#69404B', glow: 0.28, roughness: 0.84 })
   const shader = { vertexShader: ShaderLib.standard.vertexShader, fragmentShader: ShaderLib.standard.fragmentShader,
     uniforms: UniformsUtils.clone(ShaderLib.standard.uniforms) }

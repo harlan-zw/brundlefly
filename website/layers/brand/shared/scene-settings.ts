@@ -12,6 +12,7 @@ export type SceneSettings = {
   flow: number
   wetness: number
   textureGlow: number
+  reflections: number
   opening: number
   masterVolume: number
   ambienceVolume: number
@@ -20,7 +21,7 @@ export type SceneSettings = {
 }
 
 export const defaultSceneSettings: SceneSettings = {
-  ambient: 1.25,
+  ambient: 0.85,
   key: 79,
   fill: 2.05,
   rim: 2.35,
@@ -32,7 +33,8 @@ export const defaultSceneSettings: SceneSettings = {
   breath: 1,
   flow: 1,
   wetness: 0.59,
-  textureGlow: 0.94,
+  textureGlow: 0.7,
+  reflections: 1,
   opening: 0.47,
   masterVolume: 0.35,
   ambienceVolume: 0.55,

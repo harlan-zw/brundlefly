@@ -124,7 +124,9 @@ The ImageGen scene map in assets/source/scene-map.png guides the shared scene-la
 An inward-facing textured enclosure closes the ceiling, rear wall, and edges behind the chamber.
 Both camera framings remain inside it. Keep its bruised surface visible without competing with the mascot.
 Place the tunnel behind Brundlefly. A crescent walking apron separates him from uneven side egg clusters.
-Shallow mucus runoff links the lips to perimeter pools. Keep the centre clear.
+Slime pools inside the floor surface, with soft and uneven edges. Pools gather toward the walls. Keep the centre clear.
+Dark glassy chitin plates break through the enclosure flesh. Red tissue stays in the folds between them.
+A dark environment with small light cards gives wet surfaces sparse glints. The Reflections control sets its strength.
 Peristaltic contraction travels through the six rings. Tendons, membranes, plates, and bristles follow the deformation.
 Slime, thin membranes, and bristles stay near the chamber perimeter.
 Mucus uses a flowing membrane texture, displaced ripples, and wet highlights that move with its surface.
