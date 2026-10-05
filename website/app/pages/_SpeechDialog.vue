@@ -82,7 +82,7 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
 .speech-pocket { position: fixed; inset: auto; bottom: 24px; left: 50%; translate: -50% 0; box-sizing: border-box; width: min(800px, calc(100vw - 48px)); max-height: min(380px, 48dvh); margin: 0; padding: 24px 28px 18px; overflow: visible; color: #e8d4a6; background: #10130fec; border: 1px solid #69404b; border-radius: 35px 14px 30px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22; }
 .speech-pocket[open] { display: flex; flex-direction: column; }
 .speech-pocket::backdrop { background: #080b0812; }
-.speech-seam { position: absolute; width: 95%; height: 58px; top: -28px; left: 2.5%; object-fit: cover; image-rendering: pixelated; pointer-events: none; }
+.speech-seam { position: absolute; width: 95%; height: auto; top: 0; left: 2.5%; translate: 0 -72%; image-rendering: pixelated; pointer-events: none; }
 header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-shrink: 0; }
 h2 { margin: 0; font: 600 25px var(--font-display, sans-serif); }
 header p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; color: #a4b5a0; }
