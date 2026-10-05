@@ -308,3 +308,47 @@ test('the mapped upper neck attachment covers the full diagonal join', () => {
   }
   model.dispose(); texture.dispose()
 })
+
+test('mapped right shoulder and wing roots retain the attachment tissue beside the head', () => {
+  const texture = new Texture()
+  const bodyRaster = imageRaster('../../assets/brand/kit/lair/body-projection.png')
+  const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster}, {texture, raster: bodyRaster})
+  const reference = createMascotModel(texture, canonicalRaster(), undefined, undefined, {texture, raster: bodyRaster})
+  for (const [walking, speaking, pressure] of [[false, 0, 0], [true, 0, 0], [false, 1, 0], [false, 0, 1]] as const) {
+    const pose = {time: 0, pressure, pointer: new Vector2(), transform: 'unfurl' as const, walking, walkPhase: Math.PI / 2, speaking, blink: 0}
+    model.update(pose); reference.update(pose)
+  for (const [x, y] of [[0.792, 0.218], [0.792, 0.24], [0.784, 0.26], [0.778, 0.278], [0.77, 0.292], [0.76, 0.307]]) {
+    const ray = new Raycaster(new Vector3((x! - 0.5) * 2.3, (0.5 - y!) * 2.6, 2), new Vector3(0, 0, -1))
+    assert.ok(ray.intersectObject(reference.mesh, false).length, 'Fixture points must lie within canonical attachment tissue.')
+    assert.ok(ray.intersectObject(model.mesh, false).length, `The replacement head must retain the right attachment at ${x},${y}.`)
+  }
+  }
+  model.dispose(); reference.dispose(); texture.dispose()
+})
+
+test('the right shoulder stays attached while looking around and the wing bends from its chest anchor', () => {
+  const texture = new Texture()
+  const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster},
+    {texture, raster: imageRaster('../../assets/brand/kit/lair/body-projection.png')})
+  const sample = (x: number, y: number) => {
+    const hit = new Raycaster(new Vector3((x - 0.5) * 2.3, (0.5 - y) * 2.6, 2), new Vector3(0, 0, -1))
+      .intersectObject(model.mesh, false)[0]
+    assert.ok(hit?.face, 'The attachment sample must lie on rendered body tissue.')
+    const index = hit.face.a
+    const rest = new Vector3().fromBufferAttribute(model.mesh.geometry.getAttribute('position'), index)
+    return () => model.mesh.applyBoneTransform(index, rest.clone())
+  }
+  const shoulder = sample(0.778, 0.278), anchor = sample(0.788, 0.22), tip = sample(0.87, 0.20)
+  const chest = model.skeleton.bones.find(bone => bone.name === 'chest')!
+  const pose = (pointer: number, pressure: number) => {
+    model.update({time: 0, pressure, pointer: new Vector2(pointer, 0), transform: 'unfurl', blink: 0})
+    return {shoulder: shoulder(), anchor: chest.worldToLocal(anchor()), tip: chest.worldToLocal(tip())}
+  }
+  const rest = pose(0, 0), looking = pose(1, 0), unfolded = pose(0, 1)
+  assert.ok(rest.shoulder.distanceTo(looking.shoulder) < 0.000001, 'Looking around must not pull shoulder tissue into the head.')
+  assert.ok(rest.anchor.distanceTo(unfolded.anchor) < 0.003, 'The wing root must stay on its chest anchor while unfurling.')
+  assert.ok(rest.tip.distanceTo(unfolded.tip) > 0.03, 'The anchored wing must still unfurl toward its tip.')
+  const oldPupil = new Raycaster(new Vector3((0.758 - 0.5) * 2.3, (0.5 - 0.231) * 2.6, 2), new Vector3(0, 0, -1))
+  assert.equal(oldPupil.intersectObject(model.mesh, false).length, 0, 'Restoring attachments must not restore the original eye behind the new head.')
+  model.dispose(); texture.dispose()
+})

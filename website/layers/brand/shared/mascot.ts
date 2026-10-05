@@ -115,6 +115,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       + Math.min(image.width - 1, Math.round(x * (image.width - 1)))) * 4
     return (image.data[index]! * 0.3 + image.data[index + 1]! * 0.59 + image.data[index + 2]! * 0.11) / 255
   }
+  const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t) }
+  const rightWingJoints = ['chest', 'right-wing', 'right-wing-tip'].map(name => bodyJoints.findIndex(joint => joint.name === name))
   for (let side = 0; side < 2; side++) for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const i = y * width + x
     const sx = x / (width - 1)
@@ -126,9 +128,19 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       : bodyProjection ? bodyDepth[i]! : 0.018 + Math.min(distance[i]! * 0.018, 0.16) + detail * 0.035 : 0
     positions.push(...point(sx, sy, side ? -depth * 0.8 : depth).toArray())
     uv.push(sx, 1 - sy)
+    // Anchor the stalk to the chest, then blend through the wing hinge toward its tip.
+    if (bodyProjection && sx >= 0.775 && sy >= 0.175 && sy < 0.265) {
+      const flap = smooth((sx - 0.785) / 0.075)
+      const tip = smooth((sx - 0.825) / 0.095)
+      skinIndices.push(...rightWingJoints, 0)
+      skinWeights.push(1 - flap, flap * (1 - tip), flap * tip, 0)
+      continue
+    }
+    const shoulder = bodyProjection && sx >= 0.70 && sx < 0.83 && sy >= 0.265 && sy < 0.34
     const closest = bodyJoints.map((joint, index) => ({ index, distance: segmentDistance(sx, sy, joint) }))
       .filter(value => bodyProjection || !bodyJoints[value.index]!.name.endsWith('-tip'))
-      .filter(value => !wing || bodyJoints[value.index]!.name.includes('wing'))
+      .filter(value => !shoulder || (bodyJoints[value.index]!.name !== 'head' && !bodyJoints[value.index]!.name.includes('wing')))
+      .filter(value => !wing || shoulder || bodyJoints[value.index]!.name.includes('wing'))
       .sort((a, b) => a.distance - b.distance).slice(0, 2)
     const a = 1 / (Math.pow(closest[0]!.distance, 4) + 0.000002)
     const b = 1 / (Math.pow(closest[1]!.distance, 4) + 0.000002)
@@ -142,7 +154,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     const sy = (y + 0.5) / (height - 1)
     // Replace the raster head with an actual sculpt. Keep shoulder arms and both wing silhouettes.
     const neckJoin = sx >= 0.54 && sx <= 0.62 && sy >= 0.07
-    if (headProjection && !neckJoin && sy < 0.315 && Math.pow((sx - 0.67) / 0.146, 2) + Math.pow((sy - 0.218) / 0.19, 2) <= 1) continue
+    const rightAttachment = (sx >= 0.785 && sy >= 0.175) || (sx >= 0.775 && sy >= 0.25) || (sx >= 0.70 && sy >= 0.265)
+    if (headProjection && !neckJoin && !rightAttachment && sy < 0.315 && Math.pow((sx - 0.67) / 0.146, 2) + Math.pow((sy - 0.218) / 0.19, 2) <= 1) continue
     // Include a cell only when all corners are tissue. Holes remain open, including fingers and wings.
     if (!(mask[a] && mask[a + 1] && mask[a + width] && mask[a + width + 1])) continue
     occupied[y * (width - 1) + x] = 1
