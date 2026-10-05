@@ -345,7 +345,7 @@ The generated mascot is a planning reference. Runtime retains the canonical char
 shared/scene-layout.ts translates the map into opening transforms, camera framing, walking route, and egg positions.
 The six lips dominate the rear chamber. High perimeter ribs leave their silhouette visible.
 The mascot walks across a clear crescent apron. Egg clusters occupy uneven side niches.
-Thin mucus runoff links the opening to perimeter pools.
+Soft slime pools in the floor surface gather toward the walls.
 Traveling contraction moves the rings and their attached tendons, membranes, bristles, and lip plates.
 The lair deformation leaves specimen transforms unchanged.
 

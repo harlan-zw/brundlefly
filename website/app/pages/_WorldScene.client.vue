@@ -9,6 +9,7 @@ import {
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
+import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { defaultCameraView, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, rotateCameraView } from '@brundlefly/brand/shared/camera-view'
@@ -203,6 +204,8 @@ watch(canvas, async (element) => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
   const scene = new Scene()
   scene.background = new Color('#080B08')
+  const environment = createWetEnvironment(renderer)
+  scene.environment = environment.texture
   const fog = new FogExp2('#080B08', 0.028)
   scene.fog = fog
   scene.add(world.root)
@@ -248,6 +251,7 @@ watch(canvas, async (element) => {
     || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001)
   function render(delta: number) {
     renderer.toneMappingExposure = settings.value.exposure
+    scene.environmentIntensity = settings.value.reflections
     const aspect = renderWidth / renderHeight
     const portrait = aspect < 0.8
     const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(sceneLayout.camera.desktop, sceneLayout.camera.portrait, aspect)
@@ -322,7 +326,7 @@ watch(canvas, async (element) => {
     endView()
     renderer.setAnimationLoop(null)
     world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
-    shadowGeometry.dispose(); shadowMaterial.dispose(); renderer.dispose()
+    shadowGeometry.dispose(); shadowMaterial.dispose(); environment.dispose(); renderer.dispose()
   }
   status.value = { _tag: 'Ready' }
   refresh()
@@ -332,6 +336,7 @@ watch(canvas, async (element) => {
 <template>
   <div ref="host" class="world-scene" :data-renderer="status._tag" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
+    <div v-if="status._tag === 'Ready'" class="world-vignette" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
     <img v-if="status._tag === 'Fallback'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
     <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" :disabled="status._tag === 'Loading'" aria-label="Talk to Brundlefly" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
@@ -343,6 +348,9 @@ watch(canvas, async (element) => {
 <style scoped>
 .world-scene { position: fixed; inset: 0; overflow: hidden; background: var(--color-night); }
 canvas { display: block; width: 100%; height: 100%; }
+/* Dark edges hold the eye on the opening and the mascot. */
+.world-vignette { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 72% 68% at 50% 52%, transparent 52%, rgb(8 11 8 / 0.55) 82%, rgb(8 11 8 / 0.88) 100%); }
 .world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, default; touch-action: none; }
 .world-interaction.mascot-hover { cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, pointer; }
 .world-interaction:focus-visible { outline: 2px solid var(--color-cream); outline-offset: -8px; }

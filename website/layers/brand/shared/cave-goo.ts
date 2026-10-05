@@ -33,7 +33,7 @@ export function createCaveGoo(material: MeshPhysicalMaterial, attachments: reado
       const coating = new Mesh(meniscus, material)
       coating.position.copy(point).addScaledVector(normal, 0.01)
       coating.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), normal)
-      coating.scale.set(0.32, 0.22, 0.26)
+      coating.scale.set(0.2, 0.08, 0.17)
       assembly.add(coating)
     }
     const positions: number[] = [], uv: number[] = [], indices: number[] = []

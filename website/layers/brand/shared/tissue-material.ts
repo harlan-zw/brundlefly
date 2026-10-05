@@ -2,7 +2,7 @@ import { BackSide, MeshStandardMaterial, NoColorSpace, ShaderChunk } from 'three
 import type { Texture } from 'three'
 
 type SurfaceOptions = { texture: Texture, color: string, roughness: number, bumpScale: number }
-  & ({ surface: 'enclosure', height: Texture, emissive: string, glow: number } | { surface: 'floor' })
+  & ({ surface: 'enclosure', height: Texture, shell: Texture, emissive: string, glow: number } | { surface: 'floor' })
 export type TissueMotion = { time: number, breath: number, flow: number }
 
 const organicNoise = `
@@ -65,7 +65,8 @@ export function createTissueMaterial(options: SurfaceOptions) {
     material.emissiveIntensity = options.glow
   }
   const uniforms = { uTissueFlow: { value: 0 }, uTissueBreath: { value: 0 },
-    uTissueFloor: { value: options.surface === 'floor' ? 1 : 0 } }
+    uTissueFloor: { value: options.surface === 'floor' ? 1 : 0 },
+    uTissueShell: { value: options.surface === 'enclosure' ? options.shell : null } }
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms)
     shader.vertexShader = 'uniform float uTissueBreath;\nuniform float uTissueFloor;\nvarying vec3 vTissueWorld;\nvarying vec3 vTissueNormal;\n' + shader.vertexShader
@@ -99,18 +100,30 @@ vTissueWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`)
         ? 'vTissueWorld = (modelMatrix * vec4(roomProjectionPosition, 1.0)).xyz; vTissueNormal = normalize(mat3(modelMatrix) * roomProjectionNormal);'
         : 'vTissueWorld = (modelMatrix * vec4(transformed, 1.0)).xyz; vTissueNormal = tissueNormal;')
     shader.fragmentShader = coordinates + shader.fragmentShader
+    // A wet film reflects far more than bare skin. Diffuse environment light stays low, so the room keeps its depth.
+    shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_maps>', `#include <lights_fragment_maps>
+radiance *= ${options.surface === 'enclosure' ? '1.6 + shellPlate * 3.2' : '1.5 + slimePool * 2.5'};
+iblIrradiance *= 0.6;`)
     if (options.surface === 'enclosure') {
-      shader.fragmentShader = organicNoise + shader.fragmentShader
+      shader.fragmentShader = 'uniform sampler2D uTissueShell;\n' + organicNoise + shader.fragmentShader
+      // Dark chitin plates break through the flesh. Red tissue stays in the folds between them.
       shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>',
-        ShaderChunk.map_fragment.replace('texture2D( map, vMapUv )', 'roomTexture(map, vTissueWorld)'))
+        ShaderChunk.map_fragment.replace('texture2D( map, vMapUv )', 'roomTexture(map, vTissueWorld)') + `
+float shellField = tissueLayers(vTissueWorld * 0.55 + vec3(11.0, 3.0, 7.0))
+  + (roomTexture(bumpMap, vTissueWorld).r - 0.5) * 0.45;
+float shellPlate = smoothstep(0.44, 0.58, shellField);
+vec3 shellColor = roomTexture(uTissueShell, vTissueWorld * 1.7).rgb * vec3(0.7, 0.66, 0.52);
+diffuseColor.rgb = mix(diffuseColor.rgb, shellColor, shellPlate);`)
       shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
         ShaderChunk.emissivemap_fragment.replace('texture2D( emissiveMap, vEmissiveMapUv )', 'roomTexture(emissiveMap, vTissueWorld)')
-        + '\ntotalEmissiveRadiance *= mix(0.18, 0.7, smoothstep(0.12, 0.8, roomTexture(bumpMap, vTissueWorld).r));')
+        + '\ntotalEmissiveRadiance *= mix(0.18, 0.7, smoothstep(0.12, 0.8, roomTexture(bumpMap, vTissueWorld).r)) * (1.0 - shellPlate * 0.9);')
       shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>',
         ShaderChunk.roughnessmap_fragment.replace('texture2D( roughnessMap, vRoughnessMapUv )', 'roomTexture(roughnessMap, vTissueWorld)')
           .replace('roughnessFactor *= texelRoughness.g;', `roughnessFactor *= mix(0.34, 1.0, smoothstep(0.18, 0.82, texelRoughness.g));
 float wetFilm = tissueLayers(vTissueWorld * 0.85 + vec3(uTissueFlow * 0.065, uTissueBreath * 0.04, -uTissueFlow * 0.035));
-roughnessFactor *= mix(0.82, 1.0, wetFilm);`))
+roughnessFactor *= mix(0.82, 1.0, wetFilm);
+// Glassy plates catch the environment. The flesh between them stays satin.
+roughnessFactor = mix(roughnessFactor, 0.16 + wetFilm * 0.12, shellPlate);`))
       shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
 vec3 wetPoint = vTissueWorld * 1.3 + vec3(uTissueFlow * 0.07, -uTissueBreath * 0.035, uTissueFlow * 0.04);
 vec3 wetRipple = vec3(tissueNoise(wetPoint), tissueNoise(wetPoint + vec3(3.1,7.4,1.9)), tissueNoise(wetPoint + vec3(6.2,2.3,8.1))) - 0.5;
@@ -131,15 +144,30 @@ vec2 dHdxy_fwd() {
 ${ShaderChunk.bumpmap_pars_fragment.slice(ShaderChunk.bumpmap_pars_fragment.indexOf('vec3 perturbNormalArb'))}`)
     }
     else {
+      // Slime collects in soft, uneven pools toward the walls. The walking line stays mostly clear.
+      shader.fragmentShader = organicNoise + shader.fragmentShader
       shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>',
-        ShaderChunk.map_fragment.replaceAll('vMapUv', 'tissueCoordinates(vMapUv)'))
+        ShaderChunk.map_fragment.replaceAll('vMapUv', 'tissueCoordinates(vMapUv)') + `
+vec3 poolPoint = vec3(vTissueWorld.xz * 0.5, 0.0) + vec3(uTissueFlow * 0.01, -uTissueFlow * 0.007, uTissueBreath * 0.012);
+float poolField = tissueLayers(poolPoint) + tissueNoise(poolPoint * 3.4) * 0.1
+  + smoothstep(1.2, 3.8, abs(vTissueWorld.x)) * 0.24 - 0.08;
+float slimePool = smoothstep(0.62, 0.72, poolField);
+diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.62, 0.66, 0.4), slimePool);`)
       shader.fragmentShader = shader.fragmentShader.replace('#include <bumpmap_pars_fragment>',
         ShaderChunk.bumpmap_pars_fragment.replaceAll('vBumpMapUv', 'tissueCoordinates(vBumpMapUv)'))
+      // Fluid pools in the low cells. Raised ridges stay dull, so the floor glints in patches instead of a sheet.
+      shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+float floorRelief = texture2D(bumpMap, tissueCoordinates(vBumpMapUv)).r;
+roughnessFactor = clamp(roughnessFactor * mix(0.4, 1.9, smoothstep(0.18, 0.62, floorRelief)), 0.06, 1.0);
+roughnessFactor = mix(roughnessFactor, 0.16, slimePool);`)
+      // Liquid levels the relief beneath it.
+      shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+normal = normalize(mix(normal, nonPerturbedNormal, slimePool * 0.55));`)
       shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
         ShaderChunk.emissivemap_fragment.replaceAll('vEmissiveMapUv', 'tissueCoordinates(vEmissiveMapUv)'))
     }
   }
-  material.customProgramCacheKey = () => `brundlefly-tissue-${options.surface}-v5`
+  material.customProgramCacheKey = () => `brundlefly-tissue-${options.surface}-v6`
   material.addEventListener('dispose', () => heightTexture.dispose())
   let previousTime: number | undefined
   return {

@@ -87,11 +87,6 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
       core.add(lowerFold, upperFold)
       body.add(core)
 
-      const pooled = new Mesh(sphere, attachmentMaterial)
-      pooled.position.y = 0.007
-      pooled.scale.set(radius * 1.45, 0.024, radius * 1.3)
-      pooled.rotation.y = phase
-      body.add(pooled)
       for (let strand = 0; strand < 3; strand++) {
         const angle = phase + strand * Math.PI * 2 / 3
         const base = new Vector3(Math.cos(angle) * radius * 1.35, 0.015, Math.sin(angle) * radius * 1.35)
