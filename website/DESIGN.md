@@ -119,6 +119,8 @@ The speech dialog uses the local conversation provider. It keeps task logic outs
 ## Scene construction
 
 The world combines receding tunnel ribs, asymmetric tissue flanks, overhead arches, and a chitin floor.
+An inward-facing textured enclosure closes the ceiling, rear wall, and edges behind the chamber.
+Both camera framings remain inside it. Keep its bruised surface visible without competing with the mascot.
 Place the tunnel behind Brundlefly. Leave space for his walk and contact shadow in the foreground.
 Slime, thin membranes, and bristles stay near the chamber perimeter.
 Use modest mesh resolution, instanced perimeter plates, and soft ground shading.

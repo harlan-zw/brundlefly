@@ -1,9 +1,10 @@
 import {
-  BufferGeometry, CatmullRomCurve3, Color, DirectionalLight, DoubleSide, Float32BufferAttribute, Group, HemisphereLight,
+  BackSide, BufferGeometry, CatmullRomCurve3, Color, DirectionalLight, DoubleSide, Float32BufferAttribute, Group, HemisphereLight,
   InstancedMesh, LineBasicMaterial, LineSegments, Mesh, MeshPhysicalMaterial, MeshStandardMaterial,
   Object3D, PlaneGeometry, PointLight, ShaderMaterial, SphereGeometry, SpotLight, TubeGeometry, Vector2, Vector3,
 } from 'three'
 import type { Texture } from 'three'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { createOrganismModel } from './organism'
 
 export type WorldInput = { time: number, pressure: number }
@@ -35,6 +36,27 @@ function foldGeometry(seed: number) {
 export function createWorld(texture: Texture) {
   const root = new Group()
   root.name = 'Brundlefly chamber'
+  // Both camera framings sit inside the enclosure. Rounded corners keep the backdrop continuous.
+  const enclosureGeometry = new RoundedBoxGeometry(22, 9, 36, 5, 1.3)
+  const enclosurePositions = enclosureGeometry.getAttribute('position')
+  const enclosureNormals = enclosureGeometry.getAttribute('normal')
+  const enclosureUvs = enclosureGeometry.getAttribute('uv')
+  for (let index = 0; index < enclosurePositions.count; index++) {
+    const x = enclosurePositions.getX(index)
+    const y = enclosurePositions.getY(index)
+    const z = enclosurePositions.getZ(index)
+    const ripple = Math.sin(x * 1.7 + z * 0.7) * Math.cos(y * 2.2 + z * 0.5) * 0.12
+    enclosurePositions.setXYZ(index, x + enclosureNormals.getX(index) * ripple,
+      y + enclosureNormals.getY(index) * ripple, z + enclosureNormals.getZ(index) * ripple)
+    enclosureUvs.setXY(index, enclosureUvs.getX(index) * 4, enclosureUvs.getY(index) * 3)
+  }
+  enclosureGeometry.computeVertexNormals()
+  const enclosure = new Mesh(enclosureGeometry, new MeshStandardMaterial({
+    side: BackSide, color: '#69404B', map: texture, bumpMap: texture, bumpScale: 0.14,
+    emissive: '#69404B', emissiveMap: texture, emissiveIntensity: 0.28, roughness: 0.84,
+  }))
+  enclosure.position.set(0, groundLevel + 4, 5)
+  root.add(enclosure)
   const tunnel = createOrganismModel(texture, 'lair', 0.7)
   tunnel.root.position.set(0, 0.08, -2.5)
   tunnel.root.scale.setScalar(0.94)
@@ -51,7 +73,7 @@ export function createWorld(texture: Texture) {
   const slime = new MeshPhysicalMaterial({ color: '#777648', transparent: true, opacity: 0.43,
     roughness: 0.13, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08, depthWrite: false })
 
-  const groundGeometry = new PlaneGeometry(18, 20, 44, 48)
+  const groundGeometry = new PlaneGeometry(22, 36, 44, 48)
   const floorPositions = groundGeometry.getAttribute('position')
   for (let index = 0; index < floorPositions.count; index++) {
     const x = floorPositions.getX(index)
@@ -65,7 +87,7 @@ export function createWorld(texture: Texture) {
   const ground = new Mesh(groundGeometry, new MeshStandardMaterial({ color: '#343C3B', map: texture,
     bumpMap: texture, bumpScale: 0.085, roughness: 0.83, metalness: 0.04 }))
   ground.rotation.x = -Math.PI / 2
-  ground.position.set(0, groundLevel - 0.035, -2)
+  ground.position.set(0, groundLevel - 0.035, 5)
   root.add(ground)
 
   // The wall is made of asymmetric connected folds, rather than isolated boulders.
