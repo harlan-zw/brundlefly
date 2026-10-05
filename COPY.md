@@ -24,7 +24,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 | README opening | Direct, grotesque | Agent skills for grotesque text mutations. |
 | Why | Human purpose, concrete loss | You write because you want someone to understand. |
 | Features | Concrete, factual | edit prose while preserving claim scope, uncertainty, and the author's voice. |
-| Setup and reference | Plain, complete | Clone this repository with Git, then run the examples from its root: |
+| Setup and reference | Plain, complete | From your project's root, install a Skill for later sessions: |
 | Skill instructions | Direct, careful | Never invent an actor, experience, example, or supporting detail. |
 
 ## Copy principles
