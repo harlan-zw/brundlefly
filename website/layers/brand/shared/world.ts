@@ -8,6 +8,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { createOrganismModel } from './organism'
 import { createGooMaterial } from './goo'
 import { createEggSacs } from './eggs'
+import { sceneLayout } from './scene-layout'
 import type { SceneSettings } from './scene-settings'
 
 export type WorldTextures = { chitin: Texture, floor: Texture, egg: Texture }
@@ -61,9 +62,9 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   }))
   enclosure.position.set(0, groundLevel + 4, 5)
   root.add(enclosure)
-  const tunnel = createOrganismModel(texture, 'lair', 0.7)
-  tunnel.root.position.set(0, 0.08, -2.5)
-  tunnel.root.scale.setScalar(0.94)
+  const tunnel = createOrganismModel(texture, 'lair', 1.35)
+  tunnel.root.position.set(...sceneLayout.opening.position)
+  tunnel.root.scale.set(...sceneLayout.opening.scale)
   root.add(tunnel.root)
 
   const tissue = new MeshPhysicalMaterial({ color: '#AA604B', map: texture, bumpMap: texture,
@@ -99,11 +100,11 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   // The wall is made of asymmetric connected folds, rather than isolated boulders.
   const livingFolds: { mesh: Mesh, scale: Vector3, phase: number }[] = []
   for (let side = -1; side <= 1; side += 2) {
-    for (let index = 0; index < 5; index++) {
-      const z = 2.1 - index * 1.75
+    for (let index = 0; index < 4; index++) {
+      const z = 2.5 - index * 2.25
       const fold = new Mesh(foldGeometry(index + side * 3), index % 3 === 0 ? bruise : tissue)
-      fold.position.set(side * (4.15 + Math.sin(index * 2 + side) * 0.35), -0.02 + index * 0.06, z)
-      fold.scale.set(0.85 + index % 2 * 0.15, 2.7 + Math.sin(index) * 0.3, 1.25)
+      fold.position.set(side * (5.05 + Math.sin(index * 2 + side) * 0.28), -0.1 + index * 0.09, z)
+      fold.scale.set(0.7 + index % 2 * 0.12, 2.45 + Math.sin(index) * 0.3, 1.35)
       fold.rotation.z = side * (0.13 + index * 0.035)
       fold.rotation.y = side * 0.24
       livingFolds.push({ mesh: fold, scale: fold.scale.clone(), phase: index * 1.3 + side })
@@ -119,13 +120,13 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   }
 
   // Long arch folds wrap the chamber, leaving a visible tunnel and clear floor.
-  for (let index = 0; index < 5; index++) {
-    const z = 1.2 - index * 1.6
+  for (let index = 0; index < 2; index++) {
+    const z = 2.2 - index * 5.6
     const points: Vector3[] = []
     for (let step = 0; step <= 12; step++) {
       const angle = step / 12 * Math.PI
-      points.push(new Vector3(Math.cos(angle) * (4.15 + Math.sin(index) * 0.12),
-        groundLevel + Math.sin(angle) * (5.3 + Math.sin(angle * 3 + index) * 0.17),
+      points.push(new Vector3(Math.cos(angle) * (5.2 + Math.sin(index) * 0.12),
+        groundLevel + Math.sin(angle) * (6.65 + Math.sin(angle * 3 + index) * 0.17),
         z + Math.sin(angle * 2 + index) * 0.2))
     }
     const arch = new Mesh(new TubeGeometry(new CatmullRomCurve3(points), 48, 0.14 + index % 2 * 0.07, 8, false), bruise)
@@ -157,18 +158,30 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     puddlePositions.setXYZ(index, x * swelling, puddlePositions.getY(index), z * swelling)
   }
   puddleGeometry.computeVertexNormals()
-  for (let index = 0; index < 7; index++) {
+  for (let index = 0; index < 6; index++) {
+    const side = index % 2 === 0 ? -1 : 1
     const puddle = new Mesh(puddleGeometry, slime)
-    puddle.position.set(Math.sin(index * 2.4) * 2.8, groundLevel + 0.012, 2 - index * 0.78)
-    puddle.scale.set(0.46 + index % 3 * 0.18, 0.022, 0.29 + index % 2 * 0.15)
+    puddle.position.set(side * (2.2 + Math.sin(index * 1.3) * 0.35), groundLevel + 0.012, 3.1 - Math.floor(index / 2) * 1.7)
+    puddle.scale.set(0.6 + index % 3 * 0.18, 0.022, 0.38 + index % 2 * 0.15)
     puddle.rotation.y = index * 0.74
     root.add(puddle)
+  }
+
+  // Shallow runoff leads away from the lips and along the edge of the walking apron.
+  for (const side of [-1, 1]) {
+    const runoff = new Mesh(new TubeGeometry(new CatmullRomCurve3([
+      new Vector3(side * 1.7, 0, -2.6), new Vector3(side * 2.3, 0.025, -1.3),
+      new Vector3(side * 2.1, 0, 0.4), new Vector3(side * 2.75, 0.015, 2.9),
+    ]), 40, 0.11, 8, false), slime)
+    runoff.position.y = groundLevel + 0.025
+    runoff.scale.y = 0.13
+    root.add(runoff)
   }
 
   const hanging: { mesh: Mesh, drop: Mesh, anchor: Vector3, phase: number }[] = []
   for (let index = 0; index < 12; index++) {
     const side = index % 2 === 0 ? -1 : 1
-    const x = side * (2.45 + index % 3 * 0.42)
+    const x = side * (3.7 + index % 3 * 0.42)
     const z = 0.4 - Math.floor(index / 2) * 1.14
     const start = new Vector3(x, 2.2 + Math.sin(index) * 0.35, z)
     const end = new Vector3(x + side * 0.4, -0.8 + index % 3 * 0.3, z + 0.16)

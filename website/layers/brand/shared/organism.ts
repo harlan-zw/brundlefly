@@ -9,8 +9,44 @@ export type Transform = typeof transforms[number]
 export type Presentation = 'specimen' | 'lair'
 export type OrganismInput = { time: number, pressure: number, wetness: number, pointer: Vector2, opening: number, transform: Transform }
 
+// Local-space movement stays independent of the world renderer's chamber scale.
+const lairMotionShader = `
+vec3 flexLair(vec3 p, float time) {
+  float depth = max(0.0, -p.z);
+  float angle = atan(p.y, p.x);
+  float phase = time * 0.95 - depth * 1.3;
+  float wave = pow(max(0.0, sin(phase)), 2.0) * 0.065;
+  float breath = sin(time * 0.64) * 0.025;
+  float lip = exp(-depth * 0.85);
+  float uneven = (sin(angle * 3.0 + time * 0.82) * 0.028
+    + cos(angle * 5.0 - time * 0.5) * 0.018) * lip;
+  p.x *= 1.0 + breath - wave + uneven;
+  p.y *= 1.0 + breath * 0.9 - wave * 0.8 - uneven * 0.45;
+  p.z += sin(phase + 0.7) * 0.11 * (1.0 - exp(-depth * 0.3))
+    + sin(angle * 2.0 + time * 0.8) * 0.09 * lip;
+  return p;
+}
+`
+
+/** CPU counterpart anchors lip plates to the same asymmetric shader movement. */
+function flexLair(point: Vector3, time: number) {
+  const depth = Math.max(0, -point.z)
+  const angle = Math.atan2(point.y, point.x)
+  const phase = time * 0.95 - depth * 1.3
+  const wave = Math.max(0, Math.sin(phase)) ** 2 * 0.065
+  const breath = Math.sin(time * 0.64) * 0.025
+  const lip = Math.exp(-depth * 0.85)
+  const uneven = (Math.sin(angle * 3 + time * 0.82) * 0.028 + Math.cos(angle * 5 - time * 0.5) * 0.018) * lip
+  point.x *= 1 + breath - wave + uneven
+  point.y *= 1 + breath * 0.9 - wave * 0.8 - uneven * 0.45
+  point.z += Math.sin(phase + 0.7) * 0.11 * (1 - Math.exp(-depth * 0.3))
+    + Math.sin(angle * 2 + time * 0.8) * 0.09 * lip
+  return point
+}
+
 export const vertexShader = `
 uniform float uTime;
+uniform float uLair;
 uniform float uPressure;
 uniform float uOpening;
 uniform float uTwist;
@@ -18,6 +54,7 @@ uniform vec2 uPointer;
 varying vec2 vUv;
 varying vec3 vPosition;
 varying vec3 vNormal;
+${lairMotionShader}
 void main() {
   vUv = uv;
   vec3 p = position;
@@ -36,6 +73,7 @@ void main() {
   p.y *= 1.0 - uPressure * 0.3;
   p.x *= 1.0 + uPressure * 0.2;
   p.z -= localPress * uPressure * 0.48;
+  if (uLair > 0.5) p = flexLair(p, uTime);
   vPosition = (modelViewMatrix * vec4(p, 1.0)).xyz;
   vNormal = normalize(normalMatrix * vec3(rotation * normal.xy, normal.z));
   gl_Position = projectionMatrix * vec4(vPosition, 1.0);
@@ -110,7 +148,7 @@ function tissueFold(radius: number, thickness: number, depth: number, lair: bool
 export function createOrganismModel(texture: Texture, presentation: Presentation = 'specimen', brightness = 1) {
   const root = new Group()
   const uniforms = {
-    uTexture: { value: texture }, uTime: { value: 0 }, uPressure: { value: 0 },
+    uTexture: { value: texture }, uTime: { value: 0 }, uLair: { value: presentation === 'lair' ? 1 : 0 }, uPressure: { value: 0 },
     uWetness: { value: 0.75 }, uPointer: { value: { x: 0, y: 0 } },
     uOpening: { value: 0.5 }, uTwist: { value: 0 },
     uBrightness: { value: brightness },
@@ -118,10 +156,11 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
   const flesh = new ShaderMaterial({ uniforms: { ...uniforms, uChitin: { value: 0 } }, vertexShader, fragmentShader })
   const chitin = new ShaderMaterial({ uniforms: { ...uniforms, uChitin: { value: 1 } }, vertexShader, fragmentShader })
   const radius = presentation === 'lair' ? 2 : 1.04
+  const lairRadius = (layer: number) => radius - layer * 0.18 + Math.sin(layer * 2) * 0.035
   const rings: BufferGeometry[] = []
   const folds: Mesh[] = []
   for (let index = 0; index < (presentation === 'lair' ? 6 : 3); index++) {
-    const r = presentation === 'lair' ? radius + Math.sin(index * 2) * 0.09 : radius - index * 0.27
+    const r = presentation === 'lair' ? lairRadius(index) : radius - index * 0.27
     const geometry = tissueFold(r, presentation === 'lair' ? 0.24 : 0.23 - index * 0.035,
       index * (presentation === 'lair' ? 0.95 : 0.28), presentation === 'lair')
     const mesh = new Mesh(geometry, flesh)
@@ -134,20 +173,34 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
   const membraneMaterial = new MeshPhysicalMaterial({ color: '#777648', map: texture, transparent: true,
     opacity: 0.23, side: DoubleSide, roughness: 0.32, clearcoat: 1, depthWrite: false })
   const tendonMaterial = new MeshPhysicalMaterial({ color: '#AA604B', map: texture, roughness: 0.25, clearcoat: 1 })
+  if (presentation === 'lair') {
+    // Tendons and webs flex at their own depth, alongside all six rings.
+    for (const material of [membraneMaterial, tendonMaterial]) {
+      material.onBeforeCompile = shader => {
+        shader.uniforms.uTime = uniforms.uTime
+        shader.vertexShader = 'uniform float uTime;\n' + lairMotionShader + shader.vertexShader
+        shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>',
+          '#include <begin_vertex>\ntransformed = flexLair(transformed, uTime);')
+      }
+      material.customProgramCacheKey = () => 'brundlefly-lair-connective-wave'
+    }
+  }
   const connections: BufferGeometry[] = []
   const layers = presentation === 'lair' ? 5 : 2
   for (let layer = 0; layer < layers; layer++) {
     const depth = layer * (presentation === 'lair' ? 0.95 : 0.28)
     for (let index = 0; index < 8; index++) {
       const angle = index / 8 * Math.PI * 2 + layer * 0.12
-      const a = tissuePoint(angle, radius, depth, presentation === 'lair')
-      const b = tissuePoint(angle + 0.18, radius - (presentation === 'lair' ? 0 : 0.27), depth + (presentation === 'lair' ? 0.95 : 0.28), presentation === 'lair')
+      const currentRadius = presentation === 'lair' ? lairRadius(layer) : radius
+      const nextRadius = presentation === 'lair' ? lairRadius(layer + 1) : radius - 0.27
+      const a = tissuePoint(angle, currentRadius, depth, presentation === 'lair')
+      const b = tissuePoint(angle + 0.18, nextRadius, depth + (presentation === 'lair' ? 0.95 : 0.28), presentation === 'lair')
       const middle = a.clone().lerp(b, 0.5).multiplyScalar(0.95)
       const tube = new TubeGeometry(new CatmullRomCurve3([a, middle, b]), 10, 0.014 + index % 3 * 0.006, 6, false)
       connective.add(new Mesh(tube, tendonMaterial))
       connections.push(tube)
-      const c = tissuePoint(angle + 0.3, radius, depth, presentation === 'lair')
-      const d = tissuePoint(angle + 0.5, radius - (presentation === 'lair' ? 0 : 0.27), depth + (presentation === 'lair' ? 0.95 : 0.28), presentation === 'lair')
+      const c = tissuePoint(angle + 0.3, currentRadius, depth, presentation === 'lair')
+      const d = tissuePoint(angle + 0.5, nextRadius, depth + (presentation === 'lair' ? 0.95 : 0.28), presentation === 'lair')
       const web = new BufferGeometry()
       web.setAttribute('position', new Float32BufferAttribute([...a.toArray(), ...b.toArray(), ...c.toArray(), ...d.toArray(), ...middle.toArray()], 3))
       web.setAttribute('uv', new Float32BufferAttribute([0, 0, 0, 1, 1, 0, 1, 1, 0.5, 0.5], 2))
@@ -158,6 +211,30 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
     }
   }
   root.add(connective)
+  // An irregular dark end closes only the rear throat, so the room cannot show through the opening.
+  const throatGeometry = presentation === 'lair' ? new SphereGeometry(1, 32, 22) : null
+  const throatMaterial = presentation === 'lair'
+    ? new MeshPhysicalMaterial({ color: '#080B08', map: texture, bumpMap: texture, bumpScale: 0.045,
+      roughness: 0.7, clearcoat: 0.25, emissive: '#343C3B', emissiveIntensity: 0.025 })
+    : null
+  let throat: Mesh | null = null
+  if (throatGeometry && throatMaterial) {
+    const positions = throatGeometry.getAttribute('position')
+    for (let index = 0; index < positions.count; index++) {
+      const x = positions.getX(index)
+      const y = positions.getY(index)
+      const z = positions.getZ(index)
+      const angle = Math.atan2(y, x)
+      const lobe = 1 + Math.sin(angle * 3 + 1.7) * 0.07 + Math.cos(angle * 5) * 0.04
+      positions.setXYZ(index, x * lobe, y * lobe, z + Math.sin(angle * 4 + y * 3) * 0.1)
+    }
+    throatGeometry.computeVertexNormals()
+    throat = new Mesh(throatGeometry, throatMaterial)
+    throat.name = 'Dark rear throat'
+    throat.position.z = -5.65
+    throat.scale.set(1.22 * 1.7, 1.22 * 1.16, 0.24)
+    root.add(throat)
+  }
   const plateGeometry = new SphereGeometry(0.18, 16, 12)
   const shutters: { pivot: Group, angle: number }[] = []
   for (let index = 0; index < 12; index++) {
@@ -184,6 +261,15 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
   }
   const bristleGeometry = new BufferGeometry().setAttribute('position', new Float32BufferAttribute(bristlePoints, 3))
   const bristleMaterial = new LineBasicMaterial({ color: new Color('#69404B') })
+  if (presentation === 'lair') {
+    bristleMaterial.onBeforeCompile = shader => {
+      shader.uniforms.uTime = uniforms.uTime
+      shader.vertexShader = 'uniform float uTime;\n' + lairMotionShader + shader.vertexShader
+      shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>',
+        '#include <begin_vertex>\ntransformed = flexLair(transformed, uTime);')
+    }
+    bristleMaterial.customProgramCacheKey = () => 'brundlefly-lair-bristle-wave'
+  }
   const bristles = new LineSegments(bristleGeometry, bristleMaterial)
   root.add(bristles)
   const slimeMaterial = new MeshPhysicalMaterial({ color: '#777648', roughness: 0.15, clearcoat: 1, transparent: true, opacity: 0.8 })
@@ -207,6 +293,11 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
     root,
     texture,
     update(input: OrganismInput) {
+      if (throat) {
+        const pulse = 1 + Math.sin(input.time * 0.95 - 5.65 * 1.3) * 0.018
+        throat.scale.set(1.22 * 1.7 * pulse, 1.22 * 1.16 * pulse, 0.24)
+        throat.position.z = -5.65 + Math.sin(input.time * 0.7) * 0.025
+      }
       uniforms.uTime.value = input.time
       uniforms.uPressure.value = input.transform === 'squeeze' ? input.pressure : input.pressure * 0.12
       uniforms.uOpening.value = input.opening + (input.transform === 'unfurl' ? input.pressure * 0.5 : 0)
@@ -224,10 +315,19 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
         const anchor = tissuePoint(angle, radius, 0, presentation === 'lair')
         pivot.position.x = anchor.x * stretchX
         pivot.position.y = anchor.y * stretchY
+        if (presentation === 'lair') {
+          anchor.set(pivot.position.x, pivot.position.y, anchor.z + 0.14)
+          flexLair(anchor, input.time)
+          pivot.position.copy(anchor)
+        }
         pivot.rotation.y = -0.3 + input.opening * 1.2 + (input.transform === 'unfurl' ? input.pressure * 0.7 : 0)
         pivot.rotation.z = angle + (input.transform === 'twist' ? input.pressure * 0.25 : 0)
+          + (presentation === 'lair' ? Math.sin(input.time * 0.82 + angle * 3) * 0.045 : 0)
       })
-      slime.scale.set(stretchX, stretchY * (1 + input.pressure * 0.28), 1)
+      const lipBreath = presentation === 'lair'
+        ? 1 + Math.sin(input.time * 0.64) * 0.025 - Math.max(0, Math.sin(input.time * 0.95)) ** 2 * 0.065
+        : 1
+      slime.scale.set(stretchX * lipBreath, stretchY * lipBreath * (1 + input.pressure * 0.28), 1)
       bristles.scale.set(stretchX, stretchY, 1)
       root.rotation.y = input.pointer.x * (presentation === 'lair' ? 0.035 : 0.18)
       root.rotation.x = -input.pointer.y * (presentation === 'lair' ? 0.025 : 0.12)
@@ -235,6 +335,8 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
       slimeMaterial.roughness = 0.5 - input.wetness * 0.4
     },
     dispose() {
+      throatGeometry?.dispose()
+      throatMaterial?.dispose()
       rings.forEach(geometry => geometry.dispose())
       connections.forEach(geometry => geometry.dispose())
       membraneMaterial.dispose()

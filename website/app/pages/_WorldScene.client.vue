@@ -9,6 +9,7 @@ import {
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
+import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import SceneControls from './_SceneControls.vue'
 
 const { paused = false } = defineProps<{ paused?: boolean }>()
@@ -116,7 +117,7 @@ watch(canvas, async (element) => {
   let bottom = 0
   for (let index = 0; index < indices.count; index++) bottom = Math.min(bottom, positions.getY(indices.getX(index)))
   const floorY = -2.2 - bottom * 1.25
-  figure.position.set(0.35, floorY, -1.45)
+  figure.position.set(sceneLayout.mascot[0], floorY, sceneLayout.mascot[1])
   scene.add(figure)
   const shadowGeometry = new PlaneGeometry(2.5, 1.8)
   const shadowMaterial = new ShaderMaterial({ transparent: true, depthWrite: false,
@@ -130,7 +131,7 @@ watch(canvas, async (element) => {
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
   const raycaster = new Raycaster()
   hit = position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.mesh, false).length > 0 }
-  const route = [new Vector3(1.45, floorY, 0.6), new Vector3(-1.4, floorY, 0.25), new Vector3(-0.5, floorY, -1.25), new Vector3(0.8, floorY, -0.85)]
+  const route = sceneLayout.walk.map(([x, z]) => new Vector3(x, floorY, z))
   let destination = 0
   let elapsed = 0
   let phase = 0
@@ -142,8 +143,12 @@ watch(canvas, async (element) => {
   function render(delta: number) {
     renderer.toneMappingExposure = settings.value.exposure
     fog.density = settings.value.fog
-    camera.position.z = (renderWidth / renderHeight < 0.8 ? 14.5 : 10) / settings.value.zoom
-    camera.lookAt(0, -0.45, -1.3)
+    const portrait = renderWidth / renderHeight < 0.8
+    const framing = portrait ? sceneLayout.camera.portrait : sceneLayout.camera.desktop
+    const fieldOfView = portrait ? 50 : 44
+    if (camera.fov !== fieldOfView) { camera.fov = fieldOfView; camera.updateProjectionMatrix() }
+    camera.position.set(framing[0], framing[1], framing[2] / settings.value.zoom)
+    camera.lookAt(...sceneLayout.camera.target)
     camera.updateMatrixWorld()
     let walking = false
     if (animate.value) {

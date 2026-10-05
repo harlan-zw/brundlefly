@@ -1,0 +1,10 @@
+{
+  "tool": "builtin imagegen",
+  "prompt": "Use case: stylized-concept. Asset type: 2D scene layout map and front-elevation design sheet for Brundlefly's 3D lair. Reference 1 is the existing scene, reference 2 the canonical mascot. Design a NEW stronger composition using these actual primitives, not a new mascot. Two panels on a landscape sheet: left a clear top-down floor plan, right a front elevation that shows the intended camera composition. Organic hand-painted pixel-detailed planning art, warm rust flesh #AA604B, bruised #69404B, olive #777648, gray chitin. A massive contracting muscular oval opening at the back is the main architectural feature. Six layered muscular lips recede visibly into a deep tunnel. Move framing ribs to the sides and overhead perimeter, so they do not obscure the opening. Mascot stands slightly off center in front of it, four arms two legs two wings as reference. A broad clear crescent-shaped walking apron in front of the opening. Egg sac nursery clusters asymmetrically in lower left and right side niches, never across the path. Mucus flows radially out from the opening into small perimeter pools. Few hanging strands at side corners, clear sightline to face and lips. Chamber walls fold into the opening like a living organ instead of concentric architectural arches. Full scene with coherent floor and continuous organic chamber ceiling. Restrained bright teal only on edges. Minimal planning labels only: OPENING, WALK, EGGS, CAMERA. No website UI, logo, slogans, text paragraphs, gore, blood. The opening must dominate front elevation, enclosing mascot behind rather than being hidden behind a large foreground arch. Diagram useful for mapping x/z positions into a three.js scene; clear spatial zones, no decorative collage.",
+  "references": [
+    "previous textured scene screenshot",
+    "assets/brand/character.png"
+  ],
+  "output": "assets/source/scene-map.png",
+  "purpose": "Planning reference. Generated character is not canonical artwork."
+}

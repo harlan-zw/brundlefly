@@ -332,6 +332,19 @@ Warm glisten and restrained teal edges follow the scene lighting settings.
 Eight unequal translucent egg sacs cluster at the floor edges. Their inner folds and membranes breathe slowly.
 Both sources remain reusable inside the portable layer: shared/goo.ts and shared/eggs.ts.
 
+## Scene map
+
+[2D plan and elevation](../../assets/source/scene-map.png) sets the scene's composition.
+[Exact ImageGen prompt](../../assets/prompts/scene-map.json) records the design references.
+The generated mascot is a planning reference. Runtime retains the canonical character artwork.
+
+shared/scene-layout.ts translates the map into opening transforms, camera framing, walking route, and egg positions.
+The six lips dominate the rear chamber. High perimeter ribs leave their silhouette visible.
+The mascot walks across a clear crescent apron. Egg clusters occupy uneven side niches.
+Thin mucus runoff links the opening to perimeter pools.
+Traveling contraction moves the rings and their attached tendons, membranes, bristles, and lip plates.
+The lair deformation leaves specimen transforms unchanged.
+
 The homepage has hidden scene controls. Press L, or open the page with controls=1 in its query.
 Copy settings exports the live SceneSettings values. Reset restores shared/scene-settings.ts defaults.
 System reduced motion and Motion off freeze the scene.

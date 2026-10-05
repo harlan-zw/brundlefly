@@ -3,6 +3,7 @@ import {
   TubeGeometry, Vector3,
 } from 'three'
 import type { BufferGeometry, Material, Texture } from 'three'
+import { sceneLayout } from './scene-layout'
 
 export type EggSacInput = { time: number, breath: number, wetness: number }
 
@@ -55,7 +56,7 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
   materials.add(tendonMaterial)
 
   const animated: { body: Group, core: Group, phase: number, height: number, base: Vector3 }[] = []
-  const clusters = [{ x: -2.35, z: 1.3, side: -1 }, { x: 2.6, z: -0.6, side: 1 }]
+  const clusters = sceneLayout.eggs.map(([x, z], index) => ({ x, z, side: index === 0 ? -1 : 1 }))
   const heights = [0.78, 0.48, 0.64, 0.36]
   for (const [clusterIndex, cluster] of clusters.entries()) {
     for (const [index, height] of heights.entries()) {

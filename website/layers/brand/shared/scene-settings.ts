@@ -17,19 +17,19 @@ export type SceneSettings = {
 }
 
 export const defaultSceneSettings: SceneSettings = {
-  ambient: 0.85,
-  key: 90,
-  fill: 0.65,
-  rim: 0.4,
-  inner: 5,
-  exposure: 1.05,
+  ambient: 2.05,
+  key: 80,
+  fill: 2,
+  rim: 1.85,
+  inner: 4.9,
+  exposure: 1.5,
   fog: 0.028,
   zoom: 1,
   walkSpeed: 0.38,
   breath: 1,
   flow: 1,
   wetness: 0.85,
-  textureGlow: 0.28,
+  textureGlow: 0.17,
   opening: 0.7,
   motionOff: false,
 }
