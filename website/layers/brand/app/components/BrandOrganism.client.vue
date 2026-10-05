@@ -2,19 +2,20 @@
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useDocumentVisibility, useElementSize, useEventListener, useIntersectionObserver, usePreferredReducedMotion, useWindowScroll } from '@vueuse/core'
 import {
-  AmbientLight, ClampToEdgeWrapping, DirectionalLight, Group, Mesh, MeshStandardMaterial, MirroredRepeatWrapping,
+  AmbientLight, ClampToEdgeWrapping, DirectionalLight, Group, LinearFilter, Mesh, MeshStandardMaterial, MirroredRepeatWrapping,
   NearestFilter, PerspectiveCamera, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader, Vector2, WebGLRenderer,
 } from 'three'
 import { createOrganismModel } from '../../shared/organism'
 import { createMascotModel } from '../../shared/mascot'
 import type { Presentation, Transform } from '../../shared/organism'
 
-const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform = 'squeeze', presentation = 'specimen', interactive = true, motionOff = false, exportable = false, mascot = false, framing = 'center', distance } = defineProps<{
+const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform = 'squeeze', presentation = 'specimen', interactive = true, motionOff = false, exportable = false, mascot = false, framing = 'center', distance, speaking = 0, blink, brow, squint } = defineProps<{
   wetness?: number, viscosity?: number, pressure?: number, motionOff?: boolean, exportable?: boolean
   opening?: number, transform?: Transform, presentation?: Presentation, interactive?: boolean
   mascot?: boolean
-  framing?: 'center' | 'left'
+  framing?: 'center' | 'left' | 'face'
   distance?: number
+  speaking?: number, blink?: number, brow?: number, squint?: number
 }>()
 type SceneStatus = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'texture' }
 const status = ref<SceneStatus>({ _tag: 'Loading' })
@@ -60,7 +61,7 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
   refresh = undefined
   status.value = { _tag: 'Fallback', reason: 'context' }
 })
-watch([() => wetness, () => viscosity, () => pressure, () => opening, () => transform, () => motionOff, () => distance, pressed, animate, width, height], () => refresh?.())
+watch([() => wetness, () => viscosity, () => pressure, () => opening, () => transform, () => motionOff, () => distance, () => framing, () => speaking, () => blink, () => brow, () => squint, pressed, animate, width, height], () => refresh?.())
 watch(scrollY, () => { if (presentation === 'lair' && animate.value) refresh?.() })
 onScopeDispose(() => { alive = false; cleanup?.() })
 
@@ -89,12 +90,32 @@ watch(canvas, async (element) => {
   light.position.set(-2, 3, 4)
   scene.add(light)
   const model = createOrganismModel(texture, presentation, mascot ? 0.58 : 1)
+  model.root.visible = !mascot
   scene.add(model.root)
-  const mascotTexture = mascot ? await new TextureLoader().loadAsync('/brand/character.png').catch((error: unknown) => {
+  const [mascotTexture, faceTexture, projectionTexture] = mascot ? await Promise.all([
+    new TextureLoader().loadAsync('/brand/character.png').catch((error: unknown) => {
     console.warn('Brundlefly mascot texture load failed.', error)
     return undefined // The chamber remains usable when its optional mascot artwork fails.
-  }) : undefined
-  if (!alive) { mascotTexture?.dispose(); model.dispose(); texture.dispose(); renderer.dispose(); return }
+    }),
+    new TextureLoader().loadAsync('/brand/kit/lair/face-skin-diffuse.png').catch((error: unknown) => {
+      console.warn('Brundlefly face texture load failed. Using the chamber tissue.', error)
+      return undefined
+    }),
+    new TextureLoader().loadAsync('/brand/kit/lair/head-projection.png').catch((error: unknown) => {
+      console.warn('Brundlefly head projection load failed. Using the sculpted head.', error)
+      return undefined
+    }),
+  ]) : [undefined, undefined, undefined]
+  if (projectionTexture) {
+    projectionTexture.colorSpace = SRGBColorSpace
+    projectionTexture.wrapS = projectionTexture.wrapT = ClampToEdgeWrapping
+    projectionTexture.magFilter = LinearFilter
+  }
+  if (faceTexture) {
+    faceTexture.colorSpace = SRGBColorSpace
+    faceTexture.wrapS = faceTexture.wrapT = MirroredRepeatWrapping
+  }
+  if (!alive) { mascotTexture?.dispose(); faceTexture?.dispose(); projectionTexture?.dispose(); model.dispose(); texture.dispose(); renderer.dispose(); return }
   const mascotModel = mascotTexture ? (() => {
     mascotTexture.colorSpace = SRGBColorSpace
     mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
@@ -105,7 +126,16 @@ watch(canvas, async (element) => {
     raster.height = Math.round(180 * image.height / image.width)
     const painter = raster.getContext('2d')!
     painter.drawImage(image, 0, 0, raster.width, raster.height)
-    return createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height))
+    const projection = projectionTexture ? (() => {
+      const projectionImage = projectionTexture.image as HTMLImageElement
+      const projectionRaster = document.createElement('canvas')
+      projectionRaster.width = 180
+      projectionRaster.height = Math.round(180 * projectionImage.height / projectionImage.width)
+      const projectionPainter = projectionRaster.getContext('2d')!
+      projectionPainter.drawImage(projectionImage, 0, 0, projectionRaster.width, projectionRaster.height)
+      return { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) }
+    })() : undefined
+    return createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture ?? texture, projection)
   })() : undefined
   if (mascotModel) {
     const figure = new Group()
@@ -124,10 +154,17 @@ watch(canvas, async (element) => {
     const target = pressed.value ? 1 : pressure
     currentPressure = animate.value ? currentPressure + (target - currentPressure) * Math.min(1, delta * (14 - viscosity * 10)) : target
     const approach = presentation === 'lair' ? Math.min(scrollY.value / 900, 0.8) : 0
-    camera.position.z = (distance ?? (presentation === 'lair' ? 5.8 : 5.5)) - approach * 0.45
+    if (mascot && framing === 'face') {
+      camera.position.set(1.012, 1.108, -1.72 + (distance ?? 2.8))
+      camera.lookAt(1.012, 1.108, -1.72)
+    }
+    else {
+      camera.position.set(0, -0.07, (distance ?? (presentation === 'lair' ? 5.8 : 5.5)) - approach * 0.45)
+      camera.lookAt(0, -0.07, 0)
+    }
     model.update({ time: elapsed, pressure: currentPressure, wetness, pointer, transform,
       opening: opening + (presentation === 'lair' ? Math.min(elapsed / 2, 1) * 0.15 + approach * 0.12 : 0) })
-    mascotModel?.update({ time: elapsed, pressure: currentPressure, pointer, transform })
+    mascotModel?.update({ time: elapsed, pressure: currentPressure, pointer, transform, speaking, blink, brow, squint })
     renderer.render(scene, camera)
   }
   refresh = () => {
@@ -159,6 +196,8 @@ watch(canvas, async (element) => {
     model.dispose()
     mascotModel?.dispose()
     mascotTexture?.dispose()
+    faceTexture?.dispose()
+    projectionTexture?.dispose()
     texture.dispose()
     renderer.dispose()
     download = undefined
@@ -175,7 +214,7 @@ watch(canvas, async (element) => {
         object.material = object.material.uniforms.uChitin?.value ? chitin : flesh
       }
     })
-    const animations = mascotModel ? [mascotModel.idleAnimation(), mascotModel.walkAnimation()] : []
+    const animations = mascotModel ? [mascotModel.idleAnimation(), mascotModel.walkAnimation(), mascotModel.speakingAnimation()] : []
     const data = await new GLTFExporter().parseAsync(rest, { binary: true, animations }).finally(() => { flesh.dispose(); chitin.dispose(); refresh?.() })
     if (!(data instanceof ArrayBuffer)) throw new Error('GLB export did not return a binary model.')
     const url = URL.createObjectURL(new Blob([data], { type: 'model/gltf-binary' }))

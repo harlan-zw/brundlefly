@@ -148,7 +148,7 @@ GLSL adds pressure displacement, pulse, cool rim light, and wet highlights.
 Viscosity sets pressure response speed. Wetness sets the highlight strength.
 The diffuse texture uses mirrored repeat. The supplied color image is not a normal map.
 Geometry normals and shader deformation supply depth. No bone skeleton is required for this material specimen.
-The separate mascot rig preserves canonical anatomy with 23 joints and blended skin weights.
+The separate mascot rig preserves canonical anatomy with 23 body joints and nine face hinges and blended skin weights.
 
 The GLB contains rest geometry and a PBR texture. Runtime GLSL remains in the layer source.
 The kit can export its current model. The checked-in rest model provides a fixed interchange artifact.
@@ -291,11 +291,11 @@ The separate brand kit retains its functional layout controls and composition ex
 
 The canonical character pixels map onto an extruded silhouette with front, back, and edge geometry.
 A distance field supplies rounded depth. Dark background pixels define mesh occupancy without changing the source artwork.
-The rig has 23 joints and blended skin weights. It preserves four arms, two legs, and two unequal wings.
+The rig has 23 body joints and nine face hinges and blended skin weights. It preserves four arms, two legs, and two unequal wings.
 The head follows the pointer. Pressure moves elbows and hands. Unfurl opens the wings.
 Idle motion breathes through the chest and shifts the knees and wings.
-The exported GLB includes the skinned mesh, canonical texture, skeleton, and idle and walk clips.
-The artifact is a volumetric relief. A full side and back sculpt needs additional modeling.
+The exported GLB includes the skinned mesh, canonical texture, skeleton, and idle, walk, and speaking clips.
+The body remains a volumetric relief. The head projects generated reference artwork onto an articulated surface with skull depth.
 The generated sculpt reference supplies that direction. Canonical anatomy remains authoritative.
 
 | File | Type | Role |
@@ -303,8 +303,8 @@ The generated sculpt reference supplies that direction. Canonical anatomy remain
 | assets/brand/character.png | 1199 × 1312, PNG | Unchanged canonical texture |
 | assets/brand/kit/lair/mascot-sculpt-reference.png | 1199 × 1312, PNG | Generated sculpt direction |
 | assets/prompts/mascot-rig.json | JSON | Exact prompt and references |
-| assets/brand/kit/lair/brundlefly-rig.glb | GLB 2.0, 6,580,204 bytes | Rigged relief with idle and walk clips |
-| website/layers/brand/shared/mascot.ts | TypeScript | Geometry, skin weights, bones, idle and walk clips |
+| assets/brand/kit/lair/brundlefly-rig.glb | GLB 2.0 | Rigged relief with idle, walk, and speaking clips |
+| website/layers/brand/shared/mascot.ts | TypeScript | Geometry, skin weights, bones, idle, walk, and speaking clips |
 | website/layers/brand/shared/world.ts | TypeScript | Chamber geometry, materials, lights, and ambient movement |
 | website/app/pages/_WorldScene.client.vue | Vue | World lifecycle, walking, raycast, and keyboard conversation target |
 | website/app/pages/_SpeechDialog.vue | Vue | Native local text conversation |
@@ -362,3 +362,33 @@ The shapes approximate sticky filaments; they do not run a fluid simulation.
 The homepage has hidden scene controls. Press L, or open the page with controls=1 in its query.
 Copy settings exports the live SceneSettings values. Reset restores shared/scene-settings.ts defaults.
 System reduced motion and Motion off freeze the scene.
+
+## Face, cursor, and scene sound
+
+The front head texture controls visible features. Geometry adds eye socket, skull, and mouth depth.
+Face weights move the jaw, brows, lids, and mouth tendrils. Dark eye pixels remain opaque.
+The kit exposes speech, blink, brow, and squint controls for the face view.
+The earlier sprite relief remains a useful visual reference for the body.
+
+| File | Role |
+| --- | --- |
+| assets/source/head-sculpt-direction.png | Generated front, side, and speaking reference master |
+| assets/brand/kit/lair/head-sculpt-direction.png | Head direction board |
+| assets/source/head-frontal-reference.png | Literal frontal crop from the direction board |
+| assets/brand/kit/lair/head-projection.png | Transparent, high-detail frontal head texture |
+| assets/source/face-skin-diffuse.png | Generated skin texture master |
+| assets/brand/kit/lair/face-skin-diffuse.png | Skull side and back texture |
+| assets/source/cursor-claw.png | Generated cursor master |
+| assets/brand/kit/lair/cursor-claw.png | 48-pixel scene cursor, hotspot 4,3 |
+| assets/prompts/head-sculpt-direction.json | Head board generation provenance |
+| assets/prompts/head-projection.json | Frontal cutout generation provenance |
+| assets/prompts/face-skin-diffuse.json | Skin generation provenance |
+| assets/prompts/cursor-claw.json | Cursor generation provenance |
+| website/layers/brand/shared/face.ts | Face geometry, projection, weights, and expression updates |
+| website/app/pages/_SceneLoading.vue | Branded loading surface with reduced motion support |
+| website/app/pages/_SceneAudio.vue | Trusted input, mute control, and audio lifecycle |
+| website/shared/scene-audio.ts | Local ambient synthesis and mascot phrase envelopes |
+
+Audio starts after trusted input. M toggles sound outside text fields. The dialog also has a sound button.
+Mascot phrases use synthesized tones. They require no microphone, speech service, or account.
+Reply length controls phrase duration. The voice envelope drives mouth movement.

@@ -26,7 +26,7 @@ Keep content 32px inward on desktop and 24px inward on mobile.
 Artwork is masked into the edge zone. It must never enter editable content.
 
 The 3D aperture uses uneven tissue meshes, connected membranes, chitin plates, bristles, slime, and GLSL deformation.
-The material specimen needs no skeleton. The separate mascot relief uses a 23-joint skeleton.
+The material specimen needs no skeleton. The separate mascot relief uses a 23 body joints and nine face hinges.
 The GLB export stores a PBR rest mesh and diffuse texture for Blender.
 The runtime shader remains in shared/organism.ts. GLB does not contain that shader.
 Reduced motion stops the render loop. Pressure changes then render immediately.
@@ -42,7 +42,7 @@ Field focus holds light pressure. Typing produces a brief contraction and moves 
 Reduced motion disables that ambient response. The lab remains explicitly interactive.
 The ZIP includes runtime artwork and model source. GLB models have separate download URLs.
 Use a key when changing mascot or presentation, since each combination builds a different model.
-The mascot uses canonical pixels on an extruded silhouette, 23 weighted joints, and baked idle and walk clips.
+The mascot uses canonical pixels on an extruded silhouette, 23 body joints and nine face hinges, and baked idle, walk, and speaking clips.
 It is a volumetric relief. Its front artwork does not supply a modeled back or side sculpt.
 
 ## World-only homepage
@@ -60,5 +60,5 @@ The renderer owns the shared texture. Model disposal releases geometry and mater
 The homepage renderer lives in website/app/pages/_WorldScene.client.vue.
 Its native dialog lives in _SpeechDialog.vue. Canonical local replies live in website/shared/conversation.ts.
 The layer supplies visual models. Conversation behavior stays in the consuming app.
-The mascot GLB contains the canonical texture, skin weights, skeleton, and idle and walk clips.
+The mascot GLB contains the canonical texture, skin weights, skeleton, and idle, walk, and speaking clips.
 The mascot remains a volumetric relief. Full side and back anatomy need additional sculpting.

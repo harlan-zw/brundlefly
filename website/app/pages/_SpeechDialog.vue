@@ -3,8 +3,8 @@ import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue
 import { replyToConversation } from '#shared/conversation'
 import type { ConversationMessage } from '#shared/conversation'
 
-const { open } = defineProps<{ open: boolean }>()
-const emit = defineEmits<{ close: [] }>()
+const { open, muted = false, soundAvailable = true } = defineProps<{ open: boolean, muted?: boolean, soundAvailable?: boolean }>()
+const emit = defineEmits<{ close: [], reply: [text: string], sound: [] }>()
 const dialog = shallowRef<HTMLDialogElement>()
 const input = shallowRef<HTMLTextAreaElement>()
 const log = shallowRef<HTMLDivElement>()
@@ -37,6 +37,7 @@ const send = async () => {
   messages.value = [...messages.value.slice(-14), { _tag: 'User', text: text.value.trim() }, { _tag: 'Reply', reply: result.reply }]
   text.value = ''
   error.value = ''
+  emit('reply', result.reply.text)
   await nextTick()
   if (log.value) log.value.scrollTop = log.value.scrollHeight
   input.value?.focus()
@@ -70,6 +71,7 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
       <textarea id="speech-input" ref="input" v-model="text" rows="2" maxlength="1000" :aria-invalid="Boolean(error)" :aria-describedby="error ? 'speech-error' : undefined" @input="error = ''" />
       <div class="speech-send-row">
         <p v-if="error" id="speech-error" role="alert">{{ error }}</p>
+        <button v-if="soundAvailable" class="speech-sound" type="button" :aria-pressed="muted" @click="emit('sound')">{{ muted ? 'Sound on' : 'Sound off' }}</button>
         <button class="speech-send" type="submit">Send</button>
       </div>
     </form>
@@ -85,6 +87,7 @@ header { display: flex; justify-content: space-between; gap: 12px; margin-bottom
 h2 { margin: 0; font: 600 25px var(--font-display, sans-serif); }
 header p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; color: #a4b5a0; }
 .speech-close { flex-shrink: 0; width: 44px; height: 44px; border: 0; background: transparent; color: #e8d4a6; font-size: 28px; cursor: pointer; }
+.speech-sound { margin-right: auto; min-height: 44px; padding: 4px 8px; border: 0; color: #a4b5a0; background: transparent; font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
 .speech-log { min-height: 40px; max-height: 130px; min-width: 0; overflow: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-color: #69404b #10130f; }
 .speech-message { padding: 12px 0; }
 .speech-message p, .speech-start { margin: 0; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }

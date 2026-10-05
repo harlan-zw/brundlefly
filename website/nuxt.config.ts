@@ -15,8 +15,13 @@ export default defineNuxtConfig({
         { property: 'og:title', content: 'Brundlefly | Self-contained Agent Skills' },
         { property: 'og:description', content: 'A collection of self-contained Agent Skills.' },
         { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: 'https://brundlefly.dev/' },
+        { property: 'og:image', content: 'https://brundlefly.dev/brand/github-banner-overhang-gross.png' },
       ],
-      link: [{ rel: 'icon', type: 'image/png', href: '/brand/github-avatar.png' }],
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/brand/github-avatar.png' },
+        { rel: 'canonical', href: 'https://brundlefly.dev/' },
+      ],
     },
   },
   // The standalone kit is generated separately and assembled after this export.

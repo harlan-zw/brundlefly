@@ -1,0 +1,8 @@
+{
+  "tool": "builtin imagegen",
+  "prompt": "Production seamless albedo/diffuse texture tile for the fleshy skin of the supplied Brundlefly head sculpt. This is a flat square texture material, NOT a face portrait or a character. Match the reference's rusty orange flesh, dark bruised purple fold creases, subtle capillary mottling, tiny insect pores and fine damp leathery wrinkles. Detailed high-resolution microscopic organic tissue with many irregular scales and soft small folds. Rich muted burnt orange #AA604B, ochre, bruise purple #69404B; occasional muted olive discoloration. Neutral diffuse lighting without highlights, directional shadows, vignette or ambient occlusion. No eyes, mouth, nose, ears, limbs, bugs, or recognizable anatomy. Seamless across all four edges; uniform detail density. Fine pores sharp enough for a close-up 3D head. Smooth continuous living skin, not enlarged pixel art. Cover canvas completely. Do not include metallic shine; the renderer adds wet highlights.",
+  "references": [
+    "assets/source/head-sculpt-direction.png"
+  ],
+  "transparent_background": false
+}

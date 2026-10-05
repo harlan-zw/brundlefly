@@ -22,6 +22,10 @@ const opening = ref(0.5)
 const transform = ref<Transform>('squeeze')
 const scene = ref<Presentation>('specimen')
 const mascot = ref(false)
+const speaking = ref(0)
+const blink = ref(0)
+const brow = ref(0)
+const squint = ref(0)
 const motionOff = ref(false)
 const reduced = usePreferredReducedMotion()
 const paused = computed(() => motionOff.value || reduced.value === 'reduce')
@@ -56,7 +60,7 @@ const paused = computed(() => motionOff.value || reduced.value === 'reduce')
           <article v-for="part in parts" :key="part.name"><div class="part-image"><img :src="part.file" :alt="part.name"></div><h3>{{ part.name }}</h3><p>{{ part.role }}</p><code>{{ part.component }}</code><a :href="part.file" download>Download ↓</a></article>
         </section>
         <section v-if="section === 'Motion'" class="motion-lab" aria-label="Motion">
-          <div><LazyBrandOrganism :key="`${scene}-${mascot}`" :mascot="mascot" :presentation="scene" :wetness="wetness" :viscosity="viscosity" :pressure="pressure" :opening="opening" :transform="transform" :motion-off="paused" exportable /><p class="kit-note">Drag to deform. Space to press.</p></div>
+          <div><LazyBrandOrganism :key="`${scene}-${mascot}`" :mascot="mascot" :framing="mascot ? 'face' : 'center'" :presentation="scene" :wetness="wetness" :viscosity="viscosity" :pressure="pressure" :opening="opening" :transform="transform" :speaking="speaking" :blink="mascot ? blink : undefined" :brow="brow" :squint="squint" :motion-off="paused" exportable /><p class="kit-note">Drag to deform. Space to press.</p></div>
           <div class="motion-controls">
             <div class="transform-choices" role="group" aria-label="Scene"><BrandChoice label="Aperture" :selected="scene === 'specimen'" @click="scene = 'specimen'" /><BrandChoice label="Lair" :selected="scene === 'lair'" @click="scene = 'lair'" /></div>
             <div class="transform-choices" role="group" aria-label="Transform"><BrandChoice v-for="value in transforms" :key="value" :label="value.charAt(0).toUpperCase() + value.slice(1)" :selected="transform === value" @click="transform = value" /></div>
@@ -65,15 +69,26 @@ const paused = computed(() => motionOff.value || reduced.value === 'reduce')
             <label for="wetness">Wetness <output>{{ wetness }}</output></label><input id="wetness" v-model.number="wetness" type="range" min="0" max="1" step="0.05">
             <label for="viscosity">Viscosity <output>{{ viscosity }}</output></label><input id="viscosity" v-model.number="viscosity" type="range" min="0" max="1" step="0.05">
             <label for="pressure">Pressure <output>{{ pressure }}</output></label><input id="pressure" v-model.number="pressure" type="range" min="0" max="1" step="0.05">
-            <p class="kit-note">{{ mascot ? 'Rigged GLB with idle and walk clips.' : 'GLB rest pose. Runtime shader adds deformation.' }}</p>
+            <template v-if="mascot">
+              <label for="speech">Speech <output>{{ speaking }}</output></label><input id="speech" v-model.number="speaking" type="range" min="0" max="1" step="0.05">
+              <label for="blink">Blink <output>{{ blink }}</output></label><input id="blink" v-model.number="blink" type="range" min="0" max="1" step="0.05">
+              <label for="brow">Brow <output>{{ brow }}</output></label><input id="brow" v-model.number="brow" type="range" min="0" max="1" step="0.05">
+              <label for="squint">Squint <output>{{ squint }}</output></label><input id="squint" v-model.number="squint" type="range" min="0" max="1" step="0.05">
+            </template>
+            <p class="kit-note">{{ mascot ? 'Rigged GLB with idle, walk, and speaking clips.' : 'GLB rest pose. Runtime shader adds deformation.' }}</p>
             <a class="rest-download" :href="mascot ? '/brand/kit/lair/brundlefly-rig.glb' : scene === 'lair' ? '/brand/kit/lair/lair-organic-rest.glb' : '/brand/kit/lair/aperture-organic-rest.glb'" download>Download rest GLB</a>
             <pre class="kit-code">&lt;LazyBrandOrganism
   presentation="{{ scene }}"
   :mascot="{{ mascot }}"
+  framing="{{ mascot ? 'face' : 'center' }}"
   :wetness="{{ wetness }}"
   :viscosity="{{ viscosity }}"
   :pressure="{{ pressure }}"
   :opening="{{ opening }}"
+  :speaking="{{ speaking }}"
+  :blink="{{ blink }}"
+  :brow="{{ brow }}"
+  :squint="{{ squint }}"
   transform="{{ transform }}"
 /&gt;</pre>
           </div>

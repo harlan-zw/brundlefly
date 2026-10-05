@@ -2,7 +2,7 @@
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useDocumentVisibility, useElementSize, useEventListener, usePreferredReducedMotion } from '@vueuse/core'
 import {
-  ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, Mesh, MirroredRepeatWrapping, NearestFilter,
+  ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
   PerspectiveCamera, PlaneGeometry, Raycaster, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
@@ -13,8 +13,9 @@ import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { defaultCameraView, moveCameraView, resolveCameraView, rotateCameraView } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import SceneControls from './_SceneControls.vue'
+import SceneLoading from './_SceneLoading.vue'
 
-const { paused = false } = defineProps<{ paused?: boolean }>()
+const { paused = false, speaking = 0 } = defineProps<{ paused?: boolean, speaking?: number }>()
 const emit = defineEmits<{ talk: [] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
@@ -104,6 +105,7 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
 })
 watch([animate, width, height], () => refresh?.())
 watch(settings, () => refresh?.(), { deep: true })
+watch(() => speaking, () => refresh?.())
 watch([() => paused, visibility], () => {
   if (paused || visibility.value !== 'visible') { cameraKeys.clear(); endView(); hovered.value = false }
   refresh?.()
@@ -121,10 +123,12 @@ watch(canvas, async (element) => {
     new TextureLoader().loadAsync('/brand/kit/lair/chitin-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/floor-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/egg-diffuse.png'),
+    new TextureLoader().loadAsync('/brand/kit/lair/face-skin-diffuse.png'),
+    new TextureLoader().loadAsync('/brand/kit/lair/head-projection.png'),
   ])
-  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult] = results
+  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult] = results
   if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
-    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected') {
+    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected') {
     for (const result of results) {
       if (result.status === 'fulfilled') result.value.dispose()
       else console.error('Brundlefly world artwork failed to load.', result.reason)
@@ -132,18 +136,20 @@ watch(canvas, async (element) => {
     status.value = { _tag: 'Fallback', reason: 'art' }
     return
   }
-  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture] = [
-    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value,
+  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture] = [
+    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value,
   ]
-  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture]
+  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture]
   if (!alive) { loadedTextures.forEach(value => value.dispose()); return }
   loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
-  for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture]) {
+  for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture]) {
     tiled.wrapS = tiled.wrapT = MirroredRepeatWrapping
   }
   chitinTexture.repeat.set(2, 2)
   floorTexture.repeat.set(5, 8)
   mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
+  projectionTexture.wrapS = projectionTexture.wrapT = ClampToEdgeWrapping
+  projectionTexture.magFilter = LinearFilter
   texture.magFilter = mascotTexture.magFilter = NearestFilter
   const image = mascotTexture.image as HTMLImageElement
   const raster = document.createElement('canvas')
@@ -151,7 +157,14 @@ watch(canvas, async (element) => {
   raster.height = Math.round(raster.width * image.height / image.width)
   const painter = raster.getContext('2d')!
   painter.drawImage(image, 0, 0, raster.width, raster.height)
-  const mascot = createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height))
+  const projectionImage = projectionTexture.image as HTMLImageElement
+  const projectionRaster = document.createElement('canvas')
+  projectionRaster.width = 180
+  projectionRaster.height = Math.round(180 * projectionImage.height / projectionImage.width)
+  const projectionPainter = projectionRaster.getContext('2d')!
+  projectionPainter.drawImage(projectionImage, 0, 0, projectionRaster.width, projectionRaster.height)
+  const mascot = createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
+    { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) })
   const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture })
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping
@@ -183,10 +196,11 @@ watch(canvas, async (element) => {
   scene.add(shadow)
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
   const raycaster = new Raycaster()
-  hit = position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.mesh, false).length > 0 }
+  hit = position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
   const route = sceneLayout.walk.map(([x, z]) => new Vector3(x, floorY, z))
   let destination = 0
   let elapsed = 0
+  let faceElapsed = 0
   let phase = 0
   let speed = 0
   let lastTime = 0
@@ -199,6 +213,7 @@ watch(canvas, async (element) => {
   const focusPosition = new Vector3()
   const focusTarget = new Vector3()
   const needsFrames = () => visibility.value === 'visible' && (animate.value || (!paused && cameraKeys.size > 0)
+    || (paused && !settings.value.motionOff && reduced.value !== 'reduce')
     || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001)
   function render(delta: number) {
     renderer.toneMappingExposure = settings.value.exposure
@@ -239,7 +254,10 @@ watch(canvas, async (element) => {
       elapsed += delta
     }
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
-    mascot.update({ time: elapsed, pressure: 0, pointer, transform: 'squeeze', walking, walkPhase: phase })
+    const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
+    if (faceMotion) faceElapsed += delta
+    mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', walking, walkPhase: phase,
+      speaking: faceMotion ? speaking : 0 })
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
     const corners = [new Vector3(-1.1, -1.25, 0), new Vector3(1.1, 1.3, 0)].map(value => figure.localToWorld(value).project(camera))
@@ -281,10 +299,11 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-renderer="status._tag">
+  <div ref="host" class="world-scene" :data-renderer="status._tag" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
-    <img v-if="status._tag !== 'Ready'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
-    <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" aria-label="Talk to Brundlefly" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
+    <SceneLoading v-if="status._tag === 'Loading'" />
+    <img v-if="status._tag === 'Fallback'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
+    <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" :disabled="status._tag === 'Loading'" aria-label="Talk to Brundlefly" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
     <p v-if="status._tag === 'Fallback'" class="world-status" role="status">{{ status.reason === 'context' ? 'Static scene. WebGL is unavailable.' : 'The scene could not load.' }}</p>
     <SceneControls v-model="settings" />
   </div>
@@ -293,8 +312,8 @@ watch(canvas, async (element) => {
 <style scoped>
 .world-scene { position: fixed; inset: 0; overflow: hidden; background: var(--color-night); }
 canvas { display: block; width: 100%; height: 100%; }
-.world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: default; touch-action: none; }
-.world-interaction.mascot-hover { cursor: pointer; }
+.world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, default; touch-action: none; }
+.world-interaction.mascot-hover { cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, pointer; }
 .world-interaction:focus-visible { outline: 2px solid var(--color-cream); outline-offset: -8px; }
 .world-fallback { position: absolute; inset: 10% 0; margin: auto; height: 80%; width: 80%; object-fit: contain; image-rendering: pixelated; }
 .world-status { position: absolute; bottom: 1rem; left: 1rem; right: 1rem; text-align: center; font: 12px var(--font-mono); color: var(--color-wing); }

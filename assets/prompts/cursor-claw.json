@@ -1,0 +1,18 @@
+{
+  "tool": "builtin imagegen",
+  "prompt": "Create one production UI mouse cursor asset for the Brundlefly organic horror lair website, using the supplied canonical artwork only as a palette and tissue/style reference. Transparent background, no words, no letters, no canvas shadow. Single very compact upward-left pointing tendon claw, recognizable sharp arrow-like hotspot at upper-left, chitin tip, small bruised fleshy root, one tiny sticky olive secretion. Four or fewer large visual masses, strong legible silhouette at 32 to 48 pixels. Pixel-sculpted flesh matching rusty orange #AA604B, muted green #A4B5A0 and bruise #69404B; pale bone highlight around perimeter for contrast against dark tissue. Not a hand, not a full mascot, no extra characters. Fill the square canvas with the single cursor icon, leaving only a narrow transparent margin. Sharply defined pixels and restrained wet glints, no wispy details or large detached drops. Gross but precise and usable as an actual cursor. Point extends toward the top left; wide bottom right root. Alpha cutout must be clean.",
+  "references": [
+    "assets/brand/character.png"
+  ],
+  "transparent_background": true,
+  "source": "assets/source/cursor-claw.png",
+  "runtime": "assets/brand/kit/lair/cursor-claw.png",
+  "runtimeSize": [
+    48,
+    48
+  ],
+  "hotspot": [
+    4,
+    3
+  ]
+}
