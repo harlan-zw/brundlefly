@@ -15,13 +15,13 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 
 | Asset | String | Where it goes |
 | --- | --- | --- |
-| Tagline | Something human in the slop. | README opening and public brand introductions |
+| Tagline | Agent skills for grotesque text mutations. | README opening and public brand introductions |
 
 ## Register by context
 
 | Context | Register | Example |
 | --- | --- | --- |
-| README opening | Warm, blunt, unsettling | Something human in the slop. |
+| README opening | Direct, grotesque | Agent skills for grotesque text mutations. |
 | Why | Human purpose, concrete loss | You write because you want someone to understand. |
 | Features | Concrete, factual | edit prose while preserving claim scope, uncertainty, and the author's voice. |
 | Setup and reference | Plain, complete | Clone this repository with Git, then run the examples from its root: |

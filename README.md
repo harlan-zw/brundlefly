@@ -1,6 +1,6 @@
 # ![Brundlefly, with its mascot's claws hanging below the banner](https://github.com/harlan-zw/brundlefly/raw/main/assets/brand/github-banner-overhang-gross.png)
 
-> Something human in the slop.
+> Agent skills for grotesque text mutations.
 
 <a href="https://skilld.dev/gh/harlan-zw/brundlefly">
   <picture>
