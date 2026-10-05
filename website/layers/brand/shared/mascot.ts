@@ -141,7 +141,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     const sx = (x + 0.5) / (width - 1)
     const sy = (y + 0.5) / (height - 1)
     // Replace the raster head with an actual sculpt. Keep shoulder arms and both wing silhouettes.
-    const neckJoin = sx >= 0.54 && sx <= 0.62 && sy >= 0.14
+    const neckJoin = sx >= 0.54 && sx <= 0.62 && sy >= 0.07
     if (headProjection && !neckJoin && sy < 0.315 && Math.pow((sx - 0.67) / 0.146, 2) + Math.pow((sy - 0.218) / 0.19, 2) <= 1) continue
     // Include a cell only when all corners are tissue. Holes remain open, including fingers and wings.
     if (!(mask[a] && mask[a + 1] && mask[a + width] && mask[a + width + 1])) continue

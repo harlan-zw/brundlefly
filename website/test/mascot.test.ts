@@ -292,3 +292,19 @@ test('the actual head overlaps its curled neck instead of exposing the upper att
     'The actual head must overlap the curled neck at its upper attachment.')
   model.dispose(); texture.dispose()
 })
+
+test('the mapped upper neck attachment covers the full diagonal join', () => {
+  const texture = new Texture()
+  const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster},
+    {texture, raster: imageRaster('../../assets/brand/kit/lair/body-projection.png')})
+  for (const [walking, speaking] of [[false, 0], [true, 0], [false, 1]] as const) {
+    model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', walking, walkPhase: Math.PI / 2, speaking, blink: 0})
+    for (let y = 0.90; y <= 1.08; y += 0.01) for (const offset of [0, 0.004, 0.008]) {
+      const x = 0.10 + (y - 0.90) * 0.55 + offset
+      const ray = new Raycaster(new Vector3(x, y, 2), new Vector3(0, 0, -1))
+      assert.ok(ray.intersectObject(model.root, true).length,
+        `The upper attachment must cover the continuous seam at ${x.toFixed(3)},${y.toFixed(3)}.`)
+    }
+  }
+  model.dispose(); texture.dispose()
+})
