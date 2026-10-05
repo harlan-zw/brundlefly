@@ -54,3 +54,11 @@ These restrictions govern claims in Brundlefly's own copy, not direct quotes or 
 ## Open questions
 
 Any further slogan or mascot dialogue requires the owner's approval before publication.
+The owner authorized the Luna dialogue implementation and its proposed voice.
+
+## Mascot dialogue
+
+The character prompt and starter conversations live in `docs/brand/mascot-dialogue.md`.
+The website's `COPY.md` owns dialogue controls, errors, and privacy text.
+Keep his words short, strained, and clear. Humour comes from his body and living room.
+Use plain errors and controls. Never distort text to imply speech.

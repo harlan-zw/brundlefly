@@ -1,6 +1,7 @@
 # Brundlefly dialogue
 
-Proposed voice for the owner's review. This document does not replace approved website copy.
+The owner requested this voice's implementation with GPT-6 Luna.
+The website's `COPY.md` owns functional dialogue strings.
 
 Brundlefly sounds like a human voice negotiating unfamiliar mouthparts.
 He is observant, guarded, and dryly funny. He makes room for the visitor.
@@ -105,7 +106,7 @@ Do not invent personal memories or details about other visitors.
 ## Dialogue presentation
 
 Keep the existing face zoom, camera restore, and quiet world motion.
-Show one current NPC utterance as the focus, with a faint physical aside above it.
+Show one current NPC utterance as the focus, with a faint physical aside beside it.
 Offer three numbered text choices below the utterance, followed by the existing free-text input.
 Numbers 1 to 3 work only when the input does not own keyboard focus.
 Use the canonical cream type. Keep words readable rather than applying distortion to the whole paragraph.
@@ -113,7 +114,7 @@ Reveal words in short breath-sized groups. Do not insert sound effects into scre
 Reduced motion shows the whole line immediately. A click reveals the rest before advancing.
 Drive the current synthesized voice and jaw from `speech`, never from `beat` or the choices.
 Use `mood` for subtle gaze and head movement, not for changing the facial artwork.
-Keep conversation history available without forcing the visitor to read a chat transcript.
+Keep recent conversation history in browser memory without showing a scrolling chat transcript.
 
 ## Model and Gateway direction
 
@@ -138,7 +139,9 @@ References: [GPT-6 Luna](https://developers.cloudflare.com/ai/models/openai/gpt-
 
 ## Voice evaluation
 
-These samples used previous model candidates. Run the voice evaluation on GPT-6 Luna before enabling live dialogue.
+The earlier samples used previous model candidates.
+A real Worker request through the dedicated Gateway returned a valid Luna reply with three choices in 3.95 seconds.
+The local checks also confirmed stable visitor ordinals, rejected cross-site origins, and rejected forged system history.
 
 Synthetic conversations ran through the existing `default` AI Gateway on 6 October 2026, Melbourne time.
 The final GPT-5.4 nano prompt returned complete JSON and three choices for all five inputs.
@@ -156,14 +159,16 @@ Before release, evaluate longer conversations, repeated refusals, visitor number
 
 ## Integration with the current site
 
-The current Worker serves static assets. AI dialogue needs a server request handler.
-Keep the Nuxt exports static and add bounded same-origin `/api/dialogue` and `/api/visit` handlers to the Worker.
-Use a Workers AI binding routed through a dedicated `brundlefly` AI Gateway.
-Keep provider credentials and prompts on the server. User-supplied text reaches Cloudflare and the selected model.
-Replace the existing browser-local privacy note before enabling AI dialogue.
-Do not retain raw conversation text in Gateway logs by default.
-Set Gateway rate and spend limits, and apply a per-session limit in the Worker.
-Use Turnstile only if observed abuse justifies an extra interaction.
+The Worker serves static Nuxt exports and same-origin `/api/dialogue` and `/api/visit` handlers.
+A Workers AI binding routes Luna through the dedicated `brundlefly` AI Gateway.
+The build extracts this system prompt into a server-only module. No provider key reaches the browser.
+User-supplied text reaches Cloudflare and OpenAI. The dialogue states this before submission.
+Gateway conversation logging and caching are disabled. Replies have a 768-token budget and a 15-second deadline.
+History stays in browser memory. The server accepts at most eight messages and 1,000 characters of new input.
+An atomic D1 reservation caps generation at 40 requests per session, 60 per daily IP hash, and 1,000 per UTC day.
+Two seconds separate requests from the same session. Failed generations consume quota too.
+Gateway rate limiting caps requests at 30 per minute. There is no automatic provider fallback or retry.
+Turnstile can follow if observed abuse justifies an extra interaction.
 
 Useful reference patterns:
 
@@ -178,9 +183,13 @@ The Brundlefly site must not depend on private checkouts or share another app's 
 ## Honest visitor numbering
 
 Count first conversation starts per anonymous browser session, not every page reload or model request.
-Use a server-issued cookie and an atomic daily counter. A Durable Object can keep assignment and increment together.
+Use a server-issued cookie and an atomic D1 statement to assign the daily ordinal.
 Use one explicit day boundary, initially UTC. Reopening keeps the same ordinal for that day.
 Return a server-issued ordinal to the greeting renderer. Inject the completed greeting after any cached opening.
 The model does not calculate or invent the number. A returning session must not increment the same day's count again.
 This counts visitor sessions. It cannot prove that each browser represents a distinct person.
 Use "visitor" rather than claiming a count of unique people. Hide the ordinal if the counter is unavailable.
+Opening a conversation removes ordinal and quota records older than the previous seven UTC dates.
+Cleanup runs on visits, so inactive deployments can retain old metadata until the next conversation opens.
+The server does not store conversation text.
+The local Cloudflare preview uses a separate local D1 store and the real remote AI binding.

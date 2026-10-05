@@ -6,6 +6,7 @@ on:
       - 'website/**'
       - 'assets/brand/**'
       - 'skills/**'
+      - 'docs/brand/mascot-dialogue.md'
       - '.github/workflows/website.yml'
   push:
     branches: [main]
@@ -13,6 +14,7 @@ on:
       - 'website/**'
       - 'assets/brand/**'
       - 'skills/**'
+      - 'docs/brand/mascot-dialogue.md'
       - '.github/workflows/website.yml'
   workflow_dispatch:
 
