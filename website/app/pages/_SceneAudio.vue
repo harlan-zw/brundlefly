@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { onMounted, onScopeDispose, shallowRef, watch } from 'vue'
 import { useDocumentVisibility, useEventListener } from '@vueuse/core'
-import { createSceneAudio } from '#shared/scene-audio'
-import type { SceneAudioState } from '#shared/scene-audio'
+import { createSceneAudio, defaultSceneAudioMix } from '#shared/scene-audio'
+import type { SceneAudioMix, SceneAudioState } from '#shared/scene-audio'
 
-const { talking, replyCount, replyLength = 120 } = defineProps<{ talking: boolean, replyCount: number, replyLength?: number }>()
+const { talking, replyCount, replyLength = 120, mix = defaultSceneAudioMix } = defineProps<{ talking: boolean, replyCount: number, replyLength?: number, mix?: SceneAudioMix }>()
 const emit = defineEmits<{ state: [value: SceneAudioState], voice: [envelope: number] }>()
 const state = shallowRef<SceneAudioState>({ muted: false, status: { _tag: 'Idle' } })
 const visibility = useDocumentVisibility()
@@ -47,6 +47,7 @@ watch(() => talking, value => {
   else pendingVoice = undefined
 })
 watch(() => replyCount, (value, previous) => { if (talking && value > previous) requestVoice('reply') })
+watch(() => mix, value => audio?.setMix(value), { deep: true })
 onMounted(() => {
   audio = createSceneAudio({
     createContext: () => new AudioContext({ latencyHint: 'interactive' }),
@@ -67,6 +68,7 @@ onMounted(() => {
     onError: error => console.error('Brundlefly scene audio failed.', error),
   })
   audio.setVisible(visibility.value === 'visible')
+  audio.setMix(mix)
   audio.setTalking(talking)
   mounted = true
 })

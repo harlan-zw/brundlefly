@@ -13,6 +13,9 @@ export type SceneSettings = {
   wetness: number
   textureGlow: number
   opening: number
+  masterVolume: number
+  ambienceVolume: number
+  voiceVolume: number
   motionOff: boolean
 }
 
@@ -31,5 +34,8 @@ export const defaultSceneSettings: SceneSettings = {
   wetness: 0.85,
   textureGlow: 0.17,
   opening: 0.7,
+  masterVolume: 0.35,
+  ambienceVolume: 0.55,
+  voiceVolume: 0.8,
   motionOff: false,
 }

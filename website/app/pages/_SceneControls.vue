@@ -44,6 +44,11 @@ const groups: { label: string; sliders: Slider[] }[] = [
     { key: 'breath', label: 'Breath', min: 0, max: 2, step: 0.05 },
     { key: 'flow', label: 'Flow', min: 0, max: 2, step: 0.05 },
   ] },
+  { label: 'Sound', sliders: [
+    { key: 'masterVolume', label: 'Master volume', min: 0, max: 1, step: 0.01 },
+    { key: 'ambienceVolume', label: 'Ambience volume', min: 0, max: 1, step: 0.01 },
+    { key: 'voiceVolume', label: 'Voice volume', min: 0, max: 1, step: 0.01 },
+  ] },
 ]
 
 const setNumber = (key: Slider['key'], event: Event) => {

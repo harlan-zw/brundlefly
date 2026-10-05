@@ -121,6 +121,18 @@ test('canonical right eye keeps opaque skin around its outer and lower socket ri
   texture.dispose()
 })
 
+test('the canonical sprite comparison keeps both eye rims opaque', () => {
+  const texture = new Texture()
+  const model = createMascotModel(texture, canonicalRaster())
+  for (const [x, y] of [[0.632, 0.214], [0.775, 0.224], [0.788, 0.23], [0.778, 0.244]]) {
+    const origin = new Vector3((x! - 0.5) * 2.3, (0.5 - y!) * 2.6, 2)
+    assert.ok(new Raycaster(origin, new Vector3(0, 0, -1)).intersectObject(model.root, true).length > 0,
+      'The comparison sprite must retain opaque eye tissue.')
+  }
+  model.dispose()
+  texture.dispose()
+})
+
 test('speech moves the sculpted mouth locally and release restores the quiet face', () => {
   const width = 100
   const height = 100
@@ -168,4 +180,72 @@ test('the speaking clip opens mouth skin, blinks, and closes without a pose jump
   mixer.uncacheRoot(model.root)
   model.dispose()
   texture.dispose()
+})
+
+test('material animation leaves a cached speaking pose unchanged', () => {
+  const texture = new Texture()
+  const model = projectedMascot(texture, { width: 100, height: 100, data: new Uint8ClampedArray(100 * 100 * 4).fill(180) })
+  const mixer = new AnimationMixer(model.root)
+  mixer.clipAction(model.speakingAnimation()).play()
+  mixer.setTime(0.32)
+  model.root.updateMatrixWorld(true)
+  const surface = (x: number, y: number) => new Raycaster(new Vector3(x, y, 2), new Vector3(0, 0, -1))
+    .intersectObject(model.root, true)[0]?.point.clone()
+  const mouthBefore = surface(0.4971, 0.422)
+  const bodyBefore = surface(-0.598, 0.338)
+  assert.ok(mouthBefore && bodyBefore, 'Both head and body must have rendered surfaces.')
+  model.updateMaterials(17.25)
+  mixer.setTime(0.32) // Cached tracks need no rewrite when their pose value has not changed.
+  model.root.updateMatrixWorld(true)
+  assert.deepEqual(surface(0.4971, 0.422), mouthBefore, 'Material time must not reset the speaking jaw.')
+  assert.deepEqual(surface(-0.598, 0.338), bodyBefore, 'Material time must not move body skin.')
+  mixer.stopAllAction()
+  mixer.uncacheRoot(model.root)
+  model.dispose()
+  texture.dispose()
+})
+
+test('mapped body skin stays rounded instead of extruding artwork rows into ridges', () => {
+  const width = 48, height = 96
+  const data = new Uint8ClampedArray(width * height * 4)
+  const artwork = new Uint8ClampedArray(data.length)
+  for (let y = 24; y < 84; y++) for (let x = 9; x < 20; x++) {
+    const offset = (y * width + x) * 4
+    data.set([180, 180, 180, 255], offset)
+    const shade = y % 2 ? 235 : 35
+    artwork.set([shade, shade, shade, 255], offset)
+  }
+  for (let y = 46; y <= 50; y++) for (let x = 12; x <= 16; x++) data.set([0, 0, 0, 255], (y * width + x) * 4)
+  const texture = new Texture()
+  const model = createMascotModel(texture, {width, height, data}, undefined, undefined,
+    {texture, raster: {width, height, data: artwork}})
+  const surface = (x: number, y: number) => new Raycaster(new Vector3((x / (width - 1) - 0.5) * 2.3,
+    (0.5 - y / (height - 1)) * 2.6, 2), new Vector3(0, 0, -1)).intersectObject(model.root, true)[0]?.point.z
+  const depths = Array.from({length: 16}, (_, i) => surface(14, 40 + i))
+  assert.ok(depths.every(value => value !== undefined), 'The mapped alpha must keep tissue solid, including dark folds.')
+  const ridge = Math.max(...depths.slice(1).map((value, i) => Math.abs(value! - depths[i]!)))
+  assert.ok(ridge < 0.004, `Fine artwork rows must not create body ridges, measured ${ridge}.`)
+  assert.ok(surface(14, 48)! > surface(10, 48)!, 'The limb must remain rounded toward its center.')
+  assert.equal(surface(7, 48), undefined, 'Depth smoothing must not fill a silhouette gap.')
+  model.dispose(); texture.dispose()
+})
+
+test('mapped limb sides soften raster stair corners without closing gaps', () => {
+  const width = 48, height = 96
+  const data = new Uint8ClampedArray(width * height * 4)
+  for (let y = 24; y < 72; y++) {
+    const left = 9 + Math.floor((y - 24) / 4)
+    for (let x = left; x < left + 10; x++) data.set([180, 180, 180, 255], (y * width + x) * 4)
+  }
+  const texture = new Texture()
+  const raster = {width, height, data}
+  const model = createMascotModel(texture, raster, undefined, undefined, {texture, raster})
+  const edge = (y: number) => new Raycaster(new Vector3(-2, (0.5 - y / (height - 1)) * 2.6, 0), new Vector3(1, 0, 0))
+    .intersectObject(model.root, true)[0]?.point.x
+  const beforeCorner = edge(38.8), afterCorner = edge(39.2)
+  assert.ok(beforeCorner !== undefined && afterCorner !== undefined, 'Both sides of the contour corner must remain solid.')
+  assert.ok(Math.abs(afterCorner - beforeCorner) < 0.03, 'Adjacent side samples must follow a softened contour instead of a full raster step.')
+  assert.equal(new Raycaster(new Vector3(-0.9, 0, 2), new Vector3(0, 0, -1)).intersectObject(model.root, true).length, 0,
+    'Smoothing must keep exterior gaps open.')
+  model.dispose(); texture.dispose()
 })

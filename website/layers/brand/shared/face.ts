@@ -1,6 +1,6 @@
 import {
   Bone, BufferGeometry, Float32BufferAttribute,
-  Group, Mesh, MeshPhysicalMaterial, NoColorSpace, Skeleton, SkinnedMesh, SphereGeometry,
+  Group, Mesh, MeshPhysicalMaterial, NoColorSpace, ShaderChunk, Skeleton, SkinnedMesh, SphereGeometry,
   Uint16BufferAttribute, Vector3,
 } from 'three'
 import type { Texture } from 'three'
@@ -12,7 +12,7 @@ export type HeadProjection = { texture: Texture, raster: { width: number, height
 export function createFaceModel(texture?: Texture, projection?: HeadProjection) {
   if (projection) return createProjectedFace(texture, projection)
   const root = new Group()
-  return { root, animatedNodes: [] as Bone[], update(_input: FaceInput) { root.updateMatrixWorld(true) }, dispose() {} }
+  return { root, animatedNodes: [] as Bone[], update(_input: FaceInput) { root.updateMatrixWorld(true) }, updateMaterials(_time: number) {}, dispose() {} }
 }
 
 /** Exact frontal artwork over a skinned volume. Alpha describes silhouette, never pixel brightness. */
@@ -23,11 +23,29 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
   const geometries: BufferGeometry[] = []
   const heightTexture = skinTexture?.clone()
   if (heightTexture) { heightTexture.colorSpace = NoColorSpace; heightTexture.needsUpdate = true }
-  const front = new MeshPhysicalMaterial({ color: '#FFFFFF', map: texture, emissive: '#FFFFFF', emissiveMap: texture,
-    emissiveIntensity: 0.62, roughness: 0.86, metalness: 0, clearcoat: 0.035, alphaTest: 0.06 })
+  const front = new MeshPhysicalMaterial({ color: '#FFFFFF', map: texture,
+    emissiveIntensity: 0, roughness: 0.65, metalness: 0.02, clearcoat: 0, alphaTest: 0.06 })
   const back = new MeshPhysicalMaterial({ color: '#B6B8A6', map: skinTexture ?? null, bumpMap: heightTexture ?? null,
     bumpScale: 0.012, roughness: 0.71, clearcoat: 0.08 })
-  const materials = [front, back]
+  const eyeMaterial = front.clone()
+  eyeMaterial.roughness = 0.28
+  eyeMaterial.clearcoat = 0.6
+  eyeMaterial.clearcoatRoughness = 0.2
+  const eyeTime = { value: 0 }
+  eyeMaterial.onBeforeCompile = shader => {
+    shader.uniforms.uEyeTime = eyeTime
+    shader.vertexShader = `uniform float uEyeTime;
+${shader.vertexShader}`.replace('#include <begin_vertex>', `#include <begin_vertex>
+transformed += normal * sin(position.x * 130.0 + position.y * 90.0 - uEyeTime * 1.7) * 0.00035;`)
+    const gaze = '(vMapUv + vec2(sin(uEyeTime * 0.53 + sin(uEyeTime * 1.4)) * 0.00065, sin(uEyeTime * 0.37) * 0.00035))'
+    shader.fragmentShader = `uniform float uEyeTime;
+${shader.fragmentShader}`
+      .replace('#include <map_fragment>', ShaderChunk.map_fragment.replaceAll('vMapUv', gaze))
+      .replace('#include <opaque_fragment>', `outgoingLight += vec3(0.002, 0.012, 0.014) * pow(1.0 - max(dot(normal, geometryViewDir), 0.0), 4.0) * (0.5 + sin(uEyeTime * 0.41) * 0.2);
+#include <opaque_fragment>`)
+  }
+  eyeMaterial.customProgramCacheKey = () => 'brundlefly-wet-eye-v1'
+  const materials = [front, back, eyeMaterial]
   let minX = width - 1, maxX = 0, minY = height - 1, maxY = 0
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) if (data[(y * width + x) * 4 + 3]! > 24) {
     minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y)
@@ -102,12 +120,12 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
   face.name = 'face-reference-surface'
   face.add(fixed); face.updateMatrixWorld(true)
   const skeleton = new Skeleton(bones)
-  face.bind(skeleton); face.frustumCulled = false
+  face.bind(skeleton); face.frustumCulled = false; face.castShadow = true; face.receiveShadow = true
   root.add(face)
   const rearGeometry = new SphereGeometry(1, 48, 40)
   geometries.push(rearGeometry)
   const rear = new Mesh(rearGeometry, back)
-  rear.scale.set(0.285, 0.365, 0.225); rear.position.z = -0.017; root.add(rear)
+  rear.scale.set(0.285, 0.365, 0.225); rear.position.z = -0.017; rear.castShadow = true; rear.receiveShadow = true; root.add(rear)
   function projectedMesh(geometry: BufferGeometry, parent: Group | Bone, eyeIndex: number, lid = false) {
     geometries.push(geometry)
     const eye = eyes[eyeIndex]!
@@ -119,7 +137,8 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
       uv.push(...uvAt(eye.x + p.x, sourceY))
     }
     geometry.setAttribute('uv', new Float32BufferAttribute(uv, 2))
-    const value = new Mesh(geometry, front)
+    const value = new Mesh(geometry, lid ? front : eyeMaterial)
+    value.castShadow = true; value.receiveShadow = true
     parent.add(value)
     return value
   }
@@ -135,7 +154,9 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
       projectedMesh(cap, animatedNodes[5 + index * 2 + (upper ? 0 : 1)]!, index, true)
     }
   })
-  function update({ speaking, blink, brow = 0, squint = 0 }: FaceInput) {
+  function updateMaterials(time: number) { eyeTime.value = time }
+  function update({ time, speaking, blink, brow = 0, squint = 0 }: FaceInput) {
+    updateMaterials(time)
     const voice = Math.max(0, Math.min(1, speaking))
     const close = Math.max(0, Math.min(1, blink))
     animatedNodes.forEach((bone, index) => { bone.position.copy(anchors[index]!); bone.rotation.set(0, 0, 0) })
@@ -156,5 +177,5 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
     root.updateMatrixWorld(true); skeleton.update()
   }
   update({ time: 0, speaking: 0, blink: 0 })
-  return { root, animatedNodes, update, dispose() { geometries.forEach(value => value.dispose()); materials.forEach(value => value.dispose()); heightTexture?.dispose(); skeleton.dispose() } }
+  return { root, animatedNodes, update, updateMaterials, dispose() { geometries.forEach(value => value.dispose()); materials.forEach(value => value.dispose()); heightTexture?.dispose(); skeleton.dispose() } }
 }

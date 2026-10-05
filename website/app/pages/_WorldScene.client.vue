@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useDocumentVisibility, useElementSize, useEventListener, usePreferredReducedMotion } from '@vueuse/core'
+import { useRoute } from '#app'
 import {
   ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
   PerspectiveCamera, PlaneGeometry, Raycaster, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
@@ -12,11 +13,13 @@ import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { defaultCameraView, moveCameraView, resolveCameraView, rotateCameraView } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
+import type { SceneAudioMix } from '#shared/scene-audio'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
 const { paused = false, speaking = 0 } = defineProps<{ paused?: boolean, speaking?: number }>()
-const emit = defineEmits<{ talk: [] }>()
+const spriteMascot = useRoute().query.mascot === 'sprite'
+const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
@@ -26,6 +29,9 @@ const { width, height } = useElementSize(host)
 const reduced = usePreferredReducedMotion()
 const visibility = useDocumentVisibility()
 const settings = ref({ ...defaultSceneSettings })
+watch(() => [settings.value.masterVolume, settings.value.ambienceVolume, settings.value.voiceVolume] as const, ([master, ambience, voice]) => {
+  emit('mix', { master, ambience, voice })
+}, { immediate: true })
 const animate = computed(() => !paused && !settings.value.motionOff && reduced.value !== 'reduce' && visibility.value === 'visible')
 const hovered = ref(false)
 const pointer = new Vector2()
@@ -125,10 +131,11 @@ watch(canvas, async (element) => {
     new TextureLoader().loadAsync('/brand/kit/lair/egg-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/face-skin-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/head-projection.png'),
+    new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
   ])
-  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult] = results
+  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult] = results
   if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
-    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected') {
+    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected') {
     for (const result of results) {
       if (result.status === 'fulfilled') result.value.dispose()
       else console.error('Brundlefly world artwork failed to load.', result.reason)
@@ -136,10 +143,10 @@ watch(canvas, async (element) => {
     status.value = { _tag: 'Fallback', reason: 'art' }
     return
   }
-  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture] = [
-    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value,
+  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture] = [
+    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value,
   ]
-  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture]
+  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture]
   if (!alive) { loadedTextures.forEach(value => value.dispose()); return }
   loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
   for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture]) {
@@ -150,6 +157,8 @@ watch(canvas, async (element) => {
   mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.wrapS = projectionTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.magFilter = LinearFilter
+  bodyProjectionTexture.wrapS = bodyProjectionTexture.wrapT = ClampToEdgeWrapping
+  bodyProjectionTexture.magFilter = LinearFilter
   texture.magFilter = mascotTexture.magFilter = NearestFilter
   const image = mascotTexture.image as HTMLImageElement
   const raster = document.createElement('canvas')
@@ -163,8 +172,15 @@ watch(canvas, async (element) => {
   projectionRaster.height = Math.round(180 * projectionImage.height / projectionImage.width)
   const projectionPainter = projectionRaster.getContext('2d')!
   projectionPainter.drawImage(projectionImage, 0, 0, projectionRaster.width, projectionRaster.height)
+  const bodyProjectionImage = bodyProjectionTexture.image as HTMLImageElement
+  const bodyProjectionRaster = document.createElement('canvas')
+  bodyProjectionRaster.width = 180
+  bodyProjectionRaster.height = Math.round(180 * bodyProjectionImage.height / bodyProjectionImage.width)
+  const bodyProjectionPainter = bodyProjectionRaster.getContext('2d')!
+  bodyProjectionPainter.drawImage(bodyProjectionImage, 0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height)
   const mascot = createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
-    { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) })
+    spriteMascot ? undefined : { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) },
+    spriteMascot ? undefined : { texture: bodyProjectionTexture, raster: bodyProjectionPainter.getImageData(0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height) })
   const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture })
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping

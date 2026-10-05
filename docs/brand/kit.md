@@ -148,7 +148,7 @@ GLSL adds pressure displacement, pulse, cool rim light, and wet highlights.
 Viscosity sets pressure response speed. Wetness sets the highlight strength.
 The diffuse texture uses mirrored repeat. The supplied color image is not a normal map.
 Geometry normals and shader deformation supply depth. No bone skeleton is required for this material specimen.
-The separate mascot rig preserves canonical anatomy with 23 body joints and nine face hinges and blended skin weights.
+The separate mascot rig preserves canonical anatomy with weighted body joints, nine face hinges, and blended skin weights.
 
 The GLB contains rest geometry and a PBR texture. Runtime GLSL remains in the layer source.
 The kit can export its current model. The checked-in rest model provides a fixed interchange artifact.
@@ -289,13 +289,13 @@ The separate brand kit retains its functional layout controls and composition ex
 
 ## Mascot rig
 
-The canonical character pixels map onto an extruded silhouette with front, back, and edge geometry.
-A distance field supplies rounded depth. Dark background pixels define mesh occupancy without changing the source artwork.
-The rig has 23 body joints and nine face hinges and blended skin weights. It preserves four arms, two legs, and two unequal wings.
+Canonical anatomy controls the silhouette and joint placement. Generated detail maps onto front, back, and edge geometry.
+A distance field supplies rounded depth. Generated artwork uses its alpha silhouette; the canonical sprite uses its dark background mask.
+The rig has weighted body joints, nine face hinges, and blended skin weights. It preserves four arms, two legs, and two unequal wings.
 The head follows the pointer. Pressure moves elbows and hands. Unfurl opens the wings.
 Idle motion breathes through the chest and shifts the knees and wings.
-The exported GLB includes the skinned mesh, canonical texture, skeleton, and idle, walk, and speaking clips.
-The body remains a volumetric relief. The head projects generated reference artwork onto an articulated surface with skull depth.
+The exported GLB includes skinned meshes, mapped textures, skeletons, and idle, walk, and speaking clips.
+The body remains a volumetric relief with weighted limbs and thin articulated wings. The head projects reference artwork onto skull depth.
 The generated sculpt reference supplies that direction. Canonical anatomy remains authoritative.
 
 | File | Type | Role |
@@ -392,3 +392,37 @@ The earlier sprite relief remains a useful visual reference for the body.
 Audio starts after trusted input. M toggles sound outside text fields. The dialog also has a sound button.
 Mascot phrases use synthesized tones. They require no microphone, speech service, or account.
 Reply length controls phrase duration. The voice envelope drives mouth movement.
+
+## Detailed body mapping
+
+The generated body texture keeps the canonical 1199 × 1312 canvas and pose.
+Four arms, two legs, and two unequal wings remain the anatomy reference.
+The body and head receive scene lighting. Neither emits its own light.
+A wet eye shader adds small gaze shifts, ripples, and sparse grazing reflections.
+
+| File | Role |
+| --- | --- |
+| assets/source/body-projection.png | Full-resolution generated body mapping master |
+| assets/brand/kit/lair/body-projection.png | Registered body, limb, and wing detail |
+| assets/prompts/body-projection.json | Exact prompt and canonical references |
+
+Use ?mascot=sprite on the homepage to compare the canonical sprite relief.
+The normal homepage uses the detailed body and articulated head.
+
+## Rig inspection
+
+Open /brand-kit/mascot/ to inspect Brundlefly without the chamber.
+Drag to orbit and scroll to zoom. Bones and wireframe reveal the weighted model.
+Choose Idle, Walk, or Speaking for the exported animation clips. Play, pause, change speed, or scrub time.
+Manual speech, blink, brow, and squint controls stop clip playback and show a fixed pose.
+Mapped and Sprite switch the artwork. Download GLB exports the selected rig.
+
+The homepage Sound controls sit inside the hidden L panel.
+Master volume, Ambience volume, and Voice volume each accept values from zero to one.
+Reset restores the default mix. Settings JSON includes the three volume values.
+The voice uses a separate bus. Speech lowers the ambience with smooth gain changes.
+
+| File | Role |
+| --- | --- |
+| website/apps/brand-kit/app/pages/mascot.vue | Rig inspection page and native playback controls |
+| website/layers/brand/app/components/BrandOrganism.client.vue | Orbit camera, bones, wireframe, animation mixer, and export lifecycle |

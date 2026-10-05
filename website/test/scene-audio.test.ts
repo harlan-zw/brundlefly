@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSceneAudio, createVoicePhrase, phraseVoiceEnvelope, sceneVoiceEnvelope } from '../shared/scene-audio.ts'
+import { createSceneAudio, createVoicePhrase, defaultSceneAudioMix, parseSceneAudioMix, phraseVoiceEnvelope, sceneVoiceEnvelope } from '../shared/scene-audio.ts'
 import type { SceneAudioState } from '../shared/scene-audio.ts'
 
 test('the procedural face envelope rests outside the voice and releases to zero', () => {
@@ -28,12 +28,18 @@ test('reply phrases scale with text and rest between bounded syllables', () => {
   for (let time = 0; time < 8; time += 0.05) assert.ok(phraseVoiceEnvelope(time, 0, long.syllables) <= 1)
 })
 
+test('mix input clamps volume and replaces nonfinite values', () => {
+  assert.deepEqual(parseSceneAudioMix({ master: -2, ambience: 4, voice: NaN }), { master: 0, ambience: 1, voice: defaultSceneAudioMix.voice })
+})
+
 test('replies replace old voices and mute, visibility, and disposal release resources', async () => {
   let active = 0
   let disconnected = 0
   let scheduled = 0
   let cancelled = 0
   let state = 'suspended'
+  const callbacks = new Map<number, { callback: () => void, delay: number }>()
+  const flushFade = () => { for (const [id, entry] of callbacks) if (entry.delay === 45) { callbacks.delete(id); entry.callback() } }
   const voices: number[] = []
   const param = () => ({ value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime() {} })
   const node = () => {
@@ -54,7 +60,8 @@ test('replies replace old voices and mute, visibility, and disposal release reso
   }
   const audio = createSceneAudio({
     createContext: () => context as unknown as AudioContext, random: () => 0.5,
-    schedule: () => { scheduled++; return scheduled }, cancel: () => { cancelled++ },
+    schedule: (callback, delay) => { scheduled++; callbacks.set(scheduled, { callback, delay }); return scheduled },
+    cancel: id => { cancelled++; callbacks.delete(id) },
     onState: () => {}, onVoice: value => voices.push(value), onError: error => { throw error },
   })
   await audio.activate()
@@ -64,20 +71,26 @@ test('replies replace old voices and mute, visibility, and disposal release reso
   audio.playMascot('reply', 30)
   assert.equal(active, 6)
   audio.setMuted(true)
+  flushFade()
+  await Promise.resolve()
   await Promise.resolve()
   assert.equal(active, 3)
   assert.equal(state, 'suspended')
   assert.ok(disconnected > 0 && cancelled > 0)
+  assert.equal(callbacks.size, 0)
   assert.equal(voices.at(-1), 0)
   audio.setMuted(false)
   await Promise.resolve()
   assert.equal(state, 'running')
   audio.setVisible(false)
+  flushFade()
+  await Promise.resolve()
   await Promise.resolve()
   assert.equal(state, 'suspended')
   await audio.dispose()
   assert.equal(state, 'closed')
   assert.equal(active, 0)
+  assert.equal(callbacks.size, 0)
 })
 
 test('idle and muted scenes create no audio context or background timer', async () => {

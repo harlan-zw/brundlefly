@@ -65,6 +65,7 @@ const paused = computed(() => motionOff.value || reduced.value === 'reduce')
             <div class="transform-choices" role="group" aria-label="Scene"><BrandChoice label="Aperture" :selected="scene === 'specimen'" @click="scene = 'specimen'" /><BrandChoice label="Lair" :selected="scene === 'lair'" @click="scene = 'lair'" /></div>
             <div class="transform-choices" role="group" aria-label="Transform"><BrandChoice v-for="value in transforms" :key="value" :label="value.charAt(0).toUpperCase() + value.slice(1)" :selected="transform === value" @click="transform = value" /></div>
             <UButton variant="outline" :aria-pressed="mascot" @click="mascot = !mascot">Brundlefly</UButton>
+            <NuxtLink to="/mascot/">Inspect mascot</NuxtLink>
             <label for="opening">Opening <output>{{ opening }}</output></label><input id="opening" v-model.number="opening" type="range" min="0" max="1" step="0.05">
             <label for="wetness">Wetness <output>{{ wetness }}</output></label><input id="wetness" v-model.number="wetness" type="range" min="0" max="1" step="0.05">
             <label for="viscosity">Viscosity <output>{{ viscosity }}</output></label><input id="viscosity" v-model.number="viscosity" type="range" min="0" max="1" step="0.05">

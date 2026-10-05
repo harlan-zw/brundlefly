@@ -4,6 +4,12 @@ export type SceneAudioStatus =
   | { _tag: 'Suspended', reason: 'muted' | 'hidden' }
   | { _tag: 'Unavailable' }
 export type SceneAudioState = { muted: boolean, status: SceneAudioStatus }
+export type SceneAudioMix = { master: number, ambience: number, voice: number }
+export const defaultSceneAudioMix: SceneAudioMix = { master: 0.35, ambience: 0.55, voice: 0.8 }
+export function parseSceneAudioMix(value: SceneAudioMix): SceneAudioMix {
+  const level = (input: number, fallback: number) => Number.isFinite(input) ? Math.max(0, Math.min(1, input)) : fallback
+  return { master: level(value.master, defaultSceneAudioMix.master), ambience: level(value.ambience, defaultSceneAudioMix.ambience), voice: level(value.voice, defaultSceneAudioMix.voice) }
+}
 export type SceneAudioDependencies = {
   createContext: () => AudioContext
   random: () => number
@@ -34,7 +40,7 @@ export function phraseVoiceEnvelope(time: number, start: number, syllables: read
     sceneVoiceEnvelope(time, start + syllable.start, syllable.duration) * syllable.strength), 0)
 }
 type Graph = {
-  context: AudioContext, master: GainNode, ambience: GainNode, noise: AudioBuffer,
+  context: AudioContext, master: GainNode, ambience: GainNode, voice: GainNode, noise: AudioBuffer,
   nodes: Set<AudioNode>, sources: Set<AudioScheduledSourceNode>, sounds: Set<SoundScope>,
 }
 
@@ -56,15 +62,24 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
   let disposed = false
   let nextDrip = 0
   let status: SceneAudioStatus = { _tag: 'Idle' }
+  let mix = { ...defaultSceneAudioMix }
+  let duckUntil = 0
+  let fadeTimer: number | undefined
+  let fadeResolve: (() => void) | undefined
   const publish = (next: SceneAudioStatus) => { status = next; dependencies.onState({ muted, status }) }
   const stopTimer = () => { if (timer !== undefined) dependencies.cancel(timer); timer = undefined }
+  const cancelFade = () => { if (fadeTimer !== undefined) dependencies.cancel(fadeTimer); fadeTimer = undefined; fadeResolve?.(); fadeResolve = undefined }
+  const fadeBeforeSuspend = () => new Promise<void>(resolve => {
+    cancelFade(); fadeResolve = resolve
+    fadeTimer = dependencies.schedule(() => { fadeTimer = undefined; fadeResolve = undefined; resolve() }, 45)
+  })
 
   function createGraph(context: AudioContext): Graph {
     const nodes = new Set<AudioNode>()
     const sources = new Set<AudioScheduledSourceNode>()
     const own = <T extends AudioNode>(node: T) => { nodes.add(node); return node }
     const master = own(context.createGain())
-    master.gain.value = 0.055
+    master.gain.value = mix.master * 0.24
     const limiter = own(context.createDynamicsCompressor())
     limiter.threshold.value = -22
     limiter.knee.value = 12
@@ -73,8 +88,11 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     limiter.release.value = 0.22
     master.connect(limiter).connect(context.destination)
     const ambience = own(context.createGain())
-    ambience.gain.value = 0.75
+    ambience.gain.value = mix.ambience * 0.5
     ambience.connect(master)
+    const voice = own(context.createGain())
+    voice.gain.value = mix.voice * 2.4
+    voice.connect(master)
     const noise = context.createBuffer(1, context.sampleRate * 2, context.sampleRate)
     const samples = noise.getChannelData(0)
     let previous = 0
@@ -106,7 +124,7 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     rumbleGain.gain.value = 0.13
     rumble.connect(rumbleGain).connect(ambience)
     for (const source of [noiseSource, breathLfo, rumble]) { sources.add(source); source.start() }
-    return { context, master, ambience, noise, nodes, sources, sounds: new Set() }
+    return { context, master, ambience, voice, noise, nodes, sources, sounds: new Set() }
   }
 
   function soundScope(current: Graph, duration: number, voice: boolean): SoundScope {
@@ -158,6 +176,8 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     }
     let voice = 0
     for (const sound of graph.sounds) if (sound.voice) voice = Math.max(voice, sound.envelope(now))
+    if (voice > 0.015) duckUntil = now + 0.24
+    graph.ambience.gain.setTargetAtTime(mix.ambience * 0.5 * (now < duckUntil ? 0.3 : talking ? 0.72 : 1), now, 0.09)
     dependencies.onVoice(voice)
     timer = dependencies.schedule(tick, 50)
   }
@@ -181,15 +201,19 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     const shouldRun = visible && !muted
     if (!shouldRun) {
       stopTimer()
-      clearShortSounds(current)
       dependencies.onVoice(0)
+      current.master.gain.setTargetAtTime(0, current.context.currentTime, 0.008)
+      await fadeBeforeSuspend()
+      if (disposed || graph !== current) return
+      if (visible && !muted) return reconcile()
+      clearShortSounds(current)
       await current.context.suspend()
     }
-    else await current.context.resume()
+    else { cancelFade(); await current.context.resume() }
     if (disposed || graph !== current) return
     if (shouldRun !== (visible && !muted)) return reconcile()
     if (shouldRun) {
-      current.master.gain.setTargetAtTime(0.055, current.context.currentTime, 0.05)
+      current.master.gain.setTargetAtTime(mix.master * 0.24, current.context.currentTime, 0.05)
       publish({ _tag: 'Running' })
       if (timer === undefined) { nextDrip = current.context.currentTime + 2.8; tick() }
     }
@@ -216,7 +240,7 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     const context = current.context
     const frequency = 104
     const throat = ownSound(scope, context.createBiquadFilter())
-    throat.type = 'bandpass'; throat.Q.value = 1.7
+    throat.type = 'bandpass'; throat.Q.value = 0.95
     throat.frequency.setValueAtTime(420, scope.start)
     throat.frequency.linearRampToValueAtTime(740, scope.start + duration * 0.32)
     throat.frequency.linearRampToValueAtTime(330, scope.start + duration)
@@ -228,7 +252,9 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
       envelope.gain.exponentialRampToValueAtTime(0.22 * syllable.strength, onset + 0.045)
       envelope.gain.exponentialRampToValueAtTime(0.0001, onset + syllable.duration)
     }
-    throat.connect(envelope).connect(current.master)
+    throat.connect(envelope).connect(current.voice)
+    duckUntil = scope.start + 0.24
+    current.ambience.gain.setTargetAtTime(mix.ambience * 0.15, scope.start, 0.045)
     const croak = ownSound(scope, context.createOscillator())
     croak.type = 'sawtooth'
     for (const syllable of phrase.syllables) {
@@ -260,7 +286,7 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
         if (!graph) {
           const context = dependencies.createContext()
           graph = createGraph(context)
-          graph.ambience.gain.value = talking ? 0.34 : 0.75
+          graph.ambience.gain.value = mix.ambience * 0.5 * (talking ? 0.72 : 1)
         }
         await reconcile()
       }).catch(handleFailure)
@@ -268,14 +294,14 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     setMuted(value: boolean) {
       muted = value
       if (!graph) { publish({ _tag: 'Idle' }); return }
-      graph.master.gain.setTargetAtTime(value ? 0 : 0.055, graph.context.currentTime, 0.025)
+      graph.master.gain.setTargetAtTime(value ? 0 : mix.master * 0.24, graph.context.currentTime, 0.025)
       void reconcile().catch(handleFailure)
     },
     setVisible(value: boolean) { visible = value; void reconcile().catch(handleFailure) },
     setTalking(value: boolean) {
       talking = value
       if (graph) {
-        graph.ambience.gain.setTargetAtTime(talking ? 0.34 : 0.75, graph.context.currentTime, 0.15)
+        graph.ambience.gain.setTargetAtTime(mix.ambience * 0.5 * (talking ? 0.72 : 1), graph.context.currentTime, 0.15)
         if (!talking) {
           for (const sound of graph.sounds) if (sound.voice) {
             sound.voice = false
@@ -286,9 +312,17 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
       }
     },
     playMascot,
+    setMix(value: SceneAudioMix) {
+      mix = parseSceneAudioMix(value)
+      if (!graph) return
+      const now = graph.context.currentTime
+      graph.master.gain.setTargetAtTime(muted || !visible ? 0 : mix.master * 0.24, now, 0.06)
+      graph.voice.gain.setTargetAtTime(mix.voice * 2.4, now, 0.06)
+      graph.ambience.gain.setTargetAtTime(mix.ambience * 0.5 * (now < duckUntil ? 0.3 : talking ? 0.72 : 1), now, 0.09)
+    },
     async dispose() {
       disposed = true
-      stopTimer(); dependencies.onVoice(0)
+      stopTimer(); cancelFade(); dependencies.onVoice(0)
       const current = graph
       graph = undefined
       if (!current) return

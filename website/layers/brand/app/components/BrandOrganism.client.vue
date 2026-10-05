@@ -2,21 +2,27 @@
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useDocumentVisibility, useElementSize, useEventListener, useIntersectionObserver, usePreferredReducedMotion, useWindowScroll } from '@vueuse/core'
 import {
-  AmbientLight, ClampToEdgeWrapping, DirectionalLight, Group, LinearFilter, Mesh, MeshStandardMaterial, MirroredRepeatWrapping,
-  NearestFilter, PerspectiveCamera, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader, Vector2, WebGLRenderer,
+  AmbientLight, AnimationMixer, ClampToEdgeWrapping, DirectionalLight, Group, LinearFilter, Mesh, MeshStandardMaterial, MirroredRepeatWrapping,
+  NearestFilter, PerspectiveCamera, Scene, ShaderMaterial, SkeletonHelper, SRGBColorSpace, TextureLoader, Vector2, WebGLRenderer,
 } from 'three'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createOrganismModel } from '../../shared/organism'
 import { createMascotModel } from '../../shared/mascot'
 import type { Presentation, Transform } from '../../shared/organism'
 
-const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform = 'squeeze', presentation = 'specimen', interactive = true, motionOff = false, exportable = false, mascot = false, framing = 'center', distance, speaking = 0, blink, brow, squint } = defineProps<{
+const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform = 'squeeze', presentation = 'specimen', interactive = true, motionOff = false, exportable = false, mascot = false, framing = 'center', distance, speaking = 0, blink, brow, squint, inspector = false, bones = false, wireframe = false, clip = 'Manual', playing = false, playbackSpeed = 1, textureMode = 'mapped' } = defineProps<{
   wetness?: number, viscosity?: number, pressure?: number, motionOff?: boolean, exportable?: boolean
   opening?: number, transform?: Transform, presentation?: Presentation, interactive?: boolean
   mascot?: boolean
   framing?: 'center' | 'left' | 'face'
   distance?: number
   speaking?: number, blink?: number, brow?: number, squint?: number
+  inspector?: boolean, bones?: boolean, wireframe?: boolean
+  clip?: 'Manual' | 'Idle' | 'Walk' | 'Speaking'
+  playing?: boolean, playbackSpeed?: number, textureMode?: 'mapped' | 'sprite'
 }>()
+const clipTime = defineModel<number>('clipTime', { default: 0 })
+const emit = defineEmits<{ clips: [durations: Record<string, number>] }>()
 type SceneStatus = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'texture' }
 const status = ref<SceneStatus>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
@@ -26,7 +32,7 @@ const reducedMotion = usePreferredReducedMotion()
 const documentVisibility = useDocumentVisibility()
 const visible = ref(true)
 useIntersectionObserver(host, ([entry]) => { visible.value = Boolean(entry?.isIntersecting) })
-const animate = computed(() => !motionOff && reducedMotion.value !== 'reduce' && visible.value && documentVisibility.value === 'visible')
+const animate = computed(() => (inspector ? playing && clip !== 'Manual' : !motionOff && reducedMotion.value !== 'reduce') && visible.value && documentVisibility.value === 'visible')
 const pressed = ref(false)
 const pointer = new Vector2()
 const { y: scrollY } = useWindowScroll()
@@ -62,6 +68,7 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
   status.value = { _tag: 'Fallback', reason: 'context' }
 })
 watch([() => wetness, () => viscosity, () => pressure, () => opening, () => transform, () => motionOff, () => distance, () => framing, () => speaking, () => blink, () => brow, () => squint, pressed, animate, width, height], () => refresh?.())
+watch([() => bones, () => wireframe, () => clip, () => playbackSpeed, clipTime], () => refresh?.())
 watch(scrollY, () => { if (presentation === 'lair' && animate.value) refresh?.() })
 onScopeDispose(() => { alive = false; cleanup?.() })
 
@@ -92,7 +99,7 @@ watch(canvas, async (element) => {
   const model = createOrganismModel(texture, presentation, mascot ? 0.58 : 1)
   model.root.visible = !mascot
   scene.add(model.root)
-  const [mascotTexture, faceTexture, projectionTexture] = mascot ? await Promise.all([
+  const [mascotTexture, faceTexture, projectionTexture, bodyProjectionTexture] = mascot ? await Promise.all([
     new TextureLoader().loadAsync('/brand/character.png').catch((error: unknown) => {
     console.warn('Brundlefly mascot texture load failed.', error)
     return undefined // The chamber remains usable when its optional mascot artwork fails.
@@ -105,7 +112,11 @@ watch(canvas, async (element) => {
       console.warn('Brundlefly head projection load failed. Using the sculpted head.', error)
       return undefined
     }),
-  ]) : [undefined, undefined, undefined]
+    new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png').catch((error: unknown) => {
+      console.warn('Brundlefly body projection load failed. Using the canonical artwork.', error)
+      return undefined
+    }),
+  ]) : [undefined, undefined, undefined, undefined]
   if (projectionTexture) {
     projectionTexture.colorSpace = SRGBColorSpace
     projectionTexture.wrapS = projectionTexture.wrapT = ClampToEdgeWrapping
@@ -115,7 +126,12 @@ watch(canvas, async (element) => {
     faceTexture.colorSpace = SRGBColorSpace
     faceTexture.wrapS = faceTexture.wrapT = MirroredRepeatWrapping
   }
-  if (!alive) { mascotTexture?.dispose(); faceTexture?.dispose(); projectionTexture?.dispose(); model.dispose(); texture.dispose(); renderer.dispose(); return }
+  if (bodyProjectionTexture) {
+    bodyProjectionTexture.colorSpace = SRGBColorSpace
+    bodyProjectionTexture.wrapS = bodyProjectionTexture.wrapT = ClampToEdgeWrapping
+    bodyProjectionTexture.magFilter = LinearFilter
+  }
+  if (!alive) { mascotTexture?.dispose(); faceTexture?.dispose(); projectionTexture?.dispose(); bodyProjectionTexture?.dispose(); model.dispose(); texture.dispose(); renderer.dispose(); return }
   const mascotModel = mascotTexture ? (() => {
     mascotTexture.colorSpace = SRGBColorSpace
     mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
@@ -135,7 +151,17 @@ watch(canvas, async (element) => {
       projectionPainter.drawImage(projectionImage, 0, 0, projectionRaster.width, projectionRaster.height)
       return { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) }
     })() : undefined
-    return createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture ?? texture, projection)
+    const bodyProjection = bodyProjectionTexture ? (() => {
+      const projectionImage = bodyProjectionTexture.image as HTMLImageElement
+      const projectionRaster = document.createElement('canvas')
+      projectionRaster.width = 180
+      projectionRaster.height = Math.round(180 * projectionImage.height / projectionImage.width)
+      const projectionPainter = projectionRaster.getContext('2d')!
+      projectionPainter.drawImage(projectionImage, 0, 0, projectionRaster.width, projectionRaster.height)
+      return { texture: bodyProjectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) }
+    })() : undefined
+    return createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture ?? texture,
+      textureMode === 'sprite' ? undefined : projection, textureMode === 'sprite' ? undefined : bodyProjection)
   })() : undefined
   if (mascotModel) {
     const figure = new Group()
@@ -144,6 +170,26 @@ watch(canvas, async (element) => {
     figure.add(mascotModel.root)
     scene.add(figure)
   }
+  const orbit = inspector ? new OrbitControls(camera, element) : undefined
+  if (orbit) {
+    camera.position.set(0.3, 0.15, 6.5)
+    orbit.target.set(0.3, -0.12, -2)
+    orbit.minDistance = 2.2
+    orbit.maxDistance = 13
+    orbit.enablePan = false
+    orbit.addEventListener('change', () => refresh?.())
+    orbit.update()
+  }
+  const helper = inspector && mascotModel ? new SkeletonHelper(mascotModel.root) : undefined
+  if (helper) {
+    for (const material of Array.isArray(helper.material) ? helper.material : [helper.material]) material.depthTest = false
+    helper.renderOrder = 20
+    scene.add(helper)
+  }
+  const mixer = inspector && mascotModel ? new AnimationMixer(mascotModel.root) : undefined
+  const clips = mixer && mascotModel ? { Idle: mascotModel.idleAnimation(), Walk: mascotModel.walkAnimation(), Speaking: mascotModel.speakingAnimation() } : undefined
+  if (clips) emit('clips', Object.fromEntries(Object.entries(clips).map(([name, animation]) => [name, animation.duration])))
+  let activeClip = ''
   let currentPressure = 0
   let elapsed = 0
   let previousTime = 0
@@ -154,17 +200,37 @@ watch(canvas, async (element) => {
     const target = pressed.value ? 1 : pressure
     currentPressure = animate.value ? currentPressure + (target - currentPressure) * Math.min(1, delta * (14 - viscosity * 10)) : target
     const approach = presentation === 'lair' ? Math.min(scrollY.value / 900, 0.8) : 0
-    if (mascot && framing === 'face') {
+    if (!inspector && mascot && framing === 'face') {
       camera.position.set(1.012, 1.108, -1.72 + (distance ?? 2.8))
       camera.lookAt(1.012, 1.108, -1.72)
     }
-    else {
+    else if (!inspector) {
       camera.position.set(0, -0.07, (distance ?? (presentation === 'lair' ? 5.8 : 5.5)) - approach * 0.45)
       camera.lookAt(0, -0.07, 0)
     }
     model.update({ time: elapsed, pressure: currentPressure, wetness, pointer, transform,
       opening: opening + (presentation === 'lair' ? Math.min(elapsed / 2, 1) * 0.15 + approach * 0.12 : 0) })
-    mascotModel?.update({ time: elapsed, pressure: currentPressure, pointer, transform, speaking, blink, brow, squint })
+    if (mixer && clips && clip !== 'Manual') {
+      if (activeClip !== clip) {
+        mixer.stopAllAction()
+        mixer.clipAction(clips[clip]).reset().play()
+        activeClip = clip
+      }
+      if (delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % clips[clip].duration
+      mascotModel?.updateMaterials(clipTime.value)
+      mixer.setTime(clipTime.value)
+    }
+    else {
+      if (mixer && activeClip) { mixer.stopAllAction(); activeClip = '' }
+      mascotModel?.update({ time: inspector ? 0 : elapsed, pressure: currentPressure, pointer, transform, speaking, blink, brow, squint })
+    }
+    if (helper) helper.visible = bones
+    if (inspector) mascotModel?.root.traverse(object => {
+      if (!(object instanceof Mesh)) return
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+        if ('wireframe' in material) material.wireframe = wireframe
+      }
+    })
     renderer.render(scene, camera)
   }
   refresh = () => {
@@ -189,15 +255,20 @@ watch(canvas, async (element) => {
       render(delta)
       } : null)
     }
-    render(1 / 60)
+    render(inspector ? 0 : 1 / 60)
   }
   cleanup = () => {
     renderer.setAnimationLoop(null)
+    orbit?.dispose()
+    helper?.dispose()
+    mixer?.stopAllAction()
+    if (mascotModel) mixer?.uncacheRoot(mascotModel.root)
     model.dispose()
     mascotModel?.dispose()
     mascotTexture?.dispose()
     faceTexture?.dispose()
     projectionTexture?.dispose()
+    bodyProjectionTexture?.dispose()
     texture.dispose()
     renderer.dispose()
     download = undefined
@@ -241,7 +312,7 @@ function exportModel() {
     <div ref="host" class="brand-organism" :data-renderer="status._tag" :data-presentation="presentation" :data-transform="transform">
       <img v-if="status._tag !== 'Ready'" class="brand-organism-fallback" :src="mascot ? '/brand/character.png' : '/brand/kit/aperture.png'" alt="" :width="mascot ? 1199 : 1254" :height="mascot ? 1312 : 1254">
       <canvas ref="canvas" :style="{ opacity: status._tag === 'Ready' ? 1 : 0 }" aria-hidden="true" />
-      <button v-if="status._tag === 'Ready' && interactive" class="brand-organism-control" type="button" aria-label="Press to deform"
+      <button v-if="status._tag === 'Ready' && interactive && !inspector" class="brand-organism-control" type="button" aria-label="Press to deform"
         @pointermove="move" @pointerdown="grab" @pointercancel="release" @lostpointercapture="release"
         @keydown.space.prevent="pressed = true" @keyup.space.prevent="release" @keydown.enter.prevent="pressed = true" @keyup.enter.prevent="release" @blur="release" />
       <span class="brand-organism-status" role="status">{{ status._tag === 'Ready' ? '3D material' : status._tag === 'Loading' ? '3D loading.' : status.reason === 'texture' ? 'Static material. The texture could not load.' : 'Static material. WebGL is unavailable.' }}</span>

@@ -1,5 +1,5 @@
 import {
-  AnimationClip, Bone, BufferGeometry, Float32BufferAttribute, Group, MeshStandardMaterial,
+  AnimationClip, Bone, BufferGeometry, DoubleSide, Float32BufferAttribute, Group, MeshPhysicalMaterial, MeshStandardMaterial, NoColorSpace,
   QuaternionKeyframeTrack, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector2, Vector3, VectorKeyframeTrack,
 } from 'three'
 import type { Texture } from 'three'
@@ -8,6 +8,7 @@ import { createFaceModel } from './face.ts'
 import type { HeadProjection } from './face.ts'
 
 type Raster = { width: number, height: number, data: Uint8ClampedArray }
+export type BodyProjection = { texture: Texture, raster: Raster }
 type Joint = { name: string, parent: string | null, start: [number, number], end: [number, number] }
 const bodyJoints: Joint[] = [
   { name: 'pelvis', parent: null, start: [0.48, 0.57], end: [0.5, 0.44] },
@@ -33,6 +34,8 @@ const bodyJoints: Joint[] = [
   { name: 'right-foot', parent: 'right-knee', start: [0.59, 0.86], end: [0.7, 0.92] },
   { name: 'left-wing', parent: 'chest', start: [0.43, 0.19], end: [0.28, 0.075] },
   { name: 'right-wing', parent: 'chest', start: [0.75, 0.2], end: [0.86, 0.22] },
+  { name: 'left-wing-tip', parent: 'left-wing', start: [0.35, 0.13], end: [0.23, 0.045] },
+  { name: 'right-wing-tip', parent: 'right-wing', start: [0.83, 0.22], end: [0.94, 0.25] },
 ]
 const joints = bodyJoints
 const point = (x: number, y: number, z = 0) => new Vector3((x - 0.5) * 2.3, (0.5 - y) * 2.6, z)
@@ -45,14 +48,29 @@ function segmentDistance(x: number, y: number, joint: Joint) {
 }
 
 /** A volumetric relief of the canonical artwork, with real skin weights and articulated joints. */
-export function createMascotModel(texture: Texture, raster: Raster, faceTexture?: Texture, headProjection?: HeadProjection) {
+export function createMascotModel(texture: Texture, raster: Raster, faceTexture?: Texture, headProjection?: HeadProjection, bodyProjection?: BodyProjection) {
   const { width, height, data } = raster
   const count = width * height
   const mask = new Uint8Array(count)
   const distance = new Float32Array(count)
+  const projectionSample = (x: number, y: number) => {
+    const image = bodyProjection!.raster
+    return (Math.round(y / (height - 1) * (image.height - 1)) * image.width
+      + Math.round(x / (width - 1) * (image.width - 1))) * 4
+  }
   for (let i = 0; i < count; i++) {
-    // The supplied artwork has a black background. Infer mesh occupancy, without changing its pixels.
-    mask[i] = data[i * 4 + 3]! > 32 && Math.max(data[i * 4]!, data[i * 4 + 1]!, data[i * 4 + 2]!) > 18 ? 1 : 0
+    // Mapped artwork supplies a real silhouette. Dark tissue stays solid.
+    mask[i] = bodyProjection ? Number(bodyProjection.raster.data[projectionSample(i % width, Math.floor(i / width)) + 3]! > 32)
+      : Number(data[i * 4 + 3]! > 32 && Math.max(data[i * 4]!, data[i * 4 + 1]!, data[i * 4 + 2]!) > 18)
+  }
+  if (!headProjection) for (let index = 0; index < count; index++) {
+    if (data[index * 4 + 3]! <= 32) continue
+    const x = index % width / (width - 1)
+    const y = Math.floor(index / width) / (height - 1)
+    // Canonical eye shadows are opaque artwork, even where their black edge touches the backdrop.
+    const leftSocket = Math.pow((x - 0.632) / 0.045, 2) + Math.pow((y - 0.214) / 0.038, 2) <= 1
+    const rightSocket = Math.pow((x - 0.758) / 0.041, 2) + Math.pow((y - 0.231) / 0.033, 2) <= 1
+    if (leftSocket || rightSocket) mask[index] = 1
   }
   for (let i = 0; i < count; i++) distance[i] = mask[i] ? 100 : 0
   for (let y = 1; y < height; y++) for (let x = 1; x < width; x++) {
@@ -63,20 +81,54 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     const i = y * width + x
     distance[i] = Math.min(distance[i]!, distance[i + 1]! + 1, distance[i + width]! + 1)
   }
+  const bodyDepth = new Float32Array(count)
+  if (bodyProjection) {
+    const kernel = [1, 4, 6, 4, 1]
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      const index = y * width + x
+      if (!mask[index]) continue
+      let depth = 0, total = 0
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const px = x + dx, py = y + dy
+        if (px < 0 || px >= width || py < 0 || py >= height) continue
+        const sample = py * width + px
+        if (!mask[sample]) continue
+        const weight = kernel[dx + 2]! * kernel[dy + 2]!
+        depth += (0.006 + 0.17 * (1 - Math.exp(-distance[sample]! / 5))) * weight
+        total += weight
+      }
+      bodyDepth[index] = depth / total
+    }
+  }
   const positions: number[] = []
   const uv: number[] = []
   const skinIndices: number[] = []
   const skinWeights: number[] = []
   const indices: number[] = []
+  const wingIndices: number[] = []
+  const isWing = (x: number, y: number) => (y < 0.205 && x < 0.48) || (x > 0.79 && y > 0.17 && y < 0.29)
+  function projectedLuminance(x: number, y: number) {
+    if (!bodyProjection) return undefined
+    const image = bodyProjection.raster
+    const index = (Math.min(image.height - 1, Math.round(y * (image.height - 1))) * image.width
+      + Math.min(image.width - 1, Math.round(x * (image.width - 1)))) * 4
+    return (image.data[index]! * 0.3 + image.data[index + 1]! * 0.59 + image.data[index + 2]! * 0.11) / 255
+  }
   for (let side = 0; side < 2; side++) for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const i = y * width + x
     const sx = x / (width - 1)
     const sy = y / (height - 1)
     const luminance = (data[i * 4]! * 0.3 + data[i * 4 + 1]! * 0.59 + data[i * 4 + 2]! * 0.11) / 255
-    const depth = mask[i] ? 0.018 + Math.min(distance[i]! * 0.018, 0.16) + luminance * 0.035 : 0
+    const detail = projectedLuminance(sx, sy) ?? luminance
+    const wing = bodyProjection && isWing(sx, sy)
+    const depth = mask[i] ? wing ? 0.006 + Math.min(distance[i]! * 0.0012, 0.014) + detail * 0.003
+      : bodyProjection ? bodyDepth[i]! : 0.018 + Math.min(distance[i]! * 0.018, 0.16) + detail * 0.035 : 0
     positions.push(...point(sx, sy, side ? -depth * 0.8 : depth).toArray())
     uv.push(sx, 1 - sy)
-    const closest = bodyJoints.map((joint, index) => ({ index, distance: segmentDistance(sx, sy, joint) })).sort((a, b) => a.distance - b.distance).slice(0, 2)
+    const closest = bodyJoints.map((joint, index) => ({ index, distance: segmentDistance(sx, sy, joint) }))
+      .filter(value => bodyProjection || !bodyJoints[value.index]!.name.endsWith('-tip'))
+      .filter(value => !wing || bodyJoints[value.index]!.name.includes('wing'))
+      .sort((a, b) => a.distance - b.distance).slice(0, 2)
     const a = 1 / (Math.pow(closest[0]!.distance, 4) + 0.000002)
     const b = 1 / (Math.pow(closest[1]!.distance, 4) + 0.000002)
     skinIndices.push(closest[0]!.index, closest[1]!.index, 0, 0)
@@ -88,15 +140,19 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     const sx = (x + 0.5) / (width - 1)
     const sy = (y + 0.5) / (height - 1)
     // Replace the raster head with an actual sculpt. Keep shoulder arms and both wing silhouettes.
-    if (headProjection && Math.pow((sx - 0.67) / 0.146, 2) + Math.pow((sy - 0.218) / 0.19, 2) <= 1) continue
+    if (headProjection && sy < 0.315 && Math.pow((sx - 0.67) / 0.146, 2) + Math.pow((sy - 0.218) / 0.19, 2) <= 1) continue
     // Include a cell only when all corners are tissue. Holes remain open, including fingers and wings.
     if (!(mask[a] && mask[a + 1] && mask[a + width] && mask[a + width + 1])) continue
     occupied[y * (width - 1) + x] = 1
-    indices.push(a, a + width, a + 1, a + 1, a + width, a + width + 1)
+    const triangles = bodyProjection && isWing(sx, sy) ? wingIndices : indices
+    triangles.push(a, a + width, a + 1, a + 1, a + width, a + width + 1)
     const b = a + count
-    indices.push(b, b + 1, b + width, b + 1, b + width + 1, b + width)
+    triangles.push(b, b + 1, b + width, b + 1, b + width + 1, b + width)
   }
   const skinEnd = indices.length
+  indices.push(...wingIndices)
+  const wingEnd = indices.length
+  const contourNeighbors = new Map<number, Set<number>>()
   for (let y = 0; y < height - 1; y++) for (let x = 0; x < width - 1; x++) {
     if (!occupied[y * (width - 1) + x]) continue
     const a = y * width + x
@@ -106,7 +162,28 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       { outside: y === height - 2 || !occupied[(y + 1) * (width - 1) + x], start: a + width + 1, end: a + width },
       { outside: x === 0 || !occupied[y * (width - 1) + x - 1], start: a + width, end: a },
     ]
-    for (const { outside, start, end } of boundaries) if (outside) indices.push(start, end, start + count, end, end + count, start + count)
+    for (const { outside, start, end } of boundaries) if (outside) {
+      indices.push(start, end, start + count, end, end + count, start + count)
+      if (!bodyProjection || isWing((x + 0.5) / (width - 1), (y + 0.5) / (height - 1))) continue
+      if (!contourNeighbors.has(start)) contourNeighbors.set(start, new Set())
+      if (!contourNeighbors.has(end)) contourNeighbors.set(end, new Set())
+      contourNeighbors.get(start)!.add(end)
+      contourNeighbors.get(end)!.add(start)
+    }
+  }
+  // Relax only silhouette loops. Interior UV samples and all skin weights remain intact.
+  for (let pass = 0; pass < 3 && bodyProjection; pass++) {
+    const previous = positions.slice()
+    for (const [vertex, neighbors] of contourNeighbors) {
+      if (neighbors.size !== 2) continue
+      for (const axis of [0, 1]) {
+        let average = 0
+        for (const neighbor of neighbors) average += previous[neighbor * 3 + axis]! / 2
+        const value = previous[vertex * 3 + axis]! * 0.5 + average * 0.5
+        positions[vertex * 3 + axis] = value
+        positions[(vertex + count) * 3 + axis] = value
+      }
+    }
   }
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
@@ -115,10 +192,19 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   geometry.setAttribute('skinWeight', new Float32BufferAttribute(skinWeights, 4))
   geometry.setIndex(indices)
   geometry.addGroup(0, skinEnd, 0)
-  geometry.addGroup(skinEnd, indices.length - skinEnd, 1)
+  geometry.addGroup(skinEnd, wingEnd - skinEnd, 2)
+  geometry.addGroup(wingEnd, indices.length - wingEnd, 1)
   geometry.computeVertexNormals()
-  const front = new MeshStandardMaterial({ map: texture, roughness: 0.65, metalness: 0.02 })
-  const sides = new MeshStandardMaterial({ color: '#69404B', roughness: 0.4, metalness: 0.1 })
+  const artwork = bodyProjection?.texture ?? texture
+  const heightMap = bodyProjection?.texture.clone()
+  if (heightMap) { heightMap.colorSpace = NoColorSpace; heightMap.needsUpdate = true }
+  const front = new MeshPhysicalMaterial({ map: artwork, bumpMap: heightMap ?? null, bumpScale: 0.008,
+    alphaTest: bodyProjection ? 0.18 : 0, roughness: bodyProjection ? 0.53 : 0.65, metalness: 0.02, clearcoat: bodyProjection ? 0.28 : 0 })
+  // Frontal alpha cannot describe an extruded side. Keep those surfaces solid and softly lit.
+  const sides = new MeshStandardMaterial({ color: bodyProjection ? '#80644E' : '#69404B', roughness: 0.65, metalness: 0.02 })
+  const wingMaterial = new MeshPhysicalMaterial({ map: artwork, bumpMap: heightMap ?? null, bumpScale: 0.003,
+    side: DoubleSide, alphaTest: 0.18, roughness: 0.38, metalness: 0, transmission: 0.22, thickness: 0.018,
+    ior: 1.36, clearcoat: 0.45, clearcoatRoughness: 0.27, attenuationColor: '#a4b5a0', attenuationDistance: 0.28 })
   const bones = joints.map(joint => { const bone = new Bone(); bone.name = joint.name; return bone })
   joints.forEach((joint, index) => {
     const bone = bones[index]!
@@ -127,7 +213,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     bone.position.copy(parentIndex < 0 ? position : position.sub(point(...joints[parentIndex]!.start)))
     if (parentIndex >= 0) bones[parentIndex]!.add(bone)
   })
-  const mesh = new SkinnedMesh(geometry, [front, sides])
+  const mesh = new SkinnedMesh(geometry, [front, sides, wingMaterial])
   mesh.name = 'Brundlefly-canonical-relief'
   mesh.add(bones[0]!)
   mesh.updateMatrixWorld(true)
@@ -139,7 +225,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   root.add(mesh)
   const joint = (name: string) => bones[joints.findIndex(value => value.name === name)]!
   const face = createFaceModel(faceTexture, headProjection)
-  face.root.position.copy(point(0.677, 0.23, 0.16).sub(point(0.57, 0.22)))
+  face.root.position.copy(point(0.665, 0.238, 0.045).sub(point(0.57, 0.22)))
   joint('head').add(face.root)
   root.updateMatrixWorld(true)
   skeleton.update()
@@ -180,6 +266,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       joint('right-wing').rotation.y = spread - Math.sin(time * 2.2 + 1) * 0.025 - stride * 0.018
       joint('left-wing').rotation.z = leftLift * 0.018
       joint('right-wing').rotation.z = -rightLift * 0.012
+      joint('left-wing-tip').rotation.set(Math.sin(time * 3.1 + 0.7) * 0.032 + leftLift * 0.04, -spread * 0.38, 0)
+      joint('right-wing-tip').rotation.set(Math.sin(time * 2.7 + 1.9) * 0.018 + rightLift * 0.022, spread * 0.26, 0)
       joint('left-hip').rotation.set(stride * 0.22, 0, stride * 0.045)
       joint('right-hip').rotation.set(-stride * 0.22, 0, -stride * 0.045)
       joint('left-knee').rotation.set(pulse * 0.018 - leftLift * 0.18, 0, leftLift * 0.055)
@@ -223,6 +311,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   }
   return {
     root, mesh, skeleton, update,
+    updateMaterials(time: number) { face.updateMaterials(time) },
     idleAnimation() {
       return bakeAnimation('Brundlefly-idle', 4.8, time => ({ time, pressure: 0, pointer: new Vector2(), transform: 'squeeze' }))
     },
@@ -240,6 +329,6 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
         blink: Math.max(0, 1 - Math.abs(time - 2.45) / 0.12),
       }))
     },
-    dispose() { face.dispose(); geometry.dispose(); front.dispose(); sides.dispose(); skeleton.dispose() },
+    dispose() { face.dispose(); geometry.dispose(); front.dispose(); sides.dispose(); wingMaterial.dispose(); heightMap?.dispose(); skeleton.dispose() },
   }
 }

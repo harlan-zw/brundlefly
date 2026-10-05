@@ -101,6 +101,8 @@ Import success: “Preset loaded.”
 Clipboard error: “Clipboard access failed. Select and copy the code.”
 Material controls: “Wetness”, “Viscosity”, “Pressure”, “Animate material”, “Hide material”, “Press to deform”, “Motion off”, “Motion on”.
 Mascot expression controls: “Speech”, “Blink”, “Brow”, “Squint”.
+Mascot inspector controls: “Mascot”, “Texture”, “Mapped”, “Sprite”, “Clip”, “Manual”, “Idle”, “Walk”, “Speaking”, “Play”, “Pause”, “Speed”, “Time”, “Bones”, “Wireframe”.
+Inspector navigation uses “Inspect mascot” and “Brand kit”. Its camera hint is “Drag to orbit. Scroll to zoom.”
 3D status: “3D loading.”, “3D material”, “Static material. WebGL is unavailable.”, “Static material. The texture could not load.”
 Generic composition label: “Your text”. Its action defaults to “Review text”.
 Composition instructions: “Combine parts. Copy the Vue.”
@@ -149,6 +151,7 @@ The optional panel is titled “Scene controls”. It uses “Lighting”, “Sc
 Light labels: “Ambient light”, “Key light”, “Fill light”, “Rim light”, “Inner light”, “Exposure”, “Texture glow”.
 Scene labels: “Fog”, “Zoom”, “Wetness”, “Opening”.
 Motion labels: “Walk speed”, “Breath”, “Flow”, “Motion off”.
+Sound group: “Sound”. Its labels are “Master volume”, “Ambience volume”, and “Voice volume”.
 Panel actions use “Close”, “Reset”, and “Copy settings”.
 The copy fallback label is “Settings JSON”.
 Its error is “Clipboard access failed. Select and copy the settings.”

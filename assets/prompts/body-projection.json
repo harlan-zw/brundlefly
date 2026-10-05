@@ -1,0 +1,9 @@
+{
+  "prompt": "Edit the FIRST reference into a high-detail continuous 3D-render-style surface texture for the SAME exact Brundlefly creature. The FIRST image is an immutable pose/layout/shape template: keep exactly the same canvas proportions, exact full-body framing and scale, exact positions of every joint, finger, claw, foot, wing and the hunched stance. Preserve FOUR arms (two long shoulder arms and two short rib arms), TWO legs, and TWO unequal small developing wings. Never add, omit, merge or reposition a limb. Keep the same gaps between limbs and fingers. Keep the left-side long pale sage wing and smaller right wing in their exact locations. Remove the black background into actual transparency. Replace the pixel clusters with detailed folded rusty flesh, dark irregular chitin plates, bristles, tendons and pale sage wing membrane. Match the SECOND reference's realistic skin detail, muted rust flesh and dark green-black wet eyes, but retain the first image's entire layout and relative head size. No emissive glow. Diffuse soft neutral light without hard cast shadow, suitable as a texture projected onto articulated volume that receives scene lighting. Keep original silhouette and every appendage fully inside the image. Body horror comes from mutation, anatomy and material, no blood or exposed organs. No text, no extra objects, no pedestal. This is a registration-sensitive texture mapping asset, exact original pose alignment is more important than artistic reinterpretation.",
+  "references": [
+    "assets/brand/character.png",
+    "assets/brand/kit/lair/head-projection.png"
+  ],
+  "transparent_background": true,
+  "output": "assets/brand/kit/lair/body-projection.png"
+}
