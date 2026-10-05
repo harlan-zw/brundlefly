@@ -13,6 +13,7 @@ scripts/scratchpad/
 website/.nuxt/
 website/.output/
 website/.cloudflare/
+website/worker/persona.generated.ts
 website/.wrangler/
 website/dist
 website/.env*

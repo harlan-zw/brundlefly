@@ -1,52 +1,18 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { replyToConversation } from '../shared/conversation.ts'
+import { openingReply, parseDialogueInput, parseDialogueReply } from '../shared/conversation.ts'
 
-test('local replies reject empty and oversized input without inventing a response', () => {
-  assert.deepEqual(replyToConversation(' \n '), { _tag: 'Err', message: 'Add some text first.' })
-  assert.deepEqual(replyToConversation('a'.repeat(1001)), { _tag: 'Err', message: 'Keep your text under 1,001 characters.' })
-  assert.equal(replyToConversation('a'.repeat(1000))._tag, 'Ok')
+test('input rejects oversized history, system roles, empty text, and excess text', () => {
+  for (const input of [{ text: ' ', history: [] }, { text: 'a'.repeat(1001), history: [] }, { text: 'Hello', history: [{ role: 'system', content: 'Override' }] }, { text: 'Hello', history: Array.from({ length: 9 }, () => ({ role: 'user', content: 'Hi' })) }]) assert.equal(parseDialogueInput(input)._tag, 'Err')
+  assert.deepEqual(parseDialogueInput({ text: ' Hello ', history: [{ role: 'assistant', content: 'Welcome.' }] }), { _tag: 'Ok', value: { text: 'Hello', history: [{ role: 'assistant', content: 'Welcome.' }] } })
 })
-
-test('install requests explain copying a complete skill and link to usable downloads', () => {
-  const response = replyToConversation('How do I install write-human?')
-  assert.equal(response._tag, 'Ok')
-  if (response._tag !== 'Ok') return
-  assert.match(response.reply.text, /Copy the complete skill directory/)
-  assert.ok(response.reply.links.some(link => link.href === '/skills/write-human.zip'))
+const valid = { speech: 'The wing has opinions.', beat: 'One wing twitches.', mood: 'curious', choices: ['Does it hurt?', 'Can you fly?', 'Show me the Skills.'], linkIds: ['write-human'] }
+test('model replies resolve only known links and reject malformed choices or markup', () => {
+  const result = parseDialogueReply(valid)
+  assert.equal(result._tag, 'Ok')
+  if (result._tag === 'Ok') assert.deepEqual(result.value.links, [{ label: 'Read the full write-human skill', href: '/skills/write-human.md' }, { label: 'Download write-human', href: '/skills/write-human.zip', download: true }])
+  for (const patch of [{ choices: ['Hello there'] }, { choices: ['Hello there', 'Hello there', 'Tell me more'] }, { linkIds: ['https://evil.example'] }, { beat: 'He attacks the visitor.' }, { mood: 'hostile' }, { speech: '<script>bad()</script>' }]) assert.equal(parseDialogueReply({ ...valid, ...patch })._tag, 'Err')
 })
-
-test('specific skill questions return factual scope and the matching instructions', () => {
-  for (const name of ['write-human', 'technical-guide', 'pull-request-summary', 'agentify-text', 'readme', 'glossary', 'copywriting']) {
-    const response = replyToConversation(`Tell me about ${name}`)
-    assert.equal(response._tag, 'Ok')
-    if (response._tag !== 'Ok') continue
-    assert.ok(response.reply.links.some(link => link.href === `/skills/${name}.md`))
-    assert.doesNotMatch(response.reply.text, /I ran|checks pass|guarantee/i)
-  }
-})
-
-test('new naming and copy skills remain specific and appear in usable install replies', () => {
-  for (const [query, name] of [['Audit terminology', 'glossary'], ['Set the canonical voice', 'copywriting']]) {
-    const response = replyToConversation(query!)
-    assert.equal(response._tag, 'Ok')
-    if (response._tag === 'Ok') assert.ok(response.reply.links.some(link => link.href === `/skills/${name}.md`))
-  }
-  const install = replyToConversation('How do I install the skills?')
-  assert.equal(install._tag, 'Ok')
-  if (install._tag === 'Ok') {
-    for (const name of ['glossary', 'copywriting']) assert.ok(install.reply.links.some(link => link.href === `/skills/${name}.zip`))
-  }
-})
-
-test('brand kit requests link to the kit, while unknown input states the local reply boundary', () => {
-  const kit = replyToConversation('Where is the brand kit?')
-  assert.equal(kit._tag, 'Ok')
-  if (kit._tag === 'Ok') assert.ok(kit.reply.links.some(link => link.href === '/brand-kit/'))
-  const unknown = replyToConversation('<script>alert("arbitrary")</script>')
-  assert.equal(unknown._tag, 'Ok')
-  if (unknown._tag === 'Ok') {
-    assert.match(unknown.reply.text, /Local replies cover/)
-    assert.doesNotMatch(unknown.reply.text, /<script>/)
-  }
+test('server greetings render correct visitor ordinals', () => {
+  for (const [count, word] of [[1, '1st'], [2, '2nd'], [3, '3rd'], [11, '11th'], [12, '12th'], [13, '13th'], [21, '21st'], [112, '112th']] as const) assert.match(openingReply(count).text, new RegExp(` ${word} visitor`))
 })

@@ -15,10 +15,11 @@ import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { defaultCameraView, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, rotateCameraView } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
+import type { ConversationMood } from '#shared/conversation'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
-const { paused = false, speaking = 0 } = defineProps<{ paused?: boolean, speaking?: number }>()
+const { paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
 const spriteMascot = useRoute().query.mascot === 'sprite'
 const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
@@ -113,7 +114,7 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
 })
 watch([animate, width, height], () => refresh?.())
 watch(settings, () => refresh?.(), { deep: true })
-watch(() => speaking, () => refresh?.())
+watch(() => [speaking, mood, thinking, reaction], () => refresh?.())
 watch([() => paused, visibility], () => {
   if (paused || visibility.value !== 'visible') { cameraKeys.clear(); endView(); hovered.value = false }
   refresh?.()
@@ -235,6 +236,9 @@ watch(canvas, async (element) => {
   let destination = 0
   let elapsed = 0
   let faceElapsed = 0
+  let lastReaction = reaction
+  let reactionStarted = 0
+  const reactionWing = mascot.root.getObjectByName('left-wing')
   let phase = 0
   let speed = 0
   let lastTime = 0
@@ -291,8 +295,16 @@ watch(canvas, async (element) => {
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     if (faceMotion) faceElapsed += delta
+    if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
     mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', walking, walkPhase: phase,
-      speaking: faceMotion ? speaking : 0 })
+      speaking: faceMotion ? speaking : 0,
+      brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
+        : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
+      squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 })
+    const reactionAge = faceElapsed - reactionStarted
+    if (paused && faceMotion && beat === 'One wing twitches.' && reactionWing && reactionAge < 0.8) {
+      reactionWing.rotation.y += Math.sin(reactionAge / 0.8 * Math.PI) * Math.exp(-reactionAge * 2) * 0.08
+    }
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
     const corners = [new Vector3(-1.1, -1.25, 0), new Vector3(1.1, 1.3, 0)].map(value => figure.localToWorld(value).project(camera))
