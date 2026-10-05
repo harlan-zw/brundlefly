@@ -351,6 +351,40 @@ test('the right shoulder stays attached while looking around and the wing bends 
   assert.ok(rest.anchor.distanceTo(unfolded.anchor) < 0.003, 'The wing root must stay on its chest anchor while unfurling.')
   assert.ok(rest.tip.distanceTo(unfolded.tip) > 0.03, 'The anchored wing must still unfurl toward its tip.')
   const oldPupil = new Raycaster(new Vector3((0.758 - 0.5) * 2.3, (0.5 - 0.231) * 2.6, 2), new Vector3(0, 0, -1))
-  assert.equal(oldPupil.intersectObject(model.mesh, false).length, 0, 'Restoring attachments must not restore the original eye behind the new head.')
+  const artwork = oldPupil.intersectObject(model.mesh, false).filter(hit => model.mesh.geometry.groups
+    .find(group => hit.faceIndex! * 3 >= group.start && hit.faceIndex! * 3 < group.start + group.count)!.materialIndex !== 3)
+  assert.equal(artwork.length, 0, 'Restoring attachments must not restore the original eye behind the new head.')
   model.dispose(); texture.dispose()
+})
+
+test('the face close-up shows no silhouette walls where the body meets the sculpted head', () => {
+  const texture = new Texture()
+  const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster},
+    {texture, raster: imageRaster('../../assets/brand/kit/lair/body-projection.png')})
+  model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', blink: 0})
+  // The dialog close-up looks at his face from slightly left of centre.
+  const camera = new Vector3(0.23, 0.92, 3.28)
+  const groups = model.mesh.geometry.groups
+  const walls: string[] = []
+  for (let y = 0.62; y <= 1.1; y += 0.03) for (let x = 0; x <= 0.72; x += 0.02) {
+    const hit = new Raycaster(camera, new Vector3(x, y, 0).sub(camera).normalize()).intersectObject(model.root, true)[0]
+    if (hit?.object !== model.mesh) continue
+    const group = groups.find(value => hit.faceIndex! * 3 >= value.start && hit.faceIndex! * 3 < value.start + value.count)!
+    if (group.materialIndex === 1) walls.push(`${x.toFixed(2)},${y.toFixed(2)}`)
+  }
+  assert.deepEqual(walls, [], 'Side walls must stay hidden beneath the sculpted head.')
+  model.dispose(); texture.dispose()
+})
+
+test('the right wing root meets the sculpted head without a hole', () => {
+  const texture = new Texture()
+  const bodyRaster = imageRaster('../../assets/brand/kit/lair/body-projection.png')
+  const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster}, {texture, raster: bodyRaster})
+  const reference = createMascotModel(texture, canonicalRaster(), undefined, undefined, {texture, raster: bodyRaster})
+  for (const [x, y] of [[0.77, 0.18], [0.775, 0.2], [0.775, 0.22], [0.78, 0.24]]) {
+    const ray = new Raycaster(new Vector3((x! - 0.5) * 2.3, (0.5 - y!) * 2.6, 2), new Vector3(0, 0, -1))
+    assert.ok(ray.intersectObject(reference.mesh, false).length, 'Fixture points must lie within canonical tissue.')
+    assert.ok(ray.intersectObject(model.root, true).length, `Tissue must join the head and wing root at ${x},${y}.`)
+  }
+  model.dispose(); reference.dispose(); texture.dispose()
 })

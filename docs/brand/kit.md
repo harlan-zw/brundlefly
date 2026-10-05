@@ -299,6 +299,7 @@ Idle motion breathes through the chest and shifts the knees and wings.
 Blinks, short wing buzzes, and small-hand rubbing follow irregular schedules instead of a fixed beat.
 The exported GLB includes skinned meshes, mapped textures, skeletons, and idle, walk, and speaking clips.
 The body remains a volumetric relief with weighted limbs and thin articulated wings. The head projects reference artwork onto skull depth.
+The body hides only the tissue the head sculpt covers, and its relief thins to tuck under the sculpt rim. Dark crease tissue fills any raster eye the sculpt leaves exposed.
 The mapped outline connects the head's front, sides, and back. Side thickness tapers around bristles and mouthparts.
 The generated sculpt reference supplies that direction. Canonical anatomy remains authoritative.
 

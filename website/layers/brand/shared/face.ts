@@ -10,6 +10,30 @@ import { applyMascotSurface } from './mascot-surface.ts'
 export type FaceInput = { time: number, speaking: number, blink: number, brow?: number, squint?: number }
 export type HeadProjection = { texture: Texture, raster: { width: number, height: number, data: Uint8ClampedArray } }
 
+const headWidth = 0.67
+const headHeight = 0.86
+
+/** Places projected head pixels in face-local units. The body uses `covers` to hide only what the sculpt hides. */
+export function createHeadOutline({ width, height, data }: HeadProjection['raster']) {
+  let minX = width - 1, maxX = 0, minY = height - 1, maxY = 0
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) if (data[(y * width + x) * 4 + 3]! > 24) {
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y)
+  }
+  const spanX = Math.max(1, maxX - minX)
+  const spanY = Math.max(1, maxY - minY)
+  return {
+    uvAt: (x: number, y: number) => [(minX + (x / headWidth + 0.5) * spanX) / (width - 1),
+      1 - (minY + (0.5 - y / headHeight) * spanY) / (height - 1)] as const,
+    localAt: (x: number, y: number) => new Vector3((x - minX) / spanX * headWidth - headWidth * 0.5,
+      headHeight * 0.5 - (y - minY) / spanY * headHeight, 0),
+    covers(x: number, y: number) {
+      const px = Math.round(minX + (x / headWidth + 0.5) * spanX)
+      const py = Math.round(minY + (0.5 - y / headHeight) * spanY)
+      return px >= 0 && py >= 0 && px < width && py < height && data[(py * width + px) * 4 + 3]! > 24
+    },
+  }
+}
+
 /** The caller may retain the original sprite when the reference texture is unavailable. */
 export function createFaceModel(texture?: Texture, projection?: HeadProjection) {
   if (projection) return createProjectedFace(texture, projection)
@@ -40,18 +64,7 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
   const eyeMaterial = eye.material
   const materials = [front, back, side, lidSkin]
   const surfaces = materials.map(material => applyMascotSurface(material, 'skin'))
-  let minX = width - 1, maxX = 0, minY = height - 1, maxY = 0
-  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) if (data[(y * width + x) * 4 + 3]! > 24) {
-    minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y)
-  }
-  const spanX = Math.max(1, maxX - minX)
-  const spanY = Math.max(1, maxY - minY)
-  const headWidth = 0.67
-  const headHeight = 0.86
-  const uvAt = (x: number, y: number) => [(minX + (x / headWidth + 0.5) * spanX) / (width - 1),
-    1 - (minY + (0.5 - y / headHeight) * spanY) / (height - 1)] as const
-  const localAt = (x: number, y: number) => new Vector3((x - minX) / spanX * headWidth - headWidth * 0.5,
-    headHeight * 0.5 - (y - minY) / spanY * headHeight, 0)
+  const { uvAt, localAt } = createHeadOutline(raster)
   const depthAt = (x: number, y: number) => 0.028 + Math.sqrt(Math.max(0, 1 - Math.pow(x / 0.35, 2) * 0.82
     - Math.pow(y / 0.44, 2) * 0.75)) * 0.23
   const eyeCenters = [localAt(width * 0.3934, height * 0.4417), localAt(width * 0.6916, height * 0.4826)]
