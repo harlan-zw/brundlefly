@@ -1,5 +1,9 @@
 # Glossary
 
+This file owns Brundlefly's product names and brand terms.
+[COPY.md](COPY.md) owns sentences and voice. [VISION.md](VISION.md) owns the claims those sentences may make.
+The terms below preserve the owner's chosen tension: human connection inside something inhuman and grotesque.
+
 ## Map
 
 | Term | Location | Relationship | Public name |
@@ -11,6 +15,12 @@
 | agentify-text | skills/agentify-text | Compresses text for agents while preserving substantial meaning | agentify-text |
 | readme | skills/readme | Writes repository READMEs with researched positioning and working setup | readme |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
+| human connection | Public story | Gives the writing its purpose | human connection |
+| empathy | Editorial choices | Helps the author consider the reader | empathy |
+| inhuman | Public story | Names the absence of lived human experience in an agent | inhuman |
+| slop | Public story | Names writing that loses purpose in generated filler | slop |
+| mutation | Brand imagery | Connects changed writing with the changing mascot | mutation |
+| grotesque | Visual presentation | Makes the loss of humanity visible | grotesque |
 
 ## Terms
 
@@ -34,7 +44,57 @@ readme owns README creation and refresh, including setup and documentation routi
 It works alone and can use write-human as an optional prose review.
 Use readme for this skill, rather than readme-writer or readme-guide.
 
+### human connection
+
+The attempt by one person to be understood by another through writing.
+Use it when explaining why meaning and voice matter.
+Do not substitute engagement, conversion, or an authenticity score for this aim.
+The skills can support that attempt. They cannot guarantee a reader's response.
+
+### empathy
+
+Considering what the reader knows, needs, or could misunderstand.
+Express it through clear explanations and care for the reader's attention.
+Do not use sentimentality, flattery, or simulated intimacy as substitutes.
+Do not claim an agent feels empathy.
+
+### slop
+
+Generated writing whose filler, stock phrasing, or unsupported additions obscure what someone meant.
+Use it for a specific failure in the writing, never as a label for its author or reader.
+Do not use it as a synonym for all agent output or unfamiliar writing styles.
+Retain factual names for evaluations and technical material.
+
+### inhuman
+
+An agent does not bring the author's lived experience or relationship with the reader to the writing.
+Use the word for that boundary in public copy.
+Do not use it to dehumanize a person or claim that every generated sentence is bad.
+Avoid soulless as a technical explanation. Name the actual loss of meaning or voice.
+
+### mutation
+
+A change in form, expressed through the mascot and the transformation of writing.
+Use it in the public story and brand imagery.
+Do not rename a Skill, rewrite, installation, or review as a mutation.
+Technical instructions keep their established terms.
+
+### grotesque
+
+The body's visible distortion: warped proportions, uneven limbs, flesh changing into chitin.
+Use it for the visual presentation and deliberate horror in public copy.
+Do not substitute gore, violence, or disgust toward people for this character.
+Keep the purpose warm even when the presentation is harsh.
+
 ## Banned
 
 Do not use Fleshware, Brundleware, or Spiralware as names for this collection.
 Those names belong to archived concepts.
+
+Do not call agents human, conscious, or empathetic as a claim about their inner experience.
+Do not use human connection to imply a measured outcome without evidence.
+
+## Open questions
+
+The reusable glossary Skill can move here without moving Harlan Agent Kit's own product vocabulary.
+Confirm that migration separately. Each repository keeps its own GLOSSARY.md.

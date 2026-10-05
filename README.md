@@ -1,6 +1,6 @@
 # ![Brundlefly, with its mascot's claws hanging below the banner](https://github.com/harlan-zw/brundlefly/raw/main/assets/brand/github-banner-overhang-gross.png)
 
-> Agent skills for human mutations
+> Something human in the slop.
 
 <a href="https://skilld.dev/gh/harlan-zw/brundlefly">
   <picture>
@@ -12,17 +12,18 @@
 
 ## Why Brundlefly
 
-You ask an agent to clean up a draft. It comes back smoother, but the phrasing you liked has gone.
-You shorten instructions for another agent. Now the exception that mattered has gone too.
+You write because you want someone to understand.
+Then an agent gets hold of the draft. The sentences swell. Stock phrases creep in. Your voice gets harder to find.
 
-Both edits can look like improvements until you compare them with what you meant.
+That is the slop Brundlefly cares about: words piling up between you and the person you wanted to reach.
+Shortening the text can go wrong too. An agent can strip out the exception that held your meaning together.
 
 write-human grew out of personal instructions for editing prose, called humanize-writing.
 Brundlefly gives those instructions a home outside a personal collection, so you can use them with your own agent.
-The collection brings that concern for meaning to guides, pull request descriptions, READMEs, and agent context.
-A guide needs examples that work. A pull request description needs to fit the repository it is going into.
+The collection carries that concern into guides, pull request descriptions, READMEs, and agent context.
+Empathy has practical work to do here: explain the unfamiliar term, respect the reader's attention, keep the example usable.
 
-The point is to let an agent change the writing while keeping hold of what you wanted to say.
+The mascot is caught between flesh and something inhuman. The writing gets to change too, with its meaning still worth protecting.
 
 ## Features
 

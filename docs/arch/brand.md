@@ -9,8 +9,10 @@ The wordmark uses heavy, tall condensed cream letters with restrained distressed
 No font file is supplied.
 Do not regenerate its lettering for each new asset.
 
-The wordmark is the only approved promotional text in this kit.
-Confirm new slogans, public persona copy, or decorative text with Harlan.
+[GLOSSARY.md](../../GLOSSARY.md) owns Brundlefly's product names and brand terms.
+[COPY.md](../../COPY.md) owns approved promotional wording and voice by surface.
+Keep these rules focused on artwork. Do not maintain a second slogan or vocabulary list here.
+Confirm additional slogans, public persona copy, or decorative text with Harlan.
 
 ## Character
 
