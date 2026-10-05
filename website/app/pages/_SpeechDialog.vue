@@ -77,22 +77,21 @@ onBeforeUnmount(() => { if (dialog.value?.open) dialog.value.close() })
 </template>
 
 <style scoped>
-.speech-pocket { position: fixed; inset: auto; bottom: clamp(16px, 6vh, 72px); left: 50%; translate: -50% 0; box-sizing: border-box; width: min(480px, calc(100vw - 32px)); max-height: min(620px, calc(100dvh - 44px)); margin: 0; padding: 28px 24px 20px; overflow: visible; color: #e8d4a6; background: #10130fec; border: 1px solid #69404b; border-radius: 35px 14px 30px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22; }
+.speech-pocket { position: fixed; inset: auto; bottom: 24px; left: 50%; translate: -50% 0; box-sizing: border-box; width: min(800px, calc(100vw - 48px)); max-height: min(380px, 48dvh); margin: 0; padding: 24px 28px 18px; overflow: visible; color: #e8d4a6; background: #10130fec; border: 1px solid #69404b; border-radius: 35px 14px 30px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22; }
 .speech-pocket[open] { display: flex; flex-direction: column; }
-.speech-pocket::backdrop { background: #080b083b; }
-.speech-pocket::after { content: ''; position: absolute; bottom: -11px; left: 38%; width: 24px; height: 24px; rotate: 45deg; background: #10130f; border-bottom: 1px solid #69404b; border-right: 1px solid #69404b; border-radius: 0 0 6px; }
+.speech-pocket::backdrop { background: #080b0812; }
 .speech-seam { position: absolute; width: 95%; height: 58px; top: -28px; left: 2.5%; object-fit: cover; image-rendering: pixelated; pointer-events: none; }
-header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-shrink: 0; }
+header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-shrink: 0; }
 h2 { margin: 0; font: 600 25px var(--font-display, sans-serif); }
 header p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; color: #a4b5a0; }
 .speech-close { flex-shrink: 0; width: 44px; height: 44px; border: 0; background: transparent; color: #e8d4a6; font-size: 28px; cursor: pointer; }
-.speech-log { min-height: 76px; max-height: 320px; min-width: 0; overflow: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-color: #69404b #10130f; }
+.speech-log { min-height: 40px; max-height: 130px; min-width: 0; overflow: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-color: #69404b #10130f; }
 .speech-message { padding: 12px 0; }
 .speech-message p, .speech-start { margin: 0; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
 .speech-message[data-speaker="User"] { margin: 8px 0 4px 22px; padding: 12px 16px; background: #343c3b66; border-radius: 18px 4px 18px 18px; }
 .speech-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; }
 .speech-links a { color: #a4b5a0; font-size: 13px; line-height: 1.5; display: inline-flex; align-items: center; min-height: 44px; text-underline-offset: 4px; }
-form { margin-top: 20px; flex-shrink: 0; position: relative; z-index: 1; }
+form { margin-top: 14px; flex-shrink: 0; position: relative; z-index: 1; }
 label { display: block; font-size: 13px; margin-bottom: 7px; }
 textarea { display: block; box-sizing: border-box; width: 100%; min-height: 72px; max-height: 160px; padding: 12px; resize: vertical; background: #080b08; color: #e8d4a6; border: 1px solid #777648; border-radius: 12px 4px 16px 4px; font: inherit; font-size: 16px; line-height: 1.4; }
 .speech-send-row { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 10px; min-height: 44px; }
@@ -101,4 +100,5 @@ textarea { display: block; box-sizing: border-box; width: 100%; min-height: 72px
 .speech-send:hover { background: #a4b5a0; }
 .speech-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-height: 540px) { .speech-pocket { bottom: 16px; max-height: calc(100dvh - 32px); padding: 18px; } header { margin-bottom: 10px; } .speech-log { min-height: 0; } form { margin-top: 10px; } textarea { min-height: 52px; } }
+@media (max-width: 600px) { .speech-pocket { bottom: 10px; width: calc(100vw - 20px); padding: 22px 18px 14px; max-height: 48dvh; } h2 { font-size: 23px; } header p { font-size: 11px; } .speech-log { max-height: 100px; } .speech-message p, .speech-start { font-size: 14px; } }
 </style>

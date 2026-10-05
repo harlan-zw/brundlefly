@@ -50,8 +50,67 @@ export function createMascotModel(texture: Texture, raster: Raster) {
   for (let i = 0; i < count; i++) {
     // The supplied artwork has a black background. Infer mesh occupancy, without changing its pixels.
     mask[i] = data[i * 4 + 3]! > 32 && Math.max(data[i * 4]!, data[i * 4 + 1]!, data[i * 4 + 2]!) > 18 ? 1 : 0
-    distance[i] = mask[i] ? 100 : 0
   }
+  // Facial shadow uses the same black as the backdrop. Keep its opaque pixels as actual skin.
+  // Restrict repair to the canonical head, so finger spaces and perforated wings remain open.
+  const insideHead = (index: number) => {
+    const x = index % width / (width - 1)
+    const y = Math.floor(index / width) / (height - 1)
+    return x >= 0.48 && x <= 0.81 && y >= 0.15 && y <= 0.37
+  }
+  // The outer socket rims are opaque black artwork connected directly to the backdrop.
+  // Protect their canonical footprints before extracting holes. Pixel colors remain unchanged.
+  for (let index = 0; index < count; index++) {
+    if (data[index * 4 + 3]! <= 32) continue
+    const x = index % width / (width - 1)
+    const y = Math.floor(index / width) / (height - 1)
+    const leftSocket = Math.pow((x - 0.632) / 0.045, 2) + Math.pow((y - 0.214) / 0.038, 2) <= 1
+    const rightSocket = Math.pow((x - 0.758) / 0.041, 2) + Math.pow((y - 0.231) / 0.033, 2) <= 1
+    if (leftSocket || rightSocket) mask[index] = 1
+  }
+  const visited = new Uint8Array(count)
+  const maximumSocket = Math.max(4, Math.ceil(count * 0.004))
+  for (let start = 0; start < count; start++) {
+    if (mask[start] || visited[start]) continue
+    const region = [start]
+    visited[start] = 1
+    let enclosedFaceShadow = true
+    for (let cursor = 0; cursor < region.length; cursor++) {
+      const index = region[cursor]!
+      const x = index % width
+      const y = Math.floor(index / width)
+      if (!insideHead(index) || data[index * 4 + 3]! <= 32 || x === 0 || y === 0 || x === width - 1 || y === height - 1) enclosedFaceShadow = false
+      const neighbors = [x > 0 ? index - 1 : -1, x < width - 1 ? index + 1 : -1,
+        y > 0 ? index - width : -1, y < height - 1 ? index + width : -1]
+      for (const neighbor of neighbors) if (neighbor >= 0 && !mask[neighbor] && !visited[neighbor]) {
+        visited[neighbor] = 1
+        region.push(neighbor)
+      }
+    }
+    if (enclosedFaceShadow && region.length <= maximumSocket) for (const index of region) mask[index] = 1
+  }
+  // A thin dark crease can connect a socket to the backdrop. Three nearby tissue directions
+  // identify its interior without growing the outer silhouette or filling explicit alpha holes.
+  const faceMask = mask.slice()
+  const reach = Math.max(2, Math.ceil(Math.min(width, height) * 0.075))
+  for (let index = 0; index < count; index++) {
+    if (mask[index] || !insideHead(index) || data[index * 4 + 3]! <= 32) continue
+    const x = index % width
+    const y = Math.floor(index / width)
+    let surroundingTissue = 0
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+      for (let step = 1; step <= reach; step++) {
+        const nx = x + dx * step
+        const ny = y + dy * step
+        if (nx < 0 || nx >= width || ny < 0 || ny >= height) break
+        const neighbor = ny * width + nx
+        if (data[neighbor * 4 + 3]! <= 32) break
+        if (faceMask[neighbor]) { surroundingTissue++; break }
+      }
+    }
+    if (surroundingTissue >= 3) mask[index] = 1
+  }
+  for (let i = 0; i < count; i++) distance[i] = mask[i] ? 100 : 0
   for (let y = 1; y < height; y++) for (let x = 1; x < width; x++) {
     const i = y * width + x
     distance[i] = Math.min(distance[i]!, distance[i - 1]! + 1, distance[i - width]! + 1)

@@ -93,7 +93,7 @@ Kit controls use 14px text and at least 44px targets.
 The mascot has a named keyboard target. Enter or Space opens the same dialog as a pointer click.
 Hover slows walking and changes the cursor. Pointer position does not rotate the relief or distort his face.
 Keep visible cream focus outlines. Do not place artwork over text, inputs, or focus outlines.
-System reduced motion stops walking, idle deformation, and camera movement.
+System reduced motion stops walking and idle deformation. Manual camera movement remains available.
 Pause scene animation while the dialog is open or the document is hidden.
 If WebGL fails, provide the canonical static mascot with the same conversation action.
 Keep the dialog within a 375px viewport. Conversation content may scroll inside the dialog.
@@ -131,6 +131,10 @@ Mucus uses a flowing membrane texture, displaced ripples, and wet highlights tha
 Eight translucent egg sacs breathe at the floor edges. Preserve the central walking corridor.
 Use dedicated generated textures for chitin, compressed floor tissue, and egg membranes.
 Hanging mucus beads grow, stretch, detach, and fall through staggered cycles.
+All hanging strands share the generated mucus material. Tapered necks join pear-shaped drops.
+Physical clearcoat, absorption, and transmission respond to the scene lights.
+Rough angular chitin plates replace glossy floor discs. Larger egg sacs remain outside the walking path.
+Low scar folds and tendons populate the foreground. Floor texture stays visible between them.
 Use modest mesh resolution, instanced perimeter plates, and soft ground shading.
 The mascot GLB carries skin weights, skeleton, canonical texture, and idle and walk clips.
 Runtime GLSL remains in the layer source. The relief does not supply a full sculpted back or side.
@@ -143,3 +147,15 @@ Lighting, fog, zoom, wetness, opening, breath, flow, and walk speed update the s
 Reset restores the shared defaults. Copy settings exports JSON and provides selectable text if clipboard access fails.
 Use the owner's chosen lighting preset: ambient2.05, key80, fill2, rim1.85, inner4.9, exposure1.5, texture glow0.17.
 Motion off freezes the scene. Keep the panel within the viewport and let its contents scroll.
+
+## Camera and conversation
+
+Click-and-drag looks around from the player's position. Touch drag also turns the view.
+Slow WASD travel follows the viewing direction and stays within the walking apron.
+Dragging suppresses click-to-talk. Typing, controls, and an open dialog own their keyboard input.
+Manual camera movement works with reduced motion and Motion off.
+Wall, ceiling, and floor shaders add slow regional texture flow and breathing ripples.
+The walking corridor keeps its floor geometry stable. Motion controls freeze the shader phases.
+Talking moves the camera toward the mascot's face and opens a bottom dialogue panel.
+Closing restores the prior camera view. Reduced motion makes the camera transition immediate.
+Dark facial pixels retain skin geometry. Background, finger, and wing gaps remain open.

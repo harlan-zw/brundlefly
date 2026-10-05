@@ -1,5 +1,5 @@
 import {
-  BackSide, BufferGeometry, CatmullRomCurve3, Color, DirectionalLight, DoubleSide, Float32BufferAttribute, Group, HemisphereLight,
+  BufferGeometry, CatmullRomCurve3, Color, DirectionalLight, DoubleSide, Float32BufferAttribute, Group, HemisphereLight,
   InstancedMesh, LineBasicMaterial, LineSegments, Mesh, MeshPhysicalMaterial, MeshStandardMaterial,
   Object3D, PlaneGeometry, PointLight, ShaderMaterial, SphereGeometry, SpotLight, TubeGeometry, Vector2, Vector3,
 } from 'three'
@@ -8,6 +8,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { createOrganismModel } from './organism'
 import { createGooMaterial } from './goo'
 import { createEggSacs } from './eggs'
+import { createTissueMaterial } from './tissue-material'
 import { sceneLayout } from './scene-layout'
 import type { SceneSettings } from './scene-settings'
 
@@ -56,13 +57,12 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     enclosureUvs.setXY(index, enclosureUvs.getX(index) * 4, enclosureUvs.getY(index) * 3)
   }
   enclosureGeometry.computeVertexNormals()
-  const enclosure = new Mesh(enclosureGeometry, new MeshStandardMaterial({
-    side: BackSide, color: '#69404B', map: texture, bumpMap: texture, bumpScale: 0.14,
-    emissive: '#69404B', emissiveMap: texture, emissiveIntensity: 0.28, roughness: 0.84,
-  }))
+  const enclosureSkin = createTissueMaterial({ surface: 'enclosure', texture, color: '#69404B',
+    bumpScale: 0.14, emissive: '#69404B', glow: 0.28, roughness: 0.84 })
+  const enclosure = new Mesh(enclosureGeometry, enclosureSkin.material)
   enclosure.position.set(0, groundLevel + 4, 5)
   root.add(enclosure)
-  const tunnel = createOrganismModel(texture, 'lair', 1.35)
+  const tunnel = createOrganismModel(texture, 'lair', 1.35, gooTexture)
   tunnel.root.position.set(...sceneLayout.opening.position)
   tunnel.root.scale.set(...sceneLayout.opening.scale)
   root.add(tunnel.root)
@@ -71,8 +71,8 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     bumpScale: 0.1, roughness: 0.46, clearcoat: 0.7, clearcoatRoughness: 0.28 })
   const bruise = new MeshPhysicalMaterial({ color: '#69404B', map: texture, bumpMap: texture,
     bumpScale: 0.12, roughness: 0.55, clearcoat: 0.42 })
-  const chitin = new MeshPhysicalMaterial({ color: '#343C3B', map: textures.chitin, bumpMap: textures.chitin,
-    bumpScale: 0.035, roughness: 0.36, clearcoat: 0.8, clearcoatRoughness: 0.3 })
+  const chitin = new MeshPhysicalMaterial({ color: '#69716A', map: textures.chitin, bumpMap: textures.chitin,
+    bumpScale: 0.12, roughness: 0.72, clearcoat: 0.18, clearcoatRoughness: 0.6 })
   const membrane = new MeshPhysicalMaterial({ color: '#A4B5A0', map: texture,
     side: DoubleSide, transparent: true, opacity: 0.17, roughness: 0.45, clearcoat: 0.8, depthWrite: false })
   const goo = createGooMaterial(gooTexture)
@@ -91,8 +91,9 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     floorPositions.setZ(index, height)
   }
   groundGeometry.computeVertexNormals()
-  const ground = new Mesh(groundGeometry, new MeshStandardMaterial({ color: '#343C3B', map: textures.floor,
-    bumpMap: textures.floor, bumpScale: 0.085, roughness: 0.83, metalness: 0.04 }))
+  const floorSkin = createTissueMaterial({ surface: 'floor', texture: textures.floor, color: '#867461',
+    bumpScale: 0.14, roughness: 0.79 })
+  const ground = new Mesh(groundGeometry, floorSkin.material)
   ground.rotation.x = -Math.PI / 2
   ground.position.set(0, groundLevel - 0.035, 5)
   root.add(ground)
@@ -134,19 +135,45 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   }
 
   // Chitin splinters form a low perimeter, not obstacles in the walking area.
-  const plateGeometry = new SphereGeometry(1, 10, 6)
+  const plateGeometry = new SphereGeometry(1, 5, 3)
+  const platePositions = plateGeometry.getAttribute('position')
+  for (let index = 0; index < platePositions.count; index++) {
+    const x = platePositions.getX(index)
+    const z = platePositions.getZ(index)
+    const angular = 1 + Math.sin(Math.atan2(z, x) * 3.7) * 0.24
+    platePositions.setXYZ(index, x * angular * 1.3, platePositions.getY(index), z * angular * 0.8)
+  }
+  plateGeometry.computeVertexNormals()
   const plates = new InstancedMesh(plateGeometry, chitin, 48)
   const placement = new Object3D()
   for (let index = 0; index < 48; index++) {
     const side = index % 2 === 0 ? -1 : 1
     placement.position.set(side * (2.8 + Math.abs(variation(index)) * 2),
       groundLevel + 0.035, 3 - Math.floor(index / 2) * 0.43)
-    placement.scale.set(0.25 + Math.abs(variation(index + 2)) * 0.4, 0.07 + index % 3 * 0.025, 0.22 + index % 4 * 0.09)
+    placement.scale.set(0.2 + Math.abs(variation(index + 2)) * 0.28, 0.07 + index % 3 * 0.025, 0.18 + index % 4 * 0.06)
     placement.rotation.set(0.04, index * 0.87, side * 0.08)
     placement.updateMatrix()
     plates.setMatrixAt(index, placement.matrix)
   }
   root.add(plates)
+
+  // Low scar folds populate the foreground without blocking the walking apron.
+  for (let index = 0; index < 14; index++) {
+    const side = index % 2 === 0 ? -1 : 1
+    const x = side * (0.65 + Math.abs(variation(index + 30)) * 2.7)
+    const z = 2.9 + Math.floor(index / 2) * 0.62
+    const scar = new Mesh(foldGeometry(index + 40), index % 3 === 0 ? bruise : tissue)
+    scar.position.set(x, groundLevel + 0.035, z)
+    scar.scale.set(0.2 + Math.abs(variation(index + 32)) * 0.34, 0.06 + index % 3 * 0.025, 0.4 + index % 4 * 0.12)
+    scar.rotation.y = side * (0.4 + index * 0.33)
+    root.add(scar)
+    const tendon = new Mesh(new TubeGeometry(new CatmullRomCurve3([
+      new Vector3(x - 0.6, 0, z - 0.7), new Vector3(x, 0.045, z),
+      new Vector3(x + side * 0.45, 0.015, z + 0.75),
+    ]), 18, 0.032 + index % 3 * 0.008, 6, false), bruise)
+    tendon.position.y = groundLevel + 0.012
+    root.add(tendon)
+  }
 
   const puddleGeometry = new SphereGeometry(1, 24, 10)
   const puddlePositions = puddleGeometry.getAttribute('position')
@@ -155,7 +182,10 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     const z = puddlePositions.getZ(index)
     const angle = Math.atan2(z, x)
     const swelling = 1 + Math.sin(angle * 3 + 0.7) * 0.17 + Math.cos(angle * 7) * 0.07
-    puddlePositions.setXYZ(index, x * swelling, puddlePositions.getY(index), z * swelling)
+    const y = puddlePositions.getY(index)
+    const radial = Math.min(1, Math.hypot(x, z))
+    const meniscus = Math.exp(-(((radial - 0.86) / 0.14) ** 2)) * 0.65
+    puddlePositions.setXYZ(index, x * swelling, y > 0 ? y * 0.22 + meniscus : y, z * swelling)
   }
   puddleGeometry.computeVertexNormals()
   for (let index = 0; index < 6; index++) {
@@ -178,6 +208,14 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     root.add(runoff)
   }
 
+  const dropGeometry = new SphereGeometry(1, 18, 14)
+  const dropVertices = dropGeometry.getAttribute('position')
+  for (let index = 0; index < dropVertices.count; index++) {
+    const y = dropVertices.getY(index)
+    const taper = 0.72 - y * 0.42
+    dropVertices.setXYZ(index, dropVertices.getX(index) * taper, y, dropVertices.getZ(index) * taper)
+  }
+  dropGeometry.computeVertexNormals()
   const hanging: { mesh: Mesh, drop: Mesh, anchor: Vector3, phase: number }[] = []
   for (let index = 0; index < 12; index++) {
     const side = index % 2 === 0 ? -1 : 1
@@ -187,12 +225,25 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     const end = new Vector3(x + side * 0.4, -0.8 + index % 3 * 0.3, z + 0.16)
     const midpoint = start.clone().lerp(end, 0.52)
     midpoint.x += side * 0.17
-    const strand = new Mesh(new TubeGeometry(new CatmullRomCurve3([
+    const curve = new CatmullRomCurve3([
       new Vector3(), midpoint.clone().sub(start), end.clone().sub(start),
-    ]), 20, 0.019 + index % 3 * 0.007, 7, false), slime)
+    ])
+    const strandGeometry = new TubeGeometry(curve, 20, 0.024 + index % 3 * 0.008, 7, false)
+    const strandVertices = strandGeometry.getAttribute('position')
+    for (let vertex = 0; vertex < strandVertices.count; vertex++) {
+      const t = Math.floor(vertex / 8) / 20
+      const centre = curve.getPointAt(t)
+      const thickness = 0.5 + Math.exp(-t * 8) * 3 + Math.exp(-(1 - t) * 12) * 0.5
+      strandVertices.setXYZ(vertex,
+        centre.x + (strandVertices.getX(vertex) - centre.x) * thickness,
+        centre.y + (strandVertices.getY(vertex) - centre.y) * thickness,
+        centre.z + (strandVertices.getZ(vertex) - centre.z) * thickness)
+    }
+    strandGeometry.computeVertexNormals()
+    const strand = new Mesh(strandGeometry, slime)
     strand.position.copy(start)
     root.add(strand)
-    const drop = new Mesh(puddleGeometry, slime)
+    const drop = new Mesh(dropGeometry, slime)
     drop.position.copy(end)
     drop.scale.set(0.055, 0.085, 0.052)
     root.add(drop)
@@ -256,10 +307,13 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
       ambient.intensity = settings.ambient
       const enclosureMaterial = enclosure.material
       enclosureMaterial.emissiveIntensity = settings.textureGlow
+      const tissueMotion = { time, breath: settings.breath, flow: settings.flow }
+      enclosureSkin.update(tissueMotion)
+      floorSkin.update(tissueMotion)
       tissue.roughness = 0.78 - settings.wetness * 0.35
       goo.update({ time, breath: settings.breath, flow: settings.flow, wetness: settings.wetness, key: settings.key, fill: settings.fill, rim: settings.rim })
       eggs.update({ time, breath: settings.breath, wetness: settings.wetness })
-      tunnel.update({ time: time * settings.breath, pressure: response * 0.25, wetness: settings.wetness, pointer, opening: settings.opening, transform: 'squeeze' })
+      tunnel.update({ time: time * settings.breath, pressure: response * 0.25, wetness: settings.wetness, pointer, opening: settings.opening, transform: 'squeeze', flow: settings.flow })
       for (const { mesh, scale, phase } of livingFolds) {
         mesh.scale.set(scale.x * (1 + Math.sin(time * 0.48 + phase) * 0.014 * settings.breath + response * 0.015),
           scale.y * (1 + Math.sin(time * 0.36 + phase) * 0.006 * settings.breath), scale.z)
@@ -273,7 +327,8 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
         mesh.rotation.z = Math.sin(time * 0.43 + phase) * 0.02 * settings.breath
         const growth = 0.65 + attached * 0.8
         drop.position.copy(anchor)
-        drop.position.y += (anchor.y - mesh.position.y) * sag - falling * falling * 1.6
+        drop.position.y += (anchor.y - mesh.position.y) * sag - falling * falling * 3.2
+        drop.visible = drop.position.y > groundLevel + 0.025
         drop.position.x += Math.sin(time * 0.43 + phase) * 0.06 * settings.breath
         drop.scale.set(0.055 * growth, 0.085 * growth * (1 + attached * 0.9 - falling * 0.7), 0.052 * growth)
       }

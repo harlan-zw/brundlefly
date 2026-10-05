@@ -3,11 +3,12 @@ import {
   Mesh, MeshPhysicalMaterial, ShaderMaterial, SphereGeometry, TubeGeometry, Vector3,
 } from 'three'
 import type { Texture, Vector2 } from 'three'
+import { createGooMaterial } from './goo'
 
 export const transforms = ['squeeze', 'twist', 'unfurl'] as const
 export type Transform = typeof transforms[number]
 export type Presentation = 'specimen' | 'lair'
-export type OrganismInput = { time: number, pressure: number, wetness: number, pointer: Vector2, opening: number, transform: Transform }
+export type OrganismInput = { time: number, pressure: number, wetness: number, pointer: Vector2, opening: number, transform: Transform, flow?: number }
 
 // Local-space movement stays independent of the world renderer's chamber scale.
 const lairMotionShader = `
@@ -145,7 +146,7 @@ function tissueFold(radius: number, thickness: number, depth: number, lair: bool
 }
 
 /** Shared material geometry. The lair is an environment, never mascot anatomy. */
-export function createOrganismModel(texture: Texture, presentation: Presentation = 'specimen', brightness = 1) {
+export function createOrganismModel(texture: Texture, presentation: Presentation = 'specimen', brightness = 1, gooTexture: Texture = texture) {
   const root = new Group()
   const uniforms = {
     uTexture: { value: texture }, uTime: { value: 0 }, uLair: { value: presentation === 'lair' ? 1 : 0 }, uPressure: { value: 0 },
@@ -272,27 +273,51 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
   }
   const bristles = new LineSegments(bristleGeometry, bristleMaterial)
   root.add(bristles)
-  const slimeMaterial = new MeshPhysicalMaterial({ color: '#777648', roughness: 0.15, clearcoat: 1, transparent: true, opacity: 0.8 })
-  const slimeGeometry = new SphereGeometry(1, 12, 10)
+  const goo = createGooMaterial(gooTexture)
+  const slimeMaterial = goo.material
+  const slimeGeometry = new SphereGeometry(1, 18, 14)
+  const dropPositions = slimeGeometry.getAttribute('position')
+  for (let index = 0; index < dropPositions.count; index++) {
+    const y = dropPositions.getY(index)
+    const taper = 0.72 - y * 0.42
+    dropPositions.setXYZ(index, dropPositions.getX(index) * taper, y, dropPositions.getZ(index) * taper)
+  }
+  slimeGeometry.computeVertexNormals()
   const slime = new Group()
+  const drips: { strand: Mesh, drop: Mesh, length: number, anchor: Vector3, phase: number }[] = []
   for (let index = 0; index < 9; index++) {
     const angle = Math.PI * (0.08 + index / 9 * 0.85)
     const anchor = tissuePoint(angle, radius, 0, presentation === 'lair')
     const { x, y } = anchor
-    const length = 0.16 + (Math.sin(index * 19) + 1) * 0.2
-    const strand = new Mesh(slimeGeometry, slimeMaterial)
-    strand.position.set(x, y - length / 2, 0.04)
-    strand.scale.set(0.012, length, 0.012)
+    const length = 0.2 + (Math.sin(index * 19) + 1) * 0.26
+    const curve = new CatmullRomCurve3([new Vector3(), new Vector3(0.025 * Math.sin(index), -length * 0.4, 0.025), new Vector3(0, -length, 0)])
+    const strandGeometry = new TubeGeometry(curve, 24, 0.018, 8, false)
+    const strandPositions = strandGeometry.getAttribute('position')
+    for (let vertex = 0; vertex < strandPositions.count; vertex++) {
+      const t = Math.floor(vertex / 9) / 24
+      const centre = curve.getPointAt(t)
+      const thickness = 0.6 + Math.exp(-t * 9) * 3.2 + Math.exp(-(1 - t) * 9) * 0.65
+      strandPositions.setXYZ(vertex,
+        centre.x + (strandPositions.getX(vertex) - centre.x) * thickness,
+        centre.y + (strandPositions.getY(vertex) - centre.y) * thickness,
+        centre.z + (strandPositions.getZ(vertex) - centre.z) * thickness)
+    }
+    strandGeometry.computeVertexNormals()
+    connections.push(strandGeometry)
+    const strand = new Mesh(strandGeometry, slimeMaterial)
+    strand.position.set(x, y, 0.04)
     const drop = new Mesh(slimeGeometry, slimeMaterial)
-    drop.position.set(x, y - length, 0.04)
-    drop.scale.set(0.035, 0.055, 0.035)
+    drop.position.set(x, y - length - 0.065, 0.04)
+    drop.scale.set(0.07, 0.085, 0.07)
     slime.add(strand, drop)
+    drips.push({ strand, drop, length, anchor: new Vector3(x, y, 0.04), phase: index * 0.117 })
   }
   root.add(slime)
   return {
     root,
     texture,
     update(input: OrganismInput) {
+      goo.update({ time: input.time, breath: 1, flow: input.flow ?? 1, wetness: input.wetness, key: 80, fill: 2, rim: 1.85 })
       if (throat) {
         const pulse = 1 + Math.sin(input.time * 0.95 - 5.65 * 1.3) * 0.018
         throat.scale.set(1.22 * 1.7 * pulse, 1.22 * 1.16 * pulse, 0.24)
@@ -328,11 +353,22 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
         ? 1 + Math.sin(input.time * 0.64) * 0.025 - Math.max(0, Math.sin(input.time * 0.95)) ** 2 * 0.065
         : 1
       slime.scale.set(stretchX * lipBreath, stretchY * lipBreath * (1 + input.pressure * 0.28), 1)
+      for (const { strand, drop, length, anchor, phase } of drips) {
+        const cycle = (input.time * 0.14 * (input.flow ?? 1) + phase) % 1
+        const attached = Math.min(cycle / 0.82, 1)
+        const falling = Math.max(0, (cycle - 0.82) / 0.18)
+        const growth = 0.55 + attached * 0.85
+        const stretch = 1 + attached * 0.3 + Math.sin(input.time * 0.6 + phase * 8) * 0.03
+        strand.scale.y = stretch
+        drop.scale.set(0.07 * growth, 0.085 * growth * (1 + attached * 0.45 - falling * 0.25), 0.07 * growth)
+        drop.position.copy(anchor)
+        drop.position.y -= length * stretch + drop.scale.y - falling * drop.scale.y * 0.5 + falling * falling * 5.2
+        drop.visible = drop.position.y > -radius * 1.35
+      }
       bristles.scale.set(stretchX, stretchY, 1)
       root.rotation.y = input.pointer.x * (presentation === 'lair' ? 0.035 : 0.18)
       root.rotation.x = -input.pointer.y * (presentation === 'lair' ? 0.025 : 0.12)
       root.rotation.z = Math.sin(input.time * 0.3) * 0.015
-      slimeMaterial.roughness = 0.5 - input.wetness * 0.4
     },
     dispose() {
       throatGeometry?.dispose()

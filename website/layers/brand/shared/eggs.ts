@@ -57,14 +57,15 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
 
   const animated: { body: Group, core: Group, phase: number, height: number, base: Vector3 }[] = []
   const clusters = sceneLayout.eggs.map(([x, z], index) => ({ x, z, side: index === 0 ? -1 : 1 }))
-  const heights = [0.78, 0.48, 0.64, 0.36]
+  const heights = [1.29, 0.79, 1.06, 0.59]
   for (const [clusterIndex, cluster] of clusters.entries()) {
     for (const [index, height] of heights.entries()) {
       const phase = index * 1.73 + clusterIndex * 2.2
-      const radius = 0.15 + height * 0.13
+      const radius = 0.23 + height * 0.15
       const body = new Group()
-      body.position.set(cluster.x + cluster.side * (index % 2 * 0.45 + Math.floor(index / 2) * 0.15),
-        floor + 0.02, cluster.z + (index - 1.5) * 0.27)
+      body.position.set(cluster.x + cluster.side * (index % 2 * 1.3 + Math.floor(index / 2) * 0.44),
+        floor + 0.02, cluster.z + (index - 1.5) * 0.8)
+      body.scale.setScalar(2)
       body.rotation.y = phase
       root.add(body)
       const shell = new Mesh(geometry, shells[(index + clusterIndex) % shells.length]!)
@@ -113,7 +114,7 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
       const wet = Math.min(1, Math.max(0, wetness))
       for (const { body, core, phase, height, base } of animated) {
         const pulse = Math.sin(time * 0.55 + phase)
-        body.scale.set(1 + pulse * 0.018 * response, 1 + pulse * 0.032 * response, 1 + pulse * 0.014 * response)
+        body.scale.set(2 * (1 + pulse * 0.018 * response), 2 * (1 + pulse * 0.032 * response), 2 * (1 + pulse * 0.014 * response))
         core.position.set(base.x + Math.sin(time * 0.31 + phase) * 0.008 * response,
           base.y + Math.sin(time * 0.4 + phase) * height * 0.008 * response, base.z)
         core.rotation.y = Math.sin(time * 0.24 + phase) * 0.035 * response

@@ -331,6 +331,9 @@ The renderer owns these textures. Materials use diffuse and bump sampling for su
 Warm glisten and restrained teal edges follow the scene lighting settings.
 Eight unequal translucent egg sacs cluster at the floor edges. Their inner folds and membranes breathe slowly.
 Both sources remain reusable inside the portable layer: shared/goo.ts and shared/eggs.ts.
+shared/tissue-material.ts animates wall, ceiling, and floor color, bump, and emission together.
+Regional texture flow and small breathing ripples retain the scene's physical lighting.
+The floor stays stable in the walking corridor. Flow and Breath independently freeze their shader phases.
 
 ## Scene map
 
@@ -344,6 +347,17 @@ The mascot walks across a clear crescent apron. Egg clusters occupy uneven side 
 Thin mucus runoff links the opening to perimeter pools.
 Traveling contraction moves the rings and their attached tendons, membranes, bristles, and lip plates.
 The lair deformation leaves specimen transforms unchanged.
+
+shared/camera-view.ts supplies first-person look and slow ground travel without owning the renderer.
+Click-and-drag turns the view from the player's position. Touch drag also turns it.
+WASD travels slowly in the viewing direction; text entry consumes those keys.
+The renderer blends into a face view for conversation and restores the previous camera view afterward.
+
+Mucus now uses Three.js physical lighting, clearcoat, modest transmission, and olive absorption.
+Both chamber and opening strands share the same generated mucus material.
+Tapered necks connect irregular attachment collars to pear-shaped drops.
+The shapes approximate sticky filaments; they do not run a fluid simulation.
+[Three.js material reference](https://threejs.org/docs/pages/MeshPhysicalMaterial.html) documents the lighting properties.
 
 The homepage has hidden scene controls. Press L, or open the page with controls=1 in its query.
 Copy settings exports the live SceneSettings values. Reset restores shared/scene-settings.ts defaults.

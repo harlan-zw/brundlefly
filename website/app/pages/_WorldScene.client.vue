@@ -10,6 +10,8 @@ import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
+import { defaultCameraView, moveCameraView, resolveCameraView, rotateCameraView } from '@brundlefly/brand/shared/camera-view'
+import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import SceneControls from './_SceneControls.vue'
 
 const { paused = false } = defineProps<{ paused?: boolean }>()
@@ -18,6 +20,7 @@ type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reas
 const status = ref<Status>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
 const canvas = shallowRef<HTMLCanvasElement | null>(null)
+const interaction = shallowRef<HTMLButtonElement | null>(null)
 const { width, height } = useElementSize(host)
 const reduced = usePreferredReducedMotion()
 const visibility = useDocumentVisibility()
@@ -30,21 +33,67 @@ let cleanup: (() => void) | undefined
 let refresh: (() => void) | undefined
 let hit: ((pointer: Vector2) => boolean) | undefined
 let bounds = { left: 0, right: 0, top: 0, bottom: 0 }
+let cameraView = { ...defaultCameraView }
+const cameraKeys = new Set<CameraKey>()
+type Gesture = { _tag: 'Idle' } | { _tag: 'Armed' | 'Dragging'; id: number; startX: number; startY: number; x: number; y: number }
+let gesture: Gesture = { _tag: 'Idle' }
+let suppressClick = false
+const isCameraKey = (key: string): key is CameraKey => ['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(key)
+const inputOwnsKeys = (target: EventTarget | null) => target instanceof HTMLElement
+  && Boolean(target.isContentEditable || target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), .scene-controls, dialog'))
+
+function beginView(event: PointerEvent) {
+  if (paused || status.value._tag !== 'Ready' || event.button !== 0) return
+  suppressClick = false
+  gesture = { _tag: 'Armed', id: event.pointerId, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY }
+  interaction.value?.setPointerCapture(event.pointerId)
+}
+function endView(event?: PointerEvent) {
+  if (gesture._tag === 'Idle' || (event && event.pointerId !== gesture.id)) return
+  const id = gesture.id
+  suppressClick = gesture._tag === 'Dragging'
+  gesture = { _tag: 'Idle' }
+  if (interaction.value?.hasPointerCapture(id)) interaction.value.releasePointerCapture(id)
+}
 
 function move(event: PointerEvent) {
   const rect = host.value?.getBoundingClientRect()
   if (!rect || paused) return
+  if (gesture._tag !== 'Idle' && gesture.id === event.pointerId) {
+    const dragged = gesture._tag === 'Dragging' || Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) > 6
+    if (dragged) {
+      cameraView = rotateCameraView(cameraView, event.clientX - gesture.x, event.clientY - gesture.y)
+      gesture = { ...gesture, _tag: 'Dragging', x: event.clientX, y: event.clientY }
+      hovered.value = false
+      refresh?.()
+      return
+    }
+  }
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
   hovered.value = x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
 }
 function select(event: MouseEvent) {
+  if (suppressClick) { suppressClick = false; if (event.detail !== 0) return }
+  if (paused) return
   const rect = host.value?.getBoundingClientRect()
   if (!rect) return
   if (event.detail === 0) { emit('talk'); return }
   const position = new Vector2((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2)
   if (status.value._tag !== 'Ready' || hit?.(position)) emit('talk')
 }
+useEventListener('keydown', (event: KeyboardEvent) => {
+  if (paused || visibility.value !== 'visible' || status.value._tag !== 'Ready' || event.ctrlKey || event.metaKey || event.altKey || inputOwnsKeys(event.target) || !isCameraKey(event.code)) return
+  event.preventDefault()
+  cameraKeys.add(event.code)
+  refresh?.()
+})
+useEventListener('keyup', (event: KeyboardEvent) => {
+  if (!isCameraKey(event.code)) return
+  cameraKeys.delete(event.code)
+  refresh?.()
+})
+useEventListener('blur', () => { cameraKeys.clear(); endView(); refresh?.() })
 useEventListener(canvas, 'webglcontextlost', (event) => {
   event.preventDefault()
   alive = false
@@ -55,6 +104,10 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
 })
 watch([animate, width, height], () => refresh?.())
 watch(settings, () => refresh?.(), { deep: true })
+watch([() => paused, visibility], () => {
+  if (paused || visibility.value !== 'visible') { cameraKeys.clear(); endView(); hovered.value = false }
+  refresh?.()
+})
 onScopeDispose(() => { alive = false; cleanup?.() })
 
 watch(canvas, async (element) => {
@@ -140,6 +193,13 @@ watch(canvas, async (element) => {
   let looping = false
   let renderWidth = 0
   let renderHeight = 0
+  let focusProgress = paused ? 1 : 0
+  const basePosition = new Vector3()
+  const baseTarget = new Vector3()
+  const focusPosition = new Vector3()
+  const focusTarget = new Vector3()
+  const needsFrames = () => visibility.value === 'visible' && (animate.value || (!paused && cameraKeys.size > 0)
+    || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001)
   function render(delta: number) {
     renderer.toneMappingExposure = settings.value.exposure
     fog.density = settings.value.fog
@@ -147,8 +207,19 @@ watch(canvas, async (element) => {
     const framing = portrait ? sceneLayout.camera.portrait : sceneLayout.camera.desktop
     const fieldOfView = portrait ? 50 : 44
     if (camera.fov !== fieldOfView) { camera.fov = fieldOfView; camera.updateProjectionMatrix() }
-    camera.position.set(framing[0], framing[1], framing[2] / settings.value.zoom)
-    camera.lookAt(...sceneLayout.camera.target)
+    if (!paused) cameraView = moveCameraView(cameraView, cameraKeys, delta)
+    const view = resolveCameraView(cameraView, framing, sceneLayout.camera.target, settings.value.zoom)
+    basePosition.set(...view.position)
+    baseTarget.set(...view.target)
+    const desiredFocus = paused ? 1 : 0
+    focusProgress = reduced.value === 'reduce' ? desiredFocus
+      : desiredFocus > focusProgress ? Math.min(1, focusProgress + delta / 0.65) : Math.max(0, focusProgress - delta / 0.65)
+    const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
+    focusTarget.copy(figure.localToWorld(new Vector3(0.23, 0.8, 0)))
+    focusPosition.copy(focusTarget).add(new Vector3(0, 0.15, portrait ? 3.8 : 4.1))
+    focusTarget.y -= portrait ? 0.55 : 0.35
+    camera.position.copy(basePosition).lerp(focusPosition, blend)
+    camera.lookAt(baseTarget.lerp(focusTarget, blend))
     camera.updateMatrixWorld()
     let walking = false
     if (animate.value) {
@@ -183,22 +254,23 @@ watch(canvas, async (element) => {
       renderWidth = w; renderHeight = h
       renderer.setSize(w, h, false)
       camera.aspect = w / h
-      camera.position.set(0, 1.25, w / h < 0.8 ? 14.5 : 10)
-      camera.lookAt(0, -0.45, -1.3)
       camera.updateProjectionMatrix()
     }
-    if (looping !== animate.value) {
-      looping = animate.value
+    if (looping !== needsFrames()) {
+      looping = needsFrames()
       lastTime = 0
       renderer.setAnimationLoop(looping ? (time: number) => {
         const delta = lastTime ? Math.min((time - lastTime) / 1000, 0.05) : 1 / 60
         lastTime = time
         render(delta)
+        if (!needsFrames()) { looping = false; lastTime = 0; renderer.setAnimationLoop(null) }
       } : null)
     }
     render(0)
   }
   cleanup = () => {
+    cameraKeys.clear()
+    endView()
     renderer.setAnimationLoop(null)
     world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
     shadowGeometry.dispose(); shadowMaterial.dispose(); renderer.dispose()
@@ -212,7 +284,7 @@ watch(canvas, async (element) => {
   <div ref="host" class="world-scene" :data-renderer="status._tag">
     <canvas ref="canvas" aria-hidden="true" />
     <img v-if="status._tag !== 'Ready'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
-    <button class="world-interaction" :class="{ 'mascot-hover': hovered }" aria-label="Talk to Brundlefly" @pointermove="move" @pointerleave="hovered = false" @click="select" />
+    <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" aria-label="Talk to Brundlefly" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
     <p v-if="status._tag === 'Fallback'" class="world-status" role="status">{{ status.reason === 'context' ? 'Static scene. WebGL is unavailable.' : 'The scene could not load.' }}</p>
     <SceneControls v-model="settings" />
   </div>
@@ -221,7 +293,7 @@ watch(canvas, async (element) => {
 <style scoped>
 .world-scene { position: fixed; inset: 0; overflow: hidden; background: var(--color-night); }
 canvas { display: block; width: 100%; height: 100%; }
-.world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: default; }
+.world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: default; touch-action: none; }
 .world-interaction.mascot-hover { cursor: pointer; }
 .world-interaction:focus-visible { outline: 2px solid var(--color-cream); outline-offset: -8px; }
 .world-fallback { position: absolute; inset: 10% 0; margin: auto; height: 80%; width: 80%; object-fit: contain; image-rendering: pixelated; }
