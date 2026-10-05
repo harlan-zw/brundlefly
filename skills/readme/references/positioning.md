@@ -43,15 +43,39 @@ Do not turn an unanswered hypothesis into an established adoption reason.
 
 ## Write the adoption case
 
-Lead with the reader's problem and the outcome this package makes possible.
-Explain the relevant alternatives' scope, then the specific reason this package fits the task.
-Support that reason with inspected behavior, a working example, or measured evidence.
-Name competitors when doing so helps the decision. Link the source beside a comparative claim.
+Lead with the reader's problem and its consequence. Use research to establish why this project addresses that problem.
+Keep the opening brief. Put mechanisms, feature lists, competitor walkthroughs, and evaluation methods in their relevant sections.
+If the owner requests problem-only positioning, lead with the failure and omit implementation detail and capability lists.
+Before trimming, identify the approved problems, adoption reasons, audience, qualifications, and evidence links.
+Map each point to retained wording or a useful destination. Remove a point only when the requested scope excludes it.
+An instruction to remove generic prose does not authorize dropping supported facts, comparisons, or approved positioning.
+Support the adoption reason with inspected behavior, a working example, or measured evidence in the research record.
+Name competitors only when the comparison helps the reader choose. Link sources beside published comparative claims.
 Keep scope clear: an observed gap in inspected alternatives does not prove absence across the entire market.
 Claim broader evaluation coverage only when comparable cases and dimensions establish it.
-Link measured results with their limits. A pilot alone does not establish overall superiority.
+When publishing measured results, link their evidence and preserve their limits. A pilot alone does not establish overall superiority.
 
 State consequential trade-offs and cases where an alternative fits better when they affect adoption.
 Do not invent a competitive gap, unsupported quality ranking, or "only" claim to fill the section.
 If evidence supports a fit but no exclusive feature, explain the supported fit and combination.
 Keep research commentary outside the published README.
+
+## Review Why
+
+Ask what each sentence adds: the problem, its cost, the adoption reason, or evidence supporting that reason.
+If another unrelated project could use the sentence unchanged, cut it or identify the actual failure.
+Use this as a review question. Do not automatically delete approved positioning or evidence links because they share ordinary wording.
+Shared format properties and routine repository practices do not establish an adoption reason.
+Do not invent an exclusive problem or a superiority claim when the evidence supports only a particular fit.
+Keep necessary qualifications beside any claim they limit. Remove the whole claim when it does not belong here.
+
+| Wording to review | Problem | Action |
+| --- | --- | --- |
+| "Each skill carries its own references" | Shared packaging property used as positioning | Move useful installation facts to Setup |
+| "It records observed results and measurement limits" | Describes a report without explaining an adoption problem | Keep the report link with evaluation guidance; remove this filler from Why |
+| "Powerful", "robust", "seamless" | Praise without a supported consequence | State the actual failure or omit the claim |
+| "Results", "limits", "workflows" | Ordinary words whose usefulness depends on context | Name what they refer to; keep them when they convey necessary meaning |
+
+Use supplied copy rules for sentence-level bans and the glossary for product-name bans.
+Follow each ban's scope and replacement. Do not ban a live product name, command, or identifier as generic language.
+If no wording guide exists, use these review questions without inventing one or requiring a personal skill.
