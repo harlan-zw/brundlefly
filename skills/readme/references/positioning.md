@@ -2,6 +2,8 @@
 
 Explain why the project exists and help the reader decide whether its purpose fits their problem.
 A human origin story can carry that explanation. It need not read like a competitor comparison.
+An origin story still needs ecosystem context: what already exists and why the author chose to build this project.
+Keep that context brief and connected to the story. A feature matrix is optional.
 
 ## Find the story
 
@@ -38,6 +40,8 @@ They explain usage, but they do not establish uniqueness.
 
 For competitive positioning, confidence requires a reader, a relevant alternative, an adoption reason, and evidence of its benefit.
 For an origin story, use documented origins or supplied experience and a clear connection to the reader's problem.
+Establish the supported reason for building alongside existing options, even when the reason is personal fit or a useful combination.
+Do not infer that the author tried, rejected, or outperformed an alternative from its existence.
 Do not require a competitive advantage or a marketing interview before telling a supported story.
 Use the evidence already supplied when these are clear. Do not interview merely because the project lacks an exclusive feature.
 If the missing intent would materially change Why, ask one direct question before finalizing that section:
@@ -80,6 +84,8 @@ Keep research commentary outside the published README.
 
 Ask what each sentence adds: the origin, the problem, its cost, the project's purpose, or supporting evidence.
 Read the opening as a whole. Does it explain why the project exists through a connected story?
+Can the reader see the relevant existing options and why this project was built alongside them?
+Keep the author's choice distinct from comparative claims about what other projects cannot do.
 Preserve grounded personal details even when they do not establish a competitive advantage.
 If another unrelated project could use the sentence unchanged, cut it or identify the actual failure.
 Use this as a review question. Do not automatically delete approved positioning or evidence links because they share ordinary wording.

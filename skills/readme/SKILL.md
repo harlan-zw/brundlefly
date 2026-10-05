@@ -50,6 +50,9 @@ Do not replace the author's story with generic you or detached product narration
 Use supplied experience or documented origins to connect a concrete frustration with the decision to build the project.
 When no origin is known, explain the reader's problem without inventing a founder story.
 Competitive positioning can support Why; it does not have to be its opening or organizing structure.
+Place the origin in its ecosystem. A personal story still needs to explain why this project joins existing options.
+Name relevant alternatives and connect the author's supported choice to the reader's task.
+Shared goals are legitimate. Do not invent failed trials, missing features, or superiority to justify building something.
 Put capability lists in Features and usage details in Setup or Guides.
 Keep story and technical detail in separate sections. Review their purposes separately.
 If using write-human, request storytelling for Why and clear technical explanation for the task and reference sections.
