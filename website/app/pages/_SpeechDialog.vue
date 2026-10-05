@@ -100,67 +100,78 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
   <dialog ref="dialog" class="speech-pocket" aria-labelledby="speech-title" aria-describedby="speech-scope" @cancel.prevent="emit('close')" @close="emit('close')">
     <img class="speech-seam" src="/brand/kit/lair/tissue-seam.png" alt="" aria-hidden="true">
     <header>
-      <div><h2 id="speech-title">Brundlefly</h2><p id="speech-scope">{{ dialogueCopy.privacy }}</p></div>
-      <button class="speech-close" type="button" aria-label="Close" @click="emit('close')">×</button>
+      <h2 id="speech-title">Brundlefly</h2>
+      <div class="speech-tools">
+        <button v-if="soundAvailable" class="speech-sound" type="button" :aria-pressed="muted" @click="emit('sound')">{{ muted ? 'Sound on' : 'Sound off' }}</button>
+        <button class="speech-close" type="button" aria-label="Close" @click="emit('close')">×</button>
+      </div>
+      <p id="speech-scope">{{ dialogueCopy.privacy }}</p>
     </header>
     <div class="speech-conversation" aria-label="Conversation" :aria-busy="request._tag === 'Pending'">
       <p v-if="reply" class="speech-utterance">{{ reply.text }}</p>
       <p v-if="reply?.beat" class="speech-beat" aria-label="Brundlefly's movement">{{ reply.beat }}</p>
+      <div v-if="reply?.links.length" class="speech-links">
+        <a v-for="link in reply.links" :key="link.href" :href="link.href" :download="link.download || undefined">{{ link.label }}</a>
+      </div>
       <p v-if="request._tag === 'Pending'" class="speech-pending" role="status">{{ dialogueCopy.loading }}</p>
-      <ol v-if="reply" class="speech-choices">
+      <ol v-if="reply" class="speech-choices" aria-label="Your reply">
         <li v-for="(choice, index) in reply.choices" :key="`${index}:${choice}`">
           <button type="button" :disabled="request._tag === 'Pending'" @click="choose(choice)"><span aria-hidden="true">{{ index + 1 }}</span>{{ choice }}</button>
         </li>
       </ol>
-      <div v-if="reply?.links.length" class="speech-links">
-        <a v-for="link in reply.links" :key="link.href" :href="link.href" :download="link.download || undefined">{{ link.label }}</a>
-      </div>
     </div>
     <p class="speech-announcement" role="status" aria-live="polite" aria-atomic="true">{{ reply?.text }}</p>
     <form @submit.prevent="receive('dialogue')">
-      <label for="speech-input">Your text</label>
-      <textarea id="speech-input" ref="input" v-model="text" rows="1" maxlength="1000" :aria-invalid="Boolean(error)" :aria-describedby="error ? 'speech-error' : undefined" @input="error = ''" />
-      <p v-if="error" id="speech-error" class="speech-error" role="alert">{{ error }}</p>
-      <div class="speech-send-row">
-        <button v-if="soundAvailable" class="speech-sound" type="button" :aria-pressed="muted" @click="emit('sound')">{{ muted ? 'Sound on' : 'Sound off' }}</button>
+      <label class="speech-label" for="speech-input">Your text</label>
+      <div class="speech-compose">
+        <textarea id="speech-input" ref="input" v-model="text" rows="1" maxlength="1000" placeholder="Your text" :aria-invalid="Boolean(error)" :aria-describedby="error ? 'speech-error' : undefined" @input="error = ''" />
         <button v-if="failedVisit" class="speech-retry" type="button" :disabled="request._tag === 'Pending'" @click="receive('visit')">Try again</button>
         <button class="speech-send" type="submit" :disabled="request._tag === 'Pending'">Send</button>
       </div>
+      <p v-if="error" id="speech-error" class="speech-error" role="alert">{{ error }}</p>
     </form>
   </dialog>
 </template>
 
 <style scoped>
-.speech-pocket { position: fixed; inset: auto; bottom: 24px; left: 50%; translate: -50% 0; box-sizing: border-box; width: min(800px, calc(100vw - 48px)); max-height: min(550px, 54dvh); margin: 0; padding: 22px 28px 18px; overflow: visible; color: #e8d4a6; background: #10130fec; border: 1px solid #69404b; border-radius: 35px 14px 30px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22; }
-.speech-pocket[open] { display: flex; flex-direction: column; }
+.speech-pocket { position: fixed; inset: auto; bottom: 20px; left: 50%; translate: -50% 0; box-sizing: border-box; width: min(720px, calc(100vw - 32px)); max-height: min(460px, 46dvh); margin: 0; padding: 18px 22px 16px; overflow: visible; color: #e8d4a6; background: #10130ff2; border: 1px solid #69404b; border-radius: 30px 12px 26px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22; }
+.speech-pocket[open] { display: flex; flex-direction: column; gap: 12px; }
 .speech-pocket::backdrop { background: #080b0812; }
-.speech-seam { position: absolute; width: 95%; height: auto; top: 0; left: 2.5%; translate: 0 -72%; image-rendering: pixelated; pointer-events: none; }
-header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-shrink: 0; }
-h2 { margin: 0; font: 600 24px var(--font-display, sans-serif); }
-header p { margin: 5px 0 0; font-size: 11px; line-height: 1.5; color: #a4b5a0; }
+/* The seam crowns the pocket without reaching up over his face. */
+.speech-seam { position: absolute; width: 88%; height: auto; top: 0; left: 6%; translate: 0 -58%; image-rendering: pixelated; pointer-events: none; }
+/* The scope note spans the full width, so the header tools never squeeze it. */
+header { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; flex-shrink: 0; }
+h2 { margin: 0; font: 600 22px/1.1 var(--font-display, sans-serif); }
+header p { grid-column: 1 / -1; margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: #a4b5a0; }
 button { font: inherit; cursor: pointer; }
 button:disabled { cursor: wait; opacity: .5; }
-.speech-close { flex-shrink: 0; width: 44px; height: 44px; border: 0; background: transparent; color: #e8d4a6; font-size: 28px; }
-.speech-sound { margin-right: auto; min-height: 44px; padding: 4px 8px; border: 0; color: #a4b5a0; background: transparent; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
-.speech-conversation { min-height: 40px; min-width: 0; overflow: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-color: #69404b #10130f; }
+.speech-tools { display: flex; align-items: center; margin: -10px -12px -10px 0; }
+.speech-sound { min-height: 44px; padding: 0 10px; border: 0; color: #a4b5a0; background: transparent; font-size: 13px; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; }
+.speech-sound:hover { color: #e8d4a6; }
+.speech-close { width: 44px; height: 44px; border: 0; background: transparent; color: #e8d4a6; font-size: 26px; line-height: 1; }
+.speech-conversation { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-color: #69404b #10130f; }
 .speech-utterance { margin: 0; font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
-.speech-pending { margin: 8px 0; color: #a4b5a0; font-size: 13px; }
-.speech-beat { margin: 6px 0 0; color: #a4b5a0; font-size: 12px; font-style: italic; line-height: 1.4; }
-.speech-choices { display: grid; gap: 3px; list-style: none; margin: 12px 0 0; padding: 0; }
-.speech-choices button { display: flex; align-items: baseline; gap: 12px; width: 100%; min-height: 44px; padding: 9px 12px; text-align: left; border: 1px solid #69404b55; border-radius: 8px 3px 12px 3px; color: #e8d4a6; background: #343c3b33; font-size: 14px; line-height: 1.4; }
-.speech-choices button:hover:not(:disabled) { border-color: #a4b5a0; background: #343c3b88; }
+.speech-beat { margin: -2px 0 0; color: #a4b5a0; font-size: 13px; font-style: italic; line-height: 1.4; }
+.speech-pending { margin: 0; color: #a4b5a0; font-size: 13px; }
+.speech-links { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.speech-links a { display: inline-flex; align-items: center; min-height: 32px; color: #a4b5a0; font-size: 13px; line-height: 1.4; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; }
+.speech-links a:hover { color: #e8d4a6; text-decoration-color: currentColor; }
+.speech-choices { display: grid; gap: 6px; list-style: none; margin: 4px 0 0; padding: 0; }
+.speech-choices button { display: flex; align-items: baseline; gap: 12px; width: 100%; min-height: 44px; padding: 10px 12px; text-align: left; border: 1px solid #69404b66; border-radius: 8px 3px 12px 3px; color: #e8d4a6; background: #343c3b40; font-size: 14px; line-height: 1.4; }
+.speech-choices button:hover:not(:disabled) { border-color: #a4b5a0; background: #343c3b99; }
 .speech-choices span { flex-shrink: 0; color: #a4b5a0; font-size: 12px; font-variant-numeric: tabular-nums; }
-.speech-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; }
-.speech-links a { color: #a4b5a0; font-size: 13px; line-height: 1.5; display: inline-flex; align-items: center; min-height: 44px; text-underline-offset: 4px; }
-form { margin-top: 12px; flex-shrink: 0; position: relative; z-index: 1; }
-label { display: block; font-size: 13px; margin-bottom: 7px; }
-textarea { display: block; box-sizing: border-box; width: 100%; min-height: 48px; max-height: 100px; padding: 11px 12px; resize: vertical; background: #080b08; color: #e8d4a6; border: 1px solid #777648; border-radius: 12px 4px 16px 4px; font: inherit; font-size: 16px; line-height: 1.4; }
-.speech-send-row { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 6px; min-height: 44px; }
-.speech-error { margin: 8px 0 0; color: #e8d4a6; font-size: 13px; line-height: 1.4; }
-.speech-send, .speech-retry { min-height: 44px; padding: 10px 18px; background: #e8d4a6; color: #080b08; border: 0; border-radius: 8px 3px 12px 3px; font-size: 14px; }
+form { flex-shrink: 0; position: relative; z-index: 1; }
+/* The accessible name stays "Your text". A chat composer needs no visible caption. */
+.speech-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.speech-compose { display: flex; align-items: flex-end; gap: 8px; }
+textarea { flex: 1; min-width: 0; box-sizing: border-box; min-height: 44px; max-height: 120px; field-sizing: content; padding: 10px 12px; resize: none; background: #080b08; color: #e8d4a6; border: 1px solid #777648; border-radius: 12px 4px 16px 4px; font: inherit; font-size: 16px; line-height: 1.4; }
+textarea::placeholder { color: #a4b5a0aa; }
+textarea:focus-visible { border-color: #e8d4a6; outline-offset: 2px; }
+.speech-error { margin: 6px 0 0; color: #e8d4a6; font-size: 13px; line-height: 1.4; }
+.speech-send, .speech-retry { flex-shrink: 0; min-height: 44px; padding: 10px 18px; background: #e8d4a6; color: #080b08; border: 0; border-radius: 8px 3px 12px 3px; font-size: 14px; }
 .speech-retry { background: #343c3b; color: #e8d4a6; }
 .speech-send:hover:not(:disabled) { background: #a4b5a0; }
 .speech-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-@media (max-height: 540px) { .speech-pocket { bottom: 16px; max-height: calc(100dvh - 32px); padding: 18px; } header { margin-bottom: 10px; } .speech-conversation { min-height: 0; } form { margin-top: 10px; } }
-@media (max-width: 600px) { .speech-pocket { bottom: 10px; width: calc(100vw - 20px); padding: 18px 16px 12px; max-height: 54dvh; } h2 { font-size: 22px; } header p { font-size: 10px; } .speech-utterance { font-size: 14px; } .speech-choices button { font-size: 13px; } }
+@media (max-height: 540px) { .speech-pocket { bottom: 12px; max-height: calc(100dvh - 24px); padding: 14px 18px 12px; gap: 10px; } }
+@media (max-width: 600px) { .speech-pocket { bottom: 10px; width: calc(100vw - 20px); max-height: 52dvh; padding: 16px 14px 12px; } h2 { font-size: 20px; } .speech-utterance { font-size: 15px; } .speech-choices button { padding: 8px 10px; font-size: 14px; } }
 </style>

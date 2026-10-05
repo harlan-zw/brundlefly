@@ -269,7 +269,8 @@ watch(canvas, async (element) => {
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
     focusTarget.copy(figure.localToWorld(new Vector3(0.23, 0.8, 0)))
     focusPosition.copy(focusTarget).add(new Vector3(0, 0.15, portrait ? 3.8 : 4.1))
-    focusTarget.y -= portrait ? 0.55 : 0.35
+    // Frame his face above the dialog, so his mouth stays visible while he speaks.
+    focusTarget.y -= portrait ? 0.85 : 0.6
     camera.position.copy(basePosition).lerp(focusPosition, blend)
     camera.lookAt(baseTarget.lerp(focusTarget, blend))
     camera.updateMatrixWorld()
