@@ -20,18 +20,20 @@ export const replyToConversation = (input: string): ConversationResult => {
   if (/brand|design|kit|artwork|3d|mascot/i.test(text)) {
     return ok({ text: 'Brand kit', links: [{ label: 'Brand kit', href: '/brand-kit/' }] })
   }
-  if (/install|download|copy|use a skill|setup|set up/i.test(text)) {
+  if (/install|download|\bcopy\b|use a skill|setup|set up/i.test(text)) {
     return ok({
       text: 'Copy the complete skill directory into your agent’s supported skills directory.',
       links: skills.map(skill => ({ label: `Download ${skill.name}`, href: `/skills/${skill.name}.zip`, download: true })),
     })
   }
-  const skill = skills.find(candidate => {
+  const skill = skills.find(candidate => text.toLowerCase().includes(candidate.name)) ?? skills.find(candidate => {
     if (candidate.name === 'write-human') return /write-human|writing|wording|rewrite/i.test(text)
     if (candidate.name === 'technical-guide') return /technical-guide|guide|tutorial|research/i.test(text)
     if (candidate.name === 'pull-request-summary') return /pull-request-summary|\bpr\b|pull request/i.test(text)
     if (candidate.name === 'agentify-text') return /agentify-text|compress|compression|reduce tokens/i.test(text)
-    return /\breadme\b/i.test(text)
+    if (candidate.name === 'readme') return /\breadme\b/i.test(text)
+    if (candidate.name === 'glossary') return /glossary|terminology|naming|vocabulary/i.test(text)
+    return /copywriting|canonical voice|canonical wording|marketing copy|ui labels/i.test(text)
   })
   if (skill) {
     return ok({

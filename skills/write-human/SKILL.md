@@ -10,6 +10,7 @@ Edit generated-sounding prose in two passes: surface wording, then structure. Pr
 
 ## How to use
 
+Choose the section's purpose using the routing below before applying either pass.
 Given text or a file path, run both passes below, report what you flagged, then rewrite. Don't silently rewrite, show the user *which* tells you found so they learn to avoid them.
 
 Verify facts and relevant priors before rewriting. Recheck them after both prose passes.
@@ -22,6 +23,28 @@ Keep distinctive vocabulary and compressed phrasing when their meaning is clear.
 Preserve claim scope, uncertainty, dates, units, attribution, and prerequisites in every genre.
 Never invent an actor, experience, example, or supporting detail.
 If the text needs no changes, return it unchanged and say so. Do not invent tells to justify a rewrite.
+
+## Route by section intent
+
+Route each section separately. A file can contain a story followed by technical detail.
+Human-to-human writing can serve either purpose. Audience alone does not select storytelling.
+
+| Intent | Reference | Apply |
+| --- | --- | --- |
+| Tell an experience, origin, or meaningful change | [Storytelling](references/storytelling.md) | A person's goal, disruption, response, and consequence, where supported |
+| Explain facts or help someone complete a task | [Clear nonfiction and technical detail](references/writing-well.md) | Plain language, explicit conditions, and predictable order |
+| Both, such as a README | Read each reference for its relevant section | Story in Why; direct explanation in Features, Setup, Guides, and API |
+
+Use supplied intent and the reader's task. A technical topic can still be part of a personal story.
+Every story has a point of view. Identify whose perspective carries it before drafting.
+If the author tells their own story, use their first-person voice: I, me, and my.
+Use we only for a supported shared experience. Preserve an explicitly requested narrator or point of view.
+Do not replace the author's perspective with generic you or a detached account of the project.
+Keep the purposes distinct with useful section or paragraph boundaries. Do not alternate them merely for variety.
+Never add suspense, character arcs, or withheld prerequisites to instructions.
+Never turn an approved story into a feature list or force its ending into a moral.
+Clear wording and factual preservation apply to both. Narrative pacing applies only where the intent calls for it.
+Treat these references as craft guidance, not proof of authorship or universal scientific rules.
 
 ## Respect the reader and author
 
@@ -44,6 +67,7 @@ Apply these rules during the structural pass. Reader comprehension takes priorit
 Read [the accessibility research and examples](references/accessible-writing.md) when explaining evidence or choosing a format.
 
 - **Start simple.** Lead with the answer or action. Then give the common case, an example, and deeper detail.
+  For a story, preserve a deliberate narrative opening. Apply answer-first ordering to its technical sections.
   Define necessary terms before using them. Keep prerequisites and consequential warnings beside the action.
   Put optional exceptions and background later. A deep dive still needs a clear entry point.
 - **Keep blocks small.** Give each sentence one main idea and each paragraph one job.
@@ -101,7 +125,8 @@ Structural habits can survive a wording pass. Change them when they weaken the d
 - **Writes as though no one is watching.** Humans address the reader directly and break the fourth wall ("you've probably hit this"). AI narrates into the void. Add direct address where natural.
 - **Tidy, single-track structure.** Keep a useful aside or unresolved question when the genre benefits from it.
   Never add digressions or non-linear jumps to make text seem human. Keep instructions predictable and complete.
-- **Narrow repertoire / over-determination.** AI converges on safe defaults and resolves everything neatly. Let tension stay unresolved; admit what you don't know; allow an opinion that isn't perfectly balanced.
+- **Narrow repertoire / over-determination.** Preserve genuine uncertainty and the author's supported opinions.
+  In a story, keep unresolved tension when it belongs. Keep procedures complete; never invent loose ends for voice.
 - **Elegant variation.** AI swaps synonyms for the same thing to sound sophisticated ("the tool... the utility... the solution"). Humans repeat the term. Use the same word for the same thing throughout.
 - **Uniform sentence rhythm.** Change repeated sentence shapes when they make the draft hard to read. Keep clear fragments and deliberate cadence. Do not add filler or replace distinctive wording to force variety.
 
@@ -112,6 +137,7 @@ Not every tell applies everywhere. Weight by genre:
 - **Tweets / social:** surface tells + specificity + direct address matter most. Skip structural nonlinearity.
 - **Release notes / docs:** specificity (real version numbers, PR links) and cutting the over-explained takeaway matter most. Keep structure clear, drop the moralizing.
 - **READMEs:** preserve requested section order, useful lookup headings, and parallel feature lists. Keep setup before deeper reference.
+  Route Why as a story when requested. Route technical sections separately using the table above.
   Treat commands, code, URLs, identifiers, and approved brand text as exact material, outside the prose pass.
   Change them only when inspected evidence supports a technical correction. Recheck the reader's path afterward.
   Apply digressions and unresolved tension only to genres that benefit from them. Keep instructions direct and complete.

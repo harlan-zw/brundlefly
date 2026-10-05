@@ -1,6 +1,6 @@
 ---
 name: readme
-description: "Create or refresh a repository README with a splash, competitive positioning, features, setup, and relevant guides or API reference. Use when writing a README, explaining why to adopt a package, or aligning its documentation with repository conventions."
+description: "Create or refresh a repository README with a splash, project story, supported positioning, features, setup, and relevant guides or API reference. Use when writing a README, explaining why a project exists or why to adopt it, or aligning its documentation with repository conventions."
 license: MIT
 ---
 
@@ -34,7 +34,7 @@ Use this order by default. Keep existing anchors when they remain useful.
 | Section | Reader need |
 | --- | --- |
 | Splash | Approved banner or logo, project name, and a factual one-line description |
-| Why | Why adopt this package over relevant alternatives, and which unmet problem it addresses |
+| Why | Why the project exists, what prompted it, and why that matters to the reader |
 | Features | Supported capabilities with a useful benefit for each |
 | Setup | Prerequisites, installation, and the smallest working example |
 | Guides | Inline task guidance when dedicated guides do not cover it |
@@ -42,7 +42,22 @@ Use this order by default. Keep existing anchors when they remain useful.
 
 Splash describes the opening block. Do not add a literal Splash heading.
 Name the Why heading after the project, such as "Why Brundlefly".
-Lead Why with the problem that motivates adoption. Put capability lists in Features and usage details in Setup or Guides.
+Treat Why as a chance to tell the project's human story. Follow the owner's requested emphasis.
+Every story has a point of view. Establish whose perspective carries Why before drafting it.
+If the author tells their own origin story, use their first-person voice: I, me, and my.
+Use we only for a supported shared experience. Follow an explicitly requested narrator or perspective.
+Do not replace the author's story with generic you or detached product narration.
+Use supplied experience or documented origins to connect a concrete frustration with the decision to build the project.
+When no origin is known, explain the reader's problem without inventing a founder story.
+Competitive positioning can support Why; it does not have to be its opening or organizing structure.
+Place the origin in its ecosystem. A personal story still needs to explain why this project joins existing options.
+Name relevant alternatives and connect the author's supported choice to the reader's task.
+Shared goals are legitimate. Do not invent failed trials, missing features, or superiority to justify building something.
+Put capability lists in Features and usage details in Setup or Guides.
+Keep story and technical detail in separate sections. Review their purposes separately.
+If using write-human, request storytelling for Why and clear technical explanation for the task and reference sections.
+When working alone, keep the same boundary: connect supported origins in Why; state prerequisites and actions directly in Setup.
+Never carry narrative suspense or character arcs into instructions. Never bury a required step in the story.
 Keep approved adoption reasons and useful evidence links. Removing filler must not erase their information.
 If the owner requests only the problem, omit implementation detail and feature inventories. Preserve other approved points unless excluded.
 Reuse approved assets and text. If artwork is absent, use a plain title and description.

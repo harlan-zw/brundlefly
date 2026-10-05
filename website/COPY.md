@@ -24,6 +24,8 @@ Use the canonical banner. Do not add a slogan or mascot persona.
 | pull-request-summary | Draft or check PR descriptions against the change and repository conventions |
 | agentify-text | Compress text for agents |
 | readme | Write a README and establish its adoption case |
+| glossary | Create or audit GLOSSARY.md. Use before naming product concepts, writing user-visible terms, renaming concepts, or checking vocabulary drift and banned terms. |
+| copywriting | Create or audit COPY.md and write user-visible strings against it. Use before writing marketing copy, UI labels, error messages, empty states, meta tags, or email, and when copy has drifted from the canonical strings. |
 
 ## Register
 

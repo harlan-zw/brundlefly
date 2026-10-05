@@ -5,7 +5,8 @@ Skills are Markdown instructions. There is no runtime build step.
 
 ## Read first
 
-- Read [GLOSSARY.md](GLOSSARY.md) before naming a skill or product concept.
+- Read [GLOSSARY.md](GLOSSARY.md) before naming a skill, product concept, or brand term.
+- Read [COPY.md](COPY.md) before writing public copy or skill prose.
 - Read [VISION.md](VISION.md) before changing scope or adding claims.
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) before adding a skill.
 - Read [brand rules](docs/arch/brand.md) before changing visual assets.

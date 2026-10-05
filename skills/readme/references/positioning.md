@@ -1,7 +1,22 @@
 # Why this package
 
-Help the reader decide whether this package solves their problem better than relevant alternatives.
-Explain the reason to adopt it, beyond its category or list of features.
+Explain why the project exists and help the reader decide whether its purpose fits their problem.
+A human origin story can carry that explanation. It need not read like a competitor comparison.
+An origin story still needs ecosystem context: what already exists and why the author chose to build this project.
+Keep that context brief and connected to the story. A feature matrix is optional.
+
+## Find the story
+
+Read supplied author notes, existing prose, and documented origins before drafting.
+Look for the concrete frustration, the response, and the purpose that connects them.
+Use those details to explain why someone bothered to build this particular project.
+Preserve supplied first-person experience and distinctive voice when they serve the story.
+Never invent feelings, anecdotes, dialogue, dates, or a sequence of events to make the story engaging.
+Repository history supports what changed. It does not establish how the author felt or why they made each decision.
+If the origin is unknown, use a concrete reader situation without presenting it as the author's experience.
+Ask for missing personal context only when the requested story depends on it.
+Keep comparisons and measured evidence beside the claims they support, or link to them from Features or Guides.
+Do not turn the opening into a feature inventory or an evaluation report.
 
 ## Establish the comparison
 
@@ -23,7 +38,11 @@ They explain usage, but they do not establish uniqueness.
 
 ## Decide whether to interview
 
-Confidence requires an identified reader, a relevant alternative, a specific adoption reason, and support for its practical benefit.
+For competitive positioning, confidence requires a reader, a relevant alternative, an adoption reason, and evidence of its benefit.
+For an origin story, use documented origins or supplied experience and a clear connection to the reader's problem.
+Establish the supported reason for building alongside existing options, even when the reason is personal fit or a useful combination.
+Do not infer that the author tried, rejected, or outperformed an alternative from its existence.
+Do not require a competitive advantage or a marketing interview before telling a supported story.
 Use the evidence already supplied when these are clear. Do not interview merely because the project lacks an exclusive feature.
 If the missing intent would materially change Why, ask one direct question before finalizing that section:
 
@@ -43,7 +62,8 @@ Do not turn an unanswered hypothesis into an established adoption reason.
 
 ## Write the adoption case
 
-Lead with the reader's problem and its consequence. Use research to establish why this project addresses that problem.
+Lead with the supported origin or the reader's problem, according to the requested emphasis.
+Connect it to the project's purpose. Use research to support technical and comparative claims.
 Keep the opening brief. Put mechanisms, feature lists, competitor walkthroughs, and evaluation methods in their relevant sections.
 If the owner requests problem-only positioning, lead with the failure and omit implementation detail and capability lists.
 Before trimming, identify the approved problems, adoption reasons, audience, qualifications, and evidence links.
@@ -62,7 +82,11 @@ Keep research commentary outside the published README.
 
 ## Review Why
 
-Ask what each sentence adds: the problem, its cost, the adoption reason, or evidence supporting that reason.
+Ask what each sentence adds: the origin, the problem, its cost, the project's purpose, or supporting evidence.
+Read the opening as a whole. Does it explain why the project exists through a connected story?
+Can the reader see the relevant existing options and why this project was built alongside them?
+Keep the author's choice distinct from comparative claims about what other projects cannot do.
+Preserve grounded personal details even when they do not establish a competitive advantage.
 If another unrelated project could use the sentence unchanged, cut it or identify the actual failure.
 Use this as a review question. Do not automatically delete approved positioning or evidence links because they share ordinary wording.
 Shared format properties and routine repository practices do not establish an adoption reason.

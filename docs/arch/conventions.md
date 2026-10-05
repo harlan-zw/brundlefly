@@ -31,3 +31,8 @@ Build scripts copy canonical assets and complete skills from the collection.
 The website contains a standalone brand-kit Nuxt app under website/apps/brand-kit.
 Both apps extend website/layers/brand. The downloadable layer includes its own public assets.
 The combined static build mounts the kit under /brand-kit/.
+
+glossary and copywriting adapt Harlan Agent Kit's naming and copy workflows.
+Their references, templates, and MIT notices stay inside their own directories.
+They follow the target project's delivery rules without requiring personal worktrees or sibling Skills.
+Each repository keeps its own GLOSSARY.md and COPY.md. The portable Skills supply methods, not Brundlefly's brand vocabulary.

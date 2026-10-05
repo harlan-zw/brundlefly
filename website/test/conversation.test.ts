@@ -17,12 +17,25 @@ test('install requests explain copying a complete skill and link to usable downl
 })
 
 test('specific skill questions return factual scope and the matching instructions', () => {
-  for (const name of ['write-human', 'technical-guide', 'pull-request-summary', 'agentify-text', 'readme']) {
+  for (const name of ['write-human', 'technical-guide', 'pull-request-summary', 'agentify-text', 'readme', 'glossary', 'copywriting']) {
     const response = replyToConversation(`Tell me about ${name}`)
     assert.equal(response._tag, 'Ok')
     if (response._tag !== 'Ok') continue
     assert.ok(response.reply.links.some(link => link.href === `/skills/${name}.md`))
     assert.doesNotMatch(response.reply.text, /I ran|checks pass|guarantee/i)
+  }
+})
+
+test('new naming and copy skills remain specific and appear in usable install replies', () => {
+  for (const [query, name] of [['Audit terminology', 'glossary'], ['Set the canonical voice', 'copywriting']]) {
+    const response = replyToConversation(query!)
+    assert.equal(response._tag, 'Ok')
+    if (response._tag === 'Ok') assert.ok(response.reply.links.some(link => link.href === `/skills/${name}.md`))
+  }
+  const install = replyToConversation('How do I install the skills?')
+  assert.equal(install._tag, 'Ok')
+  if (install._tag === 'Ok') {
+    for (const name of ['glossary', 'copywriting']) assert.ok(install.reply.links.some(link => link.href === `/skills/${name}.zip`))
   }
 })
 
