@@ -47,6 +47,10 @@ Use supplied experience or documented origins to connect a concrete frustration 
 When no origin is known, explain the reader's problem without inventing a founder story.
 Competitive positioning can support Why; it does not have to be its opening or organizing structure.
 Put capability lists in Features and usage details in Setup or Guides.
+Keep story and technical detail in separate sections. Review their purposes separately.
+If using write-human, request storytelling for Why and clear technical explanation for the task and reference sections.
+When working alone, keep the same boundary: connect supported origins in Why; state prerequisites and actions directly in Setup.
+Never carry narrative suspense or character arcs into instructions. Never bury a required step in the story.
 Keep approved adoption reasons and useful evidence links. Removing filler must not erase their information.
 If the owner requests only the problem, omit implementation detail and feature inventories. Preserve other approved points unless excluded.
 Reuse approved assets and text. If artwork is absent, use a plain title and description.
