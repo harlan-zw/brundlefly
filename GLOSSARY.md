@@ -14,6 +14,8 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | pull-request-summary | skills/pull-request-summary | Checks pull request description text | pull-request-summary |
 | agentify-text | skills/agentify-text | Compresses text for agents while preserving substantial meaning | agentify-text |
 | readme | skills/readme | Writes repository READMEs with researched positioning and working setup | readme |
+| glossary | skills/glossary | Creates and audits canonical names and meanings | glossary |
+| copywriting | skills/copywriting | Creates and audits voice and canonical wording | copywriting |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
 | human connection | Public story | Gives the writing its purpose | human connection |
 | empathy | Editorial choices | Helps the author consider the reader | empathy |
@@ -43,6 +45,13 @@ Use the owner's requested name for this skill.
 readme owns README creation and refresh, including setup and documentation routing.
 It works alone and can use write-human as an optional prose review.
 Use readme for this skill, rather than readme-writer or readme-guide.
+
+glossary owns creating and auditing GLOSSARY.md. It does not create other root documents automatically.
+Use glossary rather than terminology-manager or naming-guide for this Skill.
+
+copywriting owns creating and auditing COPY.md and writing against its wording decisions.
+Use copywriting rather than brand-voice or copy-guide for this Skill.
+It works without glossary or write-human installed. Supplied document rules remain authoritative.
 
 ### human connection
 
@@ -96,5 +105,4 @@ Do not use human connection to imply a measured outcome without evidence.
 
 ## Open questions
 
-The reusable glossary Skill can move here without moving Harlan Agent Kit's own product vocabulary.
-Confirm that migration separately. Each repository keeps its own GLOSSARY.md.
+Record unresolved naming choices here before changing canonical terms.

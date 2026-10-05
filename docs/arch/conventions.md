@@ -22,3 +22,8 @@ readme owns README structure, positioning, and reader-path checks.
 It carries its own positioning reference and a short writing checklist.
 It can use an available write-human skill for a prose review, without requiring it.
 Keep readme's positioning reference separate from write-human's instructions and references.
+
+glossary and copywriting adapt Harlan Agent Kit's naming and copy workflows.
+Their references, templates, and MIT notices stay inside their own directories.
+They follow the target project's delivery rules without requiring personal worktrees or sibling Skills.
+Each repository keeps its own GLOSSARY.md and COPY.md. The portable Skills supply methods, not Brundlefly's brand vocabulary.

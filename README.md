@@ -88,6 +88,8 @@ You can name a skill when you want to request it explicitly.
 | [pull-request-summary](skills/pull-request-summary/SKILL.md) | Draft or check PR descriptions against the change and repository conventions |
 | [agentify-text](skills/agentify-text/SKILL.md) | Compress text for agents |
 | [readme](skills/readme/SKILL.md) | Write a README and establish its adoption case |
+| [glossary](skills/glossary/SKILL.md) | Create or audit GLOSSARY.md for names, meanings, and relationships |
+| [copywriting](skills/copywriting/SKILL.md) | Create or audit COPY.md for voice and canonical wording; write copy against it |
 
 ```text
 Edit this draft. Preserve its facts, uncertainty, and voice.
@@ -100,6 +102,7 @@ A delivery Skill can call pull-request-summary and supply its own description po
 The caller owns publication. Supplied inputs need no GitHub integration.
 Technical-guide uses the target project's tools and reports unavailable checks.
 Keep personal stories in their author's voice.
+glossary and copywriting each own one requested artifact. Neither creates VISION.md or a root document set automatically.
 
 For writing comparisons and local demos, read the [writing evaluation](evals/REPORT.md), [pilot instructions](evals/README.md),
 and [review UI setup](evals/ui/README.md).
