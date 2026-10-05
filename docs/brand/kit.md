@@ -312,3 +312,26 @@ The generated sculpt reference supplies that direction. Canonical anatomy remain
 
 The kit Motion section has a Brundlefly toggle. Download GLB exports the mascot when that toggle is active.
 The portable ZIP supplies runtime art and source. GLB interchange artifacts have separate download URLs.
+
+## Living mucus and egg sacs
+
+[Goo diffuse](../../assets/brand/kit/lair/goo-diffuse.png) supplies olive mucus, veins, trapped bubbles, and membrane detail.
+[Generation prompt](../../assets/prompts/goo-texture.json) records the brand references and exact built-in ImageGen prompt.
+The goo shader flows the texture and displaces its surface with slow breathing and wet ripples.
+Hanging beads swell, stretch, detach, and fall. Their strands sag and recover.
+
+Dedicated material tiles separate the chamber surfaces:
+
+- [Chitin](../../assets/brand/kit/lair/chitin-diffuse.png): cracked shell plates and pores.
+- [Floor](../../assets/brand/kit/lair/floor-diffuse.png): compressed tissue and mucus channels.
+- [Egg membrane](../../assets/brand/kit/lair/egg-diffuse.png): stretched cellular webs and capillaries.
+
+Exact built-in ImageGen prompts live in assets/prompts/{chitin,floor,egg}-texture.json.
+The renderer owns these textures. Materials use diffuse and bump sampling for surface detail.
+Warm glisten and restrained teal edges follow the scene lighting settings.
+Eight unequal translucent egg sacs cluster at the floor edges. Their inner folds and membranes breathe slowly.
+Both sources remain reusable inside the portable layer: shared/goo.ts and shared/eggs.ts.
+
+The homepage has hidden scene controls. Press L, or open the page with controls=1 in its query.
+Copy settings exports the live SceneSettings values. Reset restores shared/scene-settings.ts defaults.
+System reduced motion and Motion off freeze the scene.

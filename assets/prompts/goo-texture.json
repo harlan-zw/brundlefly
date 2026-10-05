@@ -1,0 +1,9 @@
+{
+  "tool": "builtin imagegen",
+  "prompt": "Use case: stylized-concept. Asset type: seamless square diffuse texture for animated 3D mucus, slime puddles, and translucent egg-sac membranes in Brundlefly's living lair. Input image 1 is brand material/style reference, image 2 is mascot identity/palette reference only. Generate a NEW top-down flat material swatch, not a scene and not a character. Thick organic translucent olive mucus with subtle bruised rust vein webs, viscous stretched filaments, small trapped bubbles, clammy uneven membrane ridges, fine pores. Keep the established crunchy illustrated/pixel-detailed art finish and restrained earthy palette: olive #777648, wing-gray #A4B5A0, bruise #69404B, rust #AA604B; tiny cold teal glints only. Diffuse lighting, no strong baked highlights, no cast shadows, no large central feature. Edge-to-edge tileable texture, no border, no text, no logo, no blood, no gore, no isolated eggs. Make it wet and unsettling, richly detailed, usable as a sampled flowing surface rather than repeated decorative objects.",
+  "references": [
+    "assets/brand/kit/modular/flesh-diffuse.png",
+    "assets/brand/character.png"
+  ],
+  "output": "assets/brand/kit/lair/goo-diffuse.png"
+}

@@ -8,6 +8,8 @@ import {
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
+import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
+import SceneControls from './_SceneControls.vue'
 
 const { paused = false } = defineProps<{ paused?: boolean }>()
 const emit = defineEmits<{ talk: [] }>()
@@ -18,7 +20,8 @@ const canvas = shallowRef<HTMLCanvasElement | null>(null)
 const { width, height } = useElementSize(host)
 const reduced = usePreferredReducedMotion()
 const visibility = useDocumentVisibility()
-const animate = computed(() => !paused && reduced.value !== 'reduce' && visibility.value === 'visible')
+const settings = ref({ ...defaultSceneSettings })
+const animate = computed(() => !paused && !settings.value.motionOff && reduced.value !== 'reduce' && visibility.value === 'visible')
 const hovered = ref(false)
 const pointer = new Vector2()
 let alive = true
@@ -50,25 +53,42 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
   status.value = { _tag: 'Fallback', reason: 'context' }
 })
 watch([animate, width, height], () => refresh?.())
+watch(settings, () => refresh?.(), { deep: true })
 onScopeDispose(() => { alive = false; cleanup?.() })
 
 watch(canvas, async (element) => {
   if (!element) return
   const context = element.getContext('webgl2', { alpha: false, antialias: true })
   if (!context) { status.value = { _tag: 'Fallback', reason: 'context' }; return }
-  const loaded = await Promise.all([
+  const results = await Promise.allSettled([
     new TextureLoader().loadAsync('/brand/kit/modular/flesh-diffuse.png'),
     new TextureLoader().loadAsync('/brand/character.png'),
-  ]).catch((error: unknown) => {
-    console.error('Brundlefly world artwork failed to load.', error)
+    new TextureLoader().loadAsync('/brand/kit/lair/goo-diffuse.png'),
+    new TextureLoader().loadAsync('/brand/kit/lair/chitin-diffuse.png'),
+    new TextureLoader().loadAsync('/brand/kit/lair/floor-diffuse.png'),
+    new TextureLoader().loadAsync('/brand/kit/lair/egg-diffuse.png'),
+  ])
+  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult] = results
+  if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
+    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected') {
+    for (const result of results) {
+      if (result.status === 'fulfilled') result.value.dispose()
+      else console.error('Brundlefly world artwork failed to load.', result.reason)
+    }
     status.value = { _tag: 'Fallback', reason: 'art' }
-    return undefined
-  })
-  if (!loaded) return
-  const [texture, mascotTexture] = loaded
-  if (!alive) { texture.dispose(); mascotTexture.dispose(); return }
-  texture.colorSpace = mascotTexture.colorSpace = SRGBColorSpace
-  texture.wrapS = texture.wrapT = MirroredRepeatWrapping
+    return
+  }
+  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture] = [
+    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value,
+  ]
+  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture]
+  if (!alive) { loadedTextures.forEach(value => value.dispose()); return }
+  loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
+  for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture]) {
+    tiled.wrapS = tiled.wrapT = MirroredRepeatWrapping
+  }
+  chitinTexture.repeat.set(2, 2)
+  floorTexture.repeat.set(5, 8)
   mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
   texture.magFilter = mascotTexture.magFilter = NearestFilter
   const image = mascotTexture.image as HTMLImageElement
@@ -78,14 +98,15 @@ watch(canvas, async (element) => {
   const painter = raster.getContext('2d')!
   painter.drawImage(image, 0, 0, raster.width, raster.height)
   const mascot = createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height))
-  const world = createWorld(texture)
+  const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture })
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
   const scene = new Scene()
   scene.background = new Color('#080B08')
-  scene.fog = new FogExp2('#080B08', 0.028)
+  const fog = new FogExp2('#080B08', 0.028)
+  scene.fog = fog
   scene.add(world.root)
   const figure = new Group()
   figure.scale.setScalar(1.25)
@@ -119,9 +140,14 @@ watch(canvas, async (element) => {
   let renderWidth = 0
   let renderHeight = 0
   function render(delta: number) {
+    renderer.toneMappingExposure = settings.value.exposure
+    fog.density = settings.value.fog
+    camera.position.z = (renderWidth / renderHeight < 0.8 ? 14.5 : 10) / settings.value.zoom
+    camera.lookAt(0, -0.45, -1.3)
+    camera.updateMatrixWorld()
     let walking = false
     if (animate.value) {
-      const target = hovered.value ? 0 : 0.38
+      const target = hovered.value ? 0 : settings.value.walkSpeed
       speed += (target - speed) * Math.min(1, delta * 6)
       const direction = route[destination]!.clone().sub(figure.position)
       direction.y = 0
@@ -136,7 +162,7 @@ watch(canvas, async (element) => {
       }
       elapsed += delta
     }
-    world.update({ time: elapsed, pressure: paused ? 0.25 : 0 })
+    world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     mascot.update({ time: elapsed, pressure: 0, pointer, transform: 'squeeze', walking, walkPhase: phase })
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
@@ -169,7 +195,7 @@ watch(canvas, async (element) => {
   }
   cleanup = () => {
     renderer.setAnimationLoop(null)
-    world.dispose(); mascot.dispose(); texture.dispose(); mascotTexture.dispose()
+    world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
     shadowGeometry.dispose(); shadowMaterial.dispose(); renderer.dispose()
   }
   status.value = { _tag: 'Ready' }
@@ -183,6 +209,7 @@ watch(canvas, async (element) => {
     <img v-if="status._tag !== 'Ready'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
     <button class="world-interaction" :class="{ 'mascot-hover': hovered }" aria-label="Talk to Brundlefly" @pointermove="move" @pointerleave="hovered = false" @click="select" />
     <p v-if="status._tag === 'Fallback'" class="world-status" role="status">{{ status.reason === 'context' ? 'Static scene. WebGL is unavailable.' : 'The scene could not load.' }}</p>
+    <SceneControls v-model="settings" />
   </div>
 </template>
 

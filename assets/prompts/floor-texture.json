@@ -1,0 +1,9 @@
+{
+  "tool": "builtin imagegen",
+  "prompt": "Use case: stylized-concept. Asset type: square tileable diffuse material texture for Brundlefly's interactive 3D lair. Image 1 is material style reference, image 2 is palette and finish reference only. NEW flat orthographic edge-to-edge material swatch, no scene, character, text, borders, shadows or strong baked lighting. Seamless edges, uniform detail, crunchy illustrated pixel detail. Earthy restrained palette, rust #AA604B, bruise #69404B, olive #777648, gray #343C3B, wing gray #A4B5A0. Compressed organic lair floor, leathery scar tissue, low flattened fibrous seams and worn stippled pores, thin olive mucous residue in recessed channels, fine bruise-colored capillaries. Muted rust-gray and olive, no large protrusions, no shells or eggs. Damp walkable tissue distinct from thick wall folds.",
+  "references": [
+    "assets/brand/kit/modular/flesh-diffuse.png",
+    "assets/brand/character.png"
+  ],
+  "output": "assets/brand/kit/lair/floor-diffuse.png"
+}

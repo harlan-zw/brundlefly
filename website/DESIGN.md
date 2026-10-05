@@ -123,6 +123,18 @@ An inward-facing textured enclosure closes the ceiling, rear wall, and edges beh
 Both camera framings remain inside it. Keep its bruised surface visible without competing with the mascot.
 Place the tunnel behind Brundlefly. Leave space for his walk and contact shadow in the foreground.
 Slime, thin membranes, and bristles stay near the chamber perimeter.
+Mucus uses a flowing membrane texture, displaced ripples, and wet highlights that move with its surface.
+Eight translucent egg sacs breathe at the floor edges. Preserve the central walking corridor.
+Use dedicated generated textures for chitin, compressed floor tissue, and egg membranes.
+Hanging mucus beads grow, stretch, detach, and fall through staggered cycles.
 Use modest mesh resolution, instanced perimeter plates, and soft ground shading.
 The mascot GLB carries skin weights, skeleton, canonical texture, and idle and walk clips.
 Runtime GLSL remains in the layer source. The relief does not supply a full sculpted back or side.
+
+## Hidden controls
+
+Keep scene controls hidden by default. L toggles the panel when the visitor is not typing.
+The controls=1 query opens it on touch devices. Use labeled native sliders with live outputs.
+Lighting, fog, zoom, wetness, opening, breath, flow, and walk speed update the scene immediately.
+Reset restores the shared defaults. Copy settings exports JSON and provides selectable text if clipboard access fails.
+Motion off freezes the scene. Keep the panel within the viewport and let its contents scroll.

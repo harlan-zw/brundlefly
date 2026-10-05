@@ -6,8 +6,12 @@ import {
 import type { Texture } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { createOrganismModel } from './organism'
+import { createGooMaterial } from './goo'
+import { createEggSacs } from './eggs'
+import type { SceneSettings } from './scene-settings'
 
-export type WorldInput = { time: number, pressure: number }
+export type WorldTextures = { chitin: Texture, floor: Texture, egg: Texture }
+export type WorldInput = { time: number, pressure: number, settings: SceneSettings }
 
 const groundLevel = -2.2
 
@@ -33,7 +37,7 @@ function foldGeometry(seed: number) {
 }
 
 /** An open chamber surrounds the walkable foreground without obstructing the mascot. */
-export function createWorld(texture: Texture) {
+export function createWorld(texture: Texture, gooTexture: Texture, textures: WorldTextures) {
   const root = new Group()
   root.name = 'Brundlefly chamber'
   // Both camera framings sit inside the enclosure. Rounded corners keep the backdrop continuous.
@@ -66,12 +70,14 @@ export function createWorld(texture: Texture) {
     bumpScale: 0.1, roughness: 0.46, clearcoat: 0.7, clearcoatRoughness: 0.28 })
   const bruise = new MeshPhysicalMaterial({ color: '#69404B', map: texture, bumpMap: texture,
     bumpScale: 0.12, roughness: 0.55, clearcoat: 0.42 })
-  const chitin = new MeshPhysicalMaterial({ color: '#343C3B', map: texture, bumpMap: texture,
+  const chitin = new MeshPhysicalMaterial({ color: '#343C3B', map: textures.chitin, bumpMap: textures.chitin,
     bumpScale: 0.035, roughness: 0.36, clearcoat: 0.8, clearcoatRoughness: 0.3 })
   const membrane = new MeshPhysicalMaterial({ color: '#A4B5A0', map: texture,
     side: DoubleSide, transparent: true, opacity: 0.17, roughness: 0.45, clearcoat: 0.8, depthWrite: false })
-  const slime = new MeshPhysicalMaterial({ color: '#777648', transparent: true, opacity: 0.43,
-    roughness: 0.13, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08, depthWrite: false })
+  const goo = createGooMaterial(gooTexture)
+  const slime = goo.material
+  const eggs = createEggSacs(textures.egg, textures.chitin)
+  root.add(eggs.root)
 
   const groundGeometry = new PlaneGeometry(22, 36, 44, 48)
   const floorPositions = groundGeometry.getAttribute('position')
@@ -84,8 +90,8 @@ export function createWorld(texture: Texture) {
     floorPositions.setZ(index, height)
   }
   groundGeometry.computeVertexNormals()
-  const ground = new Mesh(groundGeometry, new MeshStandardMaterial({ color: '#343C3B', map: texture,
-    bumpMap: texture, bumpScale: 0.085, roughness: 0.83, metalness: 0.04 }))
+  const ground = new Mesh(groundGeometry, new MeshStandardMaterial({ color: '#343C3B', map: textures.floor,
+    bumpMap: textures.floor, bumpScale: 0.085, roughness: 0.83, metalness: 0.04 }))
   ground.rotation.x = -Math.PI / 2
   ground.position.set(0, groundLevel - 0.035, 5)
   root.add(ground)
@@ -142,15 +148,24 @@ export function createWorld(texture: Texture) {
   root.add(plates)
 
   const puddleGeometry = new SphereGeometry(1, 24, 10)
+  const puddlePositions = puddleGeometry.getAttribute('position')
+  for (let index = 0; index < puddlePositions.count; index++) {
+    const x = puddlePositions.getX(index)
+    const z = puddlePositions.getZ(index)
+    const angle = Math.atan2(z, x)
+    const swelling = 1 + Math.sin(angle * 3 + 0.7) * 0.17 + Math.cos(angle * 7) * 0.07
+    puddlePositions.setXYZ(index, x * swelling, puddlePositions.getY(index), z * swelling)
+  }
+  puddleGeometry.computeVertexNormals()
   for (let index = 0; index < 7; index++) {
     const puddle = new Mesh(puddleGeometry, slime)
-    puddle.position.set(Math.sin(index * 2.4) * 2.8, groundLevel - 0.018, 2 - index * 0.78)
+    puddle.position.set(Math.sin(index * 2.4) * 2.8, groundLevel + 0.012, 2 - index * 0.78)
     puddle.scale.set(0.46 + index % 3 * 0.18, 0.022, 0.29 + index % 2 * 0.15)
     puddle.rotation.y = index * 0.74
     root.add(puddle)
   }
 
-  const hanging: { mesh: Mesh, phase: number }[] = []
+  const hanging: { mesh: Mesh, drop: Mesh, anchor: Vector3, phase: number }[] = []
   for (let index = 0; index < 12; index++) {
     const side = index % 2 === 0 ? -1 : 1
     const x = side * (2.45 + index % 3 * 0.42)
@@ -159,13 +174,16 @@ export function createWorld(texture: Texture) {
     const end = new Vector3(x + side * 0.4, -0.8 + index % 3 * 0.3, z + 0.16)
     const midpoint = start.clone().lerp(end, 0.52)
     midpoint.x += side * 0.17
-    const strand = new Mesh(new TubeGeometry(new CatmullRomCurve3([start, midpoint, end]), 14, 0.013 + index % 3 * 0.005, 5, false), slime)
+    const strand = new Mesh(new TubeGeometry(new CatmullRomCurve3([
+      new Vector3(), midpoint.clone().sub(start), end.clone().sub(start),
+    ]), 20, 0.019 + index % 3 * 0.007, 7, false), slime)
+    strand.position.copy(start)
     root.add(strand)
-    hanging.push({ mesh: strand, phase: index * 1.7 })
     const drop = new Mesh(puddleGeometry, slime)
     drop.position.copy(end)
-    drop.scale.set(0.037, 0.065, 0.036)
+    drop.scale.set(0.055, 0.085, 0.052)
     root.add(drop)
+    hanging.push({ mesh: strand, drop, anchor: end.clone(), phase: index * 1.7 })
     if (index % 2 === 0) {
       const web = new BufferGeometry()
       web.setAttribute('position', new Float32BufferAttribute([...start.toArray(), ...end.toArray(), x + side * 0.65, 1.5, z - 0.35], 3))
@@ -196,7 +214,8 @@ export function createWorld(texture: Texture) {
   occlusion.position.set(0, groundLevel + 0.002, -2.2)
   root.add(occlusion)
 
-  root.add(new HemisphereLight(new Color('#A4B5A0'), new Color('#080B08'), 0.85))
+  const ambient = new HemisphereLight(new Color('#A4B5A0'), new Color('#080B08'), 0.85)
+  root.add(ambient)
   // A broad, feathered key follows the walking area, rather than lighting the nearest wall.
   const warm = new SpotLight('#E8D4A6', 90, 18, Math.PI * 0.23, 1, 2)
   warm.position.set(-1.4, 3.3, 4.5)
@@ -216,19 +235,42 @@ export function createWorld(texture: Texture) {
 
   return {
     root,
-    update({ time, pressure }: WorldInput) {
+    update({ time, pressure, settings }: WorldInput) {
       const response = Math.min(1, Math.max(0, pressure))
-      tunnel.update({ time, pressure: response * 0.25, wetness: 0.85, pointer, opening: 0.7, transform: 'squeeze' })
+      warm.intensity = settings.key
+      fill.intensity = settings.fill
+      rim.intensity = settings.rim
+      ambient.intensity = settings.ambient
+      const enclosureMaterial = enclosure.material
+      enclosureMaterial.emissiveIntensity = settings.textureGlow
+      tissue.roughness = 0.78 - settings.wetness * 0.35
+      goo.update({ time, breath: settings.breath, flow: settings.flow, wetness: settings.wetness, key: settings.key, fill: settings.fill, rim: settings.rim })
+      eggs.update({ time, breath: settings.breath, wetness: settings.wetness })
+      tunnel.update({ time: time * settings.breath, pressure: response * 0.25, wetness: settings.wetness, pointer, opening: settings.opening, transform: 'squeeze' })
       for (const { mesh, scale, phase } of livingFolds) {
-        mesh.scale.set(scale.x * (1 + Math.sin(time * 0.48 + phase) * 0.014 + response * 0.015),
-          scale.y * (1 + Math.sin(time * 0.36 + phase) * 0.006), scale.z)
+        mesh.scale.set(scale.x * (1 + Math.sin(time * 0.48 + phase) * 0.014 * settings.breath + response * 0.015),
+          scale.y * (1 + Math.sin(time * 0.36 + phase) * 0.006 * settings.breath), scale.z)
       }
-      for (const { mesh, phase } of hanging) mesh.rotation.z = Math.sin(time * 0.37 + phase) * 0.006
-      inner.intensity = 5 + Math.sin(time * 0.6) * 0.35
+      for (const { mesh, drop, anchor, phase } of hanging) {
+        const cycle = (time * 0.17 * settings.flow + phase * 0.13) % 1
+        const attached = Math.min(cycle / 0.8, 1)
+        const falling = Math.max(0, (cycle - 0.8) / 0.2)
+        const sag = Math.sin(time * 0.65 + phase) * 0.025 * settings.breath + attached * 0.035 * settings.flow
+        mesh.scale.y = 1 + sag
+        mesh.rotation.z = Math.sin(time * 0.43 + phase) * 0.02 * settings.breath
+        const growth = 0.65 + attached * 0.8
+        drop.position.copy(anchor)
+        drop.position.y += (anchor.y - mesh.position.y) * sag - falling * falling * 1.6
+        drop.position.x += Math.sin(time * 0.43 + phase) * 0.06 * settings.breath
+        drop.scale.set(0.055 * growth, 0.085 * growth * (1 + attached * 0.9 - falling * 0.7), 0.052 * growth)
+      }
+      inner.intensity = settings.inner + Math.sin(time * 0.6) * 0.35 * settings.breath
     },
     dispose() {
       tunnel.dispose()
       root.remove(tunnel.root)
+      eggs.dispose()
+      root.remove(eggs.root)
       const geometries = new Set<BufferGeometry>()
       const materials = new Set<MeshStandardMaterial | ShaderMaterial | LineBasicMaterial>()
       root.traverse(object => {
