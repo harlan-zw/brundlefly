@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
-import { useDocumentVisibility, useElementSize, useEventListener, usePreferredReducedMotion } from '@vueuse/core'
+import { useDeviceOrientation, useDocumentVisibility, useElementSize, useEventListener, useMediaQuery, usePreferredReducedMotion, useScreenOrientation } from '@vueuse/core'
 import { useRoute } from '#app'
 import {
   ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
-  NoColorSpace, PerspectiveCamera, PlaneGeometry, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
+  NoColorSpace, PerspectiveCamera, PlaneGeometry, Quaternion, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
@@ -13,7 +13,7 @@ import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
-import { defaultCameraView, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, rotateCameraView } from '@brundlefly/brand/shared/camera-view'
+import { defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ConversationMood } from '#shared/conversation'
@@ -36,6 +36,25 @@ watch(() => [settings.value.masterVolume, settings.value.ambienceVolume, setting
   emit('mix', { master, ambience, voice })
 }, { immediate: true })
 const environmentMotion = computed(() => !settings.value.motionOff && reduced.value !== 'reduce' && visibility.value === 'visible')
+// Phones look around by tilting. iOS grants motion access only during a tap, so the first tap asks once.
+const orientation = useDeviceOrientation()
+const { angle: screenAngle } = useScreenOrientation()
+const touchScreen = useMediaQuery('(pointer: coarse)')
+type OrientationAccess = { requestPermission?: () => Promise<'granted' | 'denied'> }
+const orientationAccess = 'DeviceOrientationEvent' in window ? DeviceOrientationEvent as unknown as OrientationAccess : undefined
+type TiltAccess = { _tag: 'Ask' | 'Pending' | 'Granted' | 'Denied' }
+const tiltAccess = ref<TiltAccess>({ _tag: typeof orientationAccess?.requestPermission === 'function' ? 'Ask' : 'Granted' })
+function askForTilt() {
+  if (tiltAccess.value._tag !== 'Ask' || !touchScreen.value || !orientationAccess?.requestPermission) return
+  tiltAccess.value = { _tag: 'Pending' }
+  orientationAccess.requestPermission().then((answer) => {
+    tiltAccess.value = { _tag: answer === 'granted' ? 'Granted' : 'Denied' }
+    refresh?.()
+  }, (cause: unknown) => {
+    console.warn('Tilt look is unavailable.', cause)
+    tiltAccess.value = { _tag: 'Denied' }
+  })
+}
 const animate = computed(() => !paused && environmentMotion.value)
 const hovered = ref(false)
 const pointer = new Vector2()
@@ -60,6 +79,7 @@ function beginView(event: PointerEvent) {
   interaction.value?.setPointerCapture(event.pointerId)
 }
 function endView(event?: PointerEvent) {
+  if (event?.type === 'pointerup') askForTilt()
   if (gesture._tag === 'Idle' || (event && event.pointerId !== gesture.id)) return
   const id = gesture.id
   suppressClick = gesture._tag === 'Dragging'
@@ -85,6 +105,7 @@ function move(event: PointerEvent) {
   hovered.value = x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
 }
 function select(event: MouseEvent) {
+  askForTilt()
   if (suppressClick) { suppressClick = false; if (event.detail !== 0) return }
   if (paused) return
   const rect = host.value?.getBoundingClientRect()
@@ -248,6 +269,8 @@ watch(canvas, async (element) => {
   const baseTarget = new Vector3()
   const focusPosition = new Vector3()
   const focusTarget = new Vector3()
+  let tiltRest: Quaternion | undefined
+  const tilt = { yaw: 0, pitch: 0 }
   const needsFrames = () => visibility.value === 'visible' && (animate.value || (!paused && cameraKeys.size > 0)
     || (paused && !settings.value.motionOff && reduced.value !== 'reduce')
     || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001)
@@ -260,7 +283,17 @@ watch(canvas, async (element) => {
     fog.density = settings.value.fog * fogScale
     if (camera.fov !== fieldOfView) { camera.fov = fieldOfView; camera.updateProjectionMatrix() }
     if (!paused) cameraView = moveCameraView(cameraView, cameraKeys, delta)
-    const view = resolveCameraView(cameraView, framing, sceneLayout.camera.target, settings.value.zoom)
+    const { alpha, beta, gamma } = orientation
+    // Tilt is manual look, but it follows body movement. Reduced motion and the dialog turn it off.
+    const tiltPoseNow = alpha.value !== null && beta.value !== null && gamma.value !== null && touchScreen.value
+      && tiltAccess.value._tag === 'Granted' && !paused && !settings.value.motionOff && reduced.value !== 'reduce'
+      ? tiltPose({ alpha: alpha.value, beta: beta.value, gamma: gamma.value }, screenAngle.value ?? 0) : undefined
+    tiltRest = tiltPoseNow ? followTiltRest(tiltRest, tiltPoseNow, delta) : undefined
+    const tiltTarget = tiltPoseNow && tiltRest ? resolveTiltView(tiltPoseNow, tiltRest) : { yaw: 0, pitch: 0 }
+    const tiltEase = reduced.value === 'reduce' ? 1 : Math.min(1, delta * 8)
+    tilt.yaw += (tiltTarget.yaw - tilt.yaw) * tiltEase
+    tilt.pitch += (tiltTarget.pitch - tilt.pitch) * tiltEase
+    const view = resolveCameraView(tiltCameraView(cameraView, tilt), framing, sceneLayout.camera.target, settings.value.zoom)
     basePosition.set(...view.position)
     baseTarget.set(...view.target)
     const desiredFocus = paused ? 1 : 0

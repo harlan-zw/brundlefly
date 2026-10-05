@@ -356,6 +356,7 @@ The lair deformation leaves specimen transforms unchanged.
 shared/camera-view.ts supplies first-person look and slow ground travel without owning the renderer.
 Click-and-drag turns the view from the player's position. Touch drag also turns it.
 WASD travels slowly in the viewing direction; text entry consumes those keys.
+On touch screens, turning the phone adds a gentle look offset through device orientation.
 The renderer blends into a face view for conversation and restores the previous camera view afterward.
 
 Mucus now uses Three.js physical lighting, clearcoat, modest transmission, and olive absorption.

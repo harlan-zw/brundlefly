@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { defaultCameraView, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, rotateCameraView } from '../layers/brand/shared/camera-view.ts'
+import { defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '../layers/brand/shared/camera-view.ts'
 
 test('mouse look permits a full turn and limits pitch before the view flips', () => {
   const view = rotateCameraView(defaultCameraView, Math.PI * 2 / 0.0028, 10000)
@@ -70,4 +70,47 @@ test('mobile staging brings the character closer and reduces optical fog without
   const oldTransmission = Math.exp(-Math.pow(0.075 * (portrait[2] / 0.9 + 0.8), 2))
   const newTransmission = Math.exp(-Math.pow(0.075 * narrow.fogScale * (narrow.framing[2] / 0.9 + 0.8), 2))
   assert.ok(newTransmission > oldTransmission * 3)
+})
+
+const pose = (alpha: number, beta: number, gamma: number, screenAngle = 0) => tiltPose({ alpha, beta, gamma }, screenAngle)
+
+test('turning a phone like a window looks the same way', () => {
+  const rest = pose(0, 60, 0)
+  assert.ok(resolveTiltView(pose(-20, 60, 0), rest).yaw > 0.2, 'Turning right must look right.')
+  assert.ok(resolveTiltView(pose(20, 60, 0), rest).yaw < -0.2, 'Turning left must look left.')
+  assert.ok(resolveTiltView(pose(0, 80, 0), rest).pitch < -0.2, 'Raising the phone must look up.')
+  assert.deepEqual(resolveTiltView(rest, rest), { yaw: 0, pitch: 0 })
+})
+
+test('an upright phone turns smoothly where its tilt angles flip', () => {
+  const rest = pose(0, 90, 0)
+  const turns = [-10, -5, 0, 5, 10].map(alpha => resolveTiltView(pose(alpha, 90, 0), rest).yaw)
+  turns.slice(1).forEach((yaw, index) => assert.ok(yaw < turns[index]! && turns[index]! - yaw < 0.1, 'Each small turn must move the view a small step.'))
+  assert.ok(Math.abs(resolveTiltView(pose(0, 95, 0), rest).yaw) < 0.01, 'Leaning past upright must not swing the view sideways.')
+})
+
+test('landscape phones look the same way as they turn', () => {
+  for (const screenAngle of [90, 270]) {
+    const rest = pose(0, 0, screenAngle === 90 ? -80 : 80, screenAngle)
+    const turned = pose(-20, 0, screenAngle === 90 ? -80 : 80, screenAngle)
+    assert.ok(resolveTiltView(turned, rest).yaw > 0.2, `Turning right at ${screenAngle} degrees must look right.`)
+  }
+})
+
+test('tilt looks around gently and composes with the dragged view', () => {
+  assert.ok(resolveTiltView(pose(-80, 60, 0), pose(0, 60, 0)).yaw === 0.45, 'A large turn must stay within a gentle look range.')
+  const view = tiltCameraView({ ...defaultCameraView, yaw: 1, pitch: 1.1 }, { yaw: 0.2, pitch: 0.3 })
+  assert.equal(view.yaw, 1.2)
+  assert.equal(view.pitch, 1.15)
+})
+
+test('a held phone pose slowly becomes the new rest pose, and a flip rebases at once', () => {
+  const turned = pose(-20, 60, 0)
+  let rest = followTiltRest(undefined, pose(0, 60, 0), 0)
+  rest = followTiltRest(rest, turned, 0.016)
+  assert.ok(resolveTiltView(turned, rest).yaw > 0.2, 'A fresh turn must still look aside.')
+  for (let frame = 0; frame < 60 * 30; frame++) rest = followTiltRest(rest, turned, 1 / 60)
+  assert.ok(Math.abs(resolveTiltView(turned, rest).yaw) < 0.01, 'Holding the turn must recentre the view.')
+  const flipped = pose(-20, 60, 0, 90)
+  assert.ok(followTiltRest(rest, flipped, 1 / 60).angleTo(flipped) < 1e-6, 'A screen rotation must rebase at once.')
 })
