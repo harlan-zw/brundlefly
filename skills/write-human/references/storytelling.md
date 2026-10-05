@@ -16,6 +16,10 @@ They are editorial guidance, not a complete summary of the book or independently
 
 ## Apply to the supplied story
 
+- **Choose the point of view.** Every story has one. Identify whose perspective carries the supplied experience.
+  If the author is telling their own story, write as I, me, and my in their voice.
+  Use we only when the experience belongs to a supported group. Follow an explicitly requested narrator or perspective.
+  Keep the perspective consistent. Do not turn a personal account into generic you or detached product narration.
 - **Give the reader someone to follow.** Identify whose goal matters. Use a documented author or a clearly framed reader situation.
 - **Find the disruption.** Show what changed or stopped working. Choose the supported detail that makes it concrete.
 - **Make the consequence visible.** Explain what the person could lose or could no longer do. Preserve the source's scale.
@@ -35,4 +39,5 @@ Keep installation steps outside the origin story. Keep narrative suspense outsid
 If the source supports only a problem and response, use that modest story. Never invent personal history to expand it.
 
 Before delivery, check that every event, motive, and causal claim has support.
+Check that the narrator, pronouns, and voice match the chosen point of view.
 Preserve the author's actual voice and uncertainty. A compelling story still needs to be true.

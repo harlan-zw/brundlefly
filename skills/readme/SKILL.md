@@ -43,6 +43,10 @@ Use this order by default. Keep existing anchors when they remain useful.
 Splash describes the opening block. Do not add a literal Splash heading.
 Name the Why heading after the project, such as "Why Brundlefly".
 Treat Why as a chance to tell the project's human story. Follow the owner's requested emphasis.
+Every story has a point of view. Establish whose perspective carries Why before drafting it.
+If the author tells their own origin story, use their first-person voice: I, me, and my.
+Use we only for a supported shared experience. Follow an explicitly requested narrator or perspective.
+Do not replace the author's story with generic you or detached product narration.
 Use supplied experience or documented origins to connect a concrete frustration with the decision to build the project.
 When no origin is known, explain the reader's problem without inventing a founder story.
 Competitive positioning can support Why; it does not have to be its opening or organizing structure.

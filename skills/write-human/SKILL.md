@@ -34,6 +34,10 @@ Human-to-human writing can serve either purpose. Audience alone does not select 
 | Both, such as a README | Read each reference for its relevant section | Story in Why; direct explanation in Features, Setup, Guides, and API |
 
 Use supplied intent and the reader's task. A technical topic can still be part of a personal story.
+Every story has a point of view. Identify whose perspective carries it before drafting.
+If the author tells their own story, use their first-person voice: I, me, and my.
+Use we only for a supported shared experience. Preserve an explicitly requested narrator or point of view.
+Do not replace the author's perspective with generic you or a detached account of the project.
 Keep the purposes distinct with useful section or paragraph boundaries. Do not alternate them merely for variety.
 Never add suspense, character arcs, or withheld prerequisites to instructions.
 Never turn an approved story into a feature list or force its ending into a moral.
