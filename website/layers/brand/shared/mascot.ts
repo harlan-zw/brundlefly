@@ -4,7 +4,7 @@ import {
 } from 'three'
 import type { Texture } from 'three'
 import type { Transform } from './organism'
-import { createFaceModel } from './face.ts'
+import { createFaceModel, createHeadOutline } from './face.ts'
 import type { HeadProjection } from './face.ts'
 import { applyMascotSurface } from './mascot-surface.ts'
 
@@ -130,6 +130,49 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     return (image.data[index]! * 0.3 + image.data[index + 1]! * 0.59 + image.data[index + 2]! * 0.11) / 255
   }
   const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t) }
+  // Replace the raster head with an actual sculpt. Keep the neck join, shoulder arms, and both wing roots.
+  // Below the brow, cut only where the sculpt covers the cell or a raster eye would show. Matching head skin stays.
+  // Above the brow, the sculpt sets the silhouette.
+  const headCut = new Uint8Array((width - 1) * (height - 1))
+  const headExposed = new Uint8Array((width - 1) * (height - 1))
+  const outline = headProjection ? createHeadOutline(headProjection.raster) : undefined
+  const faceCenter = point(0.643, 0.225)
+  const sculptCovers = (sx: number, sy: number) => {
+    const local = point(sx, sy).sub(faceCenter)
+    return outline!.covers(local.x, local.y)
+  }
+  const rasterEye = (sx: number, sy: number) => Math.pow((sx - 0.632) / 0.06, 2) + Math.pow((sy - 0.214) / 0.052, 2) <= 1
+    || Math.pow((sx - 0.758) / 0.056, 2) + Math.pow((sy - 0.231) / 0.048, 2) <= 1
+  if (outline) for (let y = 0; y < height - 1; y++) for (let x = 0; x < width - 1; x++) {
+    const a = y * width + x
+    const sx = (x + 0.5) / (width - 1)
+    const sy = (y + 0.5) / (height - 1)
+    const neckJoin = sx >= 0.54 && sx <= 0.62 && sy >= 0.07
+    const rightAttachment = (sx >= 0.785 && sy >= 0.175) || (sx >= 0.775 && sy >= 0.25) || (sx >= 0.70 && sy >= 0.265)
+    if (!(mask[a] && mask[a + 1] && mask[a + width] && mask[a + width + 1]) || neckJoin || rightAttachment || sy >= 0.315
+      || Math.pow((sx - 0.67) / 0.146, 2) + Math.pow((sy - 0.218) / 0.19, 2) > 1) continue
+    const x0 = x / (width - 1), x1 = (x + 1) / (width - 1), y0 = y / (height - 1), y1 = (y + 1) / (height - 1)
+    const hidden = sculptCovers(x0, y0) && sculptCovers(x1, y0) && sculptCovers(x0, y1) && sculptCovers(x1, y1)
+    const eye = rasterEye(sx, sy)
+    if (!hidden && !eye && sy >= 0.1) continue
+    headCut[y * (width - 1) + x] = 1
+    headExposed[y * (width - 1) + x] = Number(!hidden && eye)
+  }
+  // Relief thins toward the cut, so body tissue tucks under the sculpt's rim instead of standing in front of it.
+  const tuckDistance = new Float32Array(count).fill(headProjection ? 100 : 0)
+  for (let y = 0; y < height - 1; y++) for (let x = 0; x < width - 1; x++) {
+    if (!headCut[y * (width - 1) + x]) continue
+    const a = y * width + x
+    for (const corner of [a, a + 1, a + width, a + width + 1]) tuckDistance[corner] = 0
+  }
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const i = y * width + x
+    tuckDistance[i] = Math.min(tuckDistance[i]!, x > 0 ? tuckDistance[i - 1]! + 1 : 100, y > 0 ? tuckDistance[i - width]! + 1 : 100)
+  }
+  for (let y = height - 1; y >= 0; y--) for (let x = width - 1; x >= 0; x--) {
+    const i = y * width + x
+    tuckDistance[i] = Math.min(tuckDistance[i]!, x < width - 1 ? tuckDistance[i + 1]! + 1 : 100, y < height - 1 ? tuckDistance[i + width]! + 1 : 100)
+  }
   const rightWingJoints = ['chest', 'right-wing', 'right-wing-tip'].map(name => bodyJoints.findIndex(joint => joint.name === name))
   for (let side = 0; side < 2; side++) for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const i = y * width + x
@@ -138,8 +181,9 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     const luminance = (data[i * 4]! * 0.3 + data[i * 4 + 1]! * 0.59 + data[i * 4 + 2]! * 0.11) / 255
     const detail = projectedLuminance(sx, sy) ?? luminance
     const wing = bodyProjection && isWing(sx, sy)
-    const depth = mask[i] ? wing ? 0.006 + Math.min(distance[i]! * 0.0012, 0.014) + detail * 0.003
-      : bodyProjection ? bodyDepth[i]! : 0.018 + Math.min(distance[i]! * 0.018, 0.16) + detail * 0.035 : 0
+    const tuck = 0.06 + 0.94 * smooth(tuckDistance[i]! / 4)
+    const depth = (mask[i] ? wing ? 0.006 + Math.min(distance[i]! * 0.0012, 0.014) + detail * 0.003
+      : bodyProjection ? bodyDepth[i]! : 0.018 + Math.min(distance[i]! * 0.018, 0.16) + detail * 0.035 : 0) * tuck
     positions.push(...point(sx, sy, side ? -depth * 0.8 : depth).toArray())
     uv.push(sx, 1 - sy)
     // Anchor the stalk to the chest, then blend through the wing hinge toward its tip.
@@ -162,14 +206,16 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     skinWeights.push(a / (a + b), b / (a + b), 0, 0)
   }
   const occupied = new Uint8Array((width - 1) * (height - 1))
+  const creaseIndices: number[] = []
   for (let y = 0; y < height - 1; y++) for (let x = 0; x < width - 1; x++) {
     const a = y * width + x
     const sx = (x + 0.5) / (width - 1)
     const sy = (y + 0.5) / (height - 1)
-    // Replace the raster head with an actual sculpt. Keep shoulder arms and both wing silhouettes.
-    const neckJoin = sx >= 0.54 && sx <= 0.62 && sy >= 0.07
-    const rightAttachment = (sx >= 0.785 && sy >= 0.175) || (sx >= 0.775 && sy >= 0.25) || (sx >= 0.70 && sy >= 0.265)
-    if (headProjection && !neckJoin && !rightAttachment && sy < 0.315 && Math.pow((sx - 0.67) / 0.146, 2) + Math.pow((sy - 0.218) / 0.19, 2) <= 1) continue
+    if (headCut[y * (width - 1) + x]) {
+      // Shadowed tissue fills a raster eye the sculpt leaves exposed, so the wing root meets the head without it.
+      if (headExposed[y * (width - 1) + x]) creaseIndices.push(a + count, a + count + width, a + count + 1, a + count + 1, a + count + width, a + count + width + 1)
+      continue
+    }
     // Include a cell only when all corners are tissue. Holes remain open, including fingers and wings.
     if (!(mask[a] && mask[a + 1] && mask[a + width] && mask[a + width + 1])) continue
     occupied[y * (width - 1) + x] = 1
@@ -186,12 +232,13 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     if (!occupied[y * (width - 1) + x]) continue
     const a = y * width + x
     const boundaries = [
-      { outside: y === 0 || !occupied[(y - 1) * (width - 1) + x], start: a, end: a + 1 },
-      { outside: x === width - 2 || !occupied[y * (width - 1) + x + 1], start: a + 1, end: a + width + 1 },
-      { outside: y === height - 2 || !occupied[(y + 1) * (width - 1) + x], start: a + width + 1, end: a + width },
-      { outside: x === 0 || !occupied[y * (width - 1) + x - 1], start: a + width, end: a },
+      { outside: y === 0 || !occupied[(y - 1) * (width - 1) + x], start: a, end: a + 1, cut: y > 0 && headCut[(y - 1) * (width - 1) + x] },
+      { outside: x === width - 2 || !occupied[y * (width - 1) + x + 1], start: a + 1, end: a + width + 1, cut: x < width - 2 && headCut[y * (width - 1) + x + 1] },
+      { outside: y === height - 2 || !occupied[(y + 1) * (width - 1) + x], start: a + width + 1, end: a + width, cut: y < height - 2 && headCut[(y + 1) * (width - 1) + x] },
+      { outside: x === 0 || !occupied[y * (width - 1) + x - 1], start: a + width, end: a, cut: x > 0 && headCut[y * (width - 1) + x - 1] },
     ]
-    for (const { outside, start, end } of boundaries) if (outside) {
+    // The sculpt hides the cut edge. A wall there would stand in front of its rim.
+    for (const { outside, start, end, cut } of boundaries) if (outside && !cut) {
       indices.push(start, end, start + count, end, end + count, start + count)
       if (!bodyProjection || isWing((x + 0.5) / (width - 1), (y + 0.5) / (height - 1))) continue
       if (!contourNeighbors.has(start)) contourNeighbors.set(start, new Set())
@@ -214,6 +261,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       }
     }
   }
+  const sidesEnd = indices.length
+  indices.push(...creaseIndices)
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
   geometry.setAttribute('uv', new Float32BufferAttribute(uv, 2))
@@ -222,7 +271,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   geometry.setIndex(indices)
   geometry.addGroup(0, skinEnd, 0)
   geometry.addGroup(skinEnd, wingEnd - skinEnd, 2)
-  geometry.addGroup(wingEnd, indices.length - wingEnd, 1)
+  geometry.addGroup(wingEnd, sidesEnd - wingEnd, 1)
+  geometry.addGroup(sidesEnd, indices.length - sidesEnd, 3)
   geometry.computeVertexNormals()
   const artwork = bodyProjection?.texture ?? texture
   const heightMap = bodyProjection?.texture.clone()
@@ -243,7 +293,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     bone.position.copy(parentIndex < 0 ? position : position.sub(point(...joints[parentIndex]!.start)))
     if (parentIndex >= 0) bones[parentIndex]!.add(bone)
   })
-  const mesh = new SkinnedMesh(geometry, [front, sides, wingMaterial])
+  const crease = new MeshStandardMaterial({ color: '#2B1D18', roughness: 0.82, metalness: 0, side: DoubleSide })
+  const mesh = new SkinnedMesh(geometry, [front, sides, wingMaterial, crease])
   mesh.name = 'Brundlefly-canonical-relief'
   mesh.add(bones[0]!)
   mesh.updateMatrixWorld(true)
@@ -378,6 +429,6 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
         blink: Math.max(0, 1 - Math.abs(time - 2.45) / 0.12),
       }))
     },
-    dispose() { bodySurfaces.forEach(surface => surface.dispose()); face.dispose(); geometry.dispose(); front.dispose(); sides.dispose(); wingMaterial.dispose(); heightMap?.dispose(); skeleton.dispose() },
+    dispose() { bodySurfaces.forEach(surface => surface.dispose()); face.dispose(); geometry.dispose(); front.dispose(); sides.dispose(); wingMaterial.dispose(); crease.dispose(); heightMap?.dispose(); skeleton.dispose() },
   }
 }
