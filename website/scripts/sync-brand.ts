@@ -46,7 +46,7 @@ for (const directory of ['app', 'shared', 'public']) {
 }
 // The portable layer needs runtime parts. Concepts and interchange models have separate download URLs.
 for (const path of Object.keys(bundle)) {
-  if (path.endsWith('.glb') || ['design-direction.png', 'lair-direction.png', 'visceral-direction.png', 'mascot-sculpt-reference.png', 'head-sculpt-direction.png', 'material-board.png', 'instrument-surround.png'].some(name => path.endsWith(`/${name}`))) delete bundle[path]
+  if (path.endsWith('.glb') || ['github-banner-overhang-gross.png', 'github-avatar.png', 'design-direction.png', 'lair-direction.png', 'cave-direction.webp', 'visceral-direction.png', 'mascot-sculpt-reference.png', 'head-sculpt-direction.png', 'material-board.png', 'instrument-surround.png'].some(name => path.endsWith(`/${name}`))) delete bundle[path]
 }
 await writeFile(new URL('brand-layer.zip', kit), zipSync(bundle))
 await writeFile(new URL('catalogue.json', kit), JSON.stringify({ palette, parts, preset: defaultPreset }, null, 2))

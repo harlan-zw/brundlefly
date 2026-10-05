@@ -228,7 +228,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   root.add(mesh)
   const joint = (name: string) => bones[joints.findIndex(value => value.name === name)]!
   const face = createFaceModel(faceTexture, headProjection)
-  face.root.position.copy(point(0.643, 0.238, 0.015).sub(point(0.57, 0.22)))
+  face.root.position.copy(point(0.643, 0.225, 0.015).sub(point(0.57, 0.22)))
   joint('head').add(face.root)
   root.updateMatrixWorld(true)
   skeleton.update()

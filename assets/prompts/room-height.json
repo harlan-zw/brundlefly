@@ -1,0 +1,8 @@
+{
+  "tool": "image_gen.imagegen",
+  "reference": "assets/source/room-diffuse.png",
+  "master": "assets/source/room-height.png",
+  "runtime": "assets/brand/kit/lair/room-height.webp",
+  "runtimePreparation": "768px WebP, quality 90, effort 6",
+  "prompt": "Edit type: precise-object-edit. Convert the reference organic room tile into a grayscale HEIGHT / DISPLACEMENT texture, preserving every fold, pore, dark chitin nodule and mucus channel in exactly the same position and scale. This is a technical PBR height asset, not a shaded illustration. Pure neutral grayscale, opaque, flat top-down orthographic tile. Bright rounded broad flesh fold crests protrude towards viewer. Mucus valleys and pores are dark recessed creases. Chitin plates sit at medium-high height with tiny surface relief. Smooth height gradients on broad crests, sharp narrow recessed pores, strong readable macro relief. Remove all colour, lighting, painted specular highlights, cast shadows and directional shading. White means high, black means recessed, midgray base. Preserve reference composition and seamless repeating edges exactly, no new shapes, no border, no text."
+}

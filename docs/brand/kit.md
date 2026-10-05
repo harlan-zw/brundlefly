@@ -402,7 +402,15 @@ The body and head receive scene lighting. Neither emits its own light.
 A wet eye shader adds small gaze shifts, ripples, and sparse grazing reflections.
 Skin-textured lids cover both eyes during blinking, without repeating the pupil artwork.
 Skin and wing shaders vary microscopic normals and roughness while keeping the mapped artwork fixed.
-The room uses a generated tissue map with world-scale projection across walls and ceiling.
+The room uses generated colour and height maps with world-scale projection across walls and ceiling.
+Large connected cave facets, ceiling shelves, and recesses replace the rounded room box.
+The height map raises folds into the chamber. Recomputed mesh normals and height bump supply depth lighting.
+Cavity shading darkens recessed pores. Height varies roughness and limits glow inside those cavities.
+The cave walls breathe along shared projection normals, keeping sharp fold seams connected.
+Layered spatial noise adds uneven swelling and regional pulses across the walls.
+Moving wet patches vary surface roughness and fine reflections without sliding the mapped artwork.
+Wet membranes attach to the carved shelves through raycast roots.
+Curved necks taper into growing drops, which stretch, fall, and disappear before resetting.
 The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 
 | File | Role |
@@ -410,6 +418,15 @@ The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 | assets/source/room-diffuse.png | Full-resolution room texture master |
 | assets/brand/kit/lair/room-diffuse.webp | Compact runtime room texture |
 | assets/prompts/room-diffuse.json | Exact prompt, reference, and runtime preparation |
+| assets/source/room-height.png | Full-resolution generated room height master |
+| assets/brand/kit/lair/room-height.webp | Dedicated runtime height, bump, and cavity input |
+| assets/prompts/room-height.json | Exact height prompt and runtime preparation |
+| assets/source/cave-direction.png | Generated concept for large cave shapes |
+| assets/brand/kit/lair/cave-direction.webp | Cave concept preview |
+| assets/prompts/cave-direction.json | Exact scene concept prompt |
+| website/layers/brand/shared/cave-geometry.ts | Continuous faceted cave mesh and membrane cross-section |
+| website/layers/brand/shared/cave-goo.ts | Attached wet membranes, tapered strands, and falling drop cycles |
+| website/layers/brand/shared/room-height.ts | Registered inward height relief with recalculated normals |
 | assets/source/body-projection.png | Full-resolution generated body mapping master |
 | assets/brand/kit/lair/body-projection.png | Registered body, limb, and wing detail |
 | assets/prompts/body-projection.json | Exact prompt and canonical references |

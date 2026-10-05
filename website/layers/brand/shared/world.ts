@@ -1,18 +1,20 @@
 import {
   BufferGeometry, CatmullRomCurve3, Color, DirectionalLight, DoubleSide, Float32BufferAttribute, Group, HemisphereLight,
   InstancedMesh, LineBasicMaterial, LineSegments, Mesh, MeshPhysicalMaterial, MeshStandardMaterial,
-  Object3D, PlaneGeometry, PointLight, ShaderMaterial, SphereGeometry, SpotLight, TubeGeometry, Vector2, Vector3,
+  Object3D, PlaneGeometry, PointLight, Raycaster, ShaderMaterial, SphereGeometry, SpotLight, TubeGeometry, Vector2, Vector3,
 } from 'three'
 import type { Texture } from 'three'
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { createOrganismModel } from './organism'
 import { createGooMaterial } from './goo'
+import { createCaveGoo } from './cave-goo'
 import { createEggSacs } from './eggs'
 import { createTissueMaterial } from './tissue-material'
+import { caveCrossSection, createCaveGeometry } from './cave-geometry'
+import type { RoomHeight } from './room-height'
 import { sceneLayout } from './scene-layout'
 import type { SceneSettings } from './scene-settings'
 
-export type WorldTextures = { chitin: Texture, floor: Texture, egg: Texture, room: Texture }
+export type WorldTextures = { chitin: Texture, floor: Texture, egg: Texture, room: Texture, roomHeight: RoomHeight }
 export type WorldInput = { time: number, pressure: number, settings: SceneSettings }
 
 const groundLevel = -2.2
@@ -42,23 +44,11 @@ function foldGeometry(seed: number) {
 export function createWorld(texture: Texture, gooTexture: Texture, textures: WorldTextures) {
   const root = new Group()
   root.name = 'Brundlefly chamber'
-  // Both camera framings sit inside the enclosure. Rounded corners keep the backdrop continuous.
-  const enclosureGeometry = new RoundedBoxGeometry(22, 9, 36, 5, 1.3)
-  const enclosurePositions = enclosureGeometry.getAttribute('position')
-  const enclosureNormals = enclosureGeometry.getAttribute('normal')
-  const enclosureUvs = enclosureGeometry.getAttribute('uv')
-  for (let index = 0; index < enclosurePositions.count; index++) {
-    const x = enclosurePositions.getX(index)
-    const y = enclosurePositions.getY(index)
-    const z = enclosurePositions.getZ(index)
-    const ripple = Math.sin(x * 1.7 + z * 0.7) * Math.cos(y * 2.2 + z * 0.5) * 0.12
-    enclosurePositions.setXYZ(index, x + enclosureNormals.getX(index) * ripple,
-      y + enclosureNormals.getY(index) * ripple, z + enclosureNormals.getZ(index) * ripple)
-    enclosureUvs.setXY(index, enclosureUvs.getX(index) * 4, enclosureUvs.getY(index) * 3)
-  }
-  enclosureGeometry.computeVertexNormals()
-  const enclosureSkin = createTissueMaterial({ surface: 'enclosure', texture: textures.room, color: '#A09280',
-    bumpScale: 0.14, emissive: '#69404B', glow: 0.28, roughness: 0.84 })
+  // Connected angular cave shoulders surround the clearing and both player camera positions.
+  const enclosureGeometry = createCaveGeometry(textures.roomHeight.raster, [0, groundLevel + 4, 5])
+  const enclosureSkin = createTissueMaterial({ surface: 'enclosure', texture: textures.room,
+    height: textures.roomHeight.texture, color: '#A09280',
+    bumpScale: 0.28, emissive: '#69404B', glow: 0.28, roughness: 0.92 })
   const enclosure = new Mesh(enclosureGeometry, enclosureSkin.material)
   enclosure.position.set(0, groundLevel + 4, 5)
   root.add(enclosure)
@@ -73,8 +63,6 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     bumpScale: 0.12, roughness: 0.55, clearcoat: 0.42 })
   const chitin = new MeshPhysicalMaterial({ color: '#69716A', map: textures.chitin, bumpMap: textures.chitin,
     bumpScale: 0.12, roughness: 0.72, clearcoat: 0.18, clearcoatRoughness: 0.6 })
-  const membrane = new MeshPhysicalMaterial({ color: '#A4B5A0', map: texture,
-    side: DoubleSide, transparent: true, opacity: 0.17, roughness: 0.45, clearcoat: 0.8, depthWrite: false })
   const goo = createGooMaterial(gooTexture)
   const slime = goo.material
   const eggs = createEggSacs(textures.egg, textures.chitin)
@@ -101,11 +89,11 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   // The wall is made of asymmetric connected folds, rather than isolated boulders.
   const livingFolds: { mesh: Mesh, scale: Vector3, phase: number }[] = []
   for (let side = -1; side <= 1; side += 2) {
-    for (let index = 0; index < 4; index++) {
-      const z = 2.5 - index * 2.25
+    for (let index = 0; index < 2; index++) {
+      const z = -1.5 - index * 3.5
       const fold = new Mesh(foldGeometry(index + side * 3), index % 3 === 0 ? bruise : tissue)
-      fold.position.set(side * (5.05 + Math.sin(index * 2 + side) * 0.28), -0.1 + index * 0.09, z)
-      fold.scale.set(0.7 + index % 2 * 0.12, 2.45 + Math.sin(index) * 0.3, 1.35)
+      fold.position.set(side * (5.35 + Math.sin(index * 2 + side) * 0.28), -0.1 + index * 0.09, z)
+      fold.scale.set(0.45 + index % 2 * 0.12, 2.1 + Math.sin(index) * 0.3, 0.85)
       fold.rotation.z = side * (0.13 + index * 0.035)
       fold.rotation.y = side * 0.24
       livingFolds.push({ mesh: fold, scale: fold.scale.clone(), phase: index * 1.3 + side })
@@ -114,23 +102,16 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
       shell.position.copy(fold.position)
       shell.position.x += side * 0.38
       shell.position.y -= 0.5
-      shell.scale.set(0.78, 2.14, 1.13)
+      shell.scale.set(0.5, 1.9, 0.8)
       shell.rotation.copy(fold.rotation)
       root.add(shell)
     }
   }
 
-  // Long arch folds wrap the chamber, leaving a visible tunnel and clear floor.
+  // Membrane binders follow the jagged room shell instead of drawing smooth circular arches.
   for (let index = 0; index < 2; index++) {
-    const z = 2.2 - index * 5.6
-    const points: Vector3[] = []
-    for (let step = 0; step <= 12; step++) {
-      const angle = step / 12 * Math.PI
-      points.push(new Vector3(Math.cos(angle) * (5.2 + Math.sin(index) * 0.12),
-        groundLevel + Math.sin(angle) * (6.65 + Math.sin(angle * 3 + index) * 0.17),
-        z + Math.sin(angle * 2 + index) * 0.2))
-    }
-    const arch = new Mesh(new TubeGeometry(new CatmullRomCurve3(points), 48, 0.14 + index % 2 * 0.07, 8, false), bruise)
+    const points = caveCrossSection(1.2 - index * 5.1)
+    const arch = new Mesh(new TubeGeometry(new CatmullRomCurve3(points), 64, 0.085, 6, false), bruise)
     root.add(arch)
   }
 
@@ -208,54 +189,26 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     root.add(runoff)
   }
 
-  const dropGeometry = new SphereGeometry(1, 18, 14)
-  const dropVertices = dropGeometry.getAttribute('position')
-  for (let index = 0; index < dropVertices.count; index++) {
-    const y = dropVertices.getY(index)
-    const taper = 0.72 - y * 0.42
-    dropVertices.setXYZ(index, dropVertices.getX(index) * taper, y, dropVertices.getZ(index) * taper)
+  // Raycast actual carved shelves, so each wet drape starts on the cave instead of floating nearby.
+  enclosure.updateMatrixWorld(true)
+  const caveFilm = createGooMaterial(gooTexture)
+  caveFilm.material.color.set('#B59B82')
+  caveFilm.material.attenuationColor.set('#725339')
+  caveFilm.material.side = DoubleSide
+  const attachment = (z: number, corner: number) => {
+    const target = caveCrossSection(z)[corner]!
+    const origin = new Vector3(0, 0.8, z)
+    const hit = new Raycaster(origin, target.clone().sub(origin).normalize()).intersectObject(enclosure)[0]!
+    return { point: hit.point, normal: hit.face!.normal.clone() }
   }
-  dropGeometry.computeVertexNormals()
-  const hanging: { mesh: Mesh, drop: Mesh, anchor: Vector3, phase: number }[] = []
-  for (let index = 0; index < 12; index++) {
-    const side = index % 2 === 0 ? -1 : 1
-    const x = side * (3.7 + index % 3 * 0.42)
-    const z = 0.4 - Math.floor(index / 2) * 1.14
-    const start = new Vector3(x, 2.2 + Math.sin(index) * 0.35, z)
-    const end = new Vector3(x + side * 0.4, -0.8 + index % 3 * 0.3, z + 0.16)
-    const midpoint = start.clone().lerp(end, 0.52)
-    midpoint.x += side * 0.17
-    const curve = new CatmullRomCurve3([
-      new Vector3(), midpoint.clone().sub(start), end.clone().sub(start),
-    ])
-    const strandGeometry = new TubeGeometry(curve, 20, 0.024 + index % 3 * 0.008, 7, false)
-    const strandVertices = strandGeometry.getAttribute('position')
-    for (let vertex = 0; vertex < strandVertices.count; vertex++) {
-      const t = Math.floor(vertex / 8) / 20
-      const centre = curve.getPointAt(t)
-      const thickness = 0.5 + Math.exp(-t * 8) * 3 + Math.exp(-(1 - t) * 12) * 0.5
-      strandVertices.setXYZ(vertex,
-        centre.x + (strandVertices.getX(vertex) - centre.x) * thickness,
-        centre.y + (strandVertices.getY(vertex) - centre.y) * thickness,
-        centre.z + (strandVertices.getZ(vertex) - centre.z) * thickness)
-    }
-    strandGeometry.computeVertexNormals()
-    const strand = new Mesh(strandGeometry, slime)
-    strand.position.copy(start)
-    root.add(strand)
-    const drop = new Mesh(dropGeometry, slime)
-    drop.position.copy(end)
-    drop.scale.set(0.055, 0.085, 0.052)
-    root.add(drop)
-    hanging.push({ mesh: strand, drop, anchor: end.clone(), phase: index * 1.7 })
-    if (index % 2 === 0) {
-      const web = new BufferGeometry()
-      web.setAttribute('position', new Float32BufferAttribute([...start.toArray(), ...end.toArray(), x + side * 0.65, 1.5, z - 0.35], 3))
-      web.setAttribute('uv', new Float32BufferAttribute([0, 0, 0.5, 1, 1, 0], 2))
-      web.computeVertexNormals()
-      root.add(new Mesh(web, membrane))
-    }
-  }
+  const drapes = [[-0.5, 6, 7], [1.3, 10, 11], [3.5, 4, 5], [0.1, 12, 13], [-3.2, 5, 6], [4.8, 9, 10]] as const
+  const caveSlime = createCaveGoo(caveFilm.material, drapes.map(([z, a, b], index) => {
+    const start = attachment(z, a), end = attachment(z + 0.22, b)
+    return { start: start.point, end: end.point, startNormal: start.normal, endNormal: end.normal,
+      length: Math.min(Math.abs(start.point.x), Math.abs(end.point.x)) < 2.5 ? 0.48 : 0.95 + index % 3 * 0.28,
+      width: 0.28 + index % 3 * 0.09 }
+  }))
+  root.add(caveSlime.root)
 
   const bristlePositions: number[] = []
   for (let index = 0; index < 170; index++) {
@@ -312,25 +265,13 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
       floorSkin.update(tissueMotion)
       tissue.roughness = 0.78 - settings.wetness * 0.35
       goo.update({ time, breath: settings.breath, flow: settings.flow, wetness: settings.wetness, key: settings.key, fill: settings.fill, rim: settings.rim })
+      caveFilm.update({ time, breath: settings.breath, flow: settings.flow, wetness: settings.wetness, key: settings.key, fill: settings.fill, rim: settings.rim })
+      caveSlime.update({ time, breath: settings.breath, flow: settings.flow })
       eggs.update({ time, breath: settings.breath, wetness: settings.wetness })
       tunnel.update({ time: time * settings.breath, pressure: response * 0.25, wetness: settings.wetness, pointer, opening: settings.opening, transform: 'squeeze', flow: settings.flow })
       for (const { mesh, scale, phase } of livingFolds) {
         mesh.scale.set(scale.x * (1 + Math.sin(time * 0.48 + phase) * 0.014 * settings.breath + response * 0.015),
           scale.y * (1 + Math.sin(time * 0.36 + phase) * 0.006 * settings.breath), scale.z)
-      }
-      for (const { mesh, drop, anchor, phase } of hanging) {
-        const cycle = (time * 0.17 * settings.flow + phase * 0.13) % 1
-        const attached = Math.min(cycle / 0.8, 1)
-        const falling = Math.max(0, (cycle - 0.8) / 0.2)
-        const sag = Math.sin(time * 0.65 + phase) * 0.025 * settings.breath + attached * 0.035 * settings.flow
-        mesh.scale.y = 1 + sag
-        mesh.rotation.z = Math.sin(time * 0.43 + phase) * 0.02 * settings.breath
-        const growth = 0.65 + attached * 0.8
-        drop.position.copy(anchor)
-        drop.position.y += (anchor.y - mesh.position.y) * sag - falling * falling * 3.2
-        drop.visible = drop.position.y > groundLevel + 0.025
-        drop.position.x += Math.sin(time * 0.43 + phase) * 0.06 * settings.breath
-        drop.scale.set(0.055 * growth, 0.085 * growth * (1 + attached * 0.9 - falling * 0.7), 0.052 * growth)
       }
       inner.intensity = settings.inner + Math.sin(time * 0.6) * 0.35 * settings.breath
     },
@@ -339,6 +280,9 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
       root.remove(tunnel.root)
       eggs.dispose()
       root.remove(eggs.root)
+      caveSlime.dispose()
+      root.remove(caveSlime.root)
+      caveFilm.dispose()
       const geometries = new Set<BufferGeometry>()
       const materials = new Set<MeshStandardMaterial | ShaderMaterial | LineBasicMaterial>()
       root.traverse(object => {

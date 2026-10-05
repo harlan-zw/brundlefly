@@ -4,7 +4,7 @@ import { useDocumentVisibility, useElementSize, useEventListener, usePreferredRe
 import { useRoute } from '#app'
 import {
   ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
-  PerspectiveCamera, PlaneGeometry, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
+  NoColorSpace, PerspectiveCamera, PlaneGeometry, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
@@ -134,10 +134,11 @@ watch(canvas, async (element) => {
     new TextureLoader().loadAsync('/brand/kit/lair/head-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/room-diffuse.webp'),
+    new TextureLoader().loadAsync('/brand/kit/lair/room-height.webp'),
   ])
-  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult, roomResult] = results
+  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult, roomResult, roomHeightResult] = results
   if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
-    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || roomResult.status === 'rejected') {
+    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || roomResult.status === 'rejected' || roomHeightResult.status === 'rejected') {
     for (const result of results) {
       if (result.status === 'fulfilled') result.value.dispose()
       else console.error('Brundlefly world artwork failed to load.', result.reason)
@@ -145,19 +146,22 @@ watch(canvas, async (element) => {
     status.value = { _tag: 'Fallback', reason: 'art' }
     return
   }
-  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture] = [
-    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value, roomResult.value,
+  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture, roomHeightTexture] = [
+    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value, roomResult.value, roomHeightResult.value,
   ]
-  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture]
+  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture, roomHeightTexture]
   if (!alive) { loadedTextures.forEach(value => value.dispose()); return }
   loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
+  roomHeightTexture.colorSpace = NoColorSpace
   for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture]) {
     tiled.wrapS = tiled.wrapT = MirroredRepeatWrapping
   }
   chitinTexture.repeat.set(2, 2)
   floorTexture.repeat.set(5, 8)
   roomTexture.wrapS = roomTexture.wrapT = RepeatWrapping
+  roomHeightTexture.wrapS = roomHeightTexture.wrapT = RepeatWrapping
   roomTexture.magFilter = LinearFilter
+  roomHeightTexture.magFilter = LinearFilter
   mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.wrapS = projectionTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.magFilter = LinearFilter
@@ -185,7 +189,14 @@ watch(canvas, async (element) => {
   const mascot = createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
     spriteMascot ? undefined : { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) },
     spriteMascot ? undefined : { texture: bodyProjectionTexture, raster: bodyProjectionPainter.getImageData(0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height) })
-  const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture, room: roomTexture })
+  const roomHeightImage = roomHeightTexture.image as HTMLImageElement
+  const roomHeightRaster = document.createElement('canvas')
+  roomHeightRaster.width = roomHeightImage.width
+  roomHeightRaster.height = roomHeightImage.height
+  const roomHeightPainter = roomHeightRaster.getContext('2d')!
+  roomHeightPainter.drawImage(roomHeightImage, 0, 0)
+  const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture, room: roomTexture,
+    roomHeight: { texture: roomHeightTexture, raster: roomHeightPainter.getImageData(0, 0, roomHeightRaster.width, roomHeightRaster.height) } })
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05

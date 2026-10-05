@@ -119,7 +119,7 @@ test('the mapped right eye keeps opaque skin around its outer and lower socket r
   for (const [x, y] of [[1180, 510], [1160, 590], [1110, 610]]) {
     const sourceX = x! / 1536 * headRaster.width, sourceY = y! / 1024 * headRaster.height
     const origin = new Vector3(0.3289 + (sourceX - minX) / (maxX - minX) * 0.67 - 0.335,
-      0.6812 + 0.43 - (sourceY - minY) / (maxY - minY) * 0.86, 2)
+      0.7150 + 0.43 - (sourceY - minY) / (maxY - minY) * 0.86, 2)
     const hits = new Raycaster(origin, new Vector3(0, 0, -1)).intersectObject(model.root, true)
     assert.ok(hits.some(hit => hit.face?.materialIndex === 0), `Right socket rim at ${x},${y} must remain opaque.`)
   }
@@ -148,7 +148,7 @@ test('speech moves the sculpted mouth locally and release restores the quiet fac
   const foot = vertexAt(0.28, 0.92)
   const pose = (speaking: number) => {
     model.update({ time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', speaking, blink: 0 })
-    return new Raycaster(new Vector3(0.4465, 0.422, 2), new Vector3(0, 0, -1)).intersectObject(model.root, true)[0]?.point.z
+    return new Raycaster(new Vector3(0.4465, 0.4558, 2), new Vector3(0, 0, -1)).intersectObject(model.root, true)[0]?.point.z
   }
   const footPosition = () => model.mesh.applyBoneTransform(foot, new Vector3().fromBufferAttribute(model.mesh.geometry.getAttribute('position'), foot))
   const quiet = pose(0)
@@ -175,13 +175,13 @@ test('the speaking clip opens mouth skin, blinks, and closes without a pose jump
     model.skeleton.update()
     return new Raycaster(new Vector3(x, y, 2), new Vector3(0, 0, -1)).intersectObject(model.root, true)[0]?.point.z
   }
-  const mouthRest = poseAt(0, 0.4465, 0.422)
-  const mouthTalking = poseAt(0.32, 0.4465, 0.422)
+  const mouthRest = poseAt(0, 0.4465, 0.4558)
+  const mouthTalking = poseAt(0.32, 0.4465, 0.4558)
   assert.ok(mouthRest !== undefined && mouthTalking !== undefined && Math.abs(mouthRest - mouthTalking) > 0.008, 'The speaking clip must open the sculpted mouth.')
-  const eyeOpen = poseAt(0, 0.2265, 0.777)
-  const eyeClosed = poseAt(2.45, 0.2265, 0.777)
+  const eyeOpen = poseAt(0, 0.2265, 0.8108)
+  const eyeClosed = poseAt(2.45, 0.2265, 0.8108)
   assert.ok(eyeOpen !== undefined && eyeClosed !== undefined && Math.abs(eyeOpen - eyeClosed) > 0.002, 'The speaking clip must articulate the solid eyelid.')
-  assert.equal(poseAt(clip.duration, 0.4465, 0.422), mouthRest, 'Speech must loop without a mouth jump.')
+  assert.equal(poseAt(clip.duration, 0.4465, 0.4558), mouthRest, 'Speech must loop without a mouth jump.')
   mixer.stopAllAction()
   mixer.uncacheRoot(model.root)
   model.dispose()
@@ -197,13 +197,13 @@ test('material animation leaves a cached speaking pose unchanged', () => {
   model.root.updateMatrixWorld(true)
   const surface = (x: number, y: number) => new Raycaster(new Vector3(x, y, 2), new Vector3(0, 0, -1))
     .intersectObject(model.root, true)[0]?.point.clone()
-  const mouthBefore = surface(0.4465, 0.422)
+  const mouthBefore = surface(0.4465, 0.4558)
   const bodyBefore = surface(-0.598, 0.338)
   assert.ok(mouthBefore && bodyBefore, 'Both head and body must have rendered surfaces.')
   model.updateMaterials(17.25)
   mixer.setTime(0.32) // Cached tracks need no rewrite when their pose value has not changed.
   model.root.updateMatrixWorld(true)
-  assert.deepEqual(surface(0.4465, 0.422), mouthBefore, 'Material time must not reset the speaking jaw.')
+  assert.deepEqual(surface(0.4465, 0.4558), mouthBefore, 'Material time must not reset the speaking jaw.')
   assert.deepEqual(surface(-0.598, 0.338), bodyBefore, 'Material time must not move body skin.')
   mixer.stopAllAction()
   mixer.uncacheRoot(model.root)
