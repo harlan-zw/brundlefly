@@ -76,6 +76,8 @@ The dialog does not run skills or simulate remote agent execution.
 Use rust flesh, bruised folds, dark chitin, olive slime, and sparse teal reflections.
 Uneven ribs, connected tendons, membranes, puddles, and bristles establish a complete lair.
 Warm light reveals the mascot and folds. Sparse cold light separates the chamber depth.
+Use a feathered warm key over the walking area, soft front fill, and a restrained teal rim.
+Keep highlights below white clipping. The walls support the mascot rather than competing with his face.
 Use the supplied artwork and textures. Never recreate the raster wordmark or invent mascot anatomy.
 Cream carries dialog text and focus. Wing carries secondary text. Chitin supports quiet boundaries.
 Keep all generated seams outside editable dialog content.
@@ -89,6 +91,7 @@ Kit controls use 14px text and at least 44px targets.
 ## Accessibility and motion
 
 The mascot has a named keyboard target. Enter or Space opens the same dialog as a pointer click.
+Hover slows walking and changes the cursor. Pointer position does not rotate the relief or distort his face.
 Keep visible cream focus outlines. Do not place artwork over text, inputs, or focus outlines.
 System reduced motion stops walking, idle deformation, and camera movement.
 Pause scene animation while the dialog is open or the document is hidden.

@@ -2,7 +2,7 @@
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useDocumentVisibility, useElementSize, useEventListener, usePreferredReducedMotion } from '@vueuse/core'
 import {
-  ClampToEdgeWrapping, Color, FogExp2, Group, Mesh, MirroredRepeatWrapping, NearestFilter,
+  ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, Mesh, MirroredRepeatWrapping, NearestFilter,
   PerspectiveCamera, PlaneGeometry, Raycaster, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
@@ -32,7 +32,6 @@ function move(event: PointerEvent) {
   if (!rect || paused) return
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
-  pointer.set(x / rect.width * 2 - 1, 1 - y / rect.height * 2)
   hovered.value = x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
 }
 function select(event: MouseEvent) {
@@ -81,6 +80,8 @@ watch(canvas, async (element) => {
   const mascot = createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height))
   const world = createWorld(texture)
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
+  renderer.toneMapping = ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.05
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
   const scene = new Scene()
   scene.background = new Color('#080B08')

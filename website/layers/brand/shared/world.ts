@@ -1,7 +1,7 @@
 import {
-  BufferGeometry, CatmullRomCurve3, Color, DoubleSide, Float32BufferAttribute, Group, HemisphereLight,
+  BufferGeometry, CatmullRomCurve3, Color, DirectionalLight, DoubleSide, Float32BufferAttribute, Group, HemisphereLight,
   InstancedMesh, LineBasicMaterial, LineSegments, Mesh, MeshPhysicalMaterial, MeshStandardMaterial,
-  Object3D, PlaneGeometry, PointLight, ShaderMaterial, SphereGeometry, TubeGeometry, Vector2, Vector3,
+  Object3D, PlaneGeometry, PointLight, ShaderMaterial, SphereGeometry, SpotLight, TubeGeometry, Vector2, Vector3,
 } from 'three'
 import type { Texture } from 'three'
 import { createOrganismModel } from './organism'
@@ -174,14 +174,22 @@ export function createWorld(texture: Texture) {
   occlusion.position.set(0, groundLevel + 0.002, -2.2)
   root.add(occlusion)
 
-  root.add(new HemisphereLight(new Color('#A4B5A0'), new Color('#080B08'), 0.7))
-  const warm = new PointLight('#E8D4A6', 28, 15, 2)
-  warm.position.set(-2.7, 3.2, 3.4)
-  const cold = new PointLight('#418B90', 16, 12, 2)
+  root.add(new HemisphereLight(new Color('#A4B5A0'), new Color('#080B08'), 0.85))
+  // A broad, feathered key follows the walking area, rather than lighting the nearest wall.
+  const warm = new SpotLight('#E8D4A6', 90, 18, Math.PI * 0.23, 1, 2)
+  warm.position.set(-1.4, 3.3, 4.5)
+  warm.target.position.set(0, -0.2, -0.4)
+  const fill = new DirectionalLight('#A4B5A0', 0.65)
+  fill.position.set(3, 1.5, 5)
+  fill.target.position.set(0, -0.3, -0.5)
+  const rim = new DirectionalLight('#418B90', 0.4)
+  rim.position.set(2.8, 2.4, -3)
+  rim.target.position.set(0, 0, -0.3)
+  const cold = new PointLight('#418B90', 12, 12, 2)
   cold.position.set(3.5, 1.1, -1.9)
   const inner = new PointLight('#AA604B', 5, 8, 2)
   inner.position.set(-1.4, 0.6, -5.5)
-  root.add(warm, cold, inner)
+  root.add(warm, warm.target, fill, fill.target, rim, rim.target, cold, inner)
   const pointer = new Vector2()
 
   return {

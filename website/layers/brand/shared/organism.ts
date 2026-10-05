@@ -63,6 +63,7 @@ void main() {
   vec3 cold = vec3(0.025, 0.08, 0.085) * rim * (0.3 + uChitin);
   float depth = exp(-max(0.0, -vPosition.z - 4.0) * 0.16);
   gl_FragColor = vec4((skin * (0.25 + diffuse * 0.8) + wet + cold) * depth * uBrightness, 1.0);
+  #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`
 
