@@ -12,6 +12,8 @@ Edit generated-sounding prose in two passes: surface wording, then structure. Pr
 
 Given text or a file path, run both passes below, report what you flagged, then rewrite. Don't silently rewrite, show the user *which* tells you found so they learn to avoid them.
 
+Verify facts and relevant priors before rewriting. Recheck them after both prose passes.
+
 For a file edit, keep review notes in the handoff, outside the published text.
 For a requested output format, follow that format and omit review notes when it excludes them.
 
@@ -116,6 +118,25 @@ Not every tell applies everywhere. Weight by genre:
 - **Blog posts / essays:** all of Pass 2 applies. This is where structure shows the most.
 - **Email:** direct address and dropping hedging filler matter most.
 
+## Verify facts and priors
+
+Apply this check in every genre. Source every non-trivial factual claim, including claims already present in the draft.
+Non-trivial facts include numbers, comparisons, causal claims, capabilities, and claims that affect a reader's decision.
+
+- **Check sources.** Read the supporting material. Prefer primary sources, inspected code, or recorded measurements.
+  Confirm that evidence supports the exact claim, scope, date, and conditions. Verify current claims with current evidence.
+  Place citations beside claims when the format allows. Otherwise keep claim-to-source links in the handoff.
+- **Test relevant priors.** Identify assumptions behind the argument, advice, or framing when they affect the conclusion.
+  Seek evidence that could disprove them. Use a reproducible check or counterexample where appropriate and authorized.
+  Report the result and limits. A plausible assumption or supporting citation alone does not prove the conclusion.
+- **Handle gaps openly.** Separate verified facts, inferences, opinions, and supplied personal experience.
+  Attribute personal experience without claiming independent verification. Never invent sources, checks, or results.
+  If evidence is missing or conflicts, flag the claim and propose a qualified version or removal.
+  Do not silently change meaning or present an unresolved claim as verified.
+
+Keep verification proportionate to the claim. Opinions and ordinary phrasing need no artificial citations.
+If tools or sources are unavailable, report which claims and priors remain unchecked.
+
 ## Evidence-backed articles
 
 Follow the article brief and local article voice before applying structural suggestions.
@@ -137,6 +158,7 @@ Do not require another skill to complete this step.
 1. List the tells you found, grouped by pass, quoting the offending phrase.
 2. Provide the rewritten text.
 3. Compare the rewrite with the source. Undo unsupported additions, lost claims, and needless voice changes. If a meaning change is required, explain it and ask for the missing information.
+4. Report sources, relevant prior checks, and unresolved evidence gaps outside the published text when its format excludes them.
 
 ## Guardrail
 
