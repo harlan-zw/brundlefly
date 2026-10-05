@@ -33,10 +33,21 @@ pnpm preview:cloudflare
 ## Deployment
 
 The Website workflow is the production deployment path.
-It deploys the brundlefly Worker when a website change reaches main.
+It deploys the brundlefly Worker when website, brand artwork, or Skill changes reach main.
 Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID as repository Actions secrets.
-Use a token with permission to deploy Workers in the intended account.
-A custom domain belongs in cloudflare.config.ts after the owner chooses it.
+Give the token Workers Scripts Write and Account Settings Read for the intended account.
+Give it Workers Routes Write and Zone Read for the brundlefly.dev zone.
+The custom domain is brundlefly.dev in cloudflare.config.ts.
+Pull requests run checks. Main builds deploy after those checks pass.
+Deployment runs finish before another main build starts.
+The workflow checks live pages, browser scripts, scene artwork, models, and Skill downloads against the build.
+
+To rerun the current main deployment, use the Website workflow's manual dispatch.
+To check an existing build against a host, run:
+
+```sh
+node scripts/verify-deployment.ts https://brundlefly.dev
+```
 
 ## Brand and copy
 
