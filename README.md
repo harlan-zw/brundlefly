@@ -12,18 +12,15 @@
 
 ## Why Brundlefly
 
-You write because you want someone to understand.
-Then an agent gets hold of the draft. The sentences swell. Stock phrases creep in. Your voice gets harder to find.
+I want someone to understand what I write. I use agents to help, but I still want to recognise myself in the result.
+The sentences can swell. Stock phrases creep in. A personal draft becomes something anyone could have generated.
 
-That is the slop Brundlefly cares about: words piling up between you and the person you wanted to reach.
-Shortening the text can go wrong too. An agent can strip out the exception that held your meaning together.
+I started collecting writing instructions in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), my personal collection of agent tools and Skills.
+One of those was humanize-writing, which became write-human here.
 
-write-human grew out of personal instructions for editing prose, called humanize-writing.
-Brundlefly gives those instructions a home outside a personal collection, so you can use them with your own agent.
-The collection carries that concern into guides, pull request descriptions, READMEs, and agent context.
-Empathy has practical work to do here: explain the unfamiliar term, respect the reader's attention, keep the example usable.
-
-The mascot is caught between flesh and something inhuman. The writing gets to change too, with its meaning still worth protecting.
+Brundlefly gives those instructions a home you can use with your own agent.
+I want prose to keep its voice, technical guides to have examples that work, and shorter context to keep the exceptions.
+An agent can mutate the text. I want to keep what made it worth writing.
 
 ## Skills
 
