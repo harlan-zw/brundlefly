@@ -117,27 +117,28 @@ Keep conversation history available without forcing the visitor to read a chat t
 
 ## Model and Gateway direction
 
-Use `openai/gpt-5.4-nano` through AI Gateway, with `reasoning_effort: "none"`.
-Cloudflare accepted this setting during the voice evaluation. It rejected `minimal` for this model.
-Gemini 3.1 Flash-Lite remains a comparison candidate, not an automatic fallback.
-These are inexpensive current frontier-family models. Do not substitute an older small open model without the owner requesting it.
+Use `openai/gpt-6-luna` through AI Gateway, with `reasoning_effort: "none"` for Chat Completions.
+The owner selected GPT-6 Luna. Cloudflare lists the model, and OpenAI documents support for this reasoning setting.
+The earlier nano and Gemini evaluations remain historical comparisons. They do not verify Luna's voice or latency.
+Do not substitute another model automatically.
 Use one completion for speech, the aside, mood, and all three choices.
-Disable reasoning for GPT-5.4 nano and keep a bounded output budget.
+Disable reasoning for GPT-6 Luna and keep a bounded output budget.
 Validate the JSON before showing it. Reject malformed choices, unknown link IDs, and oversized output.
 Allow one request at a time. Keep recent history bounded and cancel a request when the conversation closes.
 If generation fails, keep the visitor's text and offer a seeded reply or retry. Never silently present a seed as generated.
 
-As of 6 October 2026, Cloudflare lists GPT-5.4 nano at $0.20 input and $1.25 output per million tokens.
-Gemini 3.1 Flash-Lite is listed at $0.25 input and $1.50 output per million tokens.
-At 1,000 input and 200 output tokens, 1,000 turns cost about $0.45 or $0.55 in inference respectively.
+As of 6 October 2026, Cloudflare lists Luna's short-context rates at $0.10 input and $0.50 output per million tokens.
+At 1,000 input and 200 output tokens, 1,000 turns cost about $0.20 in inference.
 Those estimates exclude reasoning tokens, credit purchase fees, and Worker or storage costs.
-Actual usage should determine the final choice, not price alone.
+Long-context rates differ. Keep the conversation history bounded.
 
-References: [GPT-5.4 nano](https://developers.cloudflare.com/ai/models/openai/gpt-5.4-nano/),
-[Gemini 3.1 Flash-Lite](https://developers.cloudflare.com/ai/models/google/gemini-3.1-flash-lite/),
+References: [GPT-6 Luna](https://developers.cloudflare.com/ai/models/openai/gpt-6-luna/),
+[OpenAI's GPT-6 parameter guide](https://developers.openai.com/api/docs/guides/latest-model),
 [AI Gateway Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/).
 
 ## Voice evaluation
+
+These samples used previous model candidates. Run the voice evaluation on GPT-6 Luna before enabling live dialogue.
 
 Synthetic conversations ran through the existing `default` AI Gateway on 6 October 2026, Melbourne time.
 The final GPT-5.4 nano prompt returned complete JSON and three choices for all five inputs.
