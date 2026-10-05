@@ -18,13 +18,22 @@ export function createCaveGoo(material: MeshPhysicalMaterial, attachments: reado
   }
   droplet.computeVertexNormals()
   geometries.add(droplet)
+  const meniscus = new SphereGeometry(1, 16, 10)
+  const coatingPositions = meniscus.getAttribute('position')
+  for (let vertex = 0; vertex < coatingPositions.count; vertex++) {
+    const y = coatingPositions.getY(vertex)
+    // The visible wet dome is shallow. Its buried side retains contact through cave breathing.
+    coatingPositions.setY(vertex, y * (y < 0 ? 0.42 : 1.15))
+  }
+  meniscus.computeVertexNormals()
+  geometries.add(meniscus)
   attachments.forEach(({ start, end, startNormal, endNormal, length, width }, index) => {
     const assembly = new Group()
     for (const [point, normal] of [[start, startNormal], [end, endNormal]] as const) {
-      const coating = new Mesh(droplet, material)
-      coating.position.copy(point).addScaledVector(normal, 0.04)
+      const coating = new Mesh(meniscus, material)
+      coating.position.copy(point).addScaledVector(normal, 0.01)
       coating.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), normal)
-      coating.scale.set(0.23, 0.2, 0.2)
+      coating.scale.set(0.32, 0.22, 0.26)
       assembly.add(coating)
     }
     const positions: number[] = [], uv: number[] = [], indices: number[] = []
