@@ -16,16 +16,21 @@ I want someone to understand what I write. I use agents to help, but I still wan
 The sentences can swell. Stock phrases creep in. A personal draft becomes something anyone could have generated.
 
 I started collecting writing instructions in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), my personal collection of agent tools and Skills.
-One of those was humanize-writing, which became write-human here.
+One of those was humanize-writing, which became [write-human](skills/write-human/SKILL.md) here.
 
 Skills such as [Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already tackle AI writing patterns.
-That work overlaps with write-human. If you need a prose cleanup Skill, those are options too.
+They address a real part of the problem. My developer workflow also needs text that carries intent into implementation and review.
 
-I built Brundlefly around the rules I want across my writing, from a personal story to a guide or PR description.
-I want prose to keep its voice, technical guides to have examples that work, and shorter context to keep the exceptions.
-Keeping those instructions together lets me refine them around the same priorities, then share them outside my personal kit.
-You can use the Skills that fit your work.
-An agent can mutate the text. I want to keep what made it worth writing.
+I built Brundlefly with opinions about what that output should do.
+[write-human](skills/write-human/SKILL.md) preserves my voice and claims, leaving clear prose alone.
+[technical-guide](skills/technical-guide/SKILL.md) checks the examples a developer will run.
+[pull-request-summary](skills/pull-request-summary/SKILL.md) grounds the description in the change a maintainer must review.
+That combination makes Brundlefly a better fit for my developer workflow than a prose cleanup Skill alone.
+
+I need to write for agents too: instructions, constraints, and context that shape what they do next.
+A dropped exception can change the work, even when the shorter text reads well.
+[agentify-text](skills/agentify-text/SKILL.md) compresses that text while preserving the rules, conditions, and exceptions.
+Whether a person reads it or an agent acts on it, I want the output to carry what I meant.
 
 ## Skills
 
