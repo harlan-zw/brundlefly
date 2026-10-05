@@ -1,0 +1,11 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-05",
+  "file": "assets/brand/kit/lair/mascot-sculpt-reference.png",
+  "references": [
+    "assets/brand/character.png",
+    "assets/brand/character-sheet.png"
+  ],
+  "prompt": "Use case: stylized-concept. Asset type: 3D sculpt and rig reference for the EXISTING Brundlefly mascot. Images 1 and 2 are canonical anatomy and proportions. Translate precisely into a tactile 3D creature sculpt, front three-quarter full body, no UI, no words. Preserve FOUR arms: TWO long shoulder arms reaching down almost to knees and TWO much smaller rib arms. Preserve TWO long thin human-insect legs and TWO unequal small developing wings behind the upper torso. Hunched adult silhouette, elongated hanging rusty flesh face folds, narrow blue-black eye sockets with tiny cold teal glints, warped human hands with five hooked fingers each, uneven dark chitin coverage, swollen rusty flesh, bruised folds, sparse stiff bristles, restrained olive slime. No extra limbs, no tentacle arms, no butterfly wings, no clothing, no blood spray or exposed organs, no cute proportions. Dark neutral background, cream rim lighting, material structure readable for modeling. Pose matches the canonical hunched standing view. Include all claws and wings unclipped with generous margin. This is a modeling reference, no changes to the brand identity.",
+  "usage": "Sculpt direction. The rigged relief uses the unchanged canonical character pixels."
+}

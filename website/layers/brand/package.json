@@ -1,0 +1,7 @@
+{
+  "name": "@brundlefly/brand",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./nuxt.config.ts", "./catalogue": "./shared/catalogue.ts" },
+  "dependencies": { "@nuxt/ui": "^4.0.0", "@nuxt/fonts": "^0.14.0", "@vueuse/core": "^14.0.0", "three": "^0.185.0", "@types/three": "^0.186.0" }
+}

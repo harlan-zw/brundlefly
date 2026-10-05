@@ -1,0 +1,9 @@
+packages:
+  - .
+  - apps/*
+  - layers/*
+allowBuilds:
+  esbuild: true
+  vue-demi: true
+  '@parcel/watcher': true
+  workerd: true

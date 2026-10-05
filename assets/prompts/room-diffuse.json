@@ -1,0 +1,8 @@
+{
+  "tool": "image_gen.imagegen",
+  "reference": "assets/brand/kit/lair/floor-diffuse.png",
+  "master": "assets/source/room-diffuse.png",
+  "runtime": "assets/brand/kit/lair/room-diffuse.webp",
+  "runtimePreparation": "512px WebP, quality 48, effort 6",
+  "prompt": "Use case: stylized-concept. Asset type: seamless square albedo texture for the walls and ceiling of Brundlefly's organic 3D lair. Use the attached local reference only for material language and palette. Create a NEW opaque flat texture tile, orthographic straight-on scan, completely filling all edges. Thick rusty flesh folds, bruised purple membrane, olive mucus channels, scattered dark chitin nodules and fine pores. More broad folded connective tissue than the floor reference, fewer large circular cells. Muted rust #AA604B, bruise #69404B, chitin #343C3B, olive #777648. Crisp clustered detail consistent with grotesque mascot artwork. Seamlessly repeat horizontally and vertically, equal feature scale and brightness at opposing edges. Flat diffuse illumination, no baked specular highlights, no directional light or shadows, no perspective, no vignette, no empty dark borders, no text, no logo, no character. This will be mapped at constant world scale around a rounded room; runtime shaders supply wet highlights and breathing."
+}

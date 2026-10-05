@@ -1,0 +1,32 @@
+{
+  "method": "Built-in image generation, reference-seeded, 2026-10-04",
+  "assets": [
+    {
+      "output": "assets/brand/kit/material-board.png",
+      "references": [
+        "assets/brand/github-banner-overhang-gross.png",
+        "assets/brand/character-sheet.png",
+        "assets/archive/concepts/brundlefly-brand-board.png"
+      ],
+      "transparent": false,
+      "prompt": "Use case: stylized-concept. Create a landscape production visual BRAND MATERIAL KIT for Brundlefly, seeded by these reference images. Image 1 controls wet swollen flesh, pixel-cluster rendering, slime and palette. Image 2 controls dark blue-black eye material, chitin and pale unequal wing membrane. Image 3 is only an old layout/material inspiration; discard its orange eyes and all its slogans. This is a visual specimen sheet of design ARTIFACTS, not a website screenshot and not another mascot. Six beautifully arranged separate material objects in a loose asymmetric 3 by 2 layout on near-black #080B08 with generous negative space: a folded rusty flesh rim with hooked chitin points; a thin pale veined wing membrane sheet; a branching rotten olive mucus web; a blue-black faceted chitin plate with one cold teal highlight; a long tapering tendon connector; and a compact biological aperture with three asymmetrical concentric flesh/chitin folds. Also place a narrow strip of eight small plain square color swatches along the bottom, matching #080B08 #E8D4A6 #AA604B #69404B #343C3B #418B90 #A4B5A0 #777648. Huge detail and tactile nastiness, subtle wet highlights, body horror anatomical materials without gore. Authentic hand-authored dark pixel art, hard square pixel clusters, restrained limited palette. Preserve the reference's rusty flesh and bruising, no cartoon/cute simplification. Objects should feel like physical design components usable in a weird interactive instrument. No text whatsoever, no wordmark recreation, no labels, no slogans, no interface controls, no blood, no exposed organs, no extra characters. The document will add exact labels outside the raster."
+    },
+    {
+      "output": "assets/brand/kit/instrument-surround.png",
+      "references": [
+        "assets/brand/kit/material-board.png",
+        "assets/brand/github-banner-overhang-gross.png"
+      ],
+      "transparent": true,
+      "prompt": "Use case: stylized-concept. Production website artwork: a single huge asymmetrical biological instrument surround, landscape wide 1536x1024 composition, on TRUE TRANSPARENCY. Reference 1 is the approved new Brundlefly material kit. Reference 2 controls the existing swollen rusty flesh and pixel treatment. Create an irregular organic aperture surround, not a rectangle, not a UI screenshot, not a creature. It frames a very large clean empty transparent central opening occupying at least 70% of the canvas. Thin rusty flesh folds on the lower left edge swell into blue-black chitin plates and hooked points, a delicate pale insect wing membrane stretches diagonally into the upper right corner, sparse bristles break the outline, rotten olive slime strings hang near the upper left and lower right outer edges. Let the asymmetrical silhouette wander through the outermost 10-15% of the canvas, with delicate tendon connections and isolated chitin flakes. One slender tissue fold may dip slightly into the opening on the lower edge, but the whole central work area must stay completely empty and transparent. Premium creepy hand-crafted pixel art, hard square pixel clusters and sharp edges, tactile wet highlights and bruised rusty flesh. Palette #AA604B #69404B #343C3B #418B90 #A4B5A0 #777648, cream only for tiny specular highlights. NO text, NO mascot, NO body limbs, NO blood, NO organs, NO interface widgets, NO checkerboard drawn into the image, NO dark fill in the opening. The surrounding canvas and the entire central hole must have actual alpha transparency. Keep every outer tip inside the image with transparent breathing room."
+    },
+    {
+      "output": "assets/brand/kit/aperture.png",
+      "references": [
+        "assets/brand/kit/material-board.png"
+      ],
+      "transparent": true,
+      "prompt": "Production Brundlefly website artifact, isolated biological aperture on true transparent background. Use the supplied material board for the exact rusty bruised flesh, folded chitin and dark pixel-cluster craft. A small irregular closed bud with three asymmetric concentric fleshy folds and tiny blue-black chitin teeth, several rotten olive mucus strings hanging below. Sparse bristles, cold tiny teal reflection, wet cream highlights. Centered square composition with generous transparent space, no lettering, no interface, no character or limbs, no blood or exposed organs. Limited palette #AA604B #69404B #343C3B #418B90 #A4B5A0 #777648 #E8D4A6. Actual alpha transparency everywhere outside the object."
+    }
+  ]
+}

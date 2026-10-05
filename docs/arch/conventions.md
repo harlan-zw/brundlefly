@@ -23,6 +23,15 @@ It carries its own positioning reference and a short writing checklist.
 It can use an available write-human skill for a prose review, without requiring it.
 Keep readme's positioning reference separate from write-human's instructions and references.
 
+The optional Nuxt website lives in website, outside the installable skill directories.
+It has its own dependency graph and Cloudflare deployment workflow.
+Its browser-local demos illustrate workflow parts rather than executing the full skills.
+Build scripts copy canonical assets and complete skills from the collection.
+
+The website contains a standalone brand-kit Nuxt app under website/apps/brand-kit.
+Both apps extend website/layers/brand. The downloadable layer includes its own public assets.
+The combined static build mounts the kit under /brand-kit/.
+
 glossary and copywriting adapt Harlan Agent Kit's naming and copy workflows.
 Their references, templates, and MIT notices stay inside their own directories.
 They follow the target project's delivery rules without requiring personal worktrees or sibling Skills.

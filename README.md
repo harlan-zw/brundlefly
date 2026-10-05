@@ -192,3 +192,8 @@ Each skill must work when its directory is copied alone.
 ## License
 
 The skill instructions use the [MIT license](LICENSE.md).
+
+## Website
+
+The [Nuxt website](website/README.md) uses canonical artwork and browser-local skill guidance.
+Each skill download includes its required references and license.

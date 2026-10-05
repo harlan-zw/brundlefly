@@ -1,0 +1,6 @@
+{
+  "prompt": "Edit this exact image ONLY to remove the dark studio background and make it fully transparent. Preserve the entire creature head exactly: identical expression, proportions, asymmetrical dark green eyes, forehead wrinkles, reddish flesh colors, long dangling mouth tendrils, crown, fine hairs, lighting and every detail. Do not redraw, redesign, beautify, simplify, reposition or add anything. Keep the same landscape canvas and head framing. Preserve dark eye pixels as fully opaque, only background outside the head becomes alpha transparent. This is an exact cutout asset for texture projection.",
+  "reference": "assets/source/head-frontal-reference.png",
+  "transparent_background": true,
+  "output": "assets/brand/kit/lair/head-projection.png"
+}

@@ -1,0 +1,8 @@
+{
+  "tool": "builtin imagegen",
+  "prompt": "Create a high-resolution 3D sculpt design sheet of ONLY the head of Brundlefly, faithfully translating the supplied canonical mascot into a genuinely volumetric expressive head. Keep recognizable silhouette and exact identity: rusty muscular fly-human face, enormous unequal dark green compound eyes (one much larger), bruised concentric fleshy eye socket rings, tall angular central nose/beak with fleshy hanging mouth appendages, small coarse chitin forehead patches and sparse antenna bristles. Four clean views on one landscape sheet: front neutral, three-quarter neutral, side profile, and front speaking with lower mouth/jaw open. No body or wings, no extra character, no writing, no panel labels. Photoreal game-character sculpt / detailed organic clay render with fine tissue grain, folds, oily creases and translucent membranes, smooth high-resolution surfaces rather than enlarged pixel blocks. Maintain muted rust orange #AA604B, bruise purple #69404B, bone-green #A4B5A0 and dark chitin #343C3B palette. Strong anatomical continuity from the reference; do not make a generic alien, cute creature, symmetrical head, human lips, huge teeth, or new horns. Eyes are fully solid and reflective. Separate physical upper and lower eyelids, brow ridges and soft cheeks capable of expression. Jaw motion opens a recessed mouth below the central beak, fleshy tendrils connected to the mouth. Restrained studio illumination on a plain dark charcoal background. Face fills each view, production modeling reference quality.",
+  "references": [
+    "assets/brand/character.png"
+  ],
+  "transparent_background": false
+}
