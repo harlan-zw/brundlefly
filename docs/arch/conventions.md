@@ -18,6 +18,11 @@ write-human adapts the owner's humanize-writing instructions.
 Its personal skill links are replaced by self-contained source and copy-review rules.
 It preserves the upstream MIT notice in its own directory.
 
+readme owns README structure, positioning, and reader-path checks.
+It carries its own positioning reference and a short writing checklist.
+It can use an available write-human skill for a prose review, without requiring it.
+Keep readme's positioning reference separate from write-human's instructions and references.
+
 The optional Nuxt website lives in website, outside the installable skill directories.
 It has its own dependency graph and Cloudflare deployment workflow.
 Its browser-local demos illustrate workflow parts rather than executing the full skills.

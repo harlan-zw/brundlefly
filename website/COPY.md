@@ -21,7 +21,9 @@ Use the canonical banner. Do not add a slogan or mascot persona.
 | Install text | Copy the complete skill directory into your agent’s supported skills directory. |
 | write-human | Remove generated-sounding writing habits while preserving meaning and voice. |
 | technical-guide | Research, write, verify, or refresh technical guides with working examples. |
-| pr | Prepare, open, or update PRs using the target repository’s rules and contributor conventions. |
+| pull-request-summary | Draft or check PR descriptions against the change and repository conventions |
+| agentify-text | Compress text for agents |
+| readme | Write a README and establish its adoption case |
 
 ## Register
 

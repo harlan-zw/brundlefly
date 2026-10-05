@@ -29,7 +29,9 @@ export const replyToConversation = (input: string): ConversationResult => {
   const skill = skills.find(candidate => {
     if (candidate.name === 'write-human') return /write-human|writing|wording|rewrite/i.test(text)
     if (candidate.name === 'technical-guide') return /technical-guide|guide|tutorial|research/i.test(text)
-    return /\bpr\b|pull request/i.test(text)
+    if (candidate.name === 'pull-request-summary') return /pull-request-summary|\bpr\b|pull request/i.test(text)
+    if (candidate.name === 'agentify-text') return /agentify-text|compress|compression|reduce tokens/i.test(text)
+    return /\breadme\b/i.test(text)
   })
   if (skill) {
     return ok({

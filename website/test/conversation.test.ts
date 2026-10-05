@@ -17,7 +17,7 @@ test('install requests explain copying a complete skill and link to usable downl
 })
 
 test('specific skill questions return factual scope and the matching instructions', () => {
-  for (const name of ['write-human', 'technical-guide', 'pr']) {
+  for (const name of ['write-human', 'technical-guide', 'pull-request-summary', 'agentify-text', 'readme']) {
     const response = replyToConversation(`Tell me about ${name}`)
     assert.equal(response._tag, 'Ok')
     if (response._tag !== 'Ok') continue
