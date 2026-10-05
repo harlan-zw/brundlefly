@@ -1,6 +1,6 @@
 ---
 name: readme
-description: "Create or refresh a repository README with a splash, competitive positioning, features, setup, and relevant guides or API reference. Use when writing a README, explaining why to adopt a package, or aligning its documentation with repository conventions."
+description: "Create or refresh a repository README with a splash, project story, supported positioning, features, setup, and relevant guides or API reference. Use when writing a README, explaining why a project exists or why to adopt it, or aligning its documentation with repository conventions."
 license: MIT
 ---
 
@@ -34,7 +34,7 @@ Use this order by default. Keep existing anchors when they remain useful.
 | Section | Reader need |
 | --- | --- |
 | Splash | Approved banner or logo, project name, and a factual one-line description |
-| Why | Why adopt this package over relevant alternatives, and which unmet problem it addresses |
+| Why | Why the project exists, what prompted it, and why that matters to the reader |
 | Features | Supported capabilities with a useful benefit for each |
 | Setup | Prerequisites, installation, and the smallest working example |
 | Guides | Inline task guidance when dedicated guides do not cover it |
@@ -42,7 +42,11 @@ Use this order by default. Keep existing anchors when they remain useful.
 
 Splash describes the opening block. Do not add a literal Splash heading.
 Name the Why heading after the project, such as "Why Brundlefly".
-Lead Why with the problem that motivates adoption. Put capability lists in Features and usage details in Setup or Guides.
+Treat Why as a chance to tell the project's human story. Follow the owner's requested emphasis.
+Use supplied experience or documented origins to connect a concrete frustration with the decision to build the project.
+When no origin is known, explain the reader's problem without inventing a founder story.
+Competitive positioning can support Why; it does not have to be its opening or organizing structure.
+Put capability lists in Features and usage details in Setup or Guides.
 Keep approved adoption reasons and useful evidence links. Removing filler must not erase their information.
 If the owner requests only the problem, omit implementation detail and feature inventories. Preserve other approved points unless excluded.
 Reuse approved assets and text. If artwork is absent, use a plain title and description.

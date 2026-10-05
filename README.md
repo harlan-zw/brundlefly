@@ -12,15 +12,17 @@
 
 ## Why Brundlefly
 
-AI prose edits can replace your voice with stock phrases or add words where none were needed.
-Text shortened for agents can lose the conditions and exceptions that control what they do.
+You ask an agent to clean up a draft. It comes back smoother, but the phrasing you liked has gone.
+You shorten instructions for another agent. Now the exception that mattered has gone too.
 
-Writing can read well while its examples fail or its instructions conflict with the target project's rules.
+Both edits can look like improvements until you compare them with what you meant.
 
-Brundlefly combines approaches from existing skills to shape writing for people and agents.
-The [writing evaluation](evals/REPORT.md) compares prose edits with
-[Humanizer](https://github.com/blader/humanizer/blob/225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8/SKILL.md)
-and [Stop Slop](https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/SKILL.md).
+write-human grew out of personal instructions for editing prose, called humanize-writing.
+Brundlefly gives those instructions a home outside a personal collection, so you can use them with your own agent.
+The collection brings that concern for meaning to guides, pull request descriptions, READMEs, and agent context.
+A guide needs examples that work. A pull request description needs to fit the repository it is going into.
+
+The point is to let an agent change the writing while keeping hold of what you wanted to say.
 
 ## Features
 
@@ -101,6 +103,9 @@ Keep personal stories in their author's voice.
 For writing comparisons and local demos, read the [writing evaluation](evals/REPORT.md), [pilot instructions](evals/README.md),
 and [review UI setup](evals/ui/README.md).
 The [quality plan](docs/ideas/skill-quality.md) explains comparison scope and human review requirements.
+The writing evaluation compares prose edits with
+[Humanizer](https://github.com/blader/humanizer/blob/225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8/SKILL.md)
+and [Stop Slop](https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/SKILL.md).
 
 ### Brand assets
 
