@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { defaultCameraView, moveCameraView, resolveCameraView, rotateCameraView } from '../layers/brand/shared/camera-view.ts'
+import { defaultCameraView, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, rotateCameraView } from '../layers/brand/shared/camera-view.ts'
 
 test('mouse look permits a full turn and limits pitch before the view flips', () => {
   const view = rotateCameraView(defaultCameraView, Math.PI * 2 / 0.0028, 10000)
@@ -52,4 +52,22 @@ test('zoom and portrait framing retain player travel without orbiting the positi
   assert.equal(desktop.position[2], 10.4 + view.z)
   assert.equal(portrait.position[2], 15.2 / 0.85 + view.z)
   assert.ok(desktop.position[1] >= 0.15 && portrait.position[1] >= 0.15)
+})
+
+test('mobile staging brings the character closer and reduces optical fog without changing desktop staging', () => {
+  const desktop = [0, 0.75, 10.4] as const
+  const portrait = [0, 1.1, 15.2] as const
+  const wide = resolveResponsiveCameraFraming(desktop, portrait, 1440 / 1000)
+  assert.deepEqual(wide, { framing: desktop, fieldOfView: 44, fogScale: 1 })
+  const narrow = resolveResponsiveCameraFraming(desktop, portrait, 375 / 812)
+  const view = { ...defaultCameraView, x: 0.5, z: -0.75 }
+  const camera = resolveCameraView(view, narrow.framing, [0, -0.35, -2.1], 0.9)
+  assert.equal(camera.position[0], view.x)
+  assert.equal(camera.position[2], 8.32 / 0.9 + view.z)
+  assert.equal(narrow.framing[1], desktop[1])
+  assert.ok(narrow.fogScale > 0.8 && narrow.fogScale < 0.9)
+  // Fog transmission at the character grows from near-black to readable tissue.
+  const oldTransmission = Math.exp(-Math.pow(0.075 * (portrait[2] / 0.9 + 0.8), 2))
+  const newTransmission = Math.exp(-Math.pow(0.075 * narrow.fogScale * (narrow.framing[2] / 0.9 + 0.8), 2))
+  assert.ok(newTransmission > oldTransmission * 3)
 })

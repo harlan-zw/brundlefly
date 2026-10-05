@@ -6,6 +6,7 @@ import type { Texture } from 'three'
 import type { Transform } from './organism'
 import { createFaceModel } from './face.ts'
 import type { HeadProjection } from './face.ts'
+import { applyMascotSurface } from './mascot-surface.ts'
 
 type Raster = { width: number, height: number, data: Uint8ClampedArray }
 export type BodyProjection = { texture: Texture, raster: Raster }
@@ -140,7 +141,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     const sx = (x + 0.5) / (width - 1)
     const sy = (y + 0.5) / (height - 1)
     // Replace the raster head with an actual sculpt. Keep shoulder arms and both wing silhouettes.
-    if (headProjection && sy < 0.315 && Math.pow((sx - 0.67) / 0.146, 2) + Math.pow((sy - 0.218) / 0.19, 2) <= 1) continue
+    const neckJoin = sx >= 0.54 && sx <= 0.62 && sy >= 0.14
+    if (headProjection && !neckJoin && sy < 0.315 && Math.pow((sx - 0.67) / 0.146, 2) + Math.pow((sy - 0.218) / 0.19, 2) <= 1) continue
     // Include a cell only when all corners are tissue. Holes remain open, including fingers and wings.
     if (!(mask[a] && mask[a + 1] && mask[a + width] && mask[a + width + 1])) continue
     occupied[y * (width - 1) + x] = 1
@@ -205,6 +207,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   const wingMaterial = new MeshPhysicalMaterial({ map: artwork, bumpMap: heightMap ?? null, bumpScale: 0.003,
     side: DoubleSide, alphaTest: 0.18, roughness: 0.38, metalness: 0, transmission: 0.22, thickness: 0.018,
     ior: 1.36, clearcoat: 0.45, clearcoatRoughness: 0.27, attenuationColor: '#a4b5a0', attenuationDistance: 0.28 })
+  const bodySurfaces = bodyProjection ? [applyMascotSurface(front, 'skin'), applyMascotSurface(sides, 'skin'), applyMascotSurface(wingMaterial, 'wing')] : []
   const bones = joints.map(joint => { const bone = new Bone(); bone.name = joint.name; return bone })
   joints.forEach((joint, index) => {
     const bone = bones[index]!
@@ -225,10 +228,14 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   root.add(mesh)
   const joint = (name: string) => bones[joints.findIndex(value => value.name === name)]!
   const face = createFaceModel(faceTexture, headProjection)
-  face.root.position.copy(point(0.665, 0.238, 0.045).sub(point(0.57, 0.22)))
+  face.root.position.copy(point(0.643, 0.238, 0.015).sub(point(0.57, 0.22)))
   joint('head').add(face.root)
   root.updateMatrixWorld(true)
   skeleton.update()
+  function updateMaterials(time: number) {
+    bodySurfaces.forEach(surface => surface.update(time))
+    face.updateMaterials(time)
+  }
   function update(input: { time: number, pressure: number, pointer: Vector2, transform: Transform, walking?: boolean, walkPhase?: number, speaking?: number, blink?: number, brow?: number, squint?: number }) {
       const { time, pressure, pointer, transform, walking = false, walkPhase = time * 3.6 } = input
       const speaking = Math.min(1, Math.max(0, input.speaking ?? 0))
@@ -278,6 +285,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       root.position.y = pulse * 0.012 + (walking ? Math.abs(Math.sin(walkPhase)) * 0.035 : 0)
       root.scale.y = transform === 'squeeze' ? 1 - pressure * 0.04 : 1
       face.update({ time, speaking, blink, brow: input.brow, squint: input.squint })
+      updateMaterials(time)
       root.updateMatrixWorld(true)
       skeleton.update()
     }
@@ -311,7 +319,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   }
   return {
     root, mesh, skeleton, update,
-    updateMaterials(time: number) { face.updateMaterials(time) },
+    updateMaterials,
     idleAnimation() {
       return bakeAnimation('Brundlefly-idle', 4.8, time => ({ time, pressure: 0, pointer: new Vector2(), transform: 'squeeze' }))
     },
@@ -329,6 +337,6 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
         blink: Math.max(0, 1 - Math.abs(time - 2.45) / 0.12),
       }))
     },
-    dispose() { face.dispose(); geometry.dispose(); front.dispose(); sides.dispose(); wingMaterial.dispose(); heightMap?.dispose(); skeleton.dispose() },
+    dispose() { bodySurfaces.forEach(surface => surface.dispose()); face.dispose(); geometry.dispose(); front.dispose(); sides.dispose(); wingMaterial.dispose(); heightMap?.dispose(); skeleton.dispose() },
   }
 }

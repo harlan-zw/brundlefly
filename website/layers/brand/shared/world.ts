@@ -12,7 +12,7 @@ import { createTissueMaterial } from './tissue-material'
 import { sceneLayout } from './scene-layout'
 import type { SceneSettings } from './scene-settings'
 
-export type WorldTextures = { chitin: Texture, floor: Texture, egg: Texture }
+export type WorldTextures = { chitin: Texture, floor: Texture, egg: Texture, room: Texture }
 export type WorldInput = { time: number, pressure: number, settings: SceneSettings }
 
 const groundLevel = -2.2
@@ -57,7 +57,7 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
     enclosureUvs.setXY(index, enclosureUvs.getX(index) * 4, enclosureUvs.getY(index) * 3)
   }
   enclosureGeometry.computeVertexNormals()
-  const enclosureSkin = createTissueMaterial({ surface: 'enclosure', texture, color: '#69404B',
+  const enclosureSkin = createTissueMaterial({ surface: 'enclosure', texture: textures.room, color: '#A09280',
     bumpScale: 0.14, emissive: '#69404B', glow: 0.28, roughness: 0.84 })
   const enclosure = new Mesh(enclosureGeometry, enclosureSkin.material)
   enclosure.position.set(0, groundLevel + 4, 5)

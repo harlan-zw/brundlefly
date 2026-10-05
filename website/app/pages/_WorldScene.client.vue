@@ -4,14 +4,14 @@ import { useDocumentVisibility, useElementSize, useEventListener, usePreferredRe
 import { useRoute } from '#app'
 import {
   ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
-  PerspectiveCamera, PlaneGeometry, Raycaster, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
+  PerspectiveCamera, PlaneGeometry, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
-import { defaultCameraView, moveCameraView, resolveCameraView, rotateCameraView } from '@brundlefly/brand/shared/camera-view'
+import { defaultCameraView, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, rotateCameraView } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import SceneControls from './_SceneControls.vue'
@@ -32,7 +32,8 @@ const settings = ref({ ...defaultSceneSettings })
 watch(() => [settings.value.masterVolume, settings.value.ambienceVolume, settings.value.voiceVolume] as const, ([master, ambience, voice]) => {
   emit('mix', { master, ambience, voice })
 }, { immediate: true })
-const animate = computed(() => !paused && !settings.value.motionOff && reduced.value !== 'reduce' && visibility.value === 'visible')
+const environmentMotion = computed(() => !settings.value.motionOff && reduced.value !== 'reduce' && visibility.value === 'visible')
+const animate = computed(() => !paused && environmentMotion.value)
 const hovered = ref(false)
 const pointer = new Vector2()
 let alive = true
@@ -132,10 +133,11 @@ watch(canvas, async (element) => {
     new TextureLoader().loadAsync('/brand/kit/lair/face-skin-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/head-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
+    new TextureLoader().loadAsync('/brand/kit/lair/room-diffuse.webp'),
   ])
-  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult] = results
+  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult, roomResult] = results
   if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
-    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected') {
+    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || roomResult.status === 'rejected') {
     for (const result of results) {
       if (result.status === 'fulfilled') result.value.dispose()
       else console.error('Brundlefly world artwork failed to load.', result.reason)
@@ -143,10 +145,10 @@ watch(canvas, async (element) => {
     status.value = { _tag: 'Fallback', reason: 'art' }
     return
   }
-  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture] = [
-    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value,
+  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture] = [
+    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value, roomResult.value,
   ]
-  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture]
+  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture]
   if (!alive) { loadedTextures.forEach(value => value.dispose()); return }
   loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
   for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture]) {
@@ -154,6 +156,8 @@ watch(canvas, async (element) => {
   }
   chitinTexture.repeat.set(2, 2)
   floorTexture.repeat.set(5, 8)
+  roomTexture.wrapS = roomTexture.wrapT = RepeatWrapping
+  roomTexture.magFilter = LinearFilter
   mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.wrapS = projectionTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.magFilter = LinearFilter
@@ -181,7 +185,7 @@ watch(canvas, async (element) => {
   const mascot = createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
     spriteMascot ? undefined : { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) },
     spriteMascot ? undefined : { texture: bodyProjectionTexture, raster: bodyProjectionPainter.getImageData(0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height) })
-  const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture })
+  const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture, room: roomTexture })
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05
@@ -233,10 +237,10 @@ watch(canvas, async (element) => {
     || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001)
   function render(delta: number) {
     renderer.toneMappingExposure = settings.value.exposure
-    fog.density = settings.value.fog
-    const portrait = renderWidth / renderHeight < 0.8
-    const framing = portrait ? sceneLayout.camera.portrait : sceneLayout.camera.desktop
-    const fieldOfView = portrait ? 50 : 44
+    const aspect = renderWidth / renderHeight
+    const portrait = aspect < 0.8
+    const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(sceneLayout.camera.desktop, sceneLayout.camera.portrait, aspect)
+    fog.density = settings.value.fog * fogScale
     if (camera.fov !== fieldOfView) { camera.fov = fieldOfView; camera.updateProjectionMatrix() }
     if (!paused) cameraView = moveCameraView(cameraView, cameraKeys, delta)
     const view = resolveCameraView(cameraView, framing, sceneLayout.camera.target, settings.value.zoom)
@@ -267,8 +271,8 @@ watch(canvas, async (element) => {
         phase += step * 10
         walking = true
       }
-      elapsed += delta
     }
+    if (environmentMotion.value) elapsed += delta
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     if (faceMotion) faceElapsed += delta

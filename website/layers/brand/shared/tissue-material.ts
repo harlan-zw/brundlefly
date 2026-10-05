@@ -10,6 +10,7 @@ uniform float uTissueFlow;
 uniform float uTissueBreath;
 uniform float uTissueFloor;
 varying vec3 vTissueWorld;
+varying vec3 vTissueNormal;
 vec2 tissueCoordinates(vec2 uv) {
   float phase = uTissueFlow * 0.18;
   vec2 current = vec2(
@@ -18,6 +19,14 @@ vec2 tissueCoordinates(vec2 uv) {
   float breath = sin(uTissueBreath * 0.46 + vTissueWorld.x * 0.36 + vTissueWorld.z * 0.24);
   // Regional drift keeps the surrounding skin alive without scrolling the entire room texture.
   return uv + current * mix(0.03, 0.018, uTissueFloor) + current.yx * breath * 0.004;
+}
+vec4 roomTexture(sampler2D surfaceMap, vec3 world) {
+  vec3 weights = pow(abs(normalize(vTissueNormal)), vec3(4.0));
+  weights /= max(weights.x + weights.y + weights.z, 0.00001);
+  // One repeat covers three world units on every wall and rounded corner.
+  return texture2D(surfaceMap, tissueCoordinates(world.yz / 3.0)) * weights.x
+    + texture2D(surfaceMap, tissueCoordinates(world.xz / 3.0)) * weights.y
+    + texture2D(surfaceMap, tissueCoordinates(world.xy / 3.0)) * weights.z;
 }
 `
 
@@ -29,6 +38,7 @@ export function createTissueMaterial(options: SurfaceOptions) {
   const material = new MeshStandardMaterial({ color: options.color, map: options.texture,
     bumpMap: heightTexture, bumpScale: options.bumpScale, roughness: options.roughness, metalness: 0 })
   if (options.surface === 'enclosure') {
+    material.roughnessMap = heightTexture
     material.side = BackSide
     material.emissive.set(options.emissive)
     material.emissiveMap = options.texture
@@ -38,7 +48,7 @@ export function createTissueMaterial(options: SurfaceOptions) {
     uTissueFloor: { value: options.surface === 'floor' ? 1 : 0 } }
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms)
-    shader.vertexShader = 'uniform float uTissueBreath;\nuniform float uTissueFloor;\nvarying vec3 vTissueWorld;\n' + shader.vertexShader
+    shader.vertexShader = 'uniform float uTissueBreath;\nuniform float uTissueFloor;\nvarying vec3 vTissueWorld;\nvarying vec3 vTissueNormal;\n' + shader.vertexShader
     shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
 vec3 tissueWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;
 vec3 tissueViewNormal = normalize(transformedNormal);
@@ -54,15 +64,39 @@ transformed += vec3(
   dot(tissueOffset, modelMatrix[1].xyz) / max(dot(modelMatrix[1].xyz, modelMatrix[1].xyz), 0.000001),
   dot(tissueOffset, modelMatrix[2].xyz) / max(dot(modelMatrix[2].xyz, modelMatrix[2].xyz), 0.000001));
 vTissueWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`)
+    shader.vertexShader = shader.vertexShader.replace('vTissueWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+      'vTissueWorld = (modelMatrix * vec4(transformed, 1.0)).xyz; vTissueNormal = tissueNormal;')
     shader.fragmentShader = coordinates + shader.fragmentShader
-    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>',
+    if (options.surface === 'enclosure') {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>',
+        ShaderChunk.map_fragment.replace('texture2D( map, vMapUv )', 'roomTexture(map, vTissueWorld)'))
+      shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
+        ShaderChunk.emissivemap_fragment.replace('texture2D( emissiveMap, vEmissiveMapUv )', 'roomTexture(emissiveMap, vTissueWorld)'))
+      shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>',
+        ShaderChunk.roughnessmap_fragment.replace('texture2D( roughnessMap, vRoughnessMapUv )', 'roomTexture(roughnessMap, vTissueWorld)')
+          .replace('roughnessFactor *= texelRoughness.g;', 'roughnessFactor *= mix(0.72, 1.0, texelRoughness.g);'))
+      shader.fragmentShader = shader.fragmentShader.replace('#include <bumpmap_pars_fragment>', `
+#ifdef USE_BUMPMAP
+uniform sampler2D bumpMap;
+uniform float bumpScale;
+vec2 dHdxy_fwd() {
+  float height = roomTexture(bumpMap, vTissueWorld).x;
+  return bumpScale * vec2(
+    roomTexture(bumpMap, vTissueWorld + dFdx(vTissueWorld)).x - height,
+    roomTexture(bumpMap, vTissueWorld + dFdy(vTissueWorld)).x - height);
+}
+${ShaderChunk.bumpmap_pars_fragment.slice(ShaderChunk.bumpmap_pars_fragment.indexOf('vec3 perturbNormalArb'))}`)
+    }
+    else {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>',
       ShaderChunk.map_fragment.replaceAll('vMapUv', 'tissueCoordinates(vMapUv)'))
     shader.fragmentShader = shader.fragmentShader.replace('#include <bumpmap_pars_fragment>',
       ShaderChunk.bumpmap_pars_fragment.replaceAll('vBumpMapUv', 'tissueCoordinates(vBumpMapUv)'))
     shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
       ShaderChunk.emissivemap_fragment.replaceAll('vEmissiveMapUv', 'tissueCoordinates(vEmissiveMapUv)'))
+    }
   }
-  material.customProgramCacheKey = () => `brundlefly-tissue-${options.surface}-v1`
+  material.customProgramCacheKey = () => `brundlefly-tissue-${options.surface}-v2`
   material.addEventListener('dispose', () => heightTexture.dispose())
   let previousTime: number | undefined
   return {

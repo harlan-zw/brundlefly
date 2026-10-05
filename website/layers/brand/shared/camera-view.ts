@@ -33,3 +33,16 @@ export const resolveCameraView = (view: CameraView, framing: readonly [number, n
       position[2] - Math.cos(view.yaw) * radius * Math.cos(elevation)] as const,
   }
 }
+
+/** Keep narrow screens inside the lair instead of adding distant empty floor. */
+export const resolveResponsiveCameraFraming = (desktop: readonly [number, number, number], portrait: readonly [number, number, number], aspect: number) => {
+  if (aspect >= 0.8) return { framing: desktop, fieldOfView: 44, fogScale: 1 }
+  const depthScale = clamp(aspect / 0.8, 0.8, 1)
+  const fieldOfView = 50
+  return {
+    framing: [portrait[0], desktop[1], Math.min(portrait[2], desktop[2] * depthScale)] as const,
+    fieldOfView,
+    // A wider vertical view reveals more surrounding tissue. Match its optical fog depth.
+    fogScale: Math.tan(44 * Math.PI / 360) / Math.tan(fieldOfView * Math.PI / 360),
+  }
+}
