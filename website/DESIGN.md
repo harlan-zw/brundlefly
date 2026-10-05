@@ -91,7 +91,7 @@ Kit controls use 14px text and at least 44px targets.
 ## Accessibility and motion
 
 The mascot has a named keyboard target. Enter or Space opens the same dialog as a pointer click.
-Hover slows walking and changes the cursor. Pointer position does not rotate the relief or distort his face.
+Hover stops walking, tilts his head toward the visitor, and changes the cursor. Pointer position does not rotate the relief or distort his face.
 Keep visible cream focus outlines. Do not place artwork over text, inputs, or focus outlines.
 System reduced motion stops walking and idle deformation. Manual camera movement remains available.
 Pause scene animation while the dialog is open or the document is hidden.

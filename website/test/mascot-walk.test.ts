@@ -3,7 +3,7 @@ import test from 'node:test'
 import { AnimationMixer, Texture, Vector2, Vector3 } from 'three'
 import { createMascotModel } from '../layers/brand/shared/mascot.ts'
 
-test('walking alternates weighted feet and stopping restores the standing pose', () => {
+test('walking alternates weighted feet, blends through partial strides, and stopping restores the standing pose', () => {
   const width = 80
   const height = 80
   const texture = new Texture()
@@ -12,18 +12,23 @@ test('walking alternates weighted feet and stopping restores the standing pose',
     const vertex = Math.round(y! * (height - 1)) * width + Math.round(x! * (width - 1))
     return { vertex, rest: new Vector3().fromBufferAttribute(model.mesh.geometry.getAttribute('position'), vertex) }
   })
-  const pose = (walking: boolean, walkPhase: number) => {
-    model.update({ time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', walking, walkPhase })
+  const pose = (gait: number, walkPhase: number) => {
+    model.update({ time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait, walkPhase })
     return feet.map(({ vertex, rest }) => model.mesh.applyBoneTransform(vertex, rest.clone()))
   }
-  const standing = pose(false, 0)
-  const firstStep = pose(true, Math.PI / 2)
-  const secondStep = pose(true, Math.PI * 1.5)
+  const standing = pose(0, 0)
+  const firstStep = pose(1, Math.PI / 2)
+  const secondStep = pose(1, Math.PI * 1.5)
   assert.ok(firstStep[0]!.distanceTo(secondStep[0]!) > 0.08, 'The left foot must visibly stride.')
   assert.ok(firstStep[1]!.distanceTo(secondStep[1]!) > 0.08, 'The right foot must visibly stride.')
   const travel = firstStep.map((foot, index) => foot.z - secondStep[index]!.z)
   assert.ok(travel[0]! * travel[1]! < 0, 'Feet must travel in opposite directions.')
-  const stopped = pose(false, Math.PI / 2)
+  const halfStep = pose(0.5, Math.PI / 2)
+  halfStep.forEach((foot, index) => {
+    const full = firstStep[index]!.distanceTo(standing[index]!), half = foot.distanceTo(standing[index]!)
+    assert.ok(half > full * 0.2 && half < full * 0.8, 'A half gait must land between standing and the full stride.')
+  })
+  const stopped = pose(0, Math.PI / 2)
   stopped.forEach((foot, index) => assert.ok(foot.distanceTo(standing[index]!) < 0.000001, 'Stopping must clear the walking pose.'))
   model.dispose()
   texture.dispose()

@@ -127,6 +127,8 @@ The brand kit remains a separate /brand-kit/ route with its composition and mate
 ## Motion and interaction
 
 Brundlefly walks slowly within the foreground and pauses between movements.
+He slows into each walk point and stands for its listed pause. Before he walks on, his head turns toward the next point.
+His stride blends in and out, so stopping never snaps his legs to the standing pose.
 The world breathes through small tissue and tendon changes. Keep the mascot silhouette readable.
 Opening the conversation pauses the walk. System reduced motion freezes the walk and ambient deformation.
 The mascot remains clickable and keyboard accessible when motion stops.
@@ -294,6 +296,7 @@ A distance field supplies rounded depth. Generated artwork uses its alpha silhou
 The rig has weighted body joints, nine face hinges, and blended skin weights. It preserves four arms, two legs, and two unequal wings.
 The head follows the pointer. Pressure moves elbows and hands. Unfurl opens the wings.
 Idle motion breathes through the chest and shifts the knees and wings.
+Blinks, short wing buzzes, and small-hand rubbing follow irregular schedules instead of a fixed beat.
 The exported GLB includes skinned meshes, mapped textures, skeletons, and idle, walk, and speaking clips.
 The body remains a volumetric relief with weighted limbs and thin articulated wings. The head projects reference artwork onto skull depth.
 The mapped outline connects the head's front, sides, and back. Side thickness tapers around bristles and mouthparts.
