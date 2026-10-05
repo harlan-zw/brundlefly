@@ -68,6 +68,7 @@ Clicking Brundlefly opens a native dialog. The dialog pauses walking and sits ov
 Use canonical local replies about the collection, skills, installation, and brand kit.
 State that replies are local. User text stays in the browser.
 Keep the dialog compact and readable. Separate visitor text and replies in reading order.
+Frame his face above the dialog, so his mouth stays visible while he speaks.
 Use native text input, submit, close, and Escape behavior. Return focus to the mascot after closing.
 The dialog does not run skills or simulate remote agent execution.
 
@@ -91,7 +92,7 @@ Kit controls use 14px text and at least 44px targets.
 ## Accessibility and motion
 
 The mascot has a named keyboard target. Enter or Space opens the same dialog as a pointer click.
-Hover slows walking and changes the cursor. Pointer position does not rotate the relief or distort his face.
+Hover stops walking, tilts his head toward the visitor, and changes the cursor. Pointer position does not rotate the relief or distort his face.
 Keep visible cream focus outlines. Do not place artwork over text, inputs, or focus outlines.
 System reduced motion stops walking and idle deformation. Manual camera movement remains available.
 Pause scene animation while the dialog is open or the document is hidden.

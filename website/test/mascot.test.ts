@@ -274,8 +274,9 @@ test('actual mapped neck stays solid beneath the face while walking and speaking
   const texture = new Texture()
   const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster},
     {texture, raster: imageRaster('../../assets/brand/kit/lair/body-projection.png')})
-  for (const [walking, speaking] of [[false, 0], [true, 0], [false, 1]] as const) {
-    model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', walking, walkPhase: Math.PI / 2, speaking, blink: 0})
+  // Head turns cover the widest gaze the walk behaviour asks for.
+  for (const [walking, speaking, yaw, tilt] of [[false, 0, 0, 0], [true, 0, 0, 0], [false, 1, 0, 0], [false, 0, 0.12, 0.07], [false, 0, -0.12, 0.07]] as const) {
+    model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: walking ? 1 : 0, walkPhase: Math.PI / 2, gaze: {yaw, tilt}, speaking, blink: 0})
     const origin = new Vector3((0.61 - 0.5) * 2.3, (0.5 - 0.23) * 2.6, 2)
     assert.ok(new Raycaster(origin, new Vector3(0, 0, -1)).intersectObject(model.mesh, false).length,
       'The real mapped neck join must remain solid in quiet, walking, and speaking poses.')
@@ -297,8 +298,9 @@ test('the mapped upper neck attachment covers the full diagonal join', () => {
   const texture = new Texture()
   const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster},
     {texture, raster: imageRaster('../../assets/brand/kit/lair/body-projection.png')})
-  for (const [walking, speaking] of [[false, 0], [true, 0], [false, 1]] as const) {
-    model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', walking, walkPhase: Math.PI / 2, speaking, blink: 0})
+  // Head turns cover the widest gaze the walk behaviour asks for.
+  for (const [walking, speaking, yaw, tilt] of [[false, 0, 0, 0], [true, 0, 0, 0], [false, 1, 0, 0], [false, 0, 0.12, 0.07], [false, 0, -0.12, 0.07]] as const) {
+    model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: walking ? 1 : 0, walkPhase: Math.PI / 2, gaze: {yaw, tilt}, speaking, blink: 0})
     for (let y = 0.90; y <= 1.08; y += 0.01) for (const offset of [0, 0.004, 0.008]) {
       const x = 0.10 + (y - 0.90) * 0.55 + offset
       const ray = new Raycaster(new Vector3(x, y, 2), new Vector3(0, 0, -1))
@@ -314,8 +316,8 @@ test('mapped right shoulder and wing roots retain the attachment tissue beside t
   const bodyRaster = imageRaster('../../assets/brand/kit/lair/body-projection.png')
   const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster}, {texture, raster: bodyRaster})
   const reference = createMascotModel(texture, canonicalRaster(), undefined, undefined, {texture, raster: bodyRaster})
-  for (const [walking, speaking, pressure] of [[false, 0, 0], [true, 0, 0], [false, 1, 0], [false, 0, 1]] as const) {
-    const pose = {time: 0, pressure, pointer: new Vector2(), transform: 'unfurl' as const, walking, walkPhase: Math.PI / 2, speaking, blink: 0}
+  for (const [walking, speaking, pressure, yaw, tilt] of [[false, 0, 0, 0, 0], [true, 0, 0, 0, 0], [false, 1, 0, 0, 0], [false, 0, 1, 0, 0], [false, 0, 0, 0.12, 0.07], [false, 0, 0, -0.12, 0.07]] as const) {
+    const pose = {time: 0, pressure, pointer: new Vector2(), transform: 'unfurl' as const, gait: walking ? 1 : 0, walkPhase: Math.PI / 2, gaze: {yaw, tilt}, speaking, blink: 0}
     model.update(pose); reference.update(pose)
   for (const [x, y] of [[0.792, 0.218], [0.792, 0.24], [0.784, 0.26], [0.778, 0.278], [0.77, 0.292], [0.76, 0.307]]) {
     const ray = new Raycaster(new Vector3((x! - 0.5) * 2.3, (0.5 - y!) * 2.6, 2), new Vector3(0, 0, -1))

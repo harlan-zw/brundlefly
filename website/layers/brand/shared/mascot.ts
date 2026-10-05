@@ -39,6 +39,20 @@ const bodyJoints: Joint[] = [
   { name: 'right-wing-tip', parent: 'right-wing', start: [0.83, 0.22], end: [0.94, 0.25] },
 ]
 const joints = bodyJoints
+// Irregular schedules keep idle habits from ticking like a metronome. Offsets repeat every cycle.
+const blinkSchedule = { cycle: 26.5, offsets: [1.8, 5.9, 6.25, 9.4, 14.6, 17.2, 22.8], halfWidth: 0.12 }
+const buzzSchedule = { cycle: 31, offsets: [7.4, 21.1], halfWidth: 0.32 }
+const rubSchedule = { cycle: 33, offsets: [11.5, 27], halfWidth: 0.95 }
+function scheduled(time: number, { cycle, offsets, halfWidth }: { cycle: number, offsets: readonly number[], halfWidth: number }) {
+  const local = (time % cycle + cycle) % cycle
+  let nearest = Infinity
+  for (const offset of offsets) {
+    const gap = Math.abs(local - offset)
+    nearest = Math.min(nearest, gap, cycle - gap)
+  }
+  return Math.max(0, 1 - nearest / halfWidth)
+}
+const ease = (value: number) => value * value * (3 - 2 * value)
 const point = (x: number, y: number, z = 0) => new Vector3((x - 0.5) * 2.3, (0.5 - y) * 2.6, z)
 function segmentDistance(x: number, y: number, joint: Joint) {
   const [a, b] = joint.start
@@ -249,20 +263,26 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     bodySurfaces.forEach(surface => surface.update(time))
     face.updateMaterials(time)
   }
-  function update(input: { time: number, pressure: number, pointer: Vector2, transform: Transform, walking?: boolean, walkPhase?: number, speaking?: number, blink?: number, brow?: number, squint?: number }) {
-      const { time, pressure, pointer, transform, walking = false, walkPhase = time * 3.6 } = input
+  /** `gait` blends the walk cycle from standing (0) to a full stride (1). `gaze` turns only the head. */
+  function update(input: { time: number, pressure: number, pointer: Vector2, transform: Transform, gait?: number, walkPhase?: number, gaze?: { yaw: number, tilt: number }, speaking?: number, blink?: number, brow?: number, squint?: number }) {
+      const { time, pressure, pointer, transform, walkPhase = time * 3.6 } = input
+      const gait = Math.min(1, Math.max(0, input.gait ?? 0))
       const speaking = Math.min(1, Math.max(0, input.speaking ?? 0))
-      const blinkPhase = ((time + 2.7) % 4.8 + 4.8) % 4.8
-      const blink = Math.min(1, Math.max(0, input.blink ?? Math.max(0, 1 - Math.abs(blinkPhase - 4.5) / 0.12)))
+      const blink = Math.min(1, Math.max(0, input.blink ?? scheduled(time, blinkSchedule)))
       const pulse = Math.sin(time * 1.4)
-      const stride = walking ? Math.sin(walkPhase) : 0
-      const leftLift = walking ? Math.max(0, Math.cos(walkPhase)) : 0
-      const rightLift = walking ? Math.max(0, -Math.cos(walkPhase)) : 0
+      const stride = gait * Math.sin(walkPhase)
+      const leftLift = gait * Math.max(0, Math.cos(walkPhase))
+      const rightLift = gait * Math.max(0, -Math.cos(walkPhase))
+      const still = 1 - gait
+      const buzz = ease(scheduled(time, buzzSchedule))
+      const rub = ease(scheduled(time, rubSchedule)) * still
       // Small rotations preserve the canonical relief while depth travel gives each foot a real stride.
       joint('pelvis').rotation.set(0, stride * 0.035, stride * 0.016)
-      joint('chest').rotation.x = pulse * 0.025 + pressure * 0.035
+      // He hunches into the walk and lifts his chest a little while he speaks.
+      joint('chest').rotation.x = pulse * 0.025 + pressure * 0.035 + gait * 0.04 - speaking * 0.015
       joint('chest').rotation.z = -stride * 0.025
-      joint('head').rotation.set(-pointer.y * 0.08, pointer.x * 0.14, pulse * 0.015)
+      joint('head').rotation.set(-pointer.y * 0.08 - speaking * 0.03 + Math.sin(time * 0.53) * 0.012 * still,
+        pointer.x * 0.14 + (input.gaze?.yaw ?? 0), pulse * 0.015 + (input.gaze?.tilt ?? 0))
       joint('left-shoulder').rotation.z = -pressure * 0.09 + pulse * 0.02
       joint('right-shoulder').rotation.z = pressure * 0.09 - pulse * 0.02
       joint('left-shoulder').rotation.x = -stride * 0.15
@@ -275,15 +295,22 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       joint('right-rib').rotation.x = -stride * 0.11
       joint('left-rib').rotation.z = stride * 0.028
       joint('right-rib').rotation.z = -stride * 0.028
-      joint('left-small-elbow').rotation.z = -pressure * 0.13
-      joint('right-small-elbow').rotation.z = pressure * 0.13
+      // Fly habit: the small inner arms rub their hands together during some idle moments.
+      const scrub = Math.sin(time * 11) * rub
+      joint('left-small-elbow').rotation.z = -pressure * 0.13 - rub * 0.1 + scrub * 0.1
+      joint('right-small-elbow').rotation.z = pressure * 0.13 + rub * 0.1 + scrub * 0.1
       joint('left-small-elbow').rotation.x = -stride * 0.075
       joint('right-small-elbow').rotation.x = stride * 0.075
       joint('left-hand').rotation.y = pressure * 0.18
       joint('right-hand').rotation.y = -pressure * 0.18
+      // Claws flex slowly while he stands, out of step with each other.
+      joint('left-hand').rotation.z = Math.sin(time * 0.81) * 0.045 * still
+      joint('right-hand').rotation.z = Math.sin(time * 0.67 + 2.1) * 0.04 * still
       const spread = transform === 'unfurl' ? pressure * 0.6 : pressure * 0.1
-      joint('left-wing').rotation.y = -spread + Math.sin(time * 2.2) * 0.035 + stride * 0.035
-      joint('right-wing').rotation.y = spread - Math.sin(time * 2.2 + 1) * 0.025 - stride * 0.018
+      // Wings idle with a slow drift and an occasional short buzz.
+      const flutter = Math.sin(time * 71) * buzz
+      joint('left-wing').rotation.y = -spread + Math.sin(time * 2.2) * 0.035 + stride * 0.035 + flutter * 0.11
+      joint('right-wing').rotation.y = spread - Math.sin(time * 2.2 + 1) * 0.025 - stride * 0.018 - flutter * 0.07
       joint('left-wing').rotation.z = leftLift * 0.018
       joint('right-wing').rotation.z = -rightLift * 0.012
       joint('left-wing-tip').rotation.set(Math.sin(time * 3.1 + 0.7) * 0.032 + leftLift * 0.04, -spread * 0.38, 0)
@@ -295,7 +322,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       joint('left-foot').rotation.set(leftLift * 0.11 - stride * 0.06, 0, -leftLift * 0.04)
       joint('right-foot').rotation.set(rightLift * 0.11 + stride * 0.06, 0, rightLift * 0.04)
       root.rotation.y = pointer.x * 0.16 + (transform === 'twist' ? pressure * 0.22 : 0)
-      root.position.y = pulse * 0.012 + (walking ? Math.abs(Math.sin(walkPhase)) * 0.035 : 0)
+      // The body rises as the legs pass each other and settles as each foot lands.
+      root.position.y = pulse * 0.012 + gait * Math.abs(Math.cos(walkPhase)) * 0.03
       root.scale.y = transform === 'squeeze' ? 1 - pressure * 0.04 : 1
       face.update({ time, speaking, blink, brow: input.brow, squint: input.squint })
       updateMaterials(time)
@@ -339,7 +367,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     walkAnimation() {
       const duration = 1.75
       return bakeAnimation('Brundlefly-walk', duration, time => ({
-        time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', walking: true,
+        time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: 1,
         walkPhase: time / duration * Math.PI * 2,
       }))
     },

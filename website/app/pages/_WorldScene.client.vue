@@ -9,6 +9,7 @@ import {
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
+import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
@@ -232,15 +233,12 @@ watch(canvas, async (element) => {
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
   const raycaster = new Raycaster()
   hit = position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
-  const route = sceneLayout.walk.map(([x, z]) => new Vector3(x, floorY, z))
-  let destination = 0
+  let stroll = startStroll(sceneLayout.mascot, 0)
   let elapsed = 0
   let faceElapsed = 0
   let lastReaction = reaction
   let reactionStarted = 0
   const reactionWing = mascot.root.getObjectByName('left-wing')
-  let phase = 0
-  let speed = 0
   let lastTime = 0
   let looping = false
   let renderWidth = 0
@@ -271,32 +269,23 @@ watch(canvas, async (element) => {
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
     focusTarget.copy(figure.localToWorld(new Vector3(0.23, 0.8, 0)))
     focusPosition.copy(focusTarget).add(new Vector3(0, 0.15, portrait ? 3.8 : 4.1))
-    focusTarget.y -= portrait ? 0.55 : 0.35
+    // Frame his face above the dialog, so his mouth stays visible while he speaks.
+    focusTarget.y -= portrait ? 0.85 : 0.6
     camera.position.copy(basePosition).lerp(focusPosition, blend)
     camera.lookAt(baseTarget.lerp(focusTarget, blend))
     camera.updateMatrixWorld()
-    let walking = false
-    if (animate.value) {
-      const target = hovered.value ? 0 : settings.value.walkSpeed
-      speed += (target - speed) * Math.min(1, delta * 6)
-      const direction = route[destination]!.clone().sub(figure.position)
-      direction.y = 0
-      const remaining = direction.length()
-      const step = Math.min(remaining, speed * delta)
-      if (remaining < 0.04) destination = (destination + 1) % route.length
-      else if (step > 0.001) {
-        figure.position.addScaledVector(direction.normalize(), step)
-        figure.rotation.y += (direction.x * 0.2 - figure.rotation.y) * Math.min(1, delta * 3)
-        phase += step * 10
-        walking = true
-      }
-    }
+    const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
+    // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
+    if (faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route: sceneLayout.walk,
+      pauses: sceneLayout.walkPauses, walkSpeed: settings.value.walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free' })
+    const pose = faceMotion ? strollPose(stroll, settings.value.walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
+    figure.position.set(stroll.position[0], floorY, stroll.position[1])
+    figure.rotation.y = stroll.heading
     if (environmentMotion.value) elapsed += delta
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
-    const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
-    mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', walking, walkPhase: phase,
+    mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose,
       speaking: faceMotion ? speaking : 0,
       brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
         : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
