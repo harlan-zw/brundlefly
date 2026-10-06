@@ -121,7 +121,47 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   const skinWeights: number[] = []
   const indices: number[] = []
   const wingIndices: number[] = []
-  const isWing = (x: number, y: number) => (y < 0.205 && x < 0.48) || (x > 0.79 && y > 0.17 && y < 0.29)
+  // Each box holds one wing and some back tissue. Colour decides which is which, so the hump keeps skin and relief.
+  const wingBox = (x: number, y: number) => (y < 0.205 && x < 0.48) || (x > 0.79 && y > 0.17 && y < 0.29)
+  const wing = new Uint8Array(count)
+  if (bodyProjection) {
+    // Membrane is pale and nearly neutral. Back tissue is warm or dark.
+    const membrane = new Uint8Array(count)
+    for (let i = 0; i < count; i++) {
+      if (!mask[i]) continue
+      const sample = projectionSample(i % width, Math.floor(i / width))
+      const [r, g, b] = [bodyProjection.raster.data[sample]!, bodyProjection.raster.data[sample + 1]!, bodyProjection.raster.data[sample + 2]!]
+      const max = Math.max(r, g, b)
+      membrane[i] = Number(max > 110 && (r - b) / max < 0.28)
+    }
+    // Dark veins fail the colour test, so a neighbourhood vote keeps them inside the membrane.
+    const core = new Uint8Array(count)
+    const body: number[] = []
+    const reached = new Uint8Array(count)
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      if (!mask[i]) continue
+      if (!wingBox(x / (width - 1), y / (height - 1))) { reached[i] = 1; body.push(i); continue }
+      let votes = 0, opaque = 0
+      for (let py = Math.max(0, y - 2); py <= Math.min(height - 1, y + 2); py++) for (let px = Math.max(0, x - 2); px <= Math.min(width - 1, x + 2); px++) {
+        opaque += mask[py * width + px]!
+        votes += membrane[py * width + px]!
+      }
+      core[i] = Number(votes * 2 >= opaque)
+    }
+    // Back tissue grows into each box from the body. Whatever it cannot reach without crossing membrane is wing,
+    // including the dark serrated edge.
+    for (let next = 0; next < body.length; next++) {
+      const i = body[next]!
+      const x = i % width
+      for (const n of [x > 0 ? i - 1 : -1, x < width - 1 ? i + 1 : -1, i - width, i + width]) {
+        if (n < 0 || n >= count || reached[n] || !mask[n] || core[n]) continue
+        reached[n] = 1
+        body.push(n)
+      }
+    }
+    for (let i = 0; i < count; i++) wing[i] = Number(mask[i] && !reached[i])
+  }
   function projectedLuminance(x: number, y: number) {
     if (!bodyProjection) return undefined
     const image = bodyProjection.raster
@@ -173,6 +213,18 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     const i = y * width + x
     tuckDistance[i] = Math.min(tuckDistance[i]!, x < width - 1 ? tuckDistance[i + 1]! + 1 : 100, y < height - 1 ? tuckDistance[i + width]! + 1 : 100)
   }
+  // A wing cell needs only one membrane corner, so the alpha test sets the outline instead of grid steps.
+  // Its outer corners carry no depth and follow the wing bones. Cells that touch back tissue stay skin.
+  const wingCell = new Uint8Array((width - 1) * (height - 1))
+  const wingBound = Uint8Array.from(wing)
+  for (let y = 0; y < height - 1; y++) for (let x = 0; x < width - 1; x++) {
+    if (headCut[y * (width - 1) + x]) continue
+    const a = y * width + x
+    const corners = [a, a + 1, a + width, a + width + 1]
+    if (!corners.some(corner => wing[corner]) || corners.some(corner => mask[corner] && !wing[corner])) continue
+    wingCell[y * (width - 1) + x] = 1
+    for (const corner of corners) wingBound[corner] = 1
+  }
   const rightWingJoints = ['chest', 'right-wing', 'right-wing-tip'].map(name => bodyJoints.findIndex(joint => joint.name === name))
   for (let side = 0; side < 2; side++) for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const i = y * width + x
@@ -180,9 +232,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     const sy = y / (height - 1)
     const luminance = (data[i * 4]! * 0.3 + data[i * 4 + 1]! * 0.59 + data[i * 4 + 2]! * 0.11) / 255
     const detail = projectedLuminance(sx, sy) ?? luminance
-    const wing = bodyProjection && isWing(sx, sy)
     const tuck = 0.06 + 0.94 * smooth(tuckDistance[i]! / 4)
-    const depth = (mask[i] ? wing ? 0.006 + Math.min(distance[i]! * 0.0012, 0.014) + detail * 0.003
+    const depth = (mask[i] ? wing[i] ? 0.006 + Math.min(distance[i]! * 0.0012, 0.014) + detail * 0.003
       : bodyProjection ? bodyDepth[i]! : 0.018 + Math.min(distance[i]! * 0.018, 0.16) + detail * 0.035 : 0) * tuck
     positions.push(...point(sx, sy, side ? -depth * 0.8 : depth).toArray())
     uv.push(sx, 1 - sy)
@@ -198,7 +249,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     const closest = bodyJoints.map((joint, index) => ({ index, distance: segmentDistance(sx, sy, joint) }))
       .filter(value => bodyProjection || !bodyJoints[value.index]!.name.endsWith('-tip'))
       .filter(value => !shoulder || (bodyJoints[value.index]!.name !== 'head' && !bodyJoints[value.index]!.name.includes('wing')))
-      .filter(value => !wing || shoulder || bodyJoints[value.index]!.name.includes('wing'))
+      .filter(value => !wingBound[i] || shoulder || bodyJoints[value.index]!.name.includes('wing'))
       .sort((a, b) => a.distance - b.distance).slice(0, 2)
     const a = 1 / (Math.pow(closest[0]!.distance, 4) + 0.000002)
     const b = 1 / (Math.pow(closest[1]!.distance, 4) + 0.000002)
@@ -209,17 +260,16 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   const creaseIndices: number[] = []
   for (let y = 0; y < height - 1; y++) for (let x = 0; x < width - 1; x++) {
     const a = y * width + x
-    const sx = (x + 0.5) / (width - 1)
-    const sy = (y + 0.5) / (height - 1)
     if (headCut[y * (width - 1) + x]) {
       // Shadowed tissue fills a raster eye the sculpt leaves exposed, so the wing root meets the head without it.
       if (headExposed[y * (width - 1) + x]) creaseIndices.push(a + count, a + count + width, a + count + 1, a + count + 1, a + count + width, a + count + width + 1)
       continue
     }
-    // Include a cell only when all corners are tissue. Holes remain open, including fingers and wings.
-    if (!(mask[a] && mask[a + 1] && mask[a + width] && mask[a + width + 1])) continue
+    // Include a body cell only when all corners are tissue. Holes remain open, including fingers and wings.
+    const membrane = wingCell[y * (width - 1) + x]
+    if (!membrane && !(mask[a] && mask[a + 1] && mask[a + width] && mask[a + width + 1])) continue
     occupied[y * (width - 1) + x] = 1
-    const triangles = bodyProjection && isWing(sx, sy) ? wingIndices : indices
+    const triangles = membrane ? wingIndices : indices
     triangles.push(a, a + width, a + 1, a + 1, a + width, a + width + 1)
     const b = a + count
     triangles.push(b, b + 1, b + width, b + 1, b + width + 1, b + width)
@@ -229,7 +279,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   const wingEnd = indices.length
   const contourNeighbors = new Map<number, Set<number>>()
   for (let y = 0; y < height - 1; y++) for (let x = 0; x < width - 1; x++) {
-    if (!occupied[y * (width - 1) + x]) continue
+    // A wing tapers to zero depth at its outline, so it needs no wall.
+    if (!occupied[y * (width - 1) + x] || wingCell[y * (width - 1) + x]) continue
     const a = y * width + x
     const boundaries = [
       { outside: y === 0 || !occupied[(y - 1) * (width - 1) + x], start: a, end: a + 1, cut: y > 0 && headCut[(y - 1) * (width - 1) + x] },
@@ -240,7 +291,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     // The sculpt hides the cut edge. A wall there would stand in front of its rim.
     for (const { outside, start, end, cut } of boundaries) if (outside && !cut) {
       indices.push(start, end, start + count, end, end + count, start + count)
-      if (!bodyProjection || isWing((x + 0.5) / (width - 1), (y + 0.5) / (height - 1))) continue
+      if (!bodyProjection) continue
       if (!contourNeighbors.has(start)) contourNeighbors.set(start, new Set())
       if (!contourNeighbors.has(end)) contourNeighbors.set(end, new Set())
       contourNeighbors.get(start)!.add(end)

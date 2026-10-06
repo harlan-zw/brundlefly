@@ -388,3 +388,46 @@ test('the right wing root meets the sculpted head without a hole', () => {
   }
   model.dispose(); reference.dispose(); texture.dispose()
 })
+
+test('back tissue beside the left wing keeps skin material and relief', () => {
+  const texture = new Texture()
+  const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster},
+    {texture, raster: imageRaster('../../assets/brand/kit/lair/body-projection.png')})
+  model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', blink: 0})
+  const hit = (x: number, y: number) => new Raycaster(new Vector3((x - 0.5) * 2.3, (0.5 - y) * 2.6, 2), new Vector3(0, 0, -1))
+    .intersectObject(model.mesh, false)[0]
+  const material = (x: number, y: number) => {
+    const face = hit(x, y)
+    assert.ok(face, `The sample at ${x},${y} must lie on rendered tissue.`)
+    return model.mesh.geometry.groups.find(group => face.faceIndex! * 3 >= group.start && face.faceIndex! * 3 < group.start + group.count)!.materialIndex
+  }
+  for (const [x, y] of [[0.44, 0.15], [0.46, 0.17], [0.42, 0.18], [0.45, 0.19]] as const)
+    assert.equal(material(x, y), 0, `The back hump at ${x},${y} must render as skin, not wing membrane.`)
+  for (const [x, y] of [[0.33, 0.08], [0.3, 0.05]] as const)
+    assert.equal(material(x, y), 2, `The wing at ${x},${y} must render as membrane.`)
+  const depths = Array.from({length: 15}, (_, i) => hit(0.45, 0.17 + i * 0.005)?.point.z)
+  assert.ok(depths.every(value => value !== undefined), 'The back hump must stay solid below the wing.')
+  const step = Math.max(...depths.slice(1).map((value, i) => Math.abs(value! - depths[i]!)))
+  assert.ok(step < 0.03, `The back hump must not drop into a ledge below the wing, measured ${step}.`)
+  model.dispose(); texture.dispose()
+})
+
+test('wing geometry reaches every opaque membrane sample, so alpha sets the outline', () => {
+  const texture = new Texture()
+  const bodyRaster = imageRaster('../../assets/brand/kit/lair/body-projection.png')
+  const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster}, {texture, raster: bodyRaster})
+  model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', blink: 0})
+  const {width, height, data} = bodyRaster
+  const missing: string[] = []
+  // This window holds the left wing and stops short of the back hump, whose outline the contour pass softens.
+  for (let y = 1; y < height * 0.178; y++) for (let x = 1; x < width * 0.365; x++) {
+    // Only the outline can fall outside the geometry. Interior samples would only slow the test.
+    const transparent = (dx: number, dy: number) => data[((y + dy) * width + x + dx) * 4 + 3]! <= 32
+    if (transparent(0, 0) || ![[-1, 0], [1, 0], [0, -1], [0, 1]].some(([dx, dy]) => transparent(dx!, dy!))) continue
+    const sx = x / (width - 1), sy = y / (height - 1)
+    const ray = new Raycaster(new Vector3((sx - 0.5) * 2.3, (0.5 - sy) * 2.6, 2), new Vector3(0, 0, -1))
+    if (!ray.intersectObject(model.mesh, false).length) missing.push(`${x},${y}`)
+  }
+  assert.deepEqual(missing, [], 'Opaque wing samples must not fall outside the wing geometry.')
+  model.dispose(); texture.dispose()
+})
