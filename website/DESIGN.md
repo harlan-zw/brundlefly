@@ -68,6 +68,7 @@ Clicking Brundlefly opens a native dialog. The dialog pauses walking and sits ov
 Use canonical local replies about the collection, skills, installation, and brand kit.
 State that replies are local. User text stays in the browser.
 Keep the dialog compact and readable. Separate visitor text and replies in reading order.
+Reply choices sit in two columns. A lone last choice takes the full row.
 Frame his face clear of the dialog, so his mouth stays visible while he speaks.
 On short landscape screens, the dialog sits at the right and his face stays left of it.
 Use native text input, submit, close, and Escape behavior. Return focus to the mascot after closing.
