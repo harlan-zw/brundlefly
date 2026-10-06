@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '../layers/brand/shared/camera-view.ts'
+import { PerspectiveCamera, Vector3 } from 'three'
+import { defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '../layers/brand/shared/camera-view.ts'
 
 test('mouse look permits a full turn and limits pitch before the view flips', () => {
   const view = rotateCameraView(defaultCameraView, Math.PI * 2 / 0.0028, 10000)
@@ -113,4 +114,34 @@ test('a held phone pose slowly becomes the new rest pose, and a flip rebases at 
   assert.ok(Math.abs(resolveTiltView(turned, rest).yaw) < 0.01, 'Holding the turn must recentre the view.')
   const flipped = pose(-20, 60, 0, 90)
   assert.ok(followTiltRest(rest, flipped, 1 / 60).angleTo(flipped) < 1e-6, 'A screen rotation must rebase at once.')
+})
+
+const talkingFace = (width: number, height: number) => {
+  const face = new Vector3(0.9, -0.4, -0.7)
+  const { fieldOfView } = resolveResponsiveCameraFraming([0, 0.75, 10.4], [0, 1.1, 15.2], width / height)
+  const focus = resolveConversationFocus(face, width, height, fieldOfView)
+  const camera = new PerspectiveCamera(fieldOfView, width / height, 0.1, 50)
+  camera.position.copy(focus.position)
+  camera.lookAt(focus.target)
+  camera.updateMatrixWorld()
+  const point = face.clone().project(camera)
+  return { x: (point.x + 1) / 2 * width, y: (1 - point.y) / 2 * height }
+}
+
+test('a talking face stays above the bottom dialog on portrait phones and desktops', () => {
+  for (const [width, height] of [[360, 640], [390, 844], [1440, 900]] as const) {
+    const face = talkingFace(width, height)
+    assert.ok(face.y > height * 0.15 && face.y < height * 0.38, `${width}x${height}: face at ${face.y}`)
+    assert.ok(Math.abs(face.x - width / 2) < 1, `${width}x${height}: face must stay centred`)
+  }
+})
+
+test('a talking face moves left of the side dialog on short landscape screens', () => {
+  for (const [width, height] of [[667, 375], [844, 390], [1280, 500]] as const) {
+    const face = talkingFace(width, height)
+    // The dialog takes up to 400px of the right side, plus its 12px edge.
+    const free = width - Math.min(400, width / 2) - 12
+    assert.ok(Math.abs(face.x - free / 2) < free * 0.08, `${width}x${height}: face at ${face.x}, free area ${free}`)
+    assert.ok(face.y > height * 0.3 && face.y < height * 0.55, `${width}x${height}: face at ${face.y}`)
+  }
 })
