@@ -70,6 +70,8 @@ State that replies are local. User text stays in the browser.
 Keep the dialog compact and readable. Separate visitor text and replies in reading order.
 Three reply choices and “Your text” sit in a two by two grid.
 “Your text” replaces the grid with the text field. “Back” returns to the grid.
+Choices read as numbered lines under a fading rule. A hovered line brightens over a rust band.
+The AI notice opens as a tooltip from a “!” button beside the name.
 Frame his face clear of the dialog, so his mouth stays visible while he speaks.
 On short landscape screens, the dialog sits at the right and his face stays left of it.
 Use native text input, submit, close, and Escape behavior. Return focus to the mascot after closing.

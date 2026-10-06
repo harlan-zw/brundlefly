@@ -138,6 +138,7 @@ Material swatches use the role labels in the shared catalogue: Background, Text 
 The scene action label is “Talk to Brundlefly”. It opens a dialog titled “Brundlefly”.
 The dialog uses “Close”, “Your text”, “Send”, and “Conversation” for its functional controls.
 Its scope note is “AI replies use Cloudflare and OpenAI. Avoid sharing private details.”
+The note opens from a “!” button beside the title. The button label is “About AI replies”.
 The character prompt and starter conversations live in `docs/brand/mascot-dialogue.md`.
 The pending message is “He listens…”.
 Generation errors use “The room swallowed that reply. Try again.”.
