@@ -150,6 +150,7 @@ Oversized input uses “Keep your text under 1,001 characters.”
 Collection, skill, and installation replies reuse the canonical assets above.
 Brand kit replies use “Brand kit” with a link to the kit.
 Luna generates conversational replies and three visitor choices. Replies do not execute a Skill.
+The fourth choice is “Your text”. It opens the text field. “Back” returns to the choices.
 Scene fallback text: “Static scene. WebGL is unavailable.” and “The scene could not load.”
 Conversation sound actions use “Sound off” and “Sound on”. They mute or enable local synthesized sound.
 

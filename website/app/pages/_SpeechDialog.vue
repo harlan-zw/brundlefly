@@ -9,9 +9,13 @@ const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction
 const dialog = shallowRef<HTMLDialogElement>()
 const input = shallowRef<HTMLTextAreaElement>()
 const conversation = shallowRef<HTMLElement>()
+const choiceList = shallowRef<HTMLOListElement>()
+const ownChoice = shallowRef<HTMLButtonElement>()
 const text = ref('')
 const error = ref('')
 const reply = shallowRef<ConversationReply>()
+// Choices and the text field take turns. "Your text" and errors show the field. A new reply shows the choices.
+const mode = ref<'Choices' | 'Compose'>('Choices')
 const history = ref<ConversationHistoryMessage[]>([])
 const visited = ref(false)
 const request = shallowRef<{ _tag: 'Idle' } | { _tag: 'Pending', controller: AbortController }>({ _tag: 'Idle' })
@@ -20,10 +24,15 @@ const touchScreen = useMediaQuery('(pointer: coarse)')
 const reduced = usePreferredReducedMotion()
 // On touch screens, focus opens the keyboard over the reply. Visitors tap the field when they want to type.
 const offerInput = () => { if (!touchScreen.value) input.value?.focus() }
+// A new reply replaces the choice buttons. Keyboard focus moves to the first one instead of falling out of the dialog.
+const focusReply = () => {
+  if (mode.value === 'Compose') offerInput()
+  else if (!touchScreen.value) choiceList.value?.querySelector('button')?.focus({ preventScroll: true })
+}
 // Phones hide scrollbars. A fade marks reply text or choices below the fold.
 const { arrivedState, measure } = useScroll(conversation)
 useResizeObserver(conversation, measure)
-watch([reply, () => request.value._tag], measure, { flush: 'post' })
+watch([reply, () => request.value._tag, mode], measure, { flush: 'post' })
 
 const cancel = () => {
   if (request.value._tag === 'Pending') request.value.controller.abort()
@@ -62,11 +71,14 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value) =>
       error.value = result.message
       failedVisit.value = kind === 'visit' || result.expired
       if (result.expired) { visited.value = false; history.value = [] }
+      mode.value = 'Compose'
     }
+    await nextTick()
     offerInput()
     return
   }
   reply.value = result.value
+  mode.value = 'Choices'
   visited.value = true
   failedVisit.value = false
   history.value = [...history.value.slice(kind === 'dialogue' ? -6 : -7),
@@ -77,7 +89,7 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value) =>
   emit('reply', result.value.text)
   await nextTick()
   conversation.value?.scrollTo({ top: 0 })
-  offerInput()
+  focusReply()
 }
 
 watch([() => open, dialog], async ([isOpen, element]) => {
@@ -89,13 +101,13 @@ watch([() => open, dialog], async ([isOpen, element]) => {
   }
   if (!element.open) element.showModal()
   await nextTick()
-  offerInput()
+  focusReply()
   if (!visited.value) void receive('visit')
 }, { flush: 'post' })
 
 // New content changes the pocket height. Easing from the old height keeps the header and seam from jumping.
 let resize: Animation | undefined
-watch([reply, () => request.value._tag, error, failedVisit], async () => {
+watch([reply, () => request.value._tag, error, failedVisit, mode], async () => {
   const element = dialog.value
   if (!element?.open || reduced.value === 'reduce') return
   const from = element.getBoundingClientRect().height
@@ -110,10 +122,23 @@ const choose = (choice: string) => {
   text.value = choice
   void receive('dialogue', choice)
 }
+// Visitors chose to type, so the field takes focus even on touch screens.
+const compose = async () => {
+  mode.value = 'Compose'
+  await nextTick()
+  input.value?.focus()
+}
+const back = async () => {
+  mode.value = 'Choices'
+  error.value = ''
+  await nextTick()
+  ownChoice.value?.focus()
+}
 useEventListener('keydown', (event: KeyboardEvent) => {
-  if (!open || request.value._tag === 'Pending' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+  if (!open || mode.value !== 'Choices' || !reply.value || request.value._tag === 'Pending' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
   if (event.target instanceof HTMLElement && (event.target.isContentEditable || event.target.closest('input,textarea,select'))) return
-  const choice = reply.value?.choices[Number(event.key) - 1]
+  if (event.key === '4') { event.preventDefault(); void compose(); return }
+  const choice = reply.value.choices[Number(event.key) - 1]
   if (/^[123]$/.test(event.key) && choice) { event.preventDefault(); choose(choice) }
 })
 onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() })
@@ -137,16 +162,20 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
         <a v-for="link in reply.links" :key="link.href" :href="link.href" :download="link.download || undefined">{{ link.label }}</a>
       </div>
       <p v-if="request._tag === 'Pending'" class="speech-pending" role="status">{{ dialogueCopy.loading }}</p>
-      <ol v-if="reply" class="speech-choices" aria-label="Your reply">
+      <ol v-if="reply && mode === 'Choices'" ref="choiceList" class="speech-choices" aria-label="Your reply">
         <li v-for="(choice, index) in reply.choices" :key="`${index}:${choice}`">
           <button type="button" :disabled="request._tag === 'Pending'" @click="choose(choice)"><span aria-hidden="true">{{ index + 1 }}</span>{{ choice }}</button>
+        </li>
+        <li>
+          <button ref="ownChoice" class="speech-own" type="button" :disabled="request._tag === 'Pending'" @click="compose"><span aria-hidden="true">4</span>Your text</button>
         </li>
       </ol>
     </div>
     <p class="speech-announcement" role="status" aria-live="polite" aria-atomic="true">{{ reply?.text }}</p>
-    <form @submit.prevent="receive('dialogue')">
+    <form v-if="mode === 'Compose'" @submit.prevent="receive('dialogue')">
       <label class="speech-label" for="speech-input">Your text</label>
       <div class="speech-compose">
+        <button v-if="reply" class="speech-back" type="button" @click="back">Back</button>
         <textarea id="speech-input" ref="input" v-model="text" rows="1" maxlength="1000" placeholder="Your text" :aria-invalid="Boolean(error)" :aria-describedby="error ? 'speech-error' : undefined" @input="error = ''" />
         <button v-if="failedVisit" class="speech-retry" type="button" :disabled="request._tag === 'Pending'" @click="receive('visit')">Try again</button>
         <button class="speech-send" type="submit" :disabled="request._tag === 'Pending'">Send</button>
@@ -187,13 +216,15 @@ button:disabled { cursor: wait; opacity: .5; }
 .speech-links a { display: inline-flex; align-items: center; min-height: 32px; color: #a4b5a0; font-size: 13px; line-height: 1.4; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; }
 .speech-links a:hover { color: #e8d4a6; text-decoration-color: currentColor; }
 @media (pointer: coarse) { .speech-links { row-gap: 0; } .speech-links a { min-height: 44px; } }
-/* Choices pair up in two columns. A lone last choice takes the full row. */
+/* Three choices and "Your text" fill a two by two grid. */
 .speech-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 2px 0 0; padding: 0; }
-.speech-choices li:last-child:nth-child(odd) { grid-column: 1 / -1; }
 /* A grid centres short labels when the neighbouring choice wraps and stretches the row. */
 .speech-choices button { display: grid; grid-template-columns: auto 1fr; align-items: baseline; align-content: center; column-gap: 8px; width: 100%; height: 100%; min-height: 44px; padding: 8px 10px; text-align: left; border: 1px solid #69404b66; border-radius: 8px 3px 12px 3px; color: #e8d4a6; background: #343c3b40; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
 .speech-choices button:hover:not(:disabled) { border-color: #a4b5a0; background: #343c3b99; }
 .speech-choices span { color: #a4b5a0; font-size: 12px; font-variant-numeric: tabular-nums; }
+/* A dashed edge sets the free text choice apart from his suggestions. */
+.speech-choices .speech-own { border-style: dashed; color: #a4b5a0; }
+.speech-choices .speech-own:hover:not(:disabled) { color: #e8d4a6; }
 form { flex-shrink: 0; position: relative; z-index: 1; }
 /* The accessible name stays "Your text". A chat composer needs no visible caption. */
 .speech-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -202,8 +233,10 @@ textarea { flex: 1; min-width: 0; box-sizing: border-box; min-height: 44px; max-
 textarea::placeholder { color: #a4b5a0aa; }
 textarea:focus-visible { border-color: #e8d4a6; outline-offset: 2px; }
 .speech-error { margin: 6px 0 0; color: #e8d4a6; font-size: 13px; line-height: 1.4; }
-.speech-send, .speech-retry { flex-shrink: 0; min-height: 44px; padding: 10px 18px; background: #e8d4a6; color: #080b08; border: 0; border-radius: 8px 3px 12px 3px; font-size: 14px; }
+.speech-send, .speech-retry, .speech-back { flex-shrink: 0; min-height: 44px; padding: 10px 18px; background: #e8d4a6; color: #080b08; border: 0; border-radius: 8px 3px 12px 3px; font-size: 14px; }
 .speech-retry { background: #343c3b; color: #e8d4a6; }
+.speech-back { padding: 10px 14px; background: transparent; color: #a4b5a0; box-shadow: inset 0 0 0 1px #69404b66; }
+.speech-back:hover { color: #e8d4a6; box-shadow: inset 0 0 0 1px #a4b5a0; }
 .speech-send:hover:not(:disabled) { background: #a4b5a0; }
 .speech-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-height: 540px) { .speech-pocket { bottom: 12px; max-height: calc(100dvh - 24px); padding: 12px 16px 10px; gap: 8px; } }
