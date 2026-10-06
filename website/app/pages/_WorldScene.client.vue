@@ -13,7 +13,7 @@ import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
-import { defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
+import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ConversationMood } from '#shared/conversation'
@@ -267,8 +267,6 @@ watch(canvas, async (element) => {
   let focusProgress = paused ? 1 : 0
   const basePosition = new Vector3()
   const baseTarget = new Vector3()
-  const focusPosition = new Vector3()
-  const focusTarget = new Vector3()
   let tiltRest: Quaternion | undefined
   const tilt = { yaw: 0, pitch: 0 }
   const needsFrames = () => visibility.value === 'visible' && (animate.value || (!paused && cameraKeys.size > 0)
@@ -295,16 +293,13 @@ watch(canvas, async (element) => {
     const view = resolveCameraView(tiltCameraView(cameraView, tilt), framing, sceneLayout.camera.target, settings.value.zoom)
     basePosition.set(...view.position)
     baseTarget.set(...view.target)
-    const desiredFocus = paused ? 1 : 0
-    focusProgress = reduced.value === 'reduce' ? desiredFocus
-      : desiredFocus > focusProgress ? Math.min(1, focusProgress + delta / 0.65) : Math.max(0, focusProgress - delta / 0.65)
+    focusProgress = advanceConversationFocus(focusProgress, paused, delta, reduced.value === 'reduce')
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
     // Frame his face clear of the dialog, so his mouth stays visible while he speaks.
     const focus = resolveConversationFocus(figure.localToWorld(new Vector3(0.23, 0.8, 0)), renderWidth, renderHeight, camera.fov)
-    focusPosition.copy(focus.position)
-    focusTarget.copy(focus.target)
-    camera.position.copy(basePosition).lerp(focusPosition, blend)
-    camera.lookAt(baseTarget.lerp(focusTarget, blend))
+    const shot = blendCameraShot({ position: basePosition, target: baseTarget }, focus, blend)
+    camera.position.copy(shot.position)
+    camera.quaternion.copy(shot.quaternion)
     camera.updateMatrixWorld()
     const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
