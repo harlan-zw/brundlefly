@@ -26,7 +26,7 @@ export const defaultSceneSettings: SceneSettings = {
   fill: 2.05,
   rim: 2.35,
   inner: 7.9,
-  exposure: 1.55,
+  exposure: 1.25,
   fog: 0.075,
   zoom: 1.2,
   walkSpeed: 0.42,
