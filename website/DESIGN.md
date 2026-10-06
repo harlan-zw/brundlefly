@@ -168,5 +168,6 @@ Manual camera movement works with reduced motion and Motion off.
 Wall, ceiling, and floor shaders add slow regional texture flow and breathing ripples.
 The walking corridor keeps its floor geometry stable. Motion controls freeze the shader phases.
 Talking moves the camera toward the mascot's face and opens a bottom dialogue panel.
+The camera turns along the shortest arc, then holds still while the dialog is open.
 Closing restores the prior camera view. Reduced motion makes the camera transition immediate.
 Dark facial pixels retain skin geometry. Background, finger, and wing gaps remain open.

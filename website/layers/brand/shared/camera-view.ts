@@ -1,4 +1,4 @@
-import { Euler, Quaternion, Vector3 } from 'three'
+import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
 export type CameraView = { yaw: number; pitch: number; x: number; z: number }
 export type CameraKey = 'KeyW' | 'KeyA' | 'KeyS' | 'KeyD'
@@ -64,6 +64,20 @@ export const resolveConversationFocus = (face: Vector3, width: number, height: n
   const portrait = aspect < 0.8
   return { position: face.clone().add(new Vector3(0, 0.15, portrait ? 3.8 : 4.1)), target: face.clone().add(new Vector3(0, portrait ? -0.85 : -0.6, 0)) }
 }
+
+/** Eases the conversation close-up in while the dialog is open and out after it closes. Each end holds exactly, so a settled shot stays still. */
+export const advanceConversationFocus = (progress: number, open: boolean, delta: number, reduced: boolean) =>
+  reduced ? Number(open) : clamp(progress + (open ? delta : -delta) / 0.65, 0, 1)
+
+export type CameraShot = { position: Vector3; target: Vector3 }
+const up = new Vector3(0, 1, 0)
+const facing = ({ position, target }: CameraShot) => new Quaternion().setFromRotationMatrix(new Matrix4().lookAt(position, target, up))
+/**
+ * Blends the free view toward the conversation close-up. The view turns along the shortest arc.
+ * Blending look targets instead would swing a view that faces away through the floor in a few frames.
+ */
+export const blendCameraShot = (from: CameraShot, to: CameraShot, blend: number) =>
+  ({ position: from.position.clone().lerp(to.position, blend), quaternion: facing(from).slerp(facing(to), blend) })
 
 export type TiltReading ={ alpha: number; beta: number; gamma: number }
 export type TiltOffset = { yaw: number; pitch: number }

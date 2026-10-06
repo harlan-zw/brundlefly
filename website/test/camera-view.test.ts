@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { PerspectiveCamera, Vector3 } from 'three'
-import { defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '../layers/brand/shared/camera-view.ts'
+import { PerspectiveCamera, Quaternion, Vector3 } from 'three'
+import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '../layers/brand/shared/camera-view.ts'
 
 test('mouse look permits a full turn and limits pitch before the view flips', () => {
   const view = rotateCameraView(defaultCameraView, Math.PI * 2 / 0.0028, 10000)
@@ -143,5 +143,37 @@ test('a talking face moves left of the side dialog on short landscape screens', 
     const free = width - Math.min(400, width / 2) - 12
     assert.ok(Math.abs(face.x - free / 2) < free * 0.08, `${width}x${height}: face at ${face.x}, free area ${free}`)
     assert.ok(face.y > height * 0.3 && face.y < height * 0.55, `${width}x${height}: face at ${face.y}`)
+  }
+})
+
+test('the conversation close-up settles and holds still while the dialog stays open', () => {
+  let progress = 0
+  const opened: number[] = []
+  for (let frame = 0; frame < 90; frame++) opened.push(progress = advanceConversationFocus(progress, true, 1 / 60, false))
+  assert.ok(opened.slice(1).every((value, index) => value >= opened[index]!), 'Opening must never ease back out.')
+  assert.deepEqual(opened.slice(60), Array(30).fill(1), 'An open dialog must hold the close-up exactly.')
+  const closed: number[] = []
+  for (let frame = 0; frame < 90; frame++) closed.push(progress = advanceConversationFocus(progress, false, 1 / 60, false))
+  assert.deepEqual(closed.slice(60), Array(30).fill(0), 'A closed dialog must hold the free view exactly.')
+  assert.equal(advanceConversationFocus(0, true, 1 / 60, true), 1, 'Reduced motion must cut straight to the close-up.')
+})
+
+test('a view turned away from the mascot swings to his face without a snap', () => {
+  const face = new Vector3(0.9, 0.7, -0.3)
+  const focus = resolveConversationFocus(face, 1440, 900, 44)
+  for (const view of [{ ...defaultCameraView, yaw: 3 }, { ...defaultCameraView, yaw: -2.2, pitch: -1.1 }, { ...defaultCameraView, pitch: 1.15 }]) {
+    const free = resolveCameraView(view, [0, 0.75, 10.4], [0, -0.35, -2.1], 1.2)
+    const from = { position: new Vector3(...free.position), target: new Vector3(...free.target) }
+    const shots = Array.from({ length: 40 }, (_, step) => {
+      const progress = step / 39
+      return blendCameraShot(from, focus, progress * progress * (3 - 2 * progress))
+    })
+    const turns = shots.slice(1).map((shot, index) => shot.quaternion.angleTo(shots[index]!.quaternion))
+    const mean = turns.reduce((sum, value) => sum + value, 0) / turns.length
+    // A smoothstep ease peaks at 1.5 times its mean speed. A snap concentrates the turn in a few steps.
+    assert.ok(Math.max(...turns) < mean * 1.6, `The turn must stay eased, measured peak ${Math.max(...turns)} against mean ${mean}.`)
+    const facing = (shot: { quaternion: Quaternion }) => new Vector3(0, 0, -1).applyQuaternion(shot.quaternion)
+    assert.ok(facing(shots.at(-1)!).angleTo(focus.target.clone().sub(focus.position)) < 1e-6, 'The blend must finish looking at his face.')
+    assert.ok(facing(shots[0]!).angleTo(from.target.clone().sub(from.position)) < 1e-6, 'The blend must start from the free view.')
   }
 })
