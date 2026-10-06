@@ -95,6 +95,8 @@ The mascot has a named keyboard target. Enter or Space opens the same dialog as 
 Hover stops walking, tilts his head toward the visitor, and changes the cursor. Pointer position does not rotate the relief or distort his face.
 Keep visible cream focus outlines. Do not place artwork over text, inputs, or focus outlines.
 System reduced motion stops walking and idle deformation. Manual camera movement remains available.
+On touch screens, turning the phone looks around like a window. A held pose slowly becomes the new centre.
+Reduced motion, Motion off, and the open dialog turn tilt off. iOS asks for motion access on the first tap.
 Pause scene animation while the dialog is open or the document is hidden.
 If WebGL fails, provide the canonical static mascot with the same conversation action.
 Keep the dialog within a 375px viewport. Conversation content may scroll inside the dialog.

@@ -1,3 +1,5 @@
+import { Euler, Quaternion, Vector3 } from 'three'
+
 export type CameraView = { yaw: number; pitch: number; x: number; z: number }
 export type CameraKey = 'KeyW' | 'KeyA' | 'KeyS' | 'KeyD'
 export const defaultCameraView: CameraView = { yaw: 0, pitch: 0, x: 0, z: 0 }
@@ -46,3 +48,33 @@ export const resolveResponsiveCameraFraming = (desktop: readonly [number, number
     fogScale: Math.tan(44 * Math.PI / 360) / Math.tan(fieldOfView * Math.PI / 360),
   }
 }
+
+export type TiltReading = { alpha: number; beta: number; gamma: number }
+export type TiltOffset = { yaw: number; pitch: number }
+const degrees = Math.PI / 180
+// The view looks out of the back of the phone, not out of its top edge.
+const backCamera = new Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2)
+const screenAxis = new Vector3(0, 0, 1)
+
+/** Phone orientation as a camera rotation. Quaternions stay stable when the phone stands upright. */
+export const tiltPose = ({ alpha, beta, gamma }: TiltReading, screenAngle: number) =>
+  new Quaternion().setFromEuler(new Euler(beta * degrees, alpha * degrees, -gamma * degrees, 'YXZ'))
+    .multiply(backCamera)
+    .multiply(new Quaternion().setFromAxisAngle(screenAxis, -screenAngle * degrees))
+
+/** Turning the phone like a window looks the same way, at three quarters of the turn. */
+export const resolveTiltView = (pose: Quaternion, rest: Quaternion): TiltOffset => {
+  const look = new Vector3(0, 0, -1).applyQuaternion(rest.clone().invert().multiply(pose))
+  const yaw = Math.atan2(look.x, -look.z) * 0.75
+  const pitch = -Math.asin(clamp(look.y, -1, 1)) * 0.75
+  // Adding zero turns a negative zero into zero for a level phone.
+  return { yaw: clamp(yaw, -0.45, 0.45) + 0, pitch: clamp(pitch, -0.3, 0.3) + 0 }
+}
+
+/** A held pose slowly becomes the rest pose, so a new posture recentres the view. A flip or screen rotation rebases at once. */
+export const followTiltRest = (rest: Quaternion | undefined, pose: Quaternion, delta: number) =>
+  !rest || rest.angleTo(pose) > 75 * degrees ? pose.clone() : rest.clone().slerp(pose, Math.min(1, Math.max(0, delta) * 0.15))
+
+/** Tilt adds to the dragged view. Pitch keeps the same limit as mouse look. */
+export const tiltCameraView = (view: CameraView, tilt: TiltOffset): CameraView =>
+  ({ ...view, yaw: view.yaw + tilt.yaw, pitch: clamp(view.pitch + tilt.pitch, -1.15, 1.15) })
