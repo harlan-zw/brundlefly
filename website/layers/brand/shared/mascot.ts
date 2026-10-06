@@ -279,8 +279,9 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
   if (heightMap) { heightMap.colorSpace = NoColorSpace; heightMap.needsUpdate = true }
   const front = new MeshPhysicalMaterial({ map: artwork, bumpMap: heightMap ?? null, bumpScale: 0.008,
     alphaTest: bodyProjection ? 0.18 : 0, roughness: bodyProjection ? 0.53 : 0.65, metalness: 0.02, clearcoat: bodyProjection ? 0.28 : 0 })
-  // Frontal alpha cannot describe an extruded side. Keep those surfaces solid and softly lit.
-  const sides = new MeshStandardMaterial({ color: bodyProjection ? '#80644E' : '#69404B', roughness: 0.65, metalness: 0.02 })
+  // Frontal alpha cannot describe an extruded side, so walls stay solid. Each wall stretches the artwork at its edge
+  // across its depth, so dark claws and chitin keep dark sides instead of a pale halo.
+  const sides = new MeshStandardMaterial({ map: artwork, roughness: 0.65, metalness: 0.02 })
   const wingMaterial = new MeshPhysicalMaterial({ map: artwork, bumpMap: heightMap ?? null, bumpScale: 0.003,
     side: DoubleSide, alphaTest: 0.18, roughness: 0.38, metalness: 0, transmission: 0.22, thickness: 0.018,
     ior: 1.36, clearcoat: 0.45, clearcoatRoughness: 0.27, attenuationColor: '#a4b5a0', attenuationDistance: 0.28 })

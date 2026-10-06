@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFileSync } from 'node:fs'
 import { inflateSync } from 'node:zlib'
-import { AnimationMixer, Raycaster, Texture, Vector2, Vector3 } from 'three'
+import { AnimationMixer, Color, Raycaster, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three'
+import type { MeshStandardMaterial } from 'three'
 import { createMascotModel } from '../layers/brand/shared/mascot.ts'
 
 function canonicalRaster() {
@@ -387,4 +388,32 @@ test('the right wing root meets the sculpted head without a hole', () => {
     assert.ok(ray.intersectObject(model.root, true).length, `Tissue must join the head and wing root at ${x},${y}.`)
   }
   model.dispose(); reference.dispose(); texture.dispose()
+})
+
+test('mapped side walls take the shade of the artwork beside them', () => {
+  const width = 48, height = 96
+  const data = new Uint8ClampedArray(width * height * 4)
+  const light = [220, 160, 120], dark = [40, 34, 30]
+  for (let y = 24; y < 72; y++) for (let x = 14; x < 24; x++) data.set([...(y < 48 ? light : dark), 255], (y * width + x) * 4)
+  const texture = new Texture()
+  const raster = {width, height, data}
+  const model = createMascotModel(texture, raster, undefined, undefined, {texture, raster})
+  const materials = model.mesh.material as MeshStandardMaterial[]
+  // Rendered albedo is the material colour times its map, which here holds the raster.
+  const albedo = (y: number) => {
+    const hit = new Raycaster(new Vector3(-2, (0.5 - y / (height - 1)) * 2.6, 0), new Vector3(1, 0, 0)).intersectObject(model.mesh, false)[0]
+    assert.ok(hit?.uv, `A ray at row ${y} must meet the limb.`)
+    const material = materials[model.mesh.geometry.groups.find(group => hit.faceIndex! * 3 >= group.start && hit.faceIndex! * 3 < group.start + group.count)!.materialIndex!]!
+    assert.equal(material, materials[1], `The ray at row ${y} must meet a side wall.`)
+    const offset = (Math.round((1 - hit.uv.y) * (height - 1)) * width + Math.round(hit.uv.x * (width - 1))) * 4
+    const map = material.map ? new Color().setRGB(data[offset]! / 255, data[offset + 1]! / 255, data[offset + 2]! / 255, SRGBColorSpace) : new Color(1, 1, 1)
+    return material.color.clone().multiply(map)
+  }
+  const luminance = (color: Color) => 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b
+  const tissue = (rgb: number[]) => luminance(new Color().setRGB(rgb[0]! / 255, rgb[1]! / 255, rgb[2]! / 255, SRGBColorSpace))
+  const lightWall = luminance(albedo(34)), darkWall = luminance(albedo(62))
+  assert.ok(darkWall < lightWall / 4, `A wall beside dark tissue must stay dark, measured ${darkWall} against ${lightWall}.`)
+  assert.ok(lightWall <= tissue(light) + 1e-6, 'A wall must not read lighter than the tissue beside it.')
+  assert.ok(darkWall <= tissue(dark) + 1e-6, 'A wall beside dark tissue must not glow as a pale halo.')
+  model.dispose(); texture.dispose()
 })
