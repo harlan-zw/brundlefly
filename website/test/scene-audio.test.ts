@@ -41,7 +41,7 @@ test('replies replace old voices and mute, visibility, and disposal release reso
   const callbacks = new Map<number, { callback: () => void, delay: number }>()
   const flushFade = () => { for (const [id, entry] of callbacks) if (entry.delay === 45) { callbacks.delete(id); entry.callback() } }
   const voices: number[] = []
-  const param = () => ({ value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime() {} })
+  const param = () => ({ value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime() {}, setValueCurveAtTime() {} })
   const node = () => {
     let started = false
     let stopped = false
@@ -54,7 +54,7 @@ test('replies replace old voices and mute, visibility, and disposal release reso
   const context = {
     currentTime: 0, sampleRate: 20, destination: node(), get state() { return state },
     createGain: node, createDynamicsCompressor: node, createBiquadFilter: node, createOscillator: node,
-    createBufferSource: node, createStereoPanner: node,
+    createBufferSource: node, createStereoPanner: node, createConvolver: node, createWaveShaper: node,
     createBuffer: () => ({ getChannelData: () => new Float32Array(40) }),
     async resume() { state = 'running' }, async suspend() { state = 'suspended' }, async close() { state = 'closed' },
   }
@@ -65,16 +65,18 @@ test('replies replace old voices and mute, visibility, and disposal release reso
     onState: () => {}, onVoice: value => voices.push(value), onError: error => { throw error },
   })
   await audio.activate()
-  assert.equal(active, 3)
+  const room = active
+  assert.ok(room > 0, 'The room must start its continuous sources.')
   audio.playMascot('reply', 400)
-  assert.equal(active, 6)
+  const speaking = active
+  assert.ok(speaking > room, 'A reply must start voice sources.')
   audio.playMascot('reply', 30)
-  assert.equal(active, 6)
+  assert.equal(active, speaking, 'A new reply must replace the old voice.')
   audio.setMuted(true)
   flushFade()
   await Promise.resolve()
   await Promise.resolve()
-  assert.equal(active, 3)
+  assert.equal(active, room)
   assert.equal(state, 'suspended')
   assert.ok(disconnected > 0 && cancelled > 0)
   assert.equal(callbacks.size, 0)
@@ -131,5 +133,51 @@ test('an unsupported audio context reports unavailable without a silent failure'
   await audio.activate()
   assert.equal(states.at(-1)?.status._tag, 'Unavailable')
   assert.equal(errors[0], failure)
+  await audio.dispose()
+})
+
+test('the voice sound follows the envelope that drives the face', async () => {
+  type Curve = { values: Float32Array, start: number, duration: number }
+  const curves: Curve[] = []
+  const param = () => ({ value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime() {},
+    setValueCurveAtTime(values: Float32Array, start: number, duration: number) { curves.push({ values: Float32Array.from(values), start, duration }) } })
+  const node = () => ({
+    gain: param(), frequency: param(), detune: param(), Q: param(), pan: param(), offset: param(),
+    threshold: param(), knee: param(), ratio: param(), attack: param(), release: param(),
+    connect(next: unknown) { return next }, disconnect() {}, start() {}, stop() {},
+  })
+  const context = {
+    currentTime: 0, sampleRate: 20, destination: node(), state: 'running',
+    createGain: node, createDynamicsCompressor: node, createBiquadFilter: node, createOscillator: node, createBufferSource: node,
+    createStereoPanner: node, createConvolver: node, createWaveShaper: node,
+    createBuffer: (_channels: number, length: number) => ({ length, getChannelData: () => new Float32Array(length) }),
+    async resume() {}, async suspend() {}, async close() {},
+  }
+  const timers = new Map<number, () => void>()
+  let id = 0
+  const faces: number[] = []
+  const audio = createSceneAudio({
+    createContext: () => context as unknown as AudioContext, random: () => 0.5,
+    schedule: callback => { timers.set(++id, callback); return id }, cancel: timer => timers.delete(timer),
+    onState: () => {}, onVoice: value => faces.push(value), onError: error => { throw error },
+  })
+  await audio.activate()
+  audio.playMascot('reply', 120)
+  const voice = curves.at(-1)
+  assert.ok(voice, 'The voice must schedule its loudness as one envelope curve.')
+  const sound = (time: number) => voice.values[Math.round((time - voice.start) / voice.duration * (voice.values.length - 1))]!
+  const samples: { face: number, sound: number }[] = []
+  for (let time = 0.05; time < voice.duration; time += 0.05) {
+    context.currentTime = time
+    const tick = [...timers.values()].at(-1)!
+    timers.clear()
+    tick()
+    samples.push({ face: faces.at(-1)!, sound: sound(time) })
+  }
+  const loudest = samples.reduce((best, sample) => sample.face > best.face ? sample : best)
+  assert.ok(loudest.face > 0.3, 'The phrase must open the mouth.')
+  const scale = loudest.sound / loudest.face
+  for (const { face, sound: level } of samples) assert.ok(Math.abs(level - face * scale) < scale * 0.08,
+    `Sound and face must rise and fall together, measured sound ${level} for face ${face}.`)
   await audio.dispose()
 })

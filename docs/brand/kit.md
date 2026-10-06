@@ -398,6 +398,8 @@ The earlier sprite relief remains a useful visual reference for the body.
 
 Audio starts after trusted input. M toggles sound outside text fields. The dialog also has a sound button.
 Mascot phrases use synthesized tones. They require no microphone, speech service, or account.
+The room breathes, drones, drips, gurgles, and groans through one cave echo. Its sound sits mostly above 200 Hz, so laptop and phone speakers can play it.
+The voice is a strained saw with two vowel formants and mandible clicks. One envelope drives both the voice and the mouth.
 Reply length controls phrase duration. The voice envelope drives mouth movement.
 
 ## Detailed body mapping
