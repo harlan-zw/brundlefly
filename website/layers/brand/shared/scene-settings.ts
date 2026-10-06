@@ -36,8 +36,8 @@ export const defaultSceneSettings: SceneSettings = {
   textureGlow: 0.7,
   reflections: 1,
   opening: 0.47,
-  masterVolume: 0.35,
-  ambienceVolume: 0.55,
+  masterVolume: 0.7,
+  ambienceVolume: 0.6,
   voiceVolume: 0.8,
   motionOff: false,
 }
