@@ -23,7 +23,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 | --- | --- | --- |
 | README opening | Direct, uneasy | Agent skills for writing that's part human. |
 | Why | Brundlefly in first person: short, strained, dry; the project history stays true | I still count which parts are mine. |
-| Features | Facts first, then an occasional aside from Brundlefly | For text a person will read. The name is aspirational. |
+| Features | One-line use, then emoji bullets with a bold label and plain facts. At most one aside per Skill. | 🧹 **Leaves clear prose alone**: it changes a sentence only to fix a reading problem. |
 | Setup and reference | Plain, complete | From your project's root, install a Skill for later sessions: |
 | Skill instructions | Direct, careful | Never invent an actor, experience, example, or supporting detail. |
 
@@ -63,6 +63,7 @@ The character prompt and starter conversations live in `docs/brand/mascot-dialog
 The website's `COPY.md` owns dialogue controls, errors, and privacy text.
 Keep his words short, strained, and clear. Humour comes from his body and living room.
 Use plain errors and controls. Never distort text to imply speech.
+In the README, write his physical beats in italics. Use only beats from the dialogue prompt.
 
 In the README, he speaks only in Why and Skills.
 Setup, Usage, Guides, and reference sections stay neutral.
