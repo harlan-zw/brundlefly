@@ -62,20 +62,20 @@ is the defect, not the code.
 Read supplied global writing rules and apply them within their scope.
 Do not duplicate them in every COPY.md. Record the product-specific wording decisions here.
 
-## Relationship to write-human
+## Relationship to im-not-a-fly
 
 They run in sequence and neither replaces the other.
 
 - **This skill decides what the sentence has to say**: which register, which canonical asset,
   which banned word, which claim `VISION.md` permits.
-- **An optional prose review checks the wording and structure.** Use write-human if it is already available.
+- **An optional prose review checks the wording and structure.** Use im-not-a-fly if it is already available.
   Do not require or install it automatically. Otherwise review clarity, repetition, unsupported claims, and voice directly.
 
 Draft against `COPY.md`, review the prose, then check the result
 still matches `COPY.md`. That last check matters, because the humanize pass rewrites structure
 and can walk a sentence off its register or paraphrase a canonical asset while improving it.
 
-Never duplicate `write-human`'s tell list into a `COPY.md`. A repo's copy file records what
+Never duplicate `im-not-a-fly`'s tell list into a `COPY.md`. A repo's copy file records what
 is true of *this product*; the tells are true of all prose and are maintained in one place.
 
 For a collection of articles, follow the project's editorial process and review each article against its sources.
@@ -181,7 +181,7 @@ Register mismatch (needs a human read):
    with the string you are about to write as its example.
 3. Reach for a canonical asset before writing a new sentence. Most requests for a meta
    description are a request for the one that already exists.
-4. Draft, then review the prose. Use an available write-human Skill optionally; otherwise use the direct review above.
+4. Draft, then review the prose. Use an available im-not-a-fly Skill optionally; otherwise use the direct review above.
 5. Re-check the humanized result against `COPY.md`. The humanize pass improves prose and does not
    know about your canonical assets, so it will sometimes paraphrase one.
 6. Show the user the string and the register row you wrote it against. Never publish under

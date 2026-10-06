@@ -46,7 +46,7 @@ If disclosure rules require unknown facts, return that gap to the caller.
 
 Use concrete words and short sentences. Cut prose that only shows effort.
 Use sentence case for authored prose. Start sentences with a capital letter unless exact reference casing requires otherwise.
-If a lowercase identifier starts a sentence, rephrase: "The `write-human` skill...". Never change the identifier's casing.
+If a lowercase identifier starts a sentence, rephrase: "The `im-not-a-fly` skill...". Never change the identifier's casing.
 Format exact skill names, identifiers, commands, and file paths as inline code.
 Use descriptive Markdown links when readers should open a referenced file, PR, issue, document, or source.
 Keep ordinary product names in plain text. Preserve required wording, quoted text, and existing author material outside the edit.

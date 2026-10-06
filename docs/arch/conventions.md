@@ -14,14 +14,14 @@ That keeps image masters and archived concepts out of an individual skill instal
 No npm runtime, package exports, or build output are required for Markdown skills.
 Provider-specific plugin packaging can be added when a consumer requires it.
 
-write-human adapts the owner's humanize-writing instructions.
+im-not-a-fly adapts the owner's humanize-writing instructions.
 Its personal skill links are replaced by self-contained source and copy-review rules.
 It preserves the upstream MIT notice in its own directory.
 
 readme owns README structure, positioning, and reader-path checks.
 It carries its own positioning reference and a short writing checklist.
-It can use an available write-human skill for a prose review, without requiring it.
-Keep readme's positioning reference separate from write-human's instructions and references.
+It can use an available im-not-a-fly skill for a prose review, without requiring it.
+Keep readme's positioning reference separate from im-not-a-fly's instructions and references.
 
 The optional Nuxt website lives in website, outside the installable skill directories.
 It has its own dependency graph and Cloudflare deployment workflow.

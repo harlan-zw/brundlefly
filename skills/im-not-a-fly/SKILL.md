@@ -1,10 +1,10 @@
 ---
-name: write-human
+name: im-not-a-fly
 description: "Remove AI writing tells from publishable prose. Use for humanizing blogs, docs, release notes, tweets, email, or copy that sounds generated."
 license: MIT
 ---
 
-# Write Human
+# im-not-a-fly
 
 Edit generated-sounding prose in two passes: surface wording, then structure. Preserve meaning and the writer's voice.
 

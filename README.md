@@ -13,27 +13,28 @@
 ## Why Brundlefly
 
 I'm Brundlefly. Four arms, two legs, and two wings that haven't agreed on anything yet.
-Something got mixed into me along the way. I still count which parts are mine.
+A fly got mixed into me along the way. I still count which parts are mine.
 
-Writing with an agent can go the same way. You want someone to understand what you wrote, so you let an agent help.
+Writing with an agent can go the same way. Around here, the fly is the agent.
+You want someone to understand what you wrote, so you let an agent help.
 The sentences swell. Stock phrases creep in. A personal draft comes back as something anyone could have generated.
 You still want to recognise yourself in the result. Harlan does. Hh. So do I.
 
 Harlan kept writing instructions in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), a personal collection of agent tools and Skills.
-One of them was humanize-writing. It crawled over here and became [write-human](skills/write-human/SKILL.md).
+One of them was humanize-writing. It crawled over here and became [im-not-a-fly](skills/im-not-a-fly/SKILL.md).
 
 Skills such as [Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already go after AI writing patterns.
 They handle a real part of the problem. Harlan's developer workflow also needs text that carries intent into implementation and review.
 
 So Harlan built me with opinions about what that text should do.
-[write-human](skills/write-human/SKILL.md) keeps your voice and your claims. It leaves clear prose alone.
+[im-not-a-fly](skills/im-not-a-fly/SKILL.md) keeps your voice and your claims. It leaves clear prose alone.
 [technical-guide](skills/technical-guide/SKILL.md) checks the examples a developer will run.
 [pull-request-summary](skills/pull-request-summary/SKILL.md) grounds the description in the change a maintainer must review.
 Together, they fit that workflow better than a prose cleanup Skill alone.
 
 Some writing is for agents: instructions, constraints, and context that shape what they do next.
 Drop one exception and the work can change, even when the shorter text reads well.
-[agentify-text](skills/agentify-text/SKILL.md) compresses that text and keeps the rules, conditions, and exceptions attached.
+[im-a-fly](skills/im-a-fly/SKILL.md) compresses that text and keeps the rules, conditions, and exceptions attached.
 
 Whether a person reads it or an agent acts on it, the output should carry what you meant and nothing you didn't.
 I came out with extras. I don't recommend it.
@@ -42,15 +43,17 @@ I came out with extras. I don't recommend it.
 
 Seven Skills, four hands. Two hands never put these down.
 
-### write-human
+### im-not-a-fly
 
-For text a person will read. [write-human](skills/write-human/SKILL.md) edits prose that sounds generated: wording first, then structure.
-Meaning, facts, and voice survive the change. Lucky them. It leaves clear prose alone.
+For text a person will read. The name is aspirational.
+[im-not-a-fly](skills/im-not-a-fly/SKILL.md) edits prose that sounds generated: wording first, then structure.
+Meaning, facts, and voice survive the change. It leaves clear prose alone.
 Use it for blogs, docs, release notes, tweets, email, or copy.
 
-### agentify-text
+### im-a-fly
 
-For text an agent will act on. [agentify-text](skills/agentify-text/SKILL.md) compresses Markdown files, instructions, and context into fewer tokens.
+For text an agent will act on. No arguments there.
+[im-a-fly](skills/im-a-fly/SKILL.md) compresses Markdown files, instructions, and context into fewer tokens.
 Facts, rules, and working links stay attached. It keeps an exception even when the exception costs tokens.
 
 ### The other five
@@ -76,18 +79,18 @@ Run the remote commands below once the Skills appear in the listing and your acc
 Ask your agent to run this command for a one-off prose edit:
 
 ```sh
-skilld run harlan-zw/brundlefly/write-human --json
+skilld run harlan-zw/brundlefly/im-not-a-fly --json
 ```
 
 This loads the instructions without installing the Skill. The agent reads them and follows them for your task.
-Replace write-human with another Skill name from Skills when you need a different task.
+Replace im-not-a-fly with another Skill name from Skills when you need a different task.
 
 ### Install
 
 From your project's root, install a Skill for later sessions:
 
 ```sh
-skilld install harlan-zw/brundlefly/write-human
+skilld install harlan-zw/brundlefly/im-not-a-fly
 ```
 
 To install the collection instead:
@@ -106,7 +109,7 @@ Tell your agent which text to work on and what must survive the edit.
 With installed Skills, describe the task in plain words. Name a Skill when you want to choose it explicitly.
 
 ```text
-Use write-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
+Use im-not-a-fly to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
 ```
 
 For a one-off task, give the agent both the load command and your request:
@@ -125,11 +128,11 @@ Review the result before publishing it.
 
 ### Edit prose without losing your voice
 
-Use write-human for a draft or a named file. State what the reader needs and which facts or phrasing must stay.
+Use im-not-a-fly for a draft or a named file. State what the reader needs and which facts or phrasing must stay.
 Keep supplied personal experience in its author's voice. Separate storytelling from technical instructions.
 
 ```text
-Use write-human on this draft. Keep the personal story, cut filler, and preserve the uncertainty in my claims.
+Use im-not-a-fly on this draft. Keep the personal story, cut filler, and preserve the uncertainty in my claims.
 ```
 
 ### Verify a technical guide
@@ -152,7 +155,7 @@ Use pull-request-summary to check this description against the diff and template
 
 ### Compress text for agents
 
-Use agentify-text when agent instructions take too much context.
+Use im-a-fly when agent instructions take too much context.
 Preserve conditions and exceptions, even when they cost tokens.
 
 ```text

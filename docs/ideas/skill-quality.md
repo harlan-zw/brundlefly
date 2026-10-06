@@ -8,7 +8,7 @@ Keep each skill standalone and directly usable.
 
 | Skill | Owns | Boundary |
 | --- | --- | --- |
-| write-human | General prose editing | Preserve facts and supplied voice; avoid unnecessary rewriting |
+| im-not-a-fly | General prose editing | Preserve facts and supplied voice; avoid unnecessary rewriting |
 | technical-guide | Technical tutorials, task guides, reference, explanations, and supported decision guides | Personal narratives keep their author-led structure |
 | pull-request-summary | PR description text and repository conventions | Delivery belongs to the caller |
 
@@ -61,7 +61,7 @@ Keep its historical snapshots distinct from current skill revisions.
 
 | Skill | Behavior gate | Human judgment |
 | --- | --- | --- |
-| write-human | Meaning, qualifiers, names, and supplied facts survive | Useful improvement, naturalness, and retained voice |
+| im-not-a-fly | Meaning, qualifiers, names, and supplied facts survive | Useful improvement, naturalness, and retained voice |
 | technical-guide | Supported claims; complete prerequisites; correct examples and reader outcomes | Can the intended reader act or understand without missing steps? |
 | pull-request-summary | Correct template, conventions, supported claims, preserved notes, and caller policy | Can maintainers review the change efficiently and trust the description? |
 
