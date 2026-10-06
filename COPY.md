@@ -15,13 +15,13 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 
 | Asset | String | Where it goes |
 | --- | --- | --- |
-| Tagline | Agent skills for grotesque text mutations. | README opening and public brand introductions |
+| Tagline | Agent skills for writing that's part human. | README opening, GitHub description after 🪰, and public brand introductions |
 
 ## Register by context
 
 | Context | Register | Example |
 | --- | --- | --- |
-| README opening | Direct, grotesque | Agent skills for grotesque text mutations. |
+| README opening | Direct, uneasy | Agent skills for writing that's part human. |
 | Why | Brundlefly in first person: short, strained, dry; the project history stays true | I still count which parts are mine. |
 | Features | Facts first, then an occasional aside from Brundlefly | For text a person will read. The name is aspirational. |
 | Setup and reference | Plain, complete | From your project's root, install a Skill for later sessions: |
