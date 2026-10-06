@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
-import { useEventListener, useMediaQuery, usePreferredReducedMotion } from '@vueuse/core'
+import { useEventListener, useMediaQuery, usePreferredReducedMotion, useResizeObserver, useScroll } from '@vueuse/core'
 import { dialogueCopy } from '#shared/conversation'
 import type { ConversationHistoryMessage, ConversationReply } from '#shared/conversation'
 
@@ -20,6 +20,10 @@ const touchScreen = useMediaQuery('(pointer: coarse)')
 const reduced = usePreferredReducedMotion()
 // On touch screens, focus opens the keyboard over the reply. Visitors tap the field when they want to type.
 const offerInput = () => { if (!touchScreen.value) input.value?.focus() }
+// Phones hide scrollbars. A fade marks reply text or choices below the fold.
+const { arrivedState, measure } = useScroll(conversation)
+useResizeObserver(conversation, measure)
+watch([reply, () => request.value._tag], measure, { flush: 'post' })
 
 const cancel = () => {
   if (request.value._tag === 'Pending') request.value.controller.abort()
@@ -126,7 +130,7 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
       </div>
       <p id="speech-scope">{{ dialogueCopy.privacy }}</p>
     </header>
-    <div ref="conversation" class="speech-conversation" aria-label="Conversation" :aria-busy="request._tag === 'Pending'">
+    <div ref="conversation" class="speech-conversation" :class="{ 'speech-more': !arrivedState.bottom }" aria-label="Conversation" :aria-busy="request._tag === 'Pending'">
       <p v-if="reply" class="speech-utterance">{{ reply.text }}</p>
       <p v-if="reply?.beat" class="speech-beat" aria-label="Brundlefly's movement">{{ reply.beat }}</p>
       <div v-if="reply?.links.length" class="speech-links">
@@ -153,7 +157,7 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
 </template>
 
 <style scoped>
-.speech-pocket { position: fixed; inset: auto; bottom: 20px; left: 50%; translate: -50% 0; box-sizing: border-box; width: min(720px, calc(100vw - 32px)); max-height: min(460px, 46dvh); margin: 0; padding: 18px 22px 16px; overflow: visible; color: #e8d4a6; background: #10130ff2; border: 1px solid #69404b; border-radius: 30px 12px 26px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22;
+.speech-pocket { position: fixed; inset: auto; bottom: 20px; left: 50%; translate: -50% 0; box-sizing: border-box; width: min(720px, calc(100vw - 32px)); max-height: min(460px, 46dvh); max-width: none; margin: 0; padding: 18px 22px 16px; overflow: visible; color: #e8d4a6; background: #10130ff2; border: 1px solid #69404b; border-radius: 30px 12px 26px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22;
   transition: opacity .2s cubic-bezier(0.23, 1, 0.32, 1), transform .2s cubic-bezier(0.23, 1, 0.32, 1), display .2s allow-discrete, overlay .2s allow-discrete; }
 .speech-pocket[open] { display: flex; flex-direction: column; gap: 12px; transition-duration: .25s; }
 /* The pocket rises into place with the camera and sinks out the same way. It keeps rendering until the fade ends. */
@@ -165,14 +169,17 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
 /* The scope note spans the full width, so the header tools never squeeze it. */
 header { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; flex-shrink: 0; }
 h2 { margin: 0; font: 600 22px/1.1 var(--font-display, sans-serif); }
-header p { grid-column: 1 / -1; margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: #a4b5a0; }
+header p { grid-column: 1 / -1; margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: #a4b5a0; }
 button { font: inherit; cursor: pointer; }
 button:disabled { cursor: wait; opacity: .5; }
 .speech-tools { display: flex; align-items: center; margin: -10px -12px -10px 0; }
+/* The tools overhang their row to keep 44px targets. An inset ring stays clear of the scope note below. */
+.speech-tools button:focus-visible { outline-offset: -6px; }
 .speech-sound { min-height: 44px; padding: 0 10px; border: 0; color: #a4b5a0; background: transparent; font-size: 13px; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; }
 .speech-sound:hover { color: #e8d4a6; }
 .speech-close { width: 44px; height: 44px; border: 0; background: transparent; color: #e8d4a6; font-size: 26px; line-height: 1; }
 .speech-conversation { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-color: #69404b #10130f; }
+.speech-more { mask-image: linear-gradient(#000 calc(100% - 32px), transparent); }
 .speech-utterance { margin: 0; font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
 .speech-beat { margin: -2px 0 0; color: #a4b5a0; font-size: 13px; font-style: italic; line-height: 1.4; }
 .speech-pending { margin: 0; color: #a4b5a0; font-size: 13px; }

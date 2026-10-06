@@ -101,6 +101,7 @@ Reduced motion, Motion off, and the open dialog turn tilt off. iOS asks for moti
 Pause scene animation while the dialog is open or the document is hidden.
 If WebGL fails, provide the canonical static mascot with the same conversation action.
 Keep the dialog within a 375px viewport. Conversation content may scroll inside the dialog.
+A fade at its lower edge shows that more content sits below.
 A new reply starts at the top of the conversation. Dialog touch targets are at least 44px.
 On touch screens, opening the dialog or receiving a reply does not open the keyboard.
 The dialog rises in over 250ms and sinks out over 200ms. Its height eases when a reply changes it.
