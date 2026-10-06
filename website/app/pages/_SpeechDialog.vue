@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useMediaQuery, usePreferredReducedMotion, useResizeObserver, useScroll } from '@vueuse/core'
 import { dialogueCopy } from '#shared/conversation'
 import type { ConversationHistoryMessage, ConversationReply } from '#shared/conversation'
 
@@ -8,6 +8,7 @@ const { open, muted = false, soundAvailable = true } = defineProps<{ open: boole
 const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: ConversationReply], pending: [value: boolean] }>()
 const dialog = shallowRef<HTMLDialogElement>()
 const input = shallowRef<HTMLTextAreaElement>()
+const conversation = shallowRef<HTMLElement>()
 const text = ref('')
 const error = ref('')
 const reply = shallowRef<ConversationReply>()
@@ -15,6 +16,14 @@ const history = ref<ConversationHistoryMessage[]>([])
 const visited = ref(false)
 const request = shallowRef<{ _tag: 'Idle' } | { _tag: 'Pending', controller: AbortController }>({ _tag: 'Idle' })
 const failedVisit = ref(false)
+const touchScreen = useMediaQuery('(pointer: coarse)')
+const reduced = usePreferredReducedMotion()
+// On touch screens, focus opens the keyboard over the reply. Visitors tap the field when they want to type.
+const offerInput = () => { if (!touchScreen.value) input.value?.focus() }
+// Phones hide scrollbars. A fade marks reply text or choices below the fold.
+const { arrivedState, measure } = useScroll(conversation)
+useResizeObserver(conversation, measure)
+watch([reply, () => request.value._tag], measure, { flush: 'post' })
 
 const cancel = () => {
   if (request.value._tag === 'Pending') request.value.controller.abort()
@@ -54,7 +63,7 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value) =>
       failedVisit.value = kind === 'visit' || result.expired
       if (result.expired) { visited.value = false; history.value = [] }
     }
-    input.value?.focus()
+    offerInput()
     return
   }
   reply.value = result.value
@@ -67,7 +76,8 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value) =>
   emit('reaction', result.value)
   emit('reply', result.value.text)
   await nextTick()
-  input.value?.focus()
+  conversation.value?.scrollTo({ top: 0 })
+  offerInput()
 }
 
 watch([() => open, dialog], async ([isOpen, element]) => {
@@ -79,9 +89,22 @@ watch([() => open, dialog], async ([isOpen, element]) => {
   }
   if (!element.open) element.showModal()
   await nextTick()
-  input.value?.focus()
+  offerInput()
   if (!visited.value) void receive('visit')
 }, { flush: 'post' })
+
+// New content changes the pocket height. Easing from the old height keeps the header and seam from jumping.
+let resize: Animation | undefined
+watch([reply, () => request.value._tag, error, failedVisit], async () => {
+  const element = dialog.value
+  if (!element?.open || reduced.value === 'reduce') return
+  const from = element.getBoundingClientRect().height
+  resize?.cancel()
+  await nextTick()
+  const to = element.getBoundingClientRect().height
+  if (Math.abs(to - from) < 2) return
+  resize = element.animate({ height: [`${from}px`, `${to}px`] }, { duration: 200, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' })
+}, { flush: 'pre' })
 
 const choose = (choice: string) => {
   text.value = choice
@@ -107,7 +130,7 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
       </div>
       <p id="speech-scope">{{ dialogueCopy.privacy }}</p>
     </header>
-    <div class="speech-conversation" aria-label="Conversation" :aria-busy="request._tag === 'Pending'">
+    <div ref="conversation" class="speech-conversation" :class="{ 'speech-more': !arrivedState.bottom }" aria-label="Conversation" :aria-busy="request._tag === 'Pending'">
       <p v-if="reply" class="speech-utterance">{{ reply.text }}</p>
       <p v-if="reply?.beat" class="speech-beat" aria-label="Brundlefly's movement">{{ reply.beat }}</p>
       <div v-if="reply?.links.length" class="speech-links">
@@ -134,28 +157,36 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
 </template>
 
 <style scoped>
-.speech-pocket { position: fixed; inset: auto; bottom: 20px; left: 50%; translate: -50% 0; box-sizing: border-box; width: min(720px, calc(100vw - 32px)); max-height: min(460px, 46dvh); margin: 0; padding: 18px 22px 16px; overflow: visible; color: #e8d4a6; background: #10130ff2; border: 1px solid #69404b; border-radius: 30px 12px 26px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22; }
-.speech-pocket[open] { display: flex; flex-direction: column; gap: 12px; }
+.speech-pocket { position: fixed; inset: auto; bottom: 20px; left: 50%; translate: -50% 0; box-sizing: border-box; width: min(720px, calc(100vw - 32px)); max-height: min(460px, 46dvh); max-width: none; margin: 0; padding: 18px 22px 16px; overflow: visible; color: #e8d4a6; background: #10130ff2; border: 1px solid #69404b; border-radius: 30px 12px 26px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22;
+  transition: opacity .2s cubic-bezier(0.23, 1, 0.32, 1), transform .2s cubic-bezier(0.23, 1, 0.32, 1), display .2s allow-discrete, overlay .2s allow-discrete; }
+.speech-pocket[open] { display: flex; flex-direction: column; gap: 12px; transition-duration: .25s; }
+/* The pocket rises into place with the camera and sinks out the same way. It keeps rendering until the fade ends. */
+.speech-pocket:not([open]) { opacity: 0; transform: translateY(16px); pointer-events: none; }
+@starting-style { .speech-pocket[open] { opacity: 0; transform: translateY(16px); } }
 .speech-pocket::backdrop { background: #080b0812; }
 /* The seam crowns the pocket without reaching up over his face. */
 .speech-seam { position: absolute; width: 88%; height: auto; top: 0; left: 6%; translate: 0 -58%; image-rendering: pixelated; pointer-events: none; }
 /* The scope note spans the full width, so the header tools never squeeze it. */
 header { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; flex-shrink: 0; }
 h2 { margin: 0; font: 600 22px/1.1 var(--font-display, sans-serif); }
-header p { grid-column: 1 / -1; margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: #a4b5a0; }
+header p { grid-column: 1 / -1; margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: #a4b5a0; }
 button { font: inherit; cursor: pointer; }
 button:disabled { cursor: wait; opacity: .5; }
 .speech-tools { display: flex; align-items: center; margin: -10px -12px -10px 0; }
+/* The tools overhang their row to keep 44px targets. An inset ring stays clear of the scope note below. */
+.speech-tools button:focus-visible { outline-offset: -6px; }
 .speech-sound { min-height: 44px; padding: 0 10px; border: 0; color: #a4b5a0; background: transparent; font-size: 13px; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; }
 .speech-sound:hover { color: #e8d4a6; }
 .speech-close { width: 44px; height: 44px; border: 0; background: transparent; color: #e8d4a6; font-size: 26px; line-height: 1; }
 .speech-conversation { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-color: #69404b #10130f; }
+.speech-more { mask-image: linear-gradient(#000 calc(100% - 32px), transparent); }
 .speech-utterance { margin: 0; font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
 .speech-beat { margin: -2px 0 0; color: #a4b5a0; font-size: 13px; font-style: italic; line-height: 1.4; }
 .speech-pending { margin: 0; color: #a4b5a0; font-size: 13px; }
 .speech-links { display: flex; flex-wrap: wrap; gap: 4px 18px; }
 .speech-links a { display: inline-flex; align-items: center; min-height: 32px; color: #a4b5a0; font-size: 13px; line-height: 1.4; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; }
 .speech-links a:hover { color: #e8d4a6; text-decoration-color: currentColor; }
+@media (pointer: coarse) { .speech-links { row-gap: 0; } .speech-links a { min-height: 44px; } }
 .speech-choices { display: grid; gap: 6px; list-style: none; margin: 4px 0 0; padding: 0; }
 .speech-choices button { display: flex; align-items: baseline; gap: 12px; width: 100%; min-height: 44px; padding: 10px 12px; text-align: left; border: 1px solid #69404b66; border-radius: 8px 3px 12px 3px; color: #e8d4a6; background: #343c3b40; font-size: 14px; line-height: 1.4; }
 .speech-choices button:hover:not(:disabled) { border-color: #a4b5a0; background: #343c3b99; }
@@ -174,4 +205,6 @@ textarea:focus-visible { border-color: #e8d4a6; outline-offset: 2px; }
 .speech-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-height: 540px) { .speech-pocket { bottom: 12px; max-height: calc(100dvh - 24px); padding: 14px 18px 12px; gap: 10px; } }
 @media (max-width: 600px) { .speech-pocket { bottom: 10px; width: calc(100vw - 20px); max-height: 52dvh; padding: 16px 14px 12px; } h2 { font-size: 20px; } .speech-utterance { font-size: 15px; } .speech-choices button { padding: 8px 10px; font-size: 14px; } }
+/* Short landscape screens keep his face beside the pocket. resolveConversationFocus pans the scene to match. */
+@media (orientation: landscape) and (max-height: 540px) { .speech-pocket { left: auto; right: 12px; translate: none; width: min(400px, 50vw); max-height: calc(100dvh - 24px); } }
 </style>

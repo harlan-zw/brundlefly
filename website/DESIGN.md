@@ -68,7 +68,8 @@ Clicking Brundlefly opens a native dialog. The dialog pauses walking and sits ov
 Use canonical local replies about the collection, skills, installation, and brand kit.
 State that replies are local. User text stays in the browser.
 Keep the dialog compact and readable. Separate visitor text and replies in reading order.
-Frame his face above the dialog, so his mouth stays visible while he speaks.
+Frame his face clear of the dialog, so his mouth stays visible while he speaks.
+On short landscape screens, the dialog sits at the right and his face stays left of it.
 Use native text input, submit, close, and Escape behavior. Return focus to the mascot after closing.
 The dialog does not run skills or simulate remote agent execution.
 
@@ -100,6 +101,11 @@ Reduced motion, Motion off, and the open dialog turn tilt off. iOS asks for moti
 Pause scene animation while the dialog is open or the document is hidden.
 If WebGL fails, provide the canonical static mascot with the same conversation action.
 Keep the dialog within a 375px viewport. Conversation content may scroll inside the dialog.
+A fade at its lower edge shows that more content sits below.
+A new reply starts at the top of the conversation. Dialog touch targets are at least 44px.
+On touch screens, opening the dialog or receiving a reply does not open the keyboard.
+The dialog rises in over 250ms and sinks out over 200ms. Its height eases when a reply changes it.
+Reduced motion makes both changes immediate.
 
 ## Voice
 

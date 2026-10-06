@@ -13,7 +13,7 @@ import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
-import { defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
+import { defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ConversationMood } from '#shared/conversation'
@@ -278,7 +278,6 @@ watch(canvas, async (element) => {
     renderer.toneMappingExposure = settings.value.exposure
     scene.environmentIntensity = settings.value.reflections
     const aspect = renderWidth / renderHeight
-    const portrait = aspect < 0.8
     const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(sceneLayout.camera.desktop, sceneLayout.camera.portrait, aspect)
     fog.density = settings.value.fog * fogScale
     if (camera.fov !== fieldOfView) { camera.fov = fieldOfView; camera.updateProjectionMatrix() }
@@ -300,10 +299,10 @@ watch(canvas, async (element) => {
     focusProgress = reduced.value === 'reduce' ? desiredFocus
       : desiredFocus > focusProgress ? Math.min(1, focusProgress + delta / 0.65) : Math.max(0, focusProgress - delta / 0.65)
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
-    focusTarget.copy(figure.localToWorld(new Vector3(0.23, 0.8, 0)))
-    focusPosition.copy(focusTarget).add(new Vector3(0, 0.15, portrait ? 3.8 : 4.1))
-    // Frame his face above the dialog, so his mouth stays visible while he speaks.
-    focusTarget.y -= portrait ? 0.85 : 0.6
+    // Frame his face clear of the dialog, so his mouth stays visible while he speaks.
+    const focus = resolveConversationFocus(figure.localToWorld(new Vector3(0.23, 0.8, 0)), renderWidth, renderHeight, camera.fov)
+    focusPosition.copy(focus.position)
+    focusTarget.copy(focus.target)
     camera.position.copy(basePosition).lerp(focusPosition, blend)
     camera.lookAt(baseTarget.lerp(focusTarget, blend))
     camera.updateMatrixWorld()

@@ -49,7 +49,23 @@ export const resolveResponsiveCameraFraming = (desktop: readonly [number, number
   }
 }
 
-export type TiltReading = { alpha: number; beta: number; gamma: number }
+/**
+ * Stages his face while he talks. The dialog normally sits below him, so the view looks down and his face rises.
+ * Short landscape screens put the dialog on the right instead. The view pans right, so his face sits in the free area.
+ */
+export const resolveConversationFocus = (face: Vector3, width: number, height: number, fieldOfView: number) => {
+  const aspect = width / height
+  if (width > height && height <= 540) {
+    // Matches the landscape dialog in _SpeechDialog.vue: up to 400px wide, 12px from the edge.
+    const dialogShare = (Math.min(400, width / 2) + 12) / width
+    const pan = dialogShare * 4.1 * Math.tan(fieldOfView * Math.PI / 360) * aspect
+    return { position: face.clone().add(new Vector3(pan, 0.15, 4.1)), target: face.clone().add(new Vector3(pan, -0.2, 0)) }
+  }
+  const portrait = aspect < 0.8
+  return { position: face.clone().add(new Vector3(0, 0.15, portrait ? 3.8 : 4.1)), target: face.clone().add(new Vector3(0, portrait ? -0.85 : -0.6, 0)) }
+}
+
+export type TiltReading ={ alpha: number; beta: number; gamma: number }
 export type TiltOffset = { yaw: number; pitch: number }
 const degrees = Math.PI / 180
 // The view looks out of the back of the phone, not out of its top edge.
