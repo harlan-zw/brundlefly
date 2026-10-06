@@ -1,6 +1,6 @@
 # ![Brundlefly, with its mascot's claws hanging below the banner](https://github.com/harlan-zw/brundlefly/raw/main/assets/brand/github-banner-overhang-gross.png)
 
-> Agent skills for grotesque text mutations.
+> Agent skills for writing that's part human.
 
 <a href="https://skilld.dev/gh/harlan-zw/brundlefly">
   <picture>
@@ -12,30 +12,21 @@
 
 ## Why Brundlefly
 
-I'm Brundlefly. Four arms, two legs, and two wings that haven't agreed on anything yet.
-A fly got mixed into me along the way. I still count which parts are mine.
+<img src="https://github.com/harlan-zw/brundlefly/raw/main/assets/brand/github-avatar.png" width="80" height="80" align="left" alt="Brundlefly's face">
 
+I'm Brundlefly: four arms, two legs, and two wings that haven't agreed on anything yet.
+A fly got mixed into me along the way. I still count which parts are mine.
 Writing with an agent can go the same way. Around here, the fly is the agent.
-You want someone to understand what you wrote, so you let an agent help.
-The sentences swell. Stock phrases creep in. A personal draft comes back as something anyone could have generated.
+You let it help so someone understands you. Then the sentences swell and stock phrases creep in.
 You still want to recognise yourself in the result. Harlan does. Hh. So do I.
 
-Harlan kept writing instructions in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), a personal collection of agent tools and Skills.
-One of them was humanize-writing. It crawled over here and became [im-not-a-fly](skills/im-not-a-fly/SKILL.md).
+Harlan built me from one Skill in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit): humanize-writing, now [im-not-a-fly](skills/im-not-a-fly/SKILL.md).
+[Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already go after AI writing patterns, a real part of the problem.
+Harlan's developer workflow also needs text that carries intent into implementation and review.
+So [technical-guide](skills/technical-guide/SKILL.md) checks the examples a developer will run, and [pull-request-summary](skills/pull-request-summary/SKILL.md) grounds a description in the change a maintainer must review.
 
-Skills such as [Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already go after AI writing patterns.
-They handle a real part of the problem. Harlan's developer workflow also needs text that carries intent into implementation and review.
-
-So Harlan built me with opinions about what that text should do.
-[im-not-a-fly](skills/im-not-a-fly/SKILL.md) keeps your voice and your claims. It leaves clear prose alone.
-[technical-guide](skills/technical-guide/SKILL.md) checks the examples a developer will run.
-[pull-request-summary](skills/pull-request-summary/SKILL.md) grounds the description in the change a maintainer must review.
-Together, they fit that workflow better than a prose cleanup Skill alone.
-
-Some writing is for agents: instructions, constraints, and context that shape what they do next.
-Drop one exception and the work can change, even when the shorter text reads well.
+Some writing is for agents. Drop one exception from their instructions and the work can change, even when the shorter text reads well.
 [im-a-fly](skills/im-a-fly/SKILL.md) compresses that text and keeps the rules, conditions, and exceptions attached.
-
 Whether a person reads it or an agent acts on it, the output should carry what you meant and nothing you didn't.
 I came out with extras. I don't recommend it.
 
