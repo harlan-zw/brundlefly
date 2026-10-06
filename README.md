@@ -40,14 +40,27 @@ I came out with extras. I don't recommend it.
 
 ## Skills
 
-Seven Skills. Four hands. I manage.
+Seven Skills, four hands. Two hands never put these down.
+
+### write-human
+
+For text a person will read. [write-human](skills/write-human/SKILL.md) edits prose that sounds generated: wording first, then structure.
+Meaning, facts, and voice survive the change. Lucky them. It leaves clear prose alone.
+Use it for blogs, docs, release notes, tweets, email, or copy.
+
+### agentify-text
+
+For text an agent will act on. [agentify-text](skills/agentify-text/SKILL.md) compresses Markdown files, instructions, and context into fewer tokens.
+Facts, rules, and working links stay attached. It keeps an exception even when the exception costs tokens.
+
+### The other five
+
+Each one does a narrower job.
 
 | Skill | Use it to |
 | --- | --- |
-| [write-human](skills/write-human/SKILL.md) | Edit prose. Its meaning, facts, and voice survive the change. Lucky them. |
 | [technical-guide](skills/technical-guide/SKILL.md) | Research or refresh technical guides and verify their examples. |
 | [pull-request-summary](skills/pull-request-summary/SKILL.md) | Draft or check PR descriptions against the diff and repository conventions. |
-| [agentify-text](skills/agentify-text/SKILL.md) | Shrink agent context. Facts, rules, and working links stay attached. |
 | [readme](skills/readme/SKILL.md) | Write a README with a grounded story and clear setup. |
 | [glossary](skills/glossary/SKILL.md) | Create or audit GLOSSARY.md for names, meanings, and relationships. One name per thing. I share mine with the collection. |
 | [copywriting](skills/copywriting/SKILL.md) | Create or audit COPY.md for voice and canonical wording, or write copy against it. Even I follow it. |
@@ -67,7 +80,7 @@ skilld run harlan-zw/brundlefly/write-human --json
 ```
 
 This loads the instructions without installing the Skill. The agent reads them and follows them for your task.
-Replace write-human with another name from the Skills table when you need a different task.
+Replace write-human with another Skill name from Skills when you need a different task.
 
 ### Install
 

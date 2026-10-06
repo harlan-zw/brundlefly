@@ -23,7 +23,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 | --- | --- | --- |
 | README opening | Direct, grotesque | Agent skills for grotesque text mutations. |
 | Why | Brundlefly in first person: short, strained, dry; the project history stays true | I still count which parts are mine. |
-| Features | Facts first, then an occasional aside from Brundlefly | Edit prose. Its meaning, facts, and voice survive the change. Lucky them. |
+| Features | Facts first, then an occasional aside from Brundlefly | Meaning, facts, and voice survive the change. Lucky them. |
 | Setup and reference | Plain, complete | From your project's root, install a Skill for later sessions: |
 | Skill instructions | Direct, careful | Never invent an actor, experience, example, or supporting detail. |
 
