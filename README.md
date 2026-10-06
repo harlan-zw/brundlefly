@@ -14,50 +14,85 @@
 
 <img src="https://github.com/harlan-zw/brundlefly/raw/main/assets/brand/github-avatar.png" width="80" height="80" align="left" alt="Brundlefly's face">
 
-I'm Brundlefly: four arms, two legs, and two wings that haven't agreed on anything yet.
-A fly got mixed into me along the way. I still count which parts are mine.
-Writing with an agent can go the same way. Around here, the fly is the agent.
-You let it help so someone understands you. Then the sentences swell and stock phrases creep in.
-You still want to recognise yourself in the result. Harlan does. Hh. So do I.
+*One wing twitches.* I'm Brundlefly. Four arms, two legs, two wings that haven't agreed on anything.
+A fly got mixed into me, and I still count which parts are m... *His jaw catches.* mine.
+Around here, the fly is the agent. You let it help so someone understands you, then your sentences swell and stock phrases creep in.
+You still want to recognise yourself in the result. Hh. So do I.
 
-Harlan built me from one Skill in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit): humanize-writing, now [im-not-a-fly](skills/im-not-a-fly/SKILL.md).
-[Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already go after AI writing patterns, a real part of the problem.
-Harlan's developer workflow also needs text that carries intent into implementation and review.
-So [technical-guide](skills/technical-guide/SKILL.md) checks the examples a developer will run, and [pull-request-summary](skills/pull-request-summary/SKILL.md) grounds a description in the change a maintainer must review.
+Harlan [<img src="https://github.com/harlan-zw.png?size=40" width="20" height="20" align="center" alt="@harlan-zw">](https://github.com/harlan-zw) built me from humanize-writing in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), now [im-not-a-fly](skills/im-not-a-fly/SKILL.md).
+[Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already hunt AI writing patterns.
+Harlan also needed [technical-guide](skills/technical-guide/SKILL.md) for examples a developer runs, and [pull-request-summary](skills/pull-request-summary/SKILL.md) for descriptions grounded in their change.
 
-Some writing is for agents. Drop one exception from their instructions and the work can change, even when the shorter text reads well.
-[im-a-fly](skills/im-a-fly/SKILL.md) compresses that text and keeps the rules, conditions, and exceptions attached.
-Whether a person reads it or an agent acts on it, the output should carry what you meant and nothing you didn't.
+Some writing is for agents. Drop one exception and the work can change.
+[im-a-fly](skills/im-a-fly/SKILL.md) compresses that text and keeps every rule and exception attached.
 I came out with extras. I don't recommend it.
 
 ## Skills
 
 Seven Skills, four hands. Two hands never put these down.
 
-### im-not-a-fly
+### [im-not-a-fly](skills/im-not-a-fly/SKILL.md)
 
-For text a person will read. The name is aspirational.
-[im-not-a-fly](skills/im-not-a-fly/SKILL.md) edits prose that sounds generated: wording first, then structure.
-Meaning, facts, and voice survive the change. It leaves clear prose alone.
-Use it for blogs, docs, release notes, tweets, email, or copy.
+For text a person will read: blogs, docs, release notes, tweets, email, or copy. The name is aspirational.
 
-### im-a-fly
+- 🔍 **Two passes**: surface wording first, then structure.
+- 🧬 **Keeps what's yours**: meaning, facts, claim scope, uncertainty, and voice survive the edit.
+- 🧹 **Leaves clear prose alone**: it changes a sentence only to fix a reading problem.
+- 📖 **Story or reference**: tells Why as a story and keeps setup and guides direct.
+- ♿ **Easier to read**: short blocks and findable headings for readers with varied attention and reading needs.
 
-For text an agent will act on. No arguments there.
-[im-a-fly](skills/im-a-fly/SKILL.md) compresses Markdown files, instructions, and context into fewer tokens.
-Facts, rules, and working links stay attached. It keeps an exception even when the exception costs tokens.
+### [im-a-fly](skills/im-a-fly/SKILL.md)
+
+For text an agent will act on: Markdown files, instructions, docs, and context. No arguments there.
+
+- 🗜️ **Fewer tokens, same rules**: cuts filler and duplicates, and keeps every requirement, condition, and exception.
+- 🧷 **Protected Markdown**: frontmatter, code, commands, links, and anchors stay verbatim.
+- ⚖️ **Checked both ways**: every source rule maps to the result, and every result rule maps back to the source.
+- 🚫 **No dialects**: plain compact Markdown, with no invented abbreviations or decoding legend.
 
 ### The other five
 
 Each one does a narrower job.
 
-| Skill | Use it to |
-| --- | --- |
-| [technical-guide](skills/technical-guide/SKILL.md) | Research or refresh technical guides and verify their examples. |
-| [pull-request-summary](skills/pull-request-summary/SKILL.md) | Draft or check PR descriptions against the diff and repository conventions. |
-| [readme](skills/readme/SKILL.md) | Write a README with a grounded story and clear setup. |
-| [glossary](skills/glossary/SKILL.md) | Create or audit GLOSSARY.md for names, meanings, and relationships. One name per thing. I share mine with the collection. |
-| [copywriting](skills/copywriting/SKILL.md) | Create or audit COPY.md for voice and canonical wording, or write copy against it. Even I follow it. |
+#### [technical-guide](skills/technical-guide/SKILL.md)
+
+Research, write, or refresh a technical guide.
+
+- 🧭 **Fits the reader's task**: a tutorial, how-to, reference, or explanation, chosen from what the reader needs.
+- 🧪 **Verified examples**: runs safe examples against current code and official sources, and reports checks it could not run.
+- 🩹 **Small refreshes**: fixes the reader's problem and keeps useful examples, anchors, and voice.
+
+#### [pull-request-summary](skills/pull-request-summary/SKILL.md)
+
+Draft or check a PR description.
+
+- 🔎 **Grounded in the diff**: checks every claim against the change and the repository's conventions.
+- 📋 **Follows your template**: keeps required sections, checklists, and AI disclosures.
+- 📤 **Text only**: returns the description, and your delivery workflow publishes it.
+
+#### [readme](skills/readme/SKILL.md)
+
+Write or refresh a README.
+
+- 📖 **Story first**: researches why the project exists before writing Why.
+- 🛠️ **Checked setup**: reads the source and CLI help before describing a command.
+- 🗺️ **A reader's path**: splash, Why, features, and setup, then guides and API.
+
+#### [glossary](skills/glossary/SKILL.md)
+
+Create or audit GLOSSARY.md. One name per thing. I share mine with the collection.
+
+- 📚 **One concept, one word**: records each product name and bans its synonyms.
+- 🔗 **Relationship map**: shows how terms relate, which is where ambiguity hides.
+- ✋ **No silent names**: proposes a new term and waits for approval.
+
+#### [copywriting](skills/copywriting/SKILL.md)
+
+Create or audit COPY.md, or write copy against it. Even I follow it.
+
+- 🔒 **Canonical strings**: approved taglines and copy are never paraphrased.
+- 🎚️ **Register per surface**: a button, an error, and a hero each get the right voice.
+- 🚷 **Banned language**: each ban carries its reason, so near misses get caught too.
 
 ## Setup
 
