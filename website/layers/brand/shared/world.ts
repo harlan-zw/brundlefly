@@ -52,7 +52,7 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   const enclosure = new Mesh(enclosureGeometry, enclosureSkin.material)
   enclosure.position.set(0, groundLevel + 4, 5)
   root.add(enclosure)
-  const tunnel = createOrganismModel(texture, 'lair', 1.35, gooTexture)
+  const tunnel = createOrganismModel(texture, 'lair', 1.35)
   tunnel.root.position.set(...sceneLayout.opening.position)
   tunnel.root.scale.set(...sceneLayout.opening.scale)
   root.add(tunnel.root)
