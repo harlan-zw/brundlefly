@@ -222,7 +222,8 @@ watch(canvas, async (element) => {
     }
     else {
       if (mixer && activeClip) { mixer.stopAllAction(); activeClip = '' }
-      mascotModel?.update({ time: inspector ? 0 : elapsed, pressure: currentPressure, pointer, transform, speaking, blink, brow, squint })
+      mascotModel?.update({ time: inspector ? 0 : elapsed, pressure: currentPressure, pointer, transform, speaking, blink, brow, squint,
+        eyes: inspector ? undefined : { _tag: 'Wander' } })
     }
     if (helper) helper.visible = bones
     if (inspector) mascotModel?.root.traverse(object => {

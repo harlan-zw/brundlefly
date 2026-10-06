@@ -5,9 +5,11 @@ import {
 } from 'three'
 import type { Texture } from 'three'
 import { createEyeMaterial } from './eye-material.ts'
+import { fixationDrift, lookToward, pupilDirection, pupilSize, wanderingLook } from './eye-gaze.ts'
+import type { EyeFocus, Look } from './eye-gaze.ts'
 import { applyMascotSurface } from './mascot-surface.ts'
 
-export type FaceInput = { time: number, speaking: number, blink: number, brow?: number, squint?: number }
+export type FaceInput = { time: number, speaking: number, blink: number, brow?: number, squint?: number, eyes?: EyeFocus }
 export type HeadProjection = { texture: Texture, raster: { width: number, height: number, data: Uint8ClampedArray } }
 
 const headWidth = 0.67
@@ -38,7 +40,7 @@ export function createHeadOutline({ width, height, data }: HeadProjection['raste
 export function createFaceModel(texture?: Texture, projection?: HeadProjection) {
   if (projection) return createProjectedFace(texture, projection)
   const root = new Group()
-  return { root, animatedNodes: [] as Bone[], update(_input: FaceInput) { root.updateMatrixWorld(true) }, updateMaterials(_time: number) {}, dispose() {} }
+  return { root, animatedNodes: [] as Bone[], update(_input: FaceInput) { root.updateMatrixWorld(true) }, updateMaterials(_time: number) {}, look: (): Look => ({ x: 0, y: 0 }), dispose() {} }
 }
 
 /** Exact frontal artwork over a skinned volume. Alpha describes silhouette, never pixel brightness. */
@@ -240,12 +242,15 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
     parent.add(value)
     return value
   }
+  const eyeCenter = new Vector3()
   eyes.forEach((eye, index) => {
     const sphere = new SphereGeometry(1, 48, 32)
+    sphere.setAttribute('eyeSphere', sphere.getAttribute('position').clone())
     sphere.scale(eye.rx, eye.ry, eye.rz)
     const globe = projectedMesh(sphere, root, index)
     globe.position.set(eye.x, eye.y, depthAt(eye.x, eye.y) - eye.rz * 0.3)
     globe.name = `face-reference-eye-${index}`
+    eyeCenter.addScaledVector(globe.position, 1 / eyes.length)
     for (const upper of [true, false]) {
       const cap = new SphereGeometry(1, 40, 24, 0, Math.PI * 2, upper ? 0 : Math.PI * 0.5, Math.PI * 0.5)
       cap.scale(eye.rx * 1.055, eye.ry * 1.055, eye.rz * 1.13)
@@ -253,8 +258,32 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
     }
   })
   function updateMaterials(time: number) { eye.updateTime(time); surfaces.forEach(surface => surface.update(time)) }
-  function update({ time, speaking, blink, brow = 0, squint = 0 }: FaceInput) {
+  // Eyes snap toward a new target in a saccade and the pupil eases its size. Stopped or jumping time sets both at once.
+  let look: Look = { x: 0, y: 0 }, pupil = pupilSize('Ahead', 0), eyeshine = 0, lookedAt: number | undefined
+  const watched = new Vector3()
+  function focusEyes(time: number, focus: EyeFocus) {
+    const drift = fixationDrift(time)
+    let target: Look = { x: 0, y: 0 }
+    if (focus._tag === 'Wander') {
+      const wander = wanderingLook(time)
+      target = { x: wander.x + drift.x, y: wander.y + drift.y }
+    }
+    if (focus._tag === 'Watch') {
+      root.updateWorldMatrix(true, false)
+      const toward = lookToward(root.worldToLocal(watched.set(focus.target.x, focus.target.y, focus.target.z)).sub(eyeCenter))
+      target = { x: toward.x + drift.x * 0.5, y: toward.y + drift.y * 0.5 }
+    }
+    const delta = lookedAt === undefined ? Infinity : time - lookedAt
+    const blend = (rate: number) => delta > 0 && delta < 0.25 ? 1 - Math.exp(-rate * delta) : 1
+    lookedAt = time
+    look = { x: look.x + (target.x - look.x) * blend(30), y: look.y + (target.y - look.y) * blend(30) }
+    pupil += (pupilSize(focus._tag, time) - pupil) * blend(2.5)
+    eyeshine += ((focus._tag === 'Watch' ? 1 : 0) - eyeshine) * blend(2.5)
+    eye.updateGaze(pupilDirection(look), pupil, eyeshine)
+  }
+  function update({ time, speaking, blink, brow = 0, squint = 0, eyes: focus = { _tag: 'Ahead' } }: FaceInput) {
     updateMaterials(time)
+    focusEyes(time, focus)
     const voice = Math.max(0, Math.min(1, speaking))
     const close = Math.max(0, Math.min(1, blink))
     animatedNodes.forEach((bone, index) => { bone.position.copy(anchors[index]!); bone.rotation.set(0, 0, 0); bone.scale.set(1, 1, 1) })
@@ -277,5 +306,5 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
     root.updateMatrixWorld(true); skeleton.update()
   }
   update({ time: 0, speaking: 0, blink: 0 })
-  return { root, animatedNodes, update, updateMaterials, dispose() { surfaces.forEach(surface => surface.dispose()); geometries.forEach(value => value.dispose()); materials.forEach(value => value.dispose()); eye.dispose(); heightTexture?.dispose(); sideTexture?.dispose(); skeleton.dispose() } }
+  return { root, animatedNodes, update, updateMaterials, look: () => look, dispose() { surfaces.forEach(surface => surface.dispose()); geometries.forEach(value => value.dispose()); materials.forEach(value => value.dispose()); eye.dispose(); heightTexture?.dispose(); sideTexture?.dispose(); skeleton.dispose() } }
 }

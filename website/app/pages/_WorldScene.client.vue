@@ -312,7 +312,10 @@ watch(canvas, async (element) => {
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
-    mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose,
+    // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera.
+    const eyes = !faceMotion ? { _tag: 'Ahead' } as const
+      : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
+    mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose, eyes,
       speaking: faceMotion ? speaking : 0,
       brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
         : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,

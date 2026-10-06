@@ -146,3 +146,14 @@ test('blinking lids sample skin instead of painting duplicate pupils', () => {
   assert.ok(sampledLids >= 2, 'Both blinking eyes must expose testable lid tissue.')
   face.dispose(); texture.dispose(); skinTexture.dispose()
 })
+
+test('both pupils watch a target, then return ahead when released', () => {
+  const face = projectedFace()
+  for (let frame = 0; frame <= 10; frame++) face.update({ time: frame / 60, speaking: 0, blink: 0, eyes: { _tag: 'Watch', target: { x: 2, y: 1, z: 3 } } })
+  const watching = face.look()
+  assert.ok(watching.x > 0.5 && watching.y > 0.2, `The pupils must turn toward an upper right visitor within a few frames, measured ${JSON.stringify(watching)}.`)
+  for (let frame = 11; frame <= 30; frame++) face.update({ time: frame / 60, speaking: 0, blink: 0 })
+  const released = face.look()
+  assert.ok(Math.hypot(released.x, released.y) < 0.02, 'The pupils must return to the canonical pose.')
+  face.dispose()
+})

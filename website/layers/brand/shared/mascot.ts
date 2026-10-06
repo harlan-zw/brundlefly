@@ -7,6 +7,8 @@ import type { Transform } from './organism'
 import { createFaceModel, createHeadOutline } from './face.ts'
 import type { HeadProjection } from './face.ts'
 import { applyMascotSurface } from './mascot-surface.ts'
+import { wanderingLook } from './eye-gaze.ts'
+import type { EyeFocus } from './eye-gaze.ts'
 
 type Raster = { width: number, height: number, data: Uint8ClampedArray }
 export type BodyProjection = { texture: Texture, raster: Raster }
@@ -366,8 +368,8 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     bodySurfaces.forEach(surface => surface.update(time))
     face.updateMaterials(time)
   }
-  /** `gait` blends the walk cycle from standing (0) to a full stride (1). `gaze` turns only the head. */
-  function update(input: { time: number, pressure: number, pointer: Vector2, transform: Transform, gait?: number, walkPhase?: number, gaze?: { yaw: number, tilt: number }, speaking?: number, blink?: number, brow?: number, squint?: number }) {
+  /** `gait` blends the walk cycle from standing (0) to a full stride (1). `gaze` turns only the head. `eyes` aims the pupils. */
+  function update(input: { time: number, pressure: number, pointer: Vector2, transform: Transform, gait?: number, walkPhase?: number, gaze?: { yaw: number, tilt: number }, speaking?: number, blink?: number, brow?: number, squint?: number, eyes?: EyeFocus }) {
       const { time, pressure, pointer, transform, walkPhase = time * 3.6 } = input
       const gait = Math.min(1, Math.max(0, input.gait ?? 0))
       const speaking = Math.min(1, Math.max(0, input.speaking ?? 0))
@@ -384,8 +386,11 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       // He hunches into the walk and lifts his chest a little while he speaks.
       joint('chest').rotation.x = pulse * 0.025 + pressure * 0.035 + gait * 0.04 - speaking * 0.015
       joint('chest').rotation.z = -stride * 0.025
-      joint('head').rotation.set(-pointer.y * 0.08 - speaking * 0.03 + Math.sin(time * 0.53) * 0.012 * still,
-        pointer.x * 0.14 + (input.gaze?.yaw ?? 0), pulse * 0.015 + (input.gaze?.tilt ?? 0))
+      // A wandering look leads and the head follows late and slow, so the glance reads from across the chamber.
+      const follow = input.eyes?._tag === 'Wander' ? wanderingLook(time - 0.16, 0.6) : { x: 0, y: 0 }
+      const headFollow = 1 - gait * 0.7
+      joint('head').rotation.set(-pointer.y * 0.08 - speaking * 0.03 + Math.sin(time * 0.53) * 0.012 * still - follow.y * 0.05 * headFollow,
+        pointer.x * 0.14 + (input.gaze?.yaw ?? 0) + follow.x * 0.09 * headFollow, pulse * 0.015 + (input.gaze?.tilt ?? 0))
       joint('left-shoulder').rotation.z = -pressure * 0.09 + pulse * 0.02
       joint('right-shoulder').rotation.z = pressure * 0.09 - pulse * 0.02
       joint('left-shoulder').rotation.x = -stride * 0.15
@@ -428,7 +433,7 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
       // The body rises as the legs pass each other and settles as each foot lands.
       root.position.y = pulse * 0.012 + gait * Math.abs(Math.cos(walkPhase)) * 0.03
       root.scale.y = transform === 'squeeze' ? 1 - pressure * 0.04 : 1
-      face.update({ time, speaking, blink, brow: input.brow, squint: input.squint })
+      face.update({ time, speaking, blink, brow: input.brow, squint: input.squint, eyes: input.eyes })
       updateMaterials(time)
       root.updateMatrixWorld(true)
       skeleton.update()

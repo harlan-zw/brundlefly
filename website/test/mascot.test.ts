@@ -5,6 +5,13 @@ import { inflateSync } from 'node:zlib'
 import { AnimationMixer, Color, Raycaster, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three'
 import type { MeshStandardMaterial } from 'three'
 import { createMascotModel } from '../layers/brand/shared/mascot.ts'
+import { wanderingLook } from '../layers/brand/shared/eye-gaze.ts'
+
+// The head turns furthest at the end of the widest held glance on each side.
+const wanderTimes = Array.from({ length: 2130 }, (_, index) => index / 100)
+const wanderXs = wanderTimes.map(time => wanderingLook(time).x)
+const widestRightGlance = wanderTimes.findLast((_, index) => wanderXs[index] === Math.max(...wanderXs))!
+const widestLeftGlance = wanderTimes.findLast((_, index) => wanderXs[index] === Math.min(...wanderXs))!
 
 function canonicalRaster() {
   return imageRaster('../../assets/brand/character.png')
@@ -276,8 +283,11 @@ test('actual mapped neck stays solid beneath the face while walking and speaking
   const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster},
     {texture, raster: imageRaster('../../assets/brand/kit/lair/body-projection.png')})
   // Head turns cover the widest gaze the walk behaviour asks for.
-  for (const [walking, speaking, yaw, tilt] of [[false, 0, 0, 0], [true, 0, 0, 0], [false, 1, 0, 0], [false, 0, 0.12, 0.07], [false, 0, -0.12, 0.07]] as const) {
-    model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: walking ? 1 : 0, walkPhase: Math.PI / 2, gaze: {yaw, tilt}, speaking, blink: 0})
+  // The last two poses add the widest look-around glance on top of the walk gaze.
+  for (const [walking, speaking, yaw, tilt, time] of [[false, 0, 0, 0, 0], [true, 0, 0, 0, 0], [false, 1, 0, 0, 0], [false, 0, 0.12, 0.07, 0], [false, 0, -0.12, 0.07, 0],
+    [false, 0, 0.12, 0.07, widestRightGlance], [false, 0, -0.12, 0.07, widestLeftGlance]] as const) {
+    model.update({time, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: walking ? 1 : 0, walkPhase: Math.PI / 2, gaze: {yaw, tilt}, speaking, blink: 0,
+      eyes: time ? {_tag: 'Wander'} : undefined})
     const origin = new Vector3((0.61 - 0.5) * 2.3, (0.5 - 0.23) * 2.6, 2)
     assert.ok(new Raycaster(origin, new Vector3(0, 0, -1)).intersectObject(model.mesh, false).length,
       'The real mapped neck join must remain solid in quiet, walking, and speaking poses.')
@@ -300,8 +310,11 @@ test('the mapped upper neck attachment covers the full diagonal join', () => {
   const model = createMascotModel(texture, canonicalRaster(), undefined, {texture, raster: headRaster},
     {texture, raster: imageRaster('../../assets/brand/kit/lair/body-projection.png')})
   // Head turns cover the widest gaze the walk behaviour asks for.
-  for (const [walking, speaking, yaw, tilt] of [[false, 0, 0, 0], [true, 0, 0, 0], [false, 1, 0, 0], [false, 0, 0.12, 0.07], [false, 0, -0.12, 0.07]] as const) {
-    model.update({time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: walking ? 1 : 0, walkPhase: Math.PI / 2, gaze: {yaw, tilt}, speaking, blink: 0})
+  // The last two poses add the widest look-around glance on top of the walk gaze.
+  for (const [walking, speaking, yaw, tilt, time] of [[false, 0, 0, 0, 0], [true, 0, 0, 0, 0], [false, 1, 0, 0, 0], [false, 0, 0.12, 0.07, 0], [false, 0, -0.12, 0.07, 0],
+    [false, 0, 0.12, 0.07, widestRightGlance], [false, 0, -0.12, 0.07, widestLeftGlance]] as const) {
+    model.update({time, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: walking ? 1 : 0, walkPhase: Math.PI / 2, gaze: {yaw, tilt}, speaking, blink: 0,
+      eyes: time ? {_tag: 'Wander'} : undefined})
     for (let y = 0.90; y <= 1.08; y += 0.01) for (const offset of [0, 0.004, 0.008]) {
       const x = 0.10 + (y - 0.90) * 0.55 + offset
       const ray = new Raycaster(new Vector3(x, y, 2), new Vector3(0, 0, -1))
