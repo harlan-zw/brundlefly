@@ -23,7 +23,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 | --- | --- | --- |
 | README opening | Direct, grotesque | Agent skills for grotesque text mutations. |
 | Why | Brundlefly in first person: short, strained, dry; the project history stays true | I still count which parts are mine. |
-| Features | Facts first, then an occasional aside from Brundlefly | Edit prose. Its meaning, facts, and voice survive the change. Lucky them. |
+| Features | Facts first, then an occasional aside from Brundlefly | For text a person will read. The name is aspirational. |
 | Setup and reference | Plain, complete | From your project's root, install a Skill for later sessions: |
 | Skill instructions | Direct, careful | Never invent an actor, experience, example, or supporting detail. |
 
@@ -37,6 +37,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
    Reject vague claims that the product creates connection or makes an agent care.
 4. **Keep the grotesque outside the procedure.** Public introductions can be unsettling.
    Commands, errors, and reference material use established terms and predictable steps.
+   Skill names may carry the fly pair. Each Skill description stays plain, so agents choose the right one.
 5. **Keep the author's experience true.** Use supplied stories or clearly framed reader situations.
    Never invent disappointment, exhaustion, or a founder's personal struggle for emotional weight.
 

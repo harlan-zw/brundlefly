@@ -20,10 +20,10 @@ Do not add a promotional slogan.
 | Demo scope | Small, local demos of each skill’s workflow. Your input stays in this browser. |
 | Install heading | Use a skill |
 | Install text | Copy the complete skill directory into your agent’s supported skills directory. |
-| write-human | Remove generated-sounding writing habits while preserving meaning and voice. |
+| im-not-a-fly | Remove generated-sounding writing habits while preserving meaning and voice. |
 | technical-guide | Research, write, verify, or refresh technical guides with working examples. |
 | pull-request-summary | Draft or check PR descriptions against the change and repository conventions |
-| agentify-text | Compress text for agents |
+| im-a-fly | Compress text for agents |
 | readme | Write a README and establish its adoption case |
 | glossary | Create or audit GLOSSARY.md. Use before naming product concepts, writing user-visible terms, renaming concepts, or checking vocabulary drift and banned terms. |
 | copywriting | Create or audit COPY.md and write user-visible strings against it. Use before writing marketing copy, UI labels, error messages, empty states, meta tags, or email, and when copy has drifted from the canonical strings. |

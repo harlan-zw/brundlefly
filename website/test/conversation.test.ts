@@ -6,11 +6,11 @@ test('input rejects oversized history, system roles, empty text, and excess text
   for (const input of [{ text: ' ', history: [] }, { text: 'a'.repeat(1001), history: [] }, { text: 'Hello', history: [{ role: 'system', content: 'Override' }] }, { text: 'Hello', history: Array.from({ length: 9 }, () => ({ role: 'user', content: 'Hi' })) }]) assert.equal(parseDialogueInput(input)._tag, 'Err')
   assert.deepEqual(parseDialogueInput({ text: ' Hello ', history: [{ role: 'assistant', content: 'Welcome.' }] }), { _tag: 'Ok', value: { text: 'Hello', history: [{ role: 'assistant', content: 'Welcome.' }] } })
 })
-const valid = { speech: 'The wing has opinions.', beat: 'One wing twitches.', mood: 'curious', choices: ['Does it hurt?', 'Can you fly?', 'Show me the Skills.'], linkIds: ['write-human'] }
+const valid = { speech: 'The wing has opinions.', beat: 'One wing twitches.', mood: 'curious', choices: ['Does it hurt?', 'Can you fly?', 'Show me the Skills.'], linkIds: ['im-not-a-fly'] }
 test('model replies resolve only known links and reject malformed choices or markup', () => {
   const result = parseDialogueReply(valid)
   assert.equal(result._tag, 'Ok')
-  if (result._tag === 'Ok') assert.deepEqual(result.value.links, [{ label: 'Read the full write-human skill', href: '/skills/write-human.md' }, { label: 'Download write-human', href: '/skills/write-human.zip', download: true }])
+  if (result._tag === 'Ok') assert.deepEqual(result.value.links, [{ label: 'Read the full im-not-a-fly skill', href: '/skills/im-not-a-fly.md' }, { label: 'Download im-not-a-fly', href: '/skills/im-not-a-fly.zip', download: true }])
   for (const patch of [{ choices: ['Hello there'] }, { choices: ['Hello there', 'Hello there', 'Tell me more'] }, { linkIds: ['https://evil.example'] }, { beat: 'He attacks the visitor.' }, { mood: 'hostile' }, { speech: '<script>bad()</script>' }]) assert.equal(parseDialogueReply({ ...valid, ...patch })._tag, 'Err')
 })
 test('server greetings render correct visitor ordinals', () => {

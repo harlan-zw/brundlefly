@@ -9,13 +9,14 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | Term | Location | Relationship | Public name |
 | --- | --- | --- | --- |
 | Brundlefly | Repository | Contains skills and brand assets | Brundlefly |
-| write-human | skills/write-human | First skill candidate | write-human |
+| im-not-a-fly | skills/im-not-a-fly | First skill candidate | im-not-a-fly |
 | technical-guide | skills/technical-guide | Creates and refreshes verified technical guides | technical-guide |
 | pull-request-summary | skills/pull-request-summary | Checks pull request description text | pull-request-summary |
-| agentify-text | skills/agentify-text | Compresses text for agents while preserving substantial meaning | agentify-text |
+| im-a-fly | skills/im-a-fly | Compresses text for agents while preserving substantial meaning | im-a-fly |
 | readme | skills/readme | Writes repository READMEs with researched positioning and working setup | readme |
 | glossary | skills/glossary | Creates and audits canonical names and meanings | glossary |
 | copywriting | skills/copywriting | Creates and audits voice and canonical wording | copywriting |
+| fly | Public story | Names the agent in the mascot's metaphor | fly |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
 | human connection | Public story | Gives the writing its purpose | human connection |
 | empathy | Editorial choices | Helps the author consider the reader | empathy |
@@ -29,8 +30,8 @@ The terms below preserve the owner's chosen tension: human connection inside som
 Brundlefly names the collection and its mascot.
 Use BRUNDLEFLY only for the uppercase wordmark.
 
-write-human is the writing skill candidate.
-It replaces the imported humanize-writing name in this collection.
+im-not-a-fly owns editing prose that people read.
+It replaces write-human, which replaced the imported humanize-writing name.
 
 technical-guide owns research, writing, and verification for a reader's technical task.
 Use this name for both creation and refresh. Do not name a second skill content-refresh for the same workflow.
@@ -39,11 +40,14 @@ pull-request-summary owns pull request description text and its convention check
 Delivery Skills call it and retain branch, publication, CI, and review policy.
 It replaces pr in this collection. Pull request remains GitHub's name for the artifact.
 
-agentify-text owns meaning-preserving text compression for agents, including Markdown files.
-Use the owner's requested name for this skill.
+im-a-fly owns meaning-preserving text compression for agents, including Markdown files.
+It replaces agentify-text. Use the owner's requested name for this skill.
+
+im-not-a-fly and im-a-fly form a pair: text people read, and text agents act on.
+Rename both together or neither.
 
 readme owns README creation and refresh, including setup and documentation routing.
-It works alone and can use write-human as an optional prose review.
+It works alone and can use im-not-a-fly as an optional prose review.
 Use readme for this skill, rather than readme-writer or readme-guide.
 
 glossary owns creating and auditing GLOSSARY.md. It does not create other root documents automatically.
@@ -51,7 +55,7 @@ Use glossary rather than terminology-manager or naming-guide for this Skill.
 
 copywriting owns creating and auditing COPY.md and writing against its wording decisions.
 Use copywriting rather than brand-voice or copy-guide for this Skill.
-It works without glossary or write-human installed. Supplied document rules remain authoritative.
+It works without glossary or im-not-a-fly installed. Supplied document rules remain authoritative.
 
 ### human connection
 
@@ -80,6 +84,13 @@ An agent does not bring the author's lived experience or relationship with the r
 Use the word for that boundary in public copy.
 Do not use it to dehumanize a person or claim that every generated sentence is bad.
 Avoid soulless as a technical explanation. Name the actual loss of meaning or voice.
+
+### fly
+
+The agent, in the mascot's metaphor. Brundlefly is part human and part fly.
+Writing through an agent is part author and part agent.
+Use it in the public story and the paired Skill names.
+Do not use it as a label for a writer or a reader.
 
 ### mutation
 

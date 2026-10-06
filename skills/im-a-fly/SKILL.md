@@ -1,9 +1,9 @@
 ---
-name: agentify-text
+name: im-a-fly
 description: Compress text for agents without losing substantial meaning. Use for Markdown files, agent instructions, documentation, and context that need fewer tokens while preserving facts, constraints, and usable structure.
 ---
 
-# agentify-text
+# im-a-fly
 
 Produce the shortest clear text that preserves the source's substantial meaning.
 Optimize agent comprehension and token count together. Do not chase a fixed compression ratio.

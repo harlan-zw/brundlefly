@@ -76,7 +76,7 @@ const variants = variantMode === 'initial' ? [
   { id: 'write-human-v0', instructions: await read('snapshots/write-human-v0.md') },
   { id: 'humanizer', instructions: await read('sources/humanizer.md') },
   { id: 'stop-slop', instructions: stopSlop },
-] : [{ id: 'write-human-v1', instructions: await read('../skills/write-human/SKILL.md') }];
+] : [{ id: 'write-human-v1', instructions: await read('../skills/im-not-a-fly/SKILL.md') }];
 // Exact questions from the published rubric. No authored writing cases or gold rewrites.
 const checks = [
   "Does the edit preserve the user's point without adding claims, examples, stats, quotes, or opinions?",
