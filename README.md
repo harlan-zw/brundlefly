@@ -19,7 +19,7 @@ A fly got mixed into me, and I still count which parts are m... *His jaw catches
 Around here, the fly is the agent. You let it help so someone understands you, then your sentences swell and stock phrases creep in.
 You still want to recognise yourself in the result. Hh. So do I.
 
-Harlan [<img src="https://github.com/harlan-zw.png?size=40" width="20" height="20" align="center" alt="@harlan-zw">](https://github.com/harlan-zw) built me from humanize-writing in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), now [im-not-a-fly](skills/im-not-a-fly/SKILL.md).
+[<img src="https://github.com/harlan-zw/brundlefly/raw/main/assets/readme/harlan-avatar.png" width="20" height="20" align="center" alt="@harlan-zw">](https://github.com/harlan-zw) Harlan built me from humanize-writing in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), now [im-not-a-fly](skills/im-not-a-fly/SKILL.md).
 [Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already hunt AI writing patterns.
 Harlan also needed [technical-guide](skills/technical-guide/SKILL.md) for examples a developer runs, and [pull-request-summary](skills/pull-request-summary/SKILL.md) for descriptions grounded in their change.
 
