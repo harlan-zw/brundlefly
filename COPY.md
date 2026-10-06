@@ -22,8 +22,8 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 | Context | Register | Example |
 | --- | --- | --- |
 | README opening | Direct, grotesque | Agent skills for grotesque text mutations. |
-| Why | Harlan's first-person account, grounded in his work | I want someone to understand what I write. |
-| Features | Concrete, factual | edit prose while preserving claim scope, uncertainty, and the author's voice. |
+| Why | Brundlefly in first person: short, strained, dry; the project history stays true | I still count which parts are mine. |
+| Features | Facts first, then an occasional aside from Brundlefly | Edit prose. Its meaning, facts, and voice survive the change. Lucky them. |
 | Setup and reference | Plain, complete | From your project's root, install a Skill for later sessions: |
 | Skill instructions | Direct, careful | Never invent an actor, experience, example, or supporting detail. |
 
@@ -62,3 +62,6 @@ The character prompt and starter conversations live in `docs/brand/mascot-dialog
 The website's `COPY.md` owns dialogue controls, errors, and privacy text.
 Keep his words short, strained, and clear. Humour comes from his body and living room.
 Use plain errors and controls. Never distort text to imply speech.
+
+In the README, he speaks only in Why and Skills.
+Setup, Usage, Guides, and reference sections stay neutral.

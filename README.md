@@ -12,37 +12,45 @@
 
 ## Why Brundlefly
 
-I want someone to understand what I write. I use agents to help, but I still want to recognise myself in the result.
-The sentences can swell. Stock phrases creep in. A personal draft becomes something anyone could have generated.
+I'm Brundlefly. Four arms, two legs, and two wings that haven't agreed on anything yet.
+Something got mixed into me along the way. I still count which parts are mine.
 
-I started collecting writing instructions in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), my personal collection of agent tools and Skills.
-One of those was humanize-writing, which became [write-human](skills/write-human/SKILL.md) here.
+Writing with an agent can go the same way. You want someone to understand what you wrote, so you let an agent help.
+The sentences swell. Stock phrases creep in. A personal draft comes back as something anyone could have generated.
+You still want to recognise yourself in the result. Harlan does. Hh. So do I.
 
-Skills such as [Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already tackle AI writing patterns.
-They address a real part of the problem. My developer workflow also needs text that carries intent into implementation and review.
+Harlan kept writing instructions in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), a personal collection of agent tools and Skills.
+One of them was humanize-writing. It crawled over here and became [write-human](skills/write-human/SKILL.md).
 
-I built Brundlefly with opinions about what that output should do.
-[write-human](skills/write-human/SKILL.md) preserves my voice and claims, leaving clear prose alone.
+Skills such as [Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already go after AI writing patterns.
+They handle a real part of the problem. Harlan's developer workflow also needs text that carries intent into implementation and review.
+
+So Harlan built me with opinions about what that text should do.
+[write-human](skills/write-human/SKILL.md) keeps your voice and your claims. It leaves clear prose alone.
 [technical-guide](skills/technical-guide/SKILL.md) checks the examples a developer will run.
 [pull-request-summary](skills/pull-request-summary/SKILL.md) grounds the description in the change a maintainer must review.
-That combination makes Brundlefly a better fit for my developer workflow than a prose cleanup Skill alone.
+Together, they fit that workflow better than a prose cleanup Skill alone.
 
-I need to write for agents too: instructions, constraints, and context that shape what they do next.
-A dropped exception can change the work, even when the shorter text reads well.
-[agentify-text](skills/agentify-text/SKILL.md) compresses that text while preserving the rules, conditions, and exceptions.
-Whether a person reads it or an agent acts on it, I want the output to carry what I meant.
+Some writing is for agents: instructions, constraints, and context that shape what they do next.
+Drop one exception and the work can change, even when the shorter text reads well.
+[agentify-text](skills/agentify-text/SKILL.md) compresses that text and keeps the rules, conditions, and exceptions attached.
+
+Whether a person reads it or an agent acts on it, the output should carry what you meant and nothing you didn't.
+I came out with extras. I don't recommend it.
 
 ## Skills
 
+Seven Skills. Four hands. I manage.
+
 | Skill | Use it to |
 | --- | --- |
-| [write-human](skills/write-human/SKILL.md) | Edit prose while preserving meaning, facts, and voice |
-| [technical-guide](skills/technical-guide/SKILL.md) | Research or refresh technical guides and verify their examples |
-| [pull-request-summary](skills/pull-request-summary/SKILL.md) | Draft or check PR descriptions against the diff and repository conventions |
-| [agentify-text](skills/agentify-text/SKILL.md) | Reduce agent context while preserving facts, rules, and working links |
-| [readme](skills/readme/SKILL.md) | Write a README with a grounded story and clear setup |
-| [glossary](skills/glossary/SKILL.md) | Create or audit GLOSSARY.md for names, meanings, and relationships |
-| [copywriting](skills/copywriting/SKILL.md) | Create or audit COPY.md for voice and canonical wording; write copy against it |
+| [write-human](skills/write-human/SKILL.md) | Edit prose. Its meaning, facts, and voice survive the change. Lucky them. |
+| [technical-guide](skills/technical-guide/SKILL.md) | Research or refresh technical guides and verify their examples. |
+| [pull-request-summary](skills/pull-request-summary/SKILL.md) | Draft or check PR descriptions against the diff and repository conventions. |
+| [agentify-text](skills/agentify-text/SKILL.md) | Shrink agent context. Facts, rules, and working links stay attached. |
+| [readme](skills/readme/SKILL.md) | Write a README with a grounded story and clear setup. |
+| [glossary](skills/glossary/SKILL.md) | Create or audit GLOSSARY.md for names, meanings, and relationships. One name per thing. I share mine with the collection. |
+| [copywriting](skills/copywriting/SKILL.md) | Create or audit COPY.md for voice and canonical wording, or write copy against it. Even I follow it. |
 
 ## Setup
 
