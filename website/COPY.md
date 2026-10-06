@@ -138,6 +138,7 @@ Material swatches use the role labels in the shared catalogue: Background, Text 
 The scene action label is “Talk to Brundlefly”. It opens a dialog titled “Brundlefly”.
 The dialog uses “Close”, “Your text”, “Send”, and “Conversation” for its functional controls.
 Its scope note is “AI replies use Cloudflare and OpenAI. Avoid sharing private details.”
+The note opens from a “!” button beside the title. The button label is “About AI replies”.
 The character prompt and starter conversations live in `docs/brand/mascot-dialogue.md`.
 The pending message is “He listens…”.
 Generation errors use “The room swallowed that reply. Try again.”.
@@ -150,6 +151,7 @@ Oversized input uses “Keep your text under 1,001 characters.”
 Collection, skill, and installation replies reuse the canonical assets above.
 Brand kit replies use “Brand kit” with a link to the kit.
 Luna generates conversational replies and three visitor choices. Replies do not execute a Skill.
+The fourth choice is “Your text”. It opens the text field. “Back” returns to the choices.
 Scene fallback text: “Static scene. WebGL is unavailable.” and “The scene could not load.”
 Conversation sound actions use “Sound off” and “Sound on”. They mute or enable local synthesized sound.
 
