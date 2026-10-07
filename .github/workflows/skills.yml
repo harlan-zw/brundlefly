@@ -1,0 +1,27 @@
+name: Skills
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'scripts/sync-blocks.ts'
+      - '.github/workflows/skills.yml'
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'scripts/sync-blocks.ts'
+      - '.github/workflows/skills.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  blocks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+      - run: node scripts/sync-blocks.ts --check

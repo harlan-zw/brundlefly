@@ -16,6 +16,11 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | readme | skills/readme | Writes repository READMEs with researched positioning and working setup | readme |
 | glossary | skills/glossary | Creates and audits canonical names and meanings | glossary |
 | copywriting | skills/copywriting | Creates and audits voice and canonical wording | copywriting |
+| clarity | skills/clarity | Block Skill used by im-not-a-fly, technical-guide, and readme | clarity |
+| claim-fidelity | skills/claim-fidelity | Block Skill used by prose, guide, README, compression, and PR workflows | claim-fidelity |
+| verify-examples | skills/verify-examples | Block Skill used by technical-guide and readme | verify-examples |
+| Workflow Skill | skills/ | Owns a complete text task and loads applicable bundled blocks | Workflow Skill |
+| Block Skill | skills/ | Owns one focused pass and also works independently | Block Skill |
 | fly | Public story | Names the agent in the mascot's metaphor | fly |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
 | human connection | Public story | Gives the writing its purpose | human connection |
@@ -56,6 +61,33 @@ Use glossary rather than terminology-manager or naming-guide for this Skill.
 copywriting owns creating and auditing COPY.md and writing against its wording decisions.
 Use copywriting rather than brand-voice or copy-guide for this Skill.
 It works without glossary or im-not-a-fly installed. Supplied document rules remain authoritative.
+
+### Workflow Skill and Block Skill
+
+A Workflow Skill owns a complete artifact or transformation, such as a guide or prose edit.
+A Block Skill owns one focused pass that a workflow can compose with other passes.
+Both use the same Agent Skills format and live directly under skills.
+Use Block Skill rather than helper Skill, subskill, or primitive for these installable passes.
+Use Workflow Skill rather than parent Skill for the complete task.
+Bundled blocks are local reference copies. They do not require sibling Skills to be installed.
+
+### clarity
+
+clarity owns a focused review of wording, reading order, and accessible structure.
+It preserves claims and deliberate voice. It does not verify factual truth or run the full im-not-a-fly workflow.
+Use clarity rather than clarity-review or readability for this Block Skill.
+
+### claim-fidelity
+
+claim-fidelity compares transformed text with its source and the authorized scope of change.
+It checks conditions, attribution, uncertainty, and required actions. It does not establish factual truth.
+Use claim-fidelity rather than meaning-check or fact-check for this Block Skill.
+
+### verify-examples
+
+verify-examples checks runnable documentation examples from their stated starting conditions.
+It separates executed results from source inspection and reports unavailable checks.
+Use verify-examples rather than example-check or test-guide for this Block Skill.
 
 ### human connection
 

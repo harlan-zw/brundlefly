@@ -64,30 +64,9 @@ Preserve required disclosures. Never assume a human reviewed the draft.
 Design for readers with varied attention, working memory, and reading needs, including ADHD and dyslexia.
 Do not infer a diagnosis or claim that most readers have one. Respect stated reader preferences.
 Apply these rules during the structural pass. Reader comprehension takes priority over stylistic variety.
+Read [the clarity block](references/blocks/clarity.md) during the structural pass.
 Read [the accessibility research and examples](references/accessible-writing.md) when explaining evidence or choosing a format.
 
-- **Start simple.** Lead with the answer or action. Then give the common case, an example, and deeper detail.
-  For a story, preserve a deliberate narrative opening. Apply answer-first ordering to its technical sections.
-  Define necessary terms before using them. Keep prerequisites and consequential warnings beside the action.
-  Put optional exceptions and background later. A deep dive still needs a clear entry point.
-- **Keep blocks small.** Give each sentence one main idea and each paragraph one job.
-  Prefer familiar words, explicit actors, and direct instructions. Explain necessary jargon on first use.
-  As editing defaults, aim for sentences under 20 words and paragraphs of one to three sentences.
-  Review three consecutive prose paragraphs for a useful heading, list, example, table, or diagram.
-  These numbers are review prompts, not research thresholds. Preserve meaning and deliberate literary voice.
-- **Make sections findable.** Use descriptive headings for distinct questions, tasks, or reference entries.
-  Keep a logical heading hierarchy. Avoid vague labels, decorative headings, and filler between sections.
-  Readers should find the answer by scanning headings and opening lines.
-- **Choose the useful format.** Use bullets for parallel points, numbers for ordered steps, and tables for comparisons.
-  Use diagrams for relationships or branching processes. Keep connected explanations in short prose.
-  Add an artifact only when it reduces reading effort. Avoid long lists, wide tables, and decorative visuals.
-- **Keep alternatives accessible.** Explain a visual's useful point in nearby text. Supply meaningful text alternatives for images.
-  Label table columns and keep cells short. Never make color, position, or an icon the only carrier of meaning.
-  Use whitespace and restrained emphasis. Avoid full paragraphs in bold, italics, or capitals.
-
-Before delivery, check that a reader can find the answer, understand the terms, and follow the required steps.
-Check that rearranging the text preserved conditions, uncertainty, and the meaning of every claim.
-If rendering is available, inspect the actual output at a narrow width. Otherwise report that limit when relevant.
 
 ## Pass 1: Surface tells (fast, lexical)
 
@@ -183,7 +162,9 @@ Do not require another skill to complete this step.
 
 1. List the tells you found, grouped by pass, quoting the offending phrase.
 2. Provide the rewritten text.
-3. Compare the rewrite with the source. Undo unsupported additions, lost claims, and needless voice changes. If a meaning change is required, explain it and ask for the missing information.
+3. Apply [claim fidelity](references/blocks/claim-fidelity.md) to compare the rewrite with the source.
+   Undo unsupported additions, lost claims, and needless voice changes.
+   If a meaning change is required, explain it and ask for the missing information.
 4. Report sources, relevant prior checks, and unresolved evidence gaps outside the published text when its format excludes them.
 
 ## Guardrail

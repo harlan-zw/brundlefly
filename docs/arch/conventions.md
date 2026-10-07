@@ -8,6 +8,28 @@ SKILL.md starts with name and description metadata.
 Supporting files stay within the same skill directory.
 References load only when the instructions need them.
 
+## Workflow Skills and Block Skills
+
+Workflow Skills own complete tasks. Block Skills own focused passes with explicit inputs and outputs.
+Keep both directly under skills so each remains an independently installable directory.
+The hierarchy comes from composition, not nested installable directories.
+
+Each workflow links to its blocks under references/blocks.
+scripts/sync-blocks.ts copies the canonical block SKILL.md into each declared consumer.
+Generated copies remain inside the workflow directory and need no sibling installation or network access.
+The Skills workflow rejects missing or stale copies. Bundling runs during maintenance, not Skill execution.
+The initial blocks are self-contained Markdown. Add supporting-file bundling before a block needs local references or scripts.
+
+| Workflow Skill | Bundled Block Skills |
+| --- | --- |
+| im-not-a-fly | clarity, claim-fidelity |
+| technical-guide | clarity, claim-fidelity, verify-examples |
+| readme | clarity, claim-fidelity, verify-examples |
+| im-a-fly | claim-fidelity |
+| pull-request-summary | claim-fidelity |
+
+## Packaging
+
 Repository branding lives in assets, outside installable skill directories.
 That keeps image masters and archived concepts out of an individual skill installation.
 

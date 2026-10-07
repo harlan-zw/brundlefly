@@ -56,6 +56,11 @@ Use exact names and stated pronouns. Otherwise use a username or singular they.
 
 ## 3. Check the description
 
+Apply [claim fidelity](references/blocks/claim-fidelity.md) against the diff, supplied intent, and required template wording.
+For a revised body, also compare the preserved author material with the original body.
+For a new body, use the supplied evidence as the source. Do not assume an earlier description exists.
+The block is bundled here and requires no sibling Skill installation.
+
 Compare every factual claim with the diff and supplied evidence.
 Check that motivation, scope, consequences, and migration match the final change.
 Check the template, caller policy, disclosure, preserved material, and unsupported claims.

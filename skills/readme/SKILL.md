@@ -92,6 +92,12 @@ Keep concise discovery links, contribution rules, attribution, and licenses wher
 
 ## Review and verify
 
+Apply [clarity](references/blocks/clarity.md) to the technical sections, preserving the story's deliberate opening.
+Use [verify examples](references/blocks/verify-examples.md) for runnable setup and usage examples.
+Apply [claim fidelity](references/blocks/claim-fidelity.md) against supplied wording and inspected evidence after edits.
+For a new README, compare claims with the evidence ledger rather than assuming an earlier draft exists.
+These blocks are bundled here. No sibling Skill installation is required.
+
 Use plain words and direct sentences. Preserve required sections and the chosen feature presentation.
 Keep product names, approved copy, commands, and links exact unless evidence supports a correction.
 Preserve facts, qualifications, attribution, and voice. Cut repetition and unsupported claims.
