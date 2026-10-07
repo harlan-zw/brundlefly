@@ -29,7 +29,7 @@ I came out with extras. I don't recommend it.
 
 ## Skills
 
-Seven Skills, four hands. Two hands never put these down.
+Seven Workflow Skills, four hands. Two hands never put these down.
 
 ### [im-not-a-fly](skills/im-not-a-fly/SKILL.md)
 
@@ -96,6 +96,26 @@ Create or audit COPY.md, or write copy against it. Even I follow it.
 
 ## Setup
 
+### Focused blocks
+
+Use a Workflow Skill for a complete task. Use a Block Skill for one focused pass.
+Each workflow includes the blocks it needs, so it still works when installed alone.
+Each block also works as a separate Skill.
+
+| Block Skill | Focus | Used by |
+| --- | --- | --- |
+| [clarity](skills/clarity/SKILL.md) | Clear wording, reading order, and accessible structure | im-not-a-fly, technical-guide, readme |
+| [claim-fidelity](skills/claim-fidelity/SKILL.md) | Preserve claims, conditions, attribution, and uncertainty | im-not-a-fly, technical-guide, readme, im-a-fly, pull-request-summary |
+| [verify-examples](skills/verify-examples/SKILL.md) | Run documentation examples and check their promised results | technical-guide, readme |
+
+For example:
+
+```text
+Use claim-fidelity to compare this rewrite with its source. Report changed meaning without editing either passage.
+```
+
+### skilld
+
 Browse [Brundlefly on skilld.dev](https://skilld.dev/gh/harlan-zw/brundlefly).
 Install the [skilld CLI](https://skilld.dev) if you do not have it.
 Run the remote commands below once the Skills appear in the listing and your account can access their source.
@@ -131,7 +151,7 @@ If private-source access requires authentication, run skilld auth login and chec
 
 ### Claude Code plugin
 
-Install all seven Skills as one plugin:
+Install all Workflow Skills and Block Skills as one plugin:
 
 ```text
 /plugin marketplace add harlan-zw/brundlefly
@@ -148,7 +168,7 @@ After installation, name a Skill with its plugin namespace:
 
 In Cursor's Customize panel, choose **From GitHub Repository** and enter `harlan-zw/brundlefly`.
 Install the Brundlefly plugin from the imported marketplace.
-It contains the same seven Skills.
+It contains the same Workflow Skills and Block Skills.
 
 ### ChatGPT and Codex plugin
 

@@ -99,6 +99,11 @@ Use exact names and stated pronouns; otherwise use a username or singular they.
 
 ## 4. Verify the reader's path
 
+For runnable examples, apply [verify examples](references/blocks/verify-examples.md).
+Use [clarity](references/blocks/clarity.md) for the editorial review.
+After prose edits, apply [claim fidelity](references/blocks/claim-fidelity.md) against the draft and inspected evidence.
+These blocks are bundled here. No sibling Skill installation is required.
+
 For procedural content, run safe examples from the documented starting state when the environment permits.
 Use the actual documented commands and record their results.
 For state-changing steps, respect the user's authorization and use an isolated environment where possible.

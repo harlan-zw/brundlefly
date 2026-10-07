@@ -62,6 +62,8 @@ If a passage is already dense, exact, or ambiguous, keep it unchanged.
 ## Verify before accepting
 
 Read [verification](references/verification.md) for review probes and worked examples.
+Apply [claim fidelity](references/blocks/claim-fidelity.md) to the complete source and candidate before accepting the compression.
+The block is bundled here and requires no sibling Skill installation.
 Compare the candidate with the original in both directions:
 
 - Every source claim and rule must map to the candidate, or to a truly equivalent retained duplicate.
