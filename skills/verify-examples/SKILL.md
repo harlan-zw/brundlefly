@@ -13,6 +13,7 @@ Follow the target's instructions, supported version, package manager, and docume
 ## Establish the example contract
 
 Read the example, surrounding instructions, prerequisites, and expected result.
+If no example or document location is supplied, ask for it. Do not search for a replacement task.
 Identify the runtime, package version, working directory, configuration, inputs, and required access.
 Separate runnable code from pseudocode, schematic output, and illustrative fixtures.
 If a core input is missing, report it before dependent execution.
@@ -51,6 +52,7 @@ Do not reuse an earlier revision's result to claim the final example works.
 
 If execution is unavailable, inspect the best available evidence and name the untested path.
 Do not fabricate output, silently substitute a different interface, or hide a failed check.
+Report only actions actually performed. A tool with no result supplies no inspection evidence.
 Mark illustrative output as illustrative. Keep an unsupported core reader path identified as a draft.
 
 ## Return the evidence
