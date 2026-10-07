@@ -1,0 +1,10 @@
+{
+  "name": "brundlefly",
+  "version": "0.1.0",
+  "description": "Agent skills for writing that's part human.",
+  "author": { "name": "Harlan", "url": "https://github.com/harlan-zw" },
+  "homepage": "https://brundlefly.dev",
+  "repository": "https://github.com/harlan-zw/brundlefly",
+  "license": "MIT",
+  "keywords": ["writing", "editing", "documentation", "agent-skills"]
+}

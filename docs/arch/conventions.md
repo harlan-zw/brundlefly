@@ -12,7 +12,18 @@ Repository branding lives in assets, outside installable skill directories.
 That keeps image masters and archived concepts out of an individual skill installation.
 
 No npm runtime, package exports, or build output are required for Markdown skills.
-Provider-specific plugin packaging can be added when a consumer requires it.
+The root plugin.json uses the portable Agent Plugins format and includes OpenAI presentation metadata.
+Claude Code and Cursor manifests live in .claude-plugin and .cursor-plugin.
+Their marketplace files each point to the repository root as one Brundlefly plugin.
+Every host reads the same skills directory. Never duplicate Skill instructions into provider directories.
+Keep the name, version, description, author, homepage, repository, and license aligned across manifests.
+Use COPY.md's approved tagline for plugin descriptions. Reuse the canonical avatar for plugin icons.
+When releasing changed Skills, increase the plugin version in all three manifests together.
+Validate Claude packaging with `claude plugin validate .` and `claude plugin validate .claude-plugin/marketplace.json`.
+
+This follows [Hyperframes' packaging](https://github.com/heygen-com/hyperframes/tree/main/.claude-plugin),
+adapted to [OpenAI's portable format](https://developers.openai.com/plugins/build/plugins)
+and [Cursor's repository import](https://cursor.com/docs/reference/plugins).
 
 im-not-a-fly adapts the owner's humanize-writing instructions.
 Its personal skill links are replaced by self-contained source and copy-review rules.

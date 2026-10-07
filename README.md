@@ -129,6 +129,34 @@ skilld installs into the current project and detects your agent targets.
 Add --global to install for your account across projects. Add --agent codex to select Codex explicitly.
 If private-source access requires authentication, run skilld auth login and check your GitHub App access on skilld.dev.
 
+### Claude Code plugin
+
+Install all seven Skills as one plugin:
+
+```text
+/plugin marketplace add harlan-zw/brundlefly
+/plugin install brundlefly@brundlefly
+```
+
+After installation, name a Skill with its plugin namespace:
+
+```text
+/brundlefly:im-not-a-fly Edit this draft. Preserve its facts, uncertainty, and voice.
+```
+
+### Cursor plugin
+
+In Cursor's Customize panel, choose **From GitHub Repository** and enter `harlan-zw/brundlefly`.
+Install the Brundlefly plugin from the imported marketplace.
+It contains the same seven Skills.
+
+### ChatGPT and Codex plugin
+
+The root `plugin.json` packages the collection in the portable Agent Plugins format.
+It includes OpenAI presentation metadata and the existing mascot icon.
+For project or global Codex installation, use the skilld commands above.
+For local plugin development, follow [OpenAI's packaging guide](https://developers.openai.com/plugins/build/plugins).
+
 ## Usage
 
 Tell your agent which text to work on and what must survive the edit.
