@@ -1,0 +1,12 @@
+{
+  "name": "brundlefly",
+  "owner": { "name": "Harlan" },
+  "metadata": { "description": "Agent skills for writing that's part human." },
+  "plugins": [
+    {
+      "name": "brundlefly",
+      "source": "./",
+      "description": "Agent skills for writing that's part human."
+    }
+  ]
+}
