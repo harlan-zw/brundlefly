@@ -119,6 +119,12 @@ Perform two distinct reviews:
 1. **Technical:** check behavior, versions, code, prerequisites, outcomes, and link destinations against evidence.
 2. **Editorial:** check task order, understandable concepts, useful detail, and preservation of meaning and voice.
 
+Report a finding only when evidence shows a contradiction, missing prerequisite, or concrete reading problem within the requested scope.
+Accept prerequisites and working-directory context supplied by the guide, request, or documented starting state.
+A supported runtime need not be the earliest compatible runtime unless the guide claims that boundary.
+Keep unavailable checks in verification limits. Missing verification alone does not prove a defect.
+Leave clear passages unchanged. Do not request background, recovery advice, or extra success signals without a demonstrated reader need.
+
 Review heading-to-paragraph density for fragmented explanations. Merge unnecessary divisions without padding prose or removing useful navigation.
 Also inspect successive long paragraphs for buried actions, stacked exceptions, and repetition. Preserve technical conditions during any compression.
 Use the guide primitives reference to distinguish needless headings from useful steps and lookup sections.
