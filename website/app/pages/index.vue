@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, shallowRef } from 'vue'
+import { defineAsyncComponent, ref, shallowRef } from 'vue'
 import { defaultSceneAudioMix } from '#shared/scene-audio'
 import type { SceneAudioMix, SceneAudioState } from '#shared/scene-audio'
 import type { ConversationMood } from '#shared/conversation'
-import WorldScene from './_WorldScene.client.vue'
 import SpeechDialog from './_SpeechDialog.vue'
 import SceneAudio from './_SceneAudio.vue'
 import SceneLoading from './_SceneLoading.vue'
+const WorldScene = defineAsyncComponent(() => import('./_WorldScene.client.vue'))
 const talking = ref(false)
 const replies = ref(0)
 const replyLength = ref(120)
