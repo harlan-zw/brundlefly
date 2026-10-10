@@ -10,10 +10,10 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'en', class: 'dark' },
       title: 'Brundlefly | Self-contained Agent Skills',
       meta: [
-        { name: 'description', content: 'A collection of self-contained Agent Skills.' },
+        { name: 'description', content: 'Self-contained Agent Skills focused on empathy and accessibility in writing.' },
         { name: 'theme-color', content: '#080B08' },
         { property: 'og:title', content: 'Brundlefly | Self-contained Agent Skills' },
-        { property: 'og:description', content: 'A collection of self-contained Agent Skills.' },
+        { property: 'og:description', content: 'Self-contained Agent Skills focused on empathy and accessibility in writing.' },
         { property: 'og:type', content: 'website' },
         { property: 'og:url', content: 'https://brundlefly.dev/' },
         { property: 'og:image', content: 'https://brundlefly.dev/brand/github-banner-overhang-gross.png' },

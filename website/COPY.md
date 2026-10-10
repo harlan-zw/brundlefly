@@ -14,20 +14,20 @@ Do not add a promotional slogan.
 | Surface | Text |
 | --- | --- |
 | Title | Brundlefly \| Self-contained Agent Skills |
-| Hero | A collection of self-contained Agent Skills. |
-| Hero support | Choose the skill that owns your task. Each skill works alone. |
+| Hero and page description | Self-contained Agent Skills focused on empathy and accessibility in writing. |
+| Hero support | Start with what your reader knows and needs, including ADHD and dyslexia needs. Each skill works alone. |
 | Demo heading | Try the skills |
 | Demo scope | Small, local demos of each skill’s workflow. Your input stays in this browser. |
 | Install heading | Use a skill |
 | Install text | Copy the complete skill directory into your agent’s supported skills directory. |
-| im-not-a-fly | Remove generated-sounding writing habits while preserving meaning and voice. |
-| technical-guide | Research, write, verify, or refresh technical guides with working examples. |
-| pull-request-summary | Draft or check PR descriptions against the change and repository conventions |
+| im-not-a-fly | Edit prose for its human reader: clear meaning, accessible structure, accurate claims, and preserved voice. |
+| technical-guide | Research, write, or refresh technical guides around the reader's task, with verified examples. |
+| pull-request-summary | Give reviewers the context they need through PR descriptions grounded in the change and repository conventions. |
 | im-a-fly | Compress text for agents |
-| readme | Write a README and establish its adoption case |
-| glossary | Create or audit GLOSSARY.md. Use before naming product concepts, writing user-visible terms, renaming concepts, or checking vocabulary drift and banned terms. |
-| copywriting | Create or audit COPY.md and write user-visible strings against it. Use before writing marketing copy, UI labels, error messages, empty states, meta tags, or email, and when copy has drifted from the canonical strings. |
-| clarity | Review clear wording, reading order, and accessible structure without changing claims or voice. |
+| readme | Write a README that explains why the project matters and helps the reader complete a first task. |
+| glossary | Create or audit GLOSSARY.md so readers can understand product terms and their meanings. |
+| copywriting | Create or audit COPY.md, then write consistent copy around what the reader knows and needs. |
+| clarity | Review wording, reading order, and accessibility, including ADHD and dyslexia needs, while preserving claims and voice. |
 | claim-fidelity | Compare a rewrite with its source for changed claims, conditions, uncertainty, and attribution. |
 | verify-examples | Check runnable documentation examples against their stated setup and promised outcomes. |
 

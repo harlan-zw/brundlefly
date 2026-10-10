@@ -1,8 +1,10 @@
 # Brundlefly website
 
+Self-contained Agent Skills focused on empathy and accessibility in writing.
+
+The site introduces the Skills and offers complete downloads.
+Its mascot conversation uses Cloudflare and OpenAI. It does not execute a Skill.
 The site uses Nuxt, Nuxt UI, and the canonical brand artwork.
-The browser-local demos show small parts of the three skill workflows.
-They do not run an agent or send input to a model.
 
 ## Develop
 
