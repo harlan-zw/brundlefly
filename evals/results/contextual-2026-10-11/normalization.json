@@ -1,0 +1,32 @@
+[
+  {
+    "requestId": "ef83652567b37e18c3d836eee4c97274544b2541e753820c7ea429e45fd5642e",
+    "rawHash": "40f6977fdc962417abd83d8a22c51bc2c63211afeacc65edc9bed259898dbb79",
+    "responseHash": "e51ea3a7d936c15495c90122383132559c87fc3e6160a34b3418f60d49aa462d",
+    "removedFence": true
+  },
+  {
+    "requestId": "ea4e3b06ff3741ab0d1748e10fbb1bb348a5485f088e27e3426c1da6e7c1b212",
+    "rawHash": "393fb6e548ab42ddbc50a6887548d351f723385e96a7ffccc12c55622f22bc5d",
+    "responseHash": "393fb6e548ab42ddbc50a6887548d351f723385e96a7ffccc12c55622f22bc5d",
+    "removedFence": false
+  },
+  {
+    "requestId": "d23791dad36846e8906b9b9ff707f7af9e023c45dad40ec5d6c2f8a3a933f646",
+    "rawHash": "2d7fa9e797ef4cf33daf017b8d68b94919f559ad7ba3b936024e252b97bbb135",
+    "responseHash": "2d7fa9e797ef4cf33daf017b8d68b94919f559ad7ba3b936024e252b97bbb135",
+    "removedFence": false
+  },
+  {
+    "requestId": "b582414ad6b7089a01577f613bc28c2a62f38c20db4ac7417d607f43cb116e73",
+    "rawHash": "af3e458fa4cd5978cb7fbda46670b83e5d362450e5f90d7131d699b5e23dbfbb",
+    "responseHash": "af3e458fa4cd5978cb7fbda46670b83e5d362450e5f90d7131d699b5e23dbfbb",
+    "removedFence": false
+  },
+  {
+    "requestId": "607d85fb49a5390746a5ddd612e5021c554ff65dc8f0891f337c8201bfb04c8c",
+    "rawHash": "f925f446a307b0ee6da340785c469501624e5470844ff1ddf8ddb22b813d6e18",
+    "responseHash": "f925f446a307b0ee6da340785c469501624e5470844ff1ddf8ddb22b813d6e18",
+    "removedFence": false
+  }
+]

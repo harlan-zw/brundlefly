@@ -1,0 +1,111 @@
+{
+  "protocol": {
+    "revision": "8622ef593da629e2af50909292317f2229874efb",
+    "previousRevision": "adab8edb01715705946beab3661d8299cf683026",
+    "generator": "zai-coding-plan/glm-5.3-flash",
+    "judge": "zai-coding-plan/glm-5.2",
+    "seed": "brundlefly-calibration-v1",
+    "startedAt": "2026-10-10T13:55:37.685Z",
+    "referenceMode": "preloaded-inline-markdown-links",
+    "instructionHash": "5cb5b3b174050b9acd5406d580dd02260115338d92b68522a54cce638b8d03ff",
+    "instructionFiles": {
+      "SKILL.md": "b4b4c48e21b9211074b4378655589c7ee29cca33506ad787a7a89b00ee76f528",
+      "references/storytelling.md": "fa0376748df4e06af718e491dc47d1dd2cee9da3093fdf79f1bfc4289403ff89",
+      "references/writing-well.md": "5275e6e532575cfc01d853bab223c2924e710f394256145288bef2659c63bc9b",
+      "references/graphite-ai-tells-2026.md": "2fc98fe7bf3b3ca472a78088fceaa0077a21932d5d158c291ebd23dbbb76f713",
+      "references/blocks/clarity.md": "4e48ebaa118d1c6f5858879dd65e80f01d4428dd87d9a2dd49dad424b05200b2",
+      "references/accessible-writing.md": "447be0e2586f752d804d1061e6b19eb717b17a1f8d251ccbde44d14a62e83a7b",
+      "references/blocks/claim-fidelity.md": "0c27dca805003965a26a411a65c1a78bccaad42a046d1112e38045cb575ee69f"
+    },
+    "previousInstructionHash": "c375ef37b1494d7d3f51009f99b71c3a33d6abdeb589b97595d68daccf6adf70",
+    "sources": [
+      {
+        "id": "long-1",
+        "sourceHash": "64c823901b42e4c42dbc55e660bc22f60f004f7495696714a61086c89f097eb5",
+        "taskHash": "e3af6cc84ab095bcf6636750841cfbd4cb114553761f99c6d052e105b98b4e02",
+        "provenance": "Owner-authored historical passage. Owner approved the five-passage evaluation packet before the 4 October 2026 run and requested publication of this session evidence on 11 October 2026."
+      },
+      {
+        "id": "long-2",
+        "sourceHash": "57779776dec539780db0f2ff45a6a5e7f09459c8fae736fcc9c573c455e80703",
+        "taskHash": "97a3d858bdcb2d6b5c841fdec9ef99e41202471566a3ecbf0cab6cc887e94332",
+        "provenance": "Owner-authored historical passage. Owner approved the five-passage evaluation packet before the 4 October 2026 run and requested publication of this session evidence on 11 October 2026."
+      },
+      {
+        "id": "long-3",
+        "sourceHash": "8b3b61baa9f686662e71f847b1ac42f10100d0946d3c42c915216654d532448d",
+        "taskHash": "84d7464b539febb6bea58a7938c07cc0277c0501aeae0c032703b0841892a828",
+        "provenance": "Owner-authored historical passage. Owner approved the five-passage evaluation packet before the 4 October 2026 run and requested publication of this session evidence on 11 October 2026."
+      },
+      {
+        "id": "long-4",
+        "sourceHash": "8feb9c07adfd4daced59cacac412174cf5066a56941b49a33614bc1b78cdb40d",
+        "taskHash": "e3be7f4a5212d2d2905e0a40b4d732c7f8ce5168c11fd212bc05526c8518deab",
+        "provenance": "Owner-authored historical passage. Owner approved the five-passage evaluation packet before the 4 October 2026 run and requested publication of this session evidence on 11 October 2026."
+      },
+      {
+        "id": "long-5",
+        "sourceHash": "37d22064001b92e354002d408165343a5168949944a5cfc6bb1e2b81d5704909",
+        "taskHash": "138a7a40289c8fdbc92f93a6f93956fca374c3c449d2e4fab17100535c08e5a9",
+        "provenance": "Owner-authored historical passage. Owner approved the five-passage evaluation packet before the 4 October 2026 run and requested publication of this session evidence on 11 October 2026."
+      }
+    ],
+    "scoringModuleHash": "a99b2ae7565dd8a191683db0b72bf78dc977bf43ed603ac0e3671fa7a6860adf",
+    "node": "v24.18.0",
+    "opencode": "1.18.32"
+  },
+  "rows": [
+    {
+      "variant": "before-51",
+      "inputs": 5,
+      "preserved": 5,
+      "changed": 0,
+      "fidelityUncertain": 0,
+      "improved": 5,
+      "equivalent": 0,
+      "worse": 0,
+      "benefitUncertain": 0,
+      "unchanged": 0,
+      "useful": 5
+    },
+    {
+      "variant": "after-51",
+      "inputs": 5,
+      "preserved": 5,
+      "changed": 0,
+      "fidelityUncertain": 0,
+      "improved": 5,
+      "equivalent": 0,
+      "worse": 0,
+      "benefitUncertain": 0,
+      "unchanged": 0,
+      "useful": 5
+    },
+    {
+      "variant": "copy-only",
+      "inputs": 5,
+      "preserved": 5,
+      "changed": 0,
+      "fidelityUncertain": 0,
+      "improved": 0,
+      "equivalent": 5,
+      "worse": 0,
+      "benefitUncertain": 0,
+      "unchanged": 5,
+      "useful": 0
+    }
+  ],
+  "independentInputs": 5,
+  "reusedPreviousJudgments": 5,
+  "newJudgments": 5,
+  "humanCalibration": {
+    "assessed": 0
+  },
+  "limitations": [
+    "One generation per revision and input cannot isolate instruction changes from output variance.",
+    "One author, one generator family, and one judge family.",
+    "Tool-free reference preloading does not test routing, research, or rendering.",
+    "Previous judgments are reused only for exact matching request identities.",
+    "No human labels carry over to these contextual passages."
+  ]
+}

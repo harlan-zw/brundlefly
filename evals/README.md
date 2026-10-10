@@ -1,8 +1,11 @@
 # Writing comparison pilot
 
 This pilot uses published correction examples and a published editing rubric.
-It contains no original writing cases.
+Its ten short cases contain no original writing cases.
 Confirm new cases with the repository owner before adding them.
+
+The separate [11 October contextual comparison](results/contextual-2026-10-11/README.md) preserves five approved owner-authored passages.
+It records frozen outputs, model scores, and one human pair preference without claiming a general winner.
 
 ## Sources
 
