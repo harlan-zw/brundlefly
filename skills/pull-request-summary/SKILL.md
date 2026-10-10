@@ -7,6 +7,10 @@ license: MIT
 # Pull request summary
 
 Return a reviewable pull request description grounded in the actual change.
+Consider the human reviewer, their existing context, and the decision the description must help them make.
+Respect their attention. Optimize for clarity, accuracy, and brevity while keeping necessary consequences and operator actions.
+Design for reading and attention needs, including ADHD and dyslexia.
+Use examples or storytelling only when they clarify supported motivation or behavior. Never invent a personal experience.
 This Skill owns description text only. The caller owns delivery and repository policy.
 Do not create branches, stage files, commit, push, publish, manage CI, or post replies.
 Do not change the PR title, labels, draft state, or reviewer decisions.
@@ -55,6 +59,11 @@ Do not use em dashes or hyphens as sentence punctuation.
 Use exact names and stated pronouns. Otherwise use a username or singular they.
 
 ## 3. Check the description
+
+Apply [clarity](references/blocks/clarity.md), including ADHD and dyslexia guidance, to the reviewer's reading path.
+Keep conditions beside the changes or operator actions they affect. Preserve required templates and complete checklists.
+Do not fragment a short description with decorative headings or add background the reviewer does not need.
+Before removing substantial author material, explain the proposed loss and ask unless removal is already authorized.
 
 Apply [claim fidelity](references/blocks/claim-fidelity.md) against the diff, supplied intent, and required template wording.
 For a revised body, also compare the preserved author material with the original body.

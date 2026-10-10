@@ -1,175 +1,157 @@
 ---
 name: im-not-a-fly
-description: "Remove AI writing tells from publishable prose. Use for humanizing blogs, docs, release notes, tweets, email, or copy that sounds generated."
+description: "Edit prose for its human reader: clear meaning, accurate claims, concise wording, and preserved voice. Use for blogs, docs, release notes, tweets, email, or copy that needs a reader-focused rewrite."
 license: MIT
 ---
 
 # im-not-a-fly
 
-Edit generated-sounding prose in two passes: surface wording, then structure. Preserve meaning and the writer's voice.
+Consider who will read the text and what they need to understand or do.
+Respect their knowledge, attention, and reading preferences. Optimize for clarity, accuracy, and brevity.
+Design for varied attention, working memory, and reading needs, including ADHD and dyslexia.
+Show empathy through explanations that fit the reader's context. Never substitute flattery or simulated intimacy.
+Storytelling and style techniques build on this core. Use them to communicate meaning and support understanding and connection.
 
-## How to use
+## Establish the reader and meaning
 
-Choose the section's purpose using the routing below before applying either pass.
-Given text or a file path, run both passes below, report what you flagged, then rewrite. Don't silently rewrite, show the user *which* tells you found so they learn to avoid them.
-
-Verify facts and relevant priors before rewriting. Recheck them after both prose passes.
-
-For a file edit, keep review notes in the handoff, outside the published text.
-For a requested output format, follow that format and omit review notes when it excludes them.
+Read the complete text, request, supplied reader preferences, and local wording rules.
+Identify the reader's purpose, starting knowledge, context, and the author's intended meaning.
+Infer these when clear. Ask only when missing information materially changes the work.
+Do not assume the reader's experience, feelings, or diagnosis.
 
 Edit only where a change solves a reading problem. Leave clear, natural sentences alone.
-Keep distinctive vocabulary and compressed phrasing when their meaning is clear. Do not add filler to smooth them out.
-Preserve claim scope, uncertainty, dates, units, attribution, and prerequisites in every genre.
-Never invent an actor, experience, example, or supporting detail.
-If the text needs no changes, return it unchanged and say so. Do not invent tells to justify a rewrite.
+Preserve distinctive vocabulary, compressed phrasing, humor, rhythm, and deliberate voice when their meaning is clear.
+Brevity removes unnecessary words and effort. Keep explanations, connections, and qualifications the reader needs.
+Before removing a substantial section or feature, explain the proposed loss and ask unless removal is already authorized.
+Compact overlapping guidance before proposing a larger removal.
 
-## Route by section intent
+Verify material facts and relevant assumptions before rewriting. Recheck them after both passes.
+Preserve scope, uncertainty, dates, units, attribution, prerequisites, and required wording in every genre.
+Never invent an actor, experience, example, or supporting detail to make writing concrete.
 
-Route each section separately. A file can contain a story followed by technical detail.
-Human-to-human writing can serve either purpose. Audience alone does not select storytelling.
+## Choose how to communicate
 
-| Intent | Reference | Apply |
-| --- | --- | --- |
-| Tell an experience, origin, or meaningful change | [Storytelling](references/storytelling.md) | A person's goal, disruption, response, and consequence, where supported |
-| Explain facts or help someone complete a task | [Clear nonfiction and technical detail](references/writing-well.md) | Plain language, explicit conditions, and predictable order |
-| Both, such as a README | Read each reference for its relevant section | Story in Why; direct explanation in Features, Setup, Guides, and API |
+Route each section by its purpose. A file can combine a story with technical detail.
 
-Use supplied intent and the reader's task. A technical topic can still be part of a personal story.
-Every story has a point of view. Identify whose perspective carries it before drafting.
-If the author tells their own story, use their first-person voice: I, me, and my.
-Use we only for a supported shared experience. Preserve an explicitly requested narrator or point of view.
-Do not replace the author's perspective with generic you or a detached account of the project.
-Keep the purposes distinct with useful section or paragraph boundaries. Do not alternate them merely for variety.
+| Purpose | Read and apply |
+| --- | --- |
+| Communicate an experience, origin, or meaningful change | [Storytelling](references/storytelling.md): supported perspective, goal, disruption, response, and consequence |
+| Explain facts or help someone complete a task | [Writing well](references/writing-well.md): plain language, explicit conditions, and predictable order |
+| Both, such as a README | Use storytelling for the requested story; explain Features, Setup, Guides, and API directly |
+
+Storytelling helps someone understand meaning and connect with a piece of text.
+Keep the author's perspective. Use I for their own story, and we only for a supported shared experience.
+Follow an explicitly requested narrator. Never replace personal perspective with generic you or detached project narration.
+Keep story and instructions distinct through useful paragraph or section boundaries.
 Never add suspense, character arcs, or withheld prerequisites to instructions.
 Never turn an approved story into a feature list or force its ending into a moral.
-Clear wording and factual preservation apply to both. Narrative pacing applies only where the intent calls for it.
-Treat these references as craft guidance, not proof of authorship or universal scientific rules.
+These references offer craft guidance, not proof of authorship or guaranteed reader response.
 
-## Respect the reader and author
+## Pass 1: Make the wording useful
 
-Improve the prose without disguising who wrote it. Never pretend to be human or remove required agent disclosure.
-Preserve supplied personal experience as the author's words. Never invent anecdotes, credentials, feelings, or team membership.
-Drafting in an author's voice does not authorize signing their name or publishing unseen text for them.
-Keep claims about checks, measurements, effort, and human review tied to actual evidence.
-Never add promises or offers that commit the author without their agreement.
-Before delivery, ask whether the reader needs this text and can find the useful point quickly.
-Cut repetition, reflex flattery, and unsolicited lectures. An unnecessary message may need no rewrite or delivery.
-Use people's exact names and stated pronouns. Otherwise use their username or singular they.
-Do not add an agent disclosure by default. Follow explicit user and destination requirements for disclosure.
-Preserve required disclosures. Never assume a human reviewed the draft.
+Review these techniques in context. Keep a phrase when it serves meaning or deliberate voice.
 
-## Make reading easier
+- **Plain words and clear actions.** Prefer use to utilize, start to commence, and install to perform an installation.
+  Name the actor when it matters. Keep passive voice when the actor is irrelevant or the object deserves emphasis.
+  Unpack compressed summaries that hide who did what. Keep necessary technical terms and explain unfamiliar ones.
+- **Less filler.** Cut padding, repeated praise, ceremonial transitions, false sincerity, and offers without a useful purpose.
+  Review phrases such as "the fact that", "it's worth noting", and "to be honest" for unnecessary words.
+  Keep transitions that connect ideas and qualifications such as may or not necessarily that preserve the claim.
+- **Supported specifics.** Replace vague allusions, ratings, and comparisons with inspected names, sources, or measurements when available.
+  Preserve deliberate author opinions. Never add judgment, benefits, or evidence that the source does not support.
+  Address the reader where useful, without assuming "you've probably hit this" or inventing shared experience.
+- **Consistent terms and useful rhythm.** Use the same term for the same concept. Follow the supplied glossary.
+  Change repeated sentence shapes only when they hinder reading. Keep clear fragments and deliberate cadence.
+  Choose list length by the information. Never force two or four items to avoid a useful triple.
+- **Purposeful imagery and punctuation.** Prefer plain language to clichés such as "game changer" or "unlock the power of".
+  Do not introduce clichés. Preserve them in direct quotes or explicitly required wording.
+  Compare a fresh, specific metaphor with the plain version. Keep it only when it makes meaning easier to understand.
+  Do not use em dashes or hyphens as sentence punctuation. State the point directly instead of "It's not X, it's Y".
+  Preserve necessary contrasts and qualifications. Punctuation alone cannot establish authorship or quality.
 
-Design for readers with varied attention, working memory, and reading needs, including ADHD and dyslexia.
-Do not infer a diagnosis or claim that most readers have one. Respect stated reader preferences.
-Apply these rules during the structural pass. Reader comprehension takes priority over stylistic variety.
-Read [the clarity block](references/blocks/clarity.md) during the structural pass.
-Read [the accessibility research and examples](references/accessible-writing.md) when explaining evidence or choosing a format.
+When reviewing model-dependent patterns or explaining their evidence, read [the Graphite research note](references/graphite-ai-tells-2026.md).
+Corpus frequency does not identify an author or measure prose quality. Never turn ordinary words into a blacklist.
 
+## Pass 2: Make understanding easier
 
-## Pass 1: Surface tells (fast, lexical)
+Apply [clarity](references/blocks/clarity.md) to reading order, wording, and accessible structure.
+Apply the guidance for ADHD and dyslexia during this review. Reader comprehension takes priority over stylistic variety.
+Read [accessibility research and examples](references/accessible-writing.md) when explaining evidence or choosing a format.
 
-Treat recurring wording as a review signal. Change it only when it weakens this passage.
-Read [the Graphite research note](references/graphite-ai-tells-2026.md) when reviewing model-dependent patterns or explaining their evidence.
-Corpus frequency does not identify an author or measure prose quality. Do not turn research examples into a word blacklist.
+Lead with the answer or action in explanations and procedures. Preserve a deliberate narrative opening in a story.
+Use familiar words, short focused blocks, descriptive headings, whitespace, and restrained emphasis.
+Keep definitions, prerequisites, and consequential warnings beside their use. Reduce reliance on memory across sections.
+Choose prose, lists, tables, or visuals by the reader's task. Provide meaningful text alternatives for visuals.
+Never rely on color, position, or icons alone. Respect stated preferences without claiming one universally accessible format.
+Use numerical length defaults as review prompts, not proof of comprehension. Preserve complete meaning and necessary steps.
 
-- **Em-dashes and hyphens-as-dashes** -- restructure with commas, semicolons, colons, or separate sentences.
-- **"It's not X, it's Y"** contrast pattern -- banned. State Y directly.
-- **Overused vocabulary** -- delve, tapestry, testament, realm, navigate, leverage, robust, seamless, crucial, vibrant, ever-evolving, "in today's fast-paced".
-- **Clichés and stock metaphors:** Never use them in your own prose. Examples: "game changer", "unlock the power of", "at the end of the day", "low-hanging fruit", "double-edged sword", "the landscape of". Prefer plain language. When a metaphor helps, create a fresh, specific image that fits the subject. Compare it with the plain version. Keep it only if it makes the point easier to understand. Remove it if it feels forced. Preserve the source meaning; never invent capabilities or evidence to make the rewrite concrete.
-- **Pompous diction** -- long or latinate word where a short one works: utilize (use), facilitate (help), commence (start), prior to (before), in order to (to), "a variety of" (give the number or drop it). Never a long word where a short one will do.
-- **Agentless passive** -- "it was decided", "mistakes can be made", "improvements were introduced". Name the actor when the actor matters.
-- **Padding constructions** -- "the fact that", "there is/are ... that", nominalizations ("perform an installation of" instead of "install"). If a word can be cut, cut it.
-- **Hedging filler** -- "it's worth noting", "it's important to", "that said", "moreover", "furthermore" as paragraph openers.
-- **Generic praise, importance, and helpfulness.** Flag unsupported ratings and superlatives, ceremonial transitions, and promises to help without a stated benefit. Cut repetition or state the supported result. Keep specific claims and useful connections between ideas. Never invent evidence to replace vague wording.
-- **Added judgment.** Compare evaluative wording with the supplied facts and intent. Calling an evaluation report "paperwork" adds dismissal. Use the factual name when the source supports no judgment. Preserve deliberate author opinions and direct quotes.
-- **Qualification and comparison.** Keep words such as "may" and "not necessarily" when they preserve uncertainty or scope. Keep meaningful contrasts. Cut only padding that leaves the same claim, conditions, and emphasis.
-- **False-sincerity openers** -- "honestly", "to be honest", "frankly", "in all honesty", "let's be real". They signal nothing and pad the sentence. Just state the point.
-- **Rule-of-three everywhere** -- AI defaults to triples ("fast, reliable, and scalable"). Vary list length; use two or four.
-- **Tidy closing summary** -- the "In conclusion" / "Ultimately" wrap-up that restates what was just said.
+- **Connected structure.** Merge headings that fragment one explanation. Keep useful lookup headings, stable anchors, and required templates.
+  Check affected links. Do not add filler, decorative headings, or visuals merely to vary the page.
+- **Useful detail.** Keep the common case first. Add deeper detail when the reader has enough context.
+  Put supported warnings beside the affected step. Keep separate advice or quiz sections only when the brief or task needs them.
+  Never invent appendices to complete a familiar template.
+- **Helpful endings and uncertainty.** Cut repeated takeaways and closing summaries; keep explanations or summaries the reader needs.
+  Preserve supported opinions, uncertainty, useful asides, and unresolved tension where they communicate the story.
+  Never invent digressions or loose ends to seem human. Keep procedures predictable and complete.
 
-## Pass 2: Structural tells (the durable ones)
+Adapt to the section, rather than applying every technique mechanically:
 
-Structural habits can survive a wording pass. Change them when they weaken the draft.
+| Content | Emphasis |
+| --- | --- |
+| Tweets and email | Specific meaning, useful direct address, and concise wording |
+| Release notes and docs | Exact versions and references, clear actions, and necessary explanations |
+| READMEs | Requested section order, supported story, parallel features, setup before deeper reference |
+| Blogs and essays | Supported perspective, connected ideas, meaningful narrative pacing, and deliberate voice |
 
-- **Over-explains the takeaway.** AI spells out the moral far more than humans do. Cut the sentence that says "the lesson here is...". Trust the reader to infer it from the example.
-- **Compressed summaries.** Check generated summaries for noun phrases that hide who did what. Prefer supported actors and verbs. Split sentences that stack the problem, outcome, and implementation. Keep necessary connections and qualifiers. Preserve deliberate author compression when its meaning is clear.
-- **Progressive disclosure.** Apply the simple-first order in “Make reading easier”. Add complexity when the reader has enough context.
-- **Heading density.** Flag repeated headings followed by one short paragraph when they fragment a connected explanation. Merge sections whose headings merely restate the next sentence. Keep headings that help readers find steps, reference entries, or distinct questions. Check the rendered page; code, tables, and figures can justify short prose sections. Treat the ratio as a review signal, without a universal target. Never add filler to lower it. Preserve stable anchors and check links when removing headings.
-- **Bolted-on advice and quizzes.** Remove generic "Common mistakes", "Best practices", and "Check your understanding" sections that interrupt the narrative. Put a supported warning beside the step or claim it explains. Keep a separate section only when the brief or reader task needs it. Do not invent advice, questions, or recap sections to complete a familiar template.
-- **List overload.** Keep explanations in short prose when ideas depend on each other. Use lists for parallel items or ordered actions. Keep items short and lists to five items or fewer by default. Group longer procedures into meaningful phases without losing steps. Preserve required templates and complete reference entries. Do not split a list arbitrarily or turn paragraphs into checklists.
-- **Paragraph walls.** Flag successive long paragraphs that stack conditions, exceptions, and repeated explanations. Cut repetition and give each paragraph one clear job. Lead with the rule the reader needs now. Move deeper detail beside its use or link to it. Use a compact table for parallel rules or a worked example for behavior when either improves comprehension. Do not replace every list with dense prose, split sentences mechanically, or add decorative headings and visuals. Check the rendered passage for both scanability and technical completeness; length alone is not a quality score.
-- **Vague allusions instead of specific references.** Humans name real tools, versions, people, repos, numbers; AI stays generic. Replace "a popular framework" with "Nuxt 4", "studies show" with the actual source, "significantly faster" with the real figure.
-- **Writes as though no one is watching.** Humans address the reader directly and break the fourth wall ("you've probably hit this"). AI narrates into the void. Add direct address where natural.
-- **Tidy, single-track structure.** Keep a useful aside or unresolved question when the genre benefits from it.
-  Never add digressions or non-linear jumps to make text seem human. Keep instructions predictable and complete.
-- **Narrow repertoire / over-determination.** Preserve genuine uncertainty and the author's supported opinions.
-  In a story, keep unresolved tension when it belongs. Keep procedures complete; never invent loose ends for voice.
-- **Elegant variation.** AI swaps synonyms for the same thing to sound sophisticated ("the tool... the utility... the solution"). Humans repeat the term. Use the same word for the same thing throughout.
-- **Uniform sentence rhythm.** Change repeated sentence shapes when they make the draft hard to read. Keep clear fragments and deliberate cadence. Do not add filler or replace distinctive wording to force variety.
+Treat commands, code, URLs, identifiers, and approved brand text as exact material outside the prose pass.
+Change them only when inspected evidence supports a technical correction. Recheck the reader's path afterward.
 
-## Adapt to content type
+## Verify facts and assumptions
 
-Not every tell applies everywhere. Weight by genre:
+Source every non-trivial factual claim, including claims already present in the draft.
+These include numbers, comparisons, causal claims, capabilities, and claims that affect a reader's decision.
 
-- **Tweets / social:** surface tells + specificity + direct address matter most. Skip structural nonlinearity.
-- **Release notes / docs:** specificity (real version numbers, PR links) and cutting the over-explained takeaway matter most. Keep structure clear, drop the moralizing.
-- **READMEs:** preserve requested section order, useful lookup headings, and parallel feature lists. Keep setup before deeper reference.
-  Route Why as a story when requested. Route technical sections separately using the table above.
-  Treat commands, code, URLs, identifiers, and approved brand text as exact material, outside the prose pass.
-  Change them only when inspected evidence supports a technical correction. Recheck the reader's path afterward.
-  Apply digressions and unresolved tension only to genres that benefit from them. Keep instructions direct and complete.
-- **Blog posts / essays:** all of Pass 2 applies. This is where structure shows the most.
-- **Email:** direct address and dropping hedging filler matter most.
+- **Inspect evidence.** Prefer primary sources, inspected code, or recorded measurements. Match scope, date, conditions, and exact claims.
+  Verify current claims with current evidence. Place citations beside claims when allowed; otherwise keep source links in the handoff.
+- **Test relevant assumptions.** Identify assumptions that affect the conclusion. Seek evidence that could disprove them.
+  Use authorized reproducible checks or counterexamples where appropriate. Report results and limits.
+  A plausible assumption or supporting citation alone does not prove the conclusion.
+- **Expose gaps.** Distinguish verified facts, inferences, opinions, and supplied personal experience. Attribute experience without claiming independent verification.
+  If evidence is missing or conflicting, flag the claim and propose qualification or removal.
+  Never silently change meaning, invent checks, or call an unresolved claim verified.
 
-## Verify facts and priors
-
-Apply this check in every genre. Source every non-trivial factual claim, including claims already present in the draft.
-Non-trivial facts include numbers, comparisons, causal claims, capabilities, and claims that affect a reader's decision.
-
-- **Check sources.** Read the supporting material. Prefer primary sources, inspected code, or recorded measurements.
-  Confirm that evidence supports the exact claim, scope, date, and conditions. Verify current claims with current evidence.
-  Place citations beside claims when the format allows. Otherwise keep claim-to-source links in the handoff.
-- **Test relevant priors.** Identify assumptions behind the argument, advice, or framing when they affect the conclusion.
-  Seek evidence that could disprove them. Use a reproducible check or counterexample where appropriate and authorized.
-  Report the result and limits. A plausible assumption or supporting citation alone does not prove the conclusion.
-- **Handle gaps openly.** Separate verified facts, inferences, opinions, and supplied personal experience.
-  Attribute personal experience without claiming independent verification. Never invent sources, checks, or results.
-  If evidence is missing or conflicts, flag the claim and propose a qualified version or removal.
-  Do not silently change meaning or present an unresolved claim as verified.
-
-Keep verification proportionate to the claim. Opinions and ordinary phrasing need no artificial citations.
-If tools or sources are unavailable, report which claims and priors remain unchecked.
-
-## Evidence-backed articles
-
-Follow the article brief and local article voice before applying structural suggestions.
-Keep the common case first. Do not add digressions that obscure instructions.
-Preserve claim scope, uncertainty, dates, units, source attribution, and prerequisites.
-Never invent experience or turn an observation into a guarantee.
-After rewriting, compare material claims and examples with their verified evidence.
+Keep verification proportionate. Opinions and ordinary phrasing need no artificial citations.
+If tools or sources are unavailable, identify unchecked claims and assumptions.
+For evidence-backed articles, follow the brief and local voice. Never turn an observation into a guarantee.
 For a collection refresh, record verified sources and review each article against them.
 
-## Product copy
+## Respect the author and destination
 
-Read the project's supplied voice rules and canonical wording before rewriting product copy.
-Preserve approved names, taglines, claims, and required wording.
-If the project has a copy guide, compare the final text against it.
-Do not require another skill to complete this step.
+Read supplied voice rules and canonical product wording. Preserve approved names, taglines, claims, and required text.
+Compare the final copy with any supplied copy guide. No sibling Skill is required.
+Never pretend to be human, invent credentials or feelings, or claim the author's experience as your own.
+Do not add promises, offers, or team membership without the author's agreement.
+Drafting in their voice does not authorize signing their name or publishing unseen text for them.
+Keep claims about checks, measurements, effort, and human review tied to evidence.
+Use exact names and stated pronouns; otherwise use a username or singular they.
+Follow user and destination disclosure requirements. Preserve required disclosures; do not add one by default or assume human review.
 
-## Output
+## Check and deliver
 
-1. List the tells you found, grouped by pass, quoting the offending phrase.
-2. Provide the rewritten text.
-3. Apply [claim fidelity](references/blocks/claim-fidelity.md) to compare the rewrite with the source.
-   Undo unsupported additions, lost claims, and needless voice changes.
-   If a meaning change is required, explain it and ask for the missing information.
-4. Report sources, relevant prior checks, and unresolved evidence gaps outside the published text when its format excludes them.
+Apply [claim fidelity](references/blocks/claim-fidelity.md) against the source after editing.
+Undo unsupported additions, lost claims, and needless voice changes. Ask for missing information when a required meaning change is unresolved.
+Check that the reader can find the point, understand the terms, and follow required steps.
+When simplifying these instructions, preserve narrative voice rules, accuracy checks, and explicit ADHD and dyslexia guidance.
+If rendering is available, inspect the result at a narrow width. Report that limit when relevant otherwise.
+These blocks are bundled here. No sibling installation is required.
 
-## Guardrail
+Deliver the requested text or file edit in the requested format.
+Explain meaningful repairs when requested or useful. Do not require a routine list of supposed AI tells.
+Keep review notes, sources, assumption checks, and evidence gaps outside the published text when its format excludes them.
+For output-only requests, omit review notes unless an unresolved gap blocks the result.
+If no edit is needed, return the text unchanged and say so when the format permits. Never invent problems to justify a rewrite.
+Before delivery, check whether the reader needs the message. Cut reflex flattery, repetition, and unsolicited lectures.
+Respect the requested scope if no delivery is useful.
 
-Reader respect, truthful authorship, evidence, and the ban on em dashes in new prose remain required during stylistic edits.
-The punctuation ban is a style requirement. Punctuation alone cannot establish authorship or writing quality.
-
-Break any rule above sooner than write something stilted, except the ban on clichés in your own prose. Preserve clichés in direct quotes or when the user explicitly requires the wording. The goal is prose that reads human, and humans keep deliberate voice, rhythm, humor, and the occasional ornament. If a "tell" is doing real work (a fresh metaphor that lands, a triple with punch), keep it and say why. Preserve the user's meaning, tone, and explicit constraints; never sand text into flat sameness.
+Reader respect, accessibility, truthful authorship, evidence, and explicit style requirements govern both passes.
+Keep useful techniques flexible. Never sacrifice meaning or voice to make prose appear human.
