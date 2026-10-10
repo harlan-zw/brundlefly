@@ -41,8 +41,7 @@ Claude Code and Cursor manifests live in .claude-plugin and .cursor-plugin.
 Their marketplace files each point to the repository root as one Brundlefly plugin.
 Every host reads the same skills directory. Never duplicate Skill instructions into provider directories.
 Keep the name, version, description, author, homepage, repository, and license aligned across manifests.
-Use COPY.md's approved collection description for plugin descriptions. Keep its tagline for short brand introductions.
-Reuse the canonical avatar for plugin icons.
+Use COPY.md's approved tagline for plugin descriptions. Reuse the canonical avatar for plugin icons.
 When releasing changed Skills, increase the plugin version in all three manifests together.
 Validate Claude packaging with `claude plugin validate .` and `claude plugin validate .claude-plugin/marketplace.json`.
 

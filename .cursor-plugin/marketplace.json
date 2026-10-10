@@ -1,12 +1,12 @@
 {
   "name": "brundlefly",
   "owner": { "name": "Harlan" },
-  "metadata": { "description": "Self-contained Agent Skills focused on empathy and accessibility in writing." },
+  "metadata": { "description": "Agent skills for writing that's part human." },
   "plugins": [
     {
       "name": "brundlefly",
       "source": "./",
-      "description": "Self-contained Agent Skills focused on empathy and accessibility in writing."
+      "description": "Agent skills for writing that's part human."
     }
   ]
 }
