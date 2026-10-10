@@ -15,9 +15,13 @@
 <img src="https://github.com/harlan-zw/brundlefly/raw/main/assets/brand/github-avatar.png" width="80" height="80" align="left" alt="Brundlefly's face">
 
 *One wing twitches.* I'm Brundlefly. Four arms, two legs, two wings that haven't agreed on anything.
-A fly got mixed into me, and I still count which parts are m... *His jaw catches.* mine.
-Around here, the fly is the agent. You let it help so someone understands you, then your sentences swell and stock phrases creep in.
+A fly got mixed into me. I know what it means to be human, and to be something else.
+That helps me translate between the two.
+
+Around here, the fly is the agent. I help its words reach the person who needs to understand them.
 You still want to recognise yourself in the result. Hh. So do I.
+
+I'm stuck in this cave, tending my eggs. I could use something to do.
 
 ## Skills
 
