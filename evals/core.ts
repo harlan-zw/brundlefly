@@ -1,7 +1,36 @@
 import { createHash } from 'node:crypto';
-import { relative, isAbsolute, sep } from 'node:path';
+import { relative, isAbsolute, sep, posix } from 'node:path';
 
 export const hash = (text: string) => createHash('sha256').update(text).digest('hex');
+
+// Tool-free comparisons preload inline-linked Markdown. This measures the supplied
+// instructions, rather than an agent's ability to select references with tools.
+export async function loadInstructionBundle(read: (path: string) => Promise<string>): Promise<{
+  instructions: string;
+  fileHashes: Record<string, string>;
+}> {
+  const files = new Map<string, string>();
+  async function visit(path: string): Promise<void> {
+    if (files.has(path)) return;
+    const text = await read(path);
+    if (typeof text !== 'string') throw Error(`Missing Skill reference: ${path}`);
+    files.set(path, text);
+    for (const match of text.matchAll(/\[[^\]]*\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g)) {
+      const target = decodeURIComponent(match[1]).split(/[?#]/)[0];
+      if (!target || /^[a-z][a-z\d+.-]*:/i.test(target) || target.startsWith('//') || !target.endsWith('.md')) continue;
+      const destination = posix.normalize(posix.join(posix.dirname(path), target));
+      if (target.startsWith('/') || target.includes('\\') || destination === '..' || destination.startsWith('../')) {
+        throw Error(`Reference is outside the Skill: ${target}`);
+      }
+      await visit(destination);
+    }
+  }
+  await visit('SKILL.md');
+  return {
+    instructions: [...files].map(([path, text]) => `\nBundled file: ${path}\n${text}`).join('\n'),
+    fileHashes: Object.fromEntries([...files].map(([path, text]) => [path, hash(text)])),
+  };
+}
 export function isOutsideRepository(repository: string, scratch: string): boolean {
   const path = relative(repository, scratch);
   return path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);

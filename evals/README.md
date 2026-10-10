@@ -73,3 +73,34 @@ Then run development revised, holdout initial, and holdout revised.
 The revised run compares its fresh edit with the stored initial edits.
 Rejudging all candidates allows direct comparison within that judgment.
 A revised judgment can disagree with the first judgment; report that uncertainty.
+
+## Compare current instructions
+
+Use `current` for fresh edits from the current Skill, both pinned competitors, and the same plain request.
+An unchanged-text control receives no generator call. It exposes checks that reward copying without useful editing.
+This control does not establish useful improvement. Keep improvement judgments separate from preservation checks.
+
+```sh
+EVAL_SCRATCH="$HOME/scratch/brundlefly-current-evals" \
+EVAL_PROVIDER_CONFIG="$HOME/.config/opencode/opencode.json" \
+node evals/run.ts development current
+```
+
+Current results stay in `EVAL_SCRATCH/development-current.json`, outside the repository.
+Use a fresh scratch directory for each independent repeat.
+Current mode never imports old candidate outputs or overwrites historical results.
+The `revised` mode now uses the frozen `write-human-v1` snapshot rather than today's Skill.
+
+Current mode preloads Markdown files reached through inline relative links, including nested Block Skills.
+It records each file hash and the complete instruction hash.
+Missing files and paths outside the Skill stop the run. Filesystem links cannot escape the Skill directory.
+External URLs, anchors, and non-Markdown resources do not load.
+Reference-style links and bare paths are outside this loader's supported format.
+Every currently linked Markdown reference is supplied, including optional research notes.
+The model must select relevant guidance from that supplied bundle.
+This differs from a tool-enabled agent's progressive loading. It does not test reference selection through tools.
+
+The competitors remain at the revisions in `sources.json`. Registry popularity does not rank their output quality.
+These ten public examples remain development evidence. They cannot establish broad superiority or an untouched holdout.
+Report unchanged outputs and the control's scores alongside preservation results.
+If the control passes, inspect whether that input needs editing before treating the pass as an improvement.
