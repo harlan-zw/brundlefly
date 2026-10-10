@@ -1,0 +1,18 @@
+[
+  {
+    "caseId": "long-4",
+    "assessor": "Harlan",
+    "evidence": "yes b is better",
+    "reviewSurface": "Chat comparison table of all A/B differences, after heading comparison",
+    "preferredLabel": "B",
+    "preferredVariant": "before-51",
+    "candidateHashes": {
+      "A": "7b669cce9618e8cb11d463bf1126e21f122f76267c1b2ed047072aeb543e67b1",
+      "B": "a855c2a7794688175ecf1c9c6ddeea873af05fc4e45b40b7bddc21c541b91d0b"
+    },
+    "fidelityAssessment": null,
+    "benefitAgainstOriginal": null,
+    "reason": null,
+    "scope": "Pair preference on this passage only. No source-relative assessment or general revision preference inferred."
+  }
+]
