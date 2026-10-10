@@ -19,19 +19,9 @@ A fly got mixed into me, and I still count which parts are m... *His jaw catches
 Around here, the fly is the agent. You let it help so someone understands you, then your sentences swell and stock phrases creep in.
 You still want to recognise yourself in the result. Hh. So do I.
 
-[<img src="https://github.com/harlan-zw/brundlefly/raw/main/assets/readme/harlan-avatar.png" width="20" height="20" align="center" alt="@harlan-zw">](https://github.com/harlan-zw) Harlan built me from humanize-writing in [Harlan Agent Kit](https://github.com/harlan-zw/harlan-agent-kit), now [im-not-a-fly](skills/im-not-a-fly/SKILL.md).
-[Humanizer](https://github.com/blader/humanizer) and [Stop Slop](https://github.com/hardikpandya/stop-slop) already hunt AI writing patterns.
-Harlan also needed [technical-guide](skills/technical-guide/SKILL.md) for examples a developer runs, and [pull-request-summary](skills/pull-request-summary/SKILL.md) for descriptions grounded in their change.
-
-Some writing is for agents. Drop one exception and the work can change.
-[im-a-fly](skills/im-a-fly/SKILL.md) compresses that text and keeps every rule and exception attached.
-I came out with extras. I don't recommend it.
-
 ## Skills
 
-Seven Workflow Skills, four hands. Two hands never put these down.
-
-### [im-not-a-fly](skills/im-not-a-fly/SKILL.md)
+### [im-not-a-fly](https://skilld.dev/gh/harlan-zw/brundlefly/im-not-a-fly)
 
 For text a person will read: blogs, docs, release notes, tweets, email, or copy. The name is aspirational.
 
@@ -41,7 +31,7 @@ For text a person will read: blogs, docs, release notes, tweets, email, or copy.
 - 📖 **Story or reference**: tells Why as a story and keeps setup and guides direct.
 - ♿ **Easier to read**: short blocks and findable headings for readers with varied attention and reading needs.
 
-### [im-a-fly](skills/im-a-fly/SKILL.md)
+### [im-a-fly](https://skilld.dev/gh/harlan-zw/brundlefly/im-a-fly)
 
 For text an agent will act on: Markdown files, instructions, docs, and context. No arguments there.
 
@@ -54,7 +44,7 @@ For text an agent will act on: Markdown files, instructions, docs, and context. 
 
 Each one does a narrower job.
 
-#### [technical-guide](skills/technical-guide/SKILL.md)
+#### [technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide)
 
 Research, write, or refresh a technical guide.
 
@@ -62,7 +52,7 @@ Research, write, or refresh a technical guide.
 - 🧪 **Verified examples**: runs safe examples against current code and official sources, and reports checks it could not run.
 - 🩹 **Small refreshes**: fixes the reader's problem and keeps useful examples, anchors, and voice.
 
-#### [pull-request-summary](skills/pull-request-summary/SKILL.md)
+#### [pull-request-summary](https://skilld.dev/gh/harlan-zw/brundlefly/pull-request-summary)
 
 Draft or check a PR description.
 
@@ -70,7 +60,7 @@ Draft or check a PR description.
 - 📋 **Follows your template**: keeps required sections, checklists, and AI disclosures.
 - 📤 **Text only**: returns the description, and your delivery workflow publishes it.
 
-#### [readme](skills/readme/SKILL.md)
+#### [readme](https://skilld.dev/gh/harlan-zw/brundlefly/readme)
 
 Write or refresh a README.
 
@@ -78,7 +68,7 @@ Write or refresh a README.
 - 🛠️ **Checked setup**: reads the source and CLI help before describing a command.
 - 🗺️ **A reader's path**: splash, Why, features, and setup, then guides and API.
 
-#### [glossary](skills/glossary/SKILL.md)
+#### [glossary](https://skilld.dev/gh/harlan-zw/brundlefly/glossary)
 
 Create or audit GLOSSARY.md. One name per thing. I share mine with the collection.
 
@@ -86,15 +76,13 @@ Create or audit GLOSSARY.md. One name per thing. I share mine with the collectio
 - 🔗 **Relationship map**: shows how terms relate, which is where ambiguity hides.
 - ✋ **No silent names**: proposes a new term and waits for approval.
 
-#### [copywriting](skills/copywriting/SKILL.md)
+#### [copywriting](https://skilld.dev/gh/harlan-zw/brundlefly/copywriting)
 
 Create or audit COPY.md, or write copy against it. Even I follow it.
 
 - 🔒 **Canonical strings**: approved taglines and copy are never paraphrased.
 - 🎚️ **Register per surface**: a button, an error, and a hero each get the right voice.
 - 🚷 **Banned language**: each ban carries its reason, so near misses get caught too.
-
-## Setup
 
 ### Focused blocks
 
@@ -104,9 +92,9 @@ Each block also works as a separate Skill.
 
 | Block Skill | Focus | Used by |
 | --- | --- | --- |
-| [clarity](skills/clarity/SKILL.md) | Clear wording, reading order, and accessible structure | im-not-a-fly, technical-guide, readme |
-| [claim-fidelity](skills/claim-fidelity/SKILL.md) | Preserve claims, conditions, attribution, and uncertainty | im-not-a-fly, technical-guide, readme, im-a-fly, pull-request-summary |
-| [verify-examples](skills/verify-examples/SKILL.md) | Run documentation examples and check their promised results | technical-guide, readme |
+| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Clear wording, reading order, and accessible structure | im-not-a-fly, technical-guide, readme |
+| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty | im-not-a-fly, technical-guide, readme, im-a-fly, pull-request-summary |
+| [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results | technical-guide, readme |
 
 For example:
 
@@ -114,40 +102,58 @@ For example:
 Use claim-fidelity to compare this rewrite with its source. Report changed meaning without editing either passage.
 ```
 
-### skilld
+## Setup
 
-Browse [Brundlefly on skilld.dev](https://skilld.dev/gh/harlan-zw/brundlefly).
-Install the [skilld CLI](https://skilld.dev) if you do not have it.
-Run the remote commands below once the Skills appear in the listing and your account can access their source.
+Start with one Skill for the task in front of you. You can add others later.
+A Skill gives your agent instructions for that task. You choose the text and review the result.
+
+Use [skilld](https://skilld.dev) with Codex or another supported agent.
+For host-specific installation, jump to [Claude Code](#claude-code-plugin) or [Cursor](#cursor-plugin).
+You do not need to clone this repository.
 
 ### Run once
 
-Ask your agent to run this command for a one-off prose edit:
+If you do not have skilld, follow its [CLI setup](https://skilld.dev).
+Then paste this request into your agent:
 
-```sh
+```text
+Run this command:
 skilld run harlan-zw/brundlefly/im-not-a-fly --json
+Then use those instructions to edit docs/intro.md.
+Keep its facts, uncertainty, and my voice. Show me the proposed edit.
 ```
 
-This loads the instructions without installing the Skill. The agent reads them and follows them for your task.
-Replace im-not-a-fly with another Skill name from Skills when you need a different task.
+Replace `docs/intro.md` with your file, or supply a draft in the same message.
+This loads the Skill for this task without installing it or changing your project's setup.
+Your agent follows the instructions and reads the supporting files it needs.
+Review the proposed edit before keeping it.
 
 ### Install
 
-From your project's root, install a Skill for later sessions:
+If you want the Skill available in later sessions, run this from your project's root:
 
 ```sh
 skilld install harlan-zw/brundlefly/im-not-a-fly
 ```
 
-To install the collection instead:
+skilld installs into the current project and detects your agent targets.
+If it cannot detect your agent, select it with `--agent codex`, `--agent claude-code`, or `--agent cursor`.
+To use the Skill across projects, add `--global`.
+Replace `im-not-a-fly` with another name from [Skills](#skills) for a different task.
+
+Then ask your agent:
+
+```text
+Use im-not-a-fly to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
+```
+
+If you want the whole collection, install all ten Skills:
 
 ```sh
 skilld add harlan-zw/brundlefly --all
 ```
 
-skilld installs into the current project and detects your agent targets.
-Add --global to install for your account across projects. Add --agent codex to select Codex explicitly.
-If private-source access requires authentication, run skilld auth login and check your GitHub App access on skilld.dev.
+The Workflow Skills include the blocks they need. You do not need to install those blocks separately.
 
 ### Claude Code plugin
 
@@ -172,10 +178,8 @@ It contains the same Workflow Skills and Block Skills.
 
 ### ChatGPT and Codex plugin
 
-The root `plugin.json` packages the collection in the portable Agent Plugins format.
-It includes OpenAI presentation metadata and the existing mascot icon.
-For project or global Codex installation, use the skilld commands above.
-For local plugin development, follow [OpenAI's packaging guide](https://developers.openai.com/plugins/build/plugins).
+For Codex, use the [skilld install](#install) above.
+If you are developing a ChatGPT plugin locally, follow [OpenAI's packaging guide](https://developers.openai.com/plugins/build/plugins).
 
 ## Usage
 
