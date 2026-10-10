@@ -117,8 +117,10 @@ If you do not have skilld, follow its [CLI setup](https://skilld.dev).
 Then paste this request into your agent:
 
 ```text
-Run skilld run harlan-zw/brundlefly/im-not-a-fly --json, then use those instructions to edit docs/intro.md.
-Preserve its facts, uncertainty, and my voice. Show me the proposed edit.
+Run this command:
+skilld run harlan-zw/brundlefly/im-not-a-fly --json
+Then use those instructions to edit docs/intro.md.
+Keep its facts, uncertainty, and my voice. Show me the proposed edit.
 ```
 
 Replace `docs/intro.md` with your file, or supply a draft in the same message.
