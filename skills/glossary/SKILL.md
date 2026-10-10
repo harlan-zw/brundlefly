@@ -6,7 +6,12 @@ license: MIT
 
 # Glossary
 
-`GLOSSARY.md` at the repo root is the canonical name for every product concept. One concept, one word, everywhere: UI strings, public API names, doc headings, route segments, error messages, commit subjects.
+Help readers understand product concepts and distinguish them without learning competing names.
+Consider their knowledge, context, and reading needs, including ADHD and dyslexia.
+Respect their attention through familiar terms, accurate definitions, and concise explanations that keep necessary distinctions.
+
+`GLOSSARY.md` owns product terms across UI strings, public APIs, headings, routes, errors, and commit subjects.
+Use one established term for each concept. Consistency alone does not prove the reader understands it.
 
 ## Ownership and dependencies
 
@@ -16,9 +21,9 @@ Create or audit GLOSSARY.md only. Do not create COPY.md or VISION.md automatical
 
 ## The failure mode this exists to stop
 
-An agent given a concept with no established name invents one, then propagates it. A single feature ends up shipping as **Sprint** in the dashboard, `runBatch()` in the SDK, "campaign" in the docs, and `/jobs` in the URL. Nobody decided that. It accretes one plausible-in-isolation naming choice at a time, and by the time a human notices, the term is in a published API and a customer's bookmarks.
-
-Vocabulary is a product surface. Treat inventing a word with the same caution as adding a public export.
+Independent naming choices can give one concept different names across the UI, SDK, docs, and routes.
+Readers must then infer which names mean the same thing. Published names also carry a cost to change.
+Treat a new product term with the same caution as a public export.
 
 ## Rules
 
@@ -30,7 +35,18 @@ Vocabulary is a product surface. Treat inventing a word with the same caution as
 6. **Match the recorded casing exactly.** `Nuxt SEO` and `NuxtSEO` are different brands to a reader.
 7. **A term list without a relationship map is half a glossary.** See below. Terms are only ambiguous in relation to each other, so the map is what makes the list decidable.
 
-Rule 4 is the one that matters. Rules 1 to 3 only work on concepts someone already thought about.
+Rule 4 protects naming decisions that nobody has approved yet.
+
+## Review for understanding
+
+Identify who uses each term and which distinctions they need to understand.
+Explain unfamiliar concepts in plain words. Show their relationships and actual use without circular definitions or new synonyms.
+Apply [clarity](references/blocks/clarity.md), including ADHD and dyslexia guidance, to definitions and relationship explanations.
+The block is bundled here. No sibling Skill installation is required.
+Keep map labels, table cells, and definitions easy to scan. Retain complete relationships and exact public identifiers.
+Preserve established names and casing. If a name confuses readers, show the problem and propose a change for approval.
+Do not rename public surfaces or remove required maps to make the glossary shorter.
+Before removing a substantial section or feature, explain the proposed loss and ask unless already authorized.
 
 ## Workflow
 

@@ -26,7 +26,9 @@ The initial blocks are self-contained Markdown. Add supporting-file bundling bef
 | technical-guide | clarity, claim-fidelity, verify-examples |
 | readme | clarity, claim-fidelity, verify-examples |
 | im-a-fly | claim-fidelity |
-| pull-request-summary | claim-fidelity |
+| pull-request-summary | clarity, claim-fidelity |
+| copywriting | clarity |
+| glossary | clarity |
 
 ## Packaging
 
