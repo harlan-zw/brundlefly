@@ -16,7 +16,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 | Asset | String | Where it goes |
 | --- | --- | --- |
 | Tagline | Agent skills for writing that's part human. | README opening, package descriptions, GitHub description after 🪰, and public brand introductions |
-| Collection description | Self-contained Agent Skills focused on empathy and accessibility in writing. | README introduction, website introduction, and page descriptions |
+| Collection description | Self-contained Agent Skills focused on empathy and accessibility in writing. | Website introduction and page descriptions |
 
 ## Register by context
 

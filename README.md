@@ -2,13 +2,6 @@
 
 > Agent skills for writing that's part human.
 
-Self-contained Agent Skills focused on empathy and accessibility in writing.
-
-- **Empathy**: start with who the reader is, what they know, and what they need to understand or do.
-- **Accessibility**: account for ADHD and dyslexia with plain words, useful order, and manageable blocks. Respect stated preferences.
-- **Clarity, accuracy, brevity**: keep the context the reader needs to understand.
-- **Storytelling and style**: communicate meaning to help someone understand and connect with the text.
-
 <a href="https://skilld.dev/gh/harlan-zw/brundlefly">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://skilld.dev/b/harlan-zw/brundlefly?theme=dark">
@@ -31,8 +24,9 @@ You still want to recognise yourself in the result. Hh. So do I.
 ### [im-not-a-fly](https://skilld.dev/gh/harlan-zw/brundlefly/im-not-a-fly)
 
 For text a person will read: blogs, docs, release notes, tweets, email, or copy. The name is aspirational.
+Empathy and accessibility guide the edit. Aim for clarity, accuracy, and brevity without losing needed context.
 
-- 🔍 **Reader first**: considers who the reader is and what they need, then reviews wording and structure.
+- 🔍 **Reader first**: considers who the reader is, what they know, and what they need. Reviews wording, then structure.
 - 🧬 **Keeps what's yours**: meaning, facts, claim scope, uncertainty, and voice survive the edit.
 - 🧹 **Leaves clear prose alone**: it changes a sentence only to fix a reading problem.
 - 📖 **Meaning through story**: keeps storytelling when it helps understanding and connection; keeps instructions direct.
@@ -63,8 +57,7 @@ Research, write, or refresh a technical guide.
 
 Draft or check a PR description.
 
-- 🧭 **Respects the reviewer**: gives the context they need to understand the change and make a decision.
-- 🔎 **Grounded in the diff**: checks every claim against the change and the repository's conventions.
+- 🔎 **Grounded in the diff**: gives reviewers needed context and checks claims against the change and repository conventions.
 - 📋 **Follows your template**: keeps required sections, checklists, and AI disclosures.
 - 📤 **Text only**: returns the description, and your delivery workflow publishes it.
 
