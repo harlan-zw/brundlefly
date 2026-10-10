@@ -2,7 +2,6 @@
 name: glossary
 description: "Create or audit GLOSSARY.md. Use before naming product concepts, writing user-visible terms, renaming concepts, or checking vocabulary drift and banned terms."
 license: MIT
-compatibility: "Designed for agents that can read and edit project text files."
 ---
 
 # Glossary

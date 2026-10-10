@@ -2,7 +2,6 @@
 name: pull-request-summary
 description: "Draft, edit, or check pull request description text against the actual change and repository conventions. Use before publishing a PR body, when its scope changes, or as the description gate inside a delivery Skill."
 license: MIT
-compatibility: "Designed for agents that can read and edit project text files."
 ---
 
 # Pull request summary

@@ -2,7 +2,6 @@
 name: technical-guide
 description: "Research, write, verify, or refresh technical guides against current code and official sources. Use for tutorials, how-to guides, developer documentation, or stale instructions that need working examples."
 license: MIT
-compatibility: "Designed for agents that can read and edit project text files."
 ---
 
 # Technical guide

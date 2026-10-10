@@ -2,7 +2,6 @@
 name: claim-fidelity
 description: Compare a rewrite with its source for changed claims, scope, uncertainty, attribution, and conditions. Use before accepting an edit, summary, compression, or translated passage.
 license: MIT
-compatibility: "Designed for agents that can read and edit project text files."
 ---
 
 # Claim fidelity
