@@ -1,6 +1,7 @@
 ---
 name: im-a-fly
 description: Compress text for agents without losing substantial meaning. Use for Markdown files, agent instructions, documentation, and context that need fewer tokens while preserving facts, constraints, and usable structure.
+license: MIT
 ---
 
 # im-a-fly
