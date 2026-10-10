@@ -2,6 +2,7 @@
 name: clarity
 description: Review text for clear wording, useful order, and accessible structure. Use for a focused clarity pass without changing claims, voice, or the document's purpose.
 license: MIT
+compatibility: "Designed for agents that can read and edit project text files."
 ---
 
 # Clarity

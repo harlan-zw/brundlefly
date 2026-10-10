@@ -2,6 +2,7 @@
 name: verify-examples
 description: Check documentation examples against their stated setup and promised outcomes. Use for commands, code, or configuration that readers should be able to run, without rewriting the whole guide.
 license: MIT
+compatibility: "Designed for agents that can read and edit project text files."
 ---
 
 # Verify examples
