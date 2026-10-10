@@ -2,7 +2,7 @@
   "name": "brundlefly",
   "displayName": "Brundlefly",
   "version": "0.2.0",
-  "description": "Agent skills for writing that's part human.",
+  "description": "Self-contained Agent Skills focused on empathy and accessibility in writing.",
   "author": { "name": "Harlan" },
   "homepage": "https://brundlefly.dev",
   "repository": "https://github.com/harlan-zw/brundlefly",

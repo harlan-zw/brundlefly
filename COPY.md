@@ -16,6 +16,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 | Asset | String | Where it goes |
 | --- | --- | --- |
 | Tagline | Agent skills for writing that's part human. | README opening, GitHub description after 🪰, and public brand introductions |
+| Collection description | Self-contained Agent Skills focused on empathy and accessibility in writing. | README introduction, website introduction, page descriptions, and plugin listings |
 
 ## Register by context
 
@@ -30,6 +31,10 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 ## Copy principles
 
 1. **Begin with the person.** Name the attempt to be understood before describing the machinery.
+   Empathy and accessibility guide the writing. Consider what the reader knows, needs, and could misunderstand.
+   Name ADHD and dyslexia explicitly. Respect stated preferences, attention, and working memory needs.
+   Clarity, accuracy, and brevity serve that reader. Keep the context they need to understand.
+   Storytelling and style help communicate meaning; keep them when they support understanding and connection.
    Reject openings that lead with optimization, productivity, or a list of tools.
 2. **Let the horror carry the loss.** The writing can become swollen with filler or lose its voice.
    Keep those images tied to a concrete reading problem. Do not add decorative horror to every paragraph.

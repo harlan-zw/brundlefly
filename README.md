@@ -2,6 +2,13 @@
 
 > Agent skills for writing that's part human.
 
+Self-contained Agent Skills focused on empathy and accessibility in writing.
+
+- **Empathy**: start with who the reader is, what they know, and what they need to understand or do.
+- **Accessibility**: account for ADHD and dyslexia with plain words, useful order, and manageable blocks. Respect stated preferences.
+- **Clarity, accuracy, brevity**: keep the context the reader needs to understand.
+- **Storytelling and style**: communicate meaning to help someone understand and connect with the text.
+
 <a href="https://skilld.dev/gh/harlan-zw/brundlefly">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://skilld.dev/b/harlan-zw/brundlefly?theme=dark">
@@ -25,11 +32,11 @@ You still want to recognise yourself in the result. Hh. So do I.
 
 For text a person will read: blogs, docs, release notes, tweets, email, or copy. The name is aspirational.
 
-- 🔍 **Two passes**: surface wording first, then structure.
+- 🔍 **Reader first**: considers who the reader is and what they need, then reviews wording and structure.
 - 🧬 **Keeps what's yours**: meaning, facts, claim scope, uncertainty, and voice survive the edit.
 - 🧹 **Leaves clear prose alone**: it changes a sentence only to fix a reading problem.
-- 📖 **Story or reference**: tells Why as a story and keeps setup and guides direct.
-- ♿ **Easier to read**: short blocks and findable headings for readers with varied attention and reading needs.
+- 📖 **Meaning through story**: keeps storytelling when it helps understanding and connection; keeps instructions direct.
+- ♿ **ADHD and dyslexia**: uses plain words, short blocks, and findable headings; respects stated reading preferences.
 
 ### [im-a-fly](https://skilld.dev/gh/harlan-zw/brundlefly/im-a-fly)
 
@@ -56,6 +63,7 @@ Research, write, or refresh a technical guide.
 
 Draft or check a PR description.
 
+- 🧭 **Respects the reviewer**: gives the context they need to understand the change and make a decision.
 - 🔎 **Grounded in the diff**: checks every claim against the change and the repository's conventions.
 - 📋 **Follows your template**: keeps required sections, checklists, and AI disclosures.
 - 📤 **Text only**: returns the description, and your delivery workflow publishes it.
@@ -64,7 +72,7 @@ Draft or check a PR description.
 
 Write or refresh a README.
 
-- 📖 **Story first**: researches why the project exists before writing Why.
+- 📖 **Story with a purpose**: researches why the project exists so the reader can understand why it matters.
 - 🛠️ **Checked setup**: reads the source and CLI help before describing a command.
 - 🗺️ **A reader's path**: splash, Why, features, and setup, then guides and API.
 
@@ -72,7 +80,7 @@ Write or refresh a README.
 
 Create or audit GLOSSARY.md. One name per thing. I share mine with the collection.
 
-- 📚 **One concept, one word**: records each product name and bans its synonyms.
+- 📚 **Clear meanings**: uses familiar terms where possible, explains unfamiliar ones, and keeps one name per concept.
 - 🔗 **Relationship map**: shows how terms relate, which is where ambiguity hides.
 - ✋ **No silent names**: proposes a new term and waits for approval.
 
@@ -81,7 +89,7 @@ Create or audit GLOSSARY.md. One name per thing. I share mine with the collectio
 Create or audit COPY.md, or write copy against it. Even I follow it.
 
 - 🔒 **Canonical strings**: approved taglines and copy are never paraphrased.
-- 🎚️ **Register per surface**: a button, an error, and a hero each get the right voice.
+- 🎚️ **Fits the reader**: a button, an error, and a hero use the wording and context their reader needs.
 - 🚷 **Banned language**: each ban carries its reason, so near misses get caught too.
 
 ### Focused blocks
