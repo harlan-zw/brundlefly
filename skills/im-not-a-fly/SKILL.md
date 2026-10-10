@@ -2,6 +2,7 @@
 name: im-not-a-fly
 description: "Remove AI writing tells from publishable prose. Use for humanizing blogs, docs, release notes, tweets, email, or copy that sounds generated."
 license: MIT
+compatibility: "Designed for agents that can read and edit project text files."
 ---
 
 # im-not-a-fly

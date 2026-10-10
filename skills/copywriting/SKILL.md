@@ -2,6 +2,7 @@
 name: copywriting
 description: "Create or audit COPY.md and write user-visible strings against it. Use before writing marketing copy, UI labels, error messages, empty states, meta tags, or email, and when copy has drifted from the canonical strings."
 license: MIT
+compatibility: "Designed for agents that can read and edit project text files."
 ---
 
 # Copywriting

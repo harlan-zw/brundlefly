@@ -2,6 +2,7 @@
 name: readme
 description: "Create or refresh a repository README with a splash, project story, supported positioning, features, setup, and relevant guides or API reference. Use when writing a README, explaining why a project exists or why to adopt it, or aligning its documentation with repository conventions."
 license: MIT
+compatibility: "Designed for agents that can read and edit project text files."
 ---
 
 # README
