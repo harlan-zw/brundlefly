@@ -1,6 +1,31 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blind, extractText, parseRewrite, parseVerdicts, parseSingleVerdict, isOutsideRepository } from './core.ts';
+import { blind, extractText, parseRewrite, parseVerdicts, parseSingleVerdict, isOutsideRepository, loadInstructionBundle, hash } from './core.ts';
+
+test('bundles linked Markdown once, including nested blocks, with reproducible hashes', async () => {
+  const files: Record<string, string> = {
+    'SKILL.md': 'Read [clarity](references/clarity.md). Read it [again](references/clarity.md#review). [Source](https://example.com/source.md)',
+    'references/clarity.md': 'Read [fidelity](blocks/fidelity.md).',
+    'references/blocks/fidelity.md': 'Preserve uncertainty. [Back](../../SKILL.md)',
+  };
+  const reads: string[] = [];
+  const bundle = await loadInstructionBundle(async path => { reads.push(path); return files[path]; });
+  assert.deepEqual(reads, ['SKILL.md', 'references/clarity.md', 'references/blocks/fidelity.md']);
+  assert.ok(bundle.instructions.includes('Preserve uncertainty.'));
+  assert.deepEqual(bundle.fileHashes, Object.fromEntries(Object.entries(files).map(([path, text]) => [path, hash(text)])));
+  const changed = await loadInstructionBundle(async path => path.endsWith('fidelity.md') ? 'Preserve dates.' : files[path]);
+  assert.notEqual(hash(bundle.instructions), hash(changed.instructions));
+});
+
+test('rejects local references outside the Skill and propagates missing references', async () => {
+  for (const target of ['../private.md', '/private.md', '%2e%2e/private.md', '..\\private.md']) {
+    await assert.rejects(loadInstructionBundle(async () => `[Read](${target})`), /outside the Skill/);
+  }
+  await assert.rejects(loadInstructionBundle(async path => {
+    if (path !== 'SKILL.md') throw Error('Missing reference');
+    return '[Required](references/missing.md)';
+  }), /Missing reference/);
+});
 
 test('scratch rejects the repository itself and its descendants', () => {
   assert.equal(isOutsideRepository('/repo', '/repo'), false);
