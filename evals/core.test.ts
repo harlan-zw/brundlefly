@@ -1,3 +1,5 @@
+// The existing CI entry point also runs calibration behavior tests.
+import './calibration.test.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { blind, extractText, parseRewrite, parseVerdicts, parseSingleVerdict, isOutsideRepository, loadInstructionBundle, hash } from './core.ts';
