@@ -1,6 +1,7 @@
 # Storytelling
 
 Use when the intent is to tell an experience, a project's origin, or a meaningful change.
+Storytelling builds on respect for the reader. It communicates meaning and can help them understand and connect with the text.
 For factual explanations and procedures, use [writing well](writing-well.md).
 
 ## Sources and scope

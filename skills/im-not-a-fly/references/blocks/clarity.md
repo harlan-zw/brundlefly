@@ -15,6 +15,8 @@ Installing this Skill does not authorize publication or unrelated edits.
 
 Read the complete passage and any supplied reader preferences.
 Identify the reader, purpose, and requested scope. Infer them when the context is clear.
+Consider their starting knowledge and the explanation they need to understand or act.
+Show respect and empathy through clear connections, accurate meaning, and no unnecessary reading effort.
 If a missing choice changes the result materially, ask before dependent edits.
 For mixed documents, distinguish stories, instructions, explanations, and reference sections.
 Preserve deliberate narrative openings. Keep technical instructions predictable.
@@ -24,6 +26,7 @@ Preserve deliberate narrative openings. Keep technical instructions predictable.
 Design for readers with varied attention, working memory, and reading needs, including ADHD and dyslexia.
 Do not infer a diagnosis or claim that most readers have one. Respect stated reader preferences.
 Reader comprehension takes priority over stylistic variety.
+Brevity removes unnecessary words. Keep the explanations, conditions, and connections this reader needs.
 
 - **Start simple.** Lead with the answer or action. Then give the common case, an example, and deeper detail.
   For a story, preserve a deliberate narrative opening. Apply answer-first ordering to its technical sections.
