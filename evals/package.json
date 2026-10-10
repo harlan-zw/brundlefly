@@ -13,7 +13,7 @@
   },
   "scripts": {
     "review": "node ui/server.ts",
-    "test": "node --test core.test.ts ui/core.test.ts",
+    "test": "node --test core.test.ts calibration.test.ts ui/core.test.ts",
     "typecheck": "tsc --noEmit"
   }
 }

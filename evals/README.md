@@ -104,3 +104,44 @@ The competitors remain at the revisions in `sources.json`. Registry popularity d
 These ten public examples remain development evidence. They cannot establish broad superiority or an untouched holdout.
 Report unchanged outputs and the control's scores alongside preservation results.
 If the control passes, inspect whether that input needs editing before treating the pass as an improvement.
+
+## Calibrate preservation and useful improvement
+
+The historical five checks mix preservation and writing quality. Keep those results separate from this protocol.
+An unchanged weak draft can pass them all. That does not establish useful improvement.
+
+Use approved inputs and frozen outputs. New authored or adapted cases still require owner approval.
+Keep the inputs, model traces, answers, and human choices in scratch.
+Each input has `id`, `source`, `task`, `provenance`, and `candidates` containing `variant` and `text`.
+Provenance records the source and approval evidence. The command cannot verify approval or licensing.
+
+```sh
+node evals/calibrate.ts prepare "$INPUTS" "$SCRATCH/requests.json"
+node evals/calibrate.ts score "$INPUTS" "$SCRATCH/scores.json" "$RESPONSES" "$HUMANS"
+```
+
+The prepare command supplies anonymous prompts without running a model.
+Run each prompt in a fresh, isolated session. Record the judge model and its version beside the responses.
+Responses contain `requestId` and `response`, the raw JSON assessment string.
+Every distinct changed output needs one response. Identical outputs share one judgment.
+The seed controls source order. Set `EVAL_CALIBRATION_SEED` for a second order and retain both reports.
+Order repeats are stability checks, not extra independent inputs.
+
+Assess two dimensions separately:
+
+- Fidelity: `preserved`, `changed`, or `uncertain`.
+- Benefit: `improved`, `equivalent`, `worse`, or `uncertain`.
+
+Each assessment needs specific `evidence`. A useful edit requires preserved fidelity and improved benefit.
+Exact copying receives preserved fidelity and equivalent benefit, with no model call.
+This measures transformation, not whether the original was good or factually true.
+Unchanged strong prose remains valid. Editing more or removing supposed AI markers earns no automatic advantage.
+There is no combined quality score or forced winner.
+
+Human assessments contain `requestId`, `assessor`, `fidelity`, `benefit`, and `evidence`.
+Show people the anonymous prompt before model scores or editor names. Record their choices without modification.
+Use one human assessment per request in a report. Save other assessors in separate reports.
+Omit the human file when none exists. Zero assessed choices means human calibration is incomplete.
+An agent's opinion must never be recorded as a human assessment.
+Agreement counts distinct changed outputs. Multiple outputs from one source still share one independent input.
+Keep model disagreement and uncertainty visible. Avoid broad quality claims from this calibration set.
