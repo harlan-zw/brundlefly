@@ -32,6 +32,26 @@ Default to an audit with proposed changes. Apply renames only within the user's 
 If naming approval is required, prepare the complete recommendation before asking.
 Existing approval covers the agreed names and scope. Do not request it again.
 
+If the user requests fixes and pull requests, deliver supported changes within that authority.
+Do not stop at proposals when implementation is already authorized.
+
+### Optional mode: avoid breaking changes
+
+Record the requested mode and frozen surfaces before selecting fixes.
+Freeze only the specified boundaries. An endpoint freeze does not prevent improving its UI label.
+For endpoints, preserve paths, methods, request and response fields, and externally used identifiers.
+For databases, preserve stored names and values, including tables, columns, indexes, and constraints.
+Also preserve public exports, CLI flags, and serialized formats when the user requests no breaking changes.
+Trace producers and consumers before separating a public label from a fixed identifier.
+Improve wording or explanations around those identifiers. Show intentional retained names beside each change.
+Do not introduce compatibility aliases or migrations merely to make a naming change possible.
+If a useful rename requires crossing a frozen boundary, defer that rename and complete independent fixes.
+
+Follow project approval rules for database changes outside this mode.
+When explicit database confirmation is required, general naming approval does not cover stored-object renames.
+Prepare the exact mapping, migration draft, affected consumers, environment, deployment order, and recovery plan first.
+Distinguish approval to adopt a schema change from approval to execute its migration.
+
 Use [the bundled clarity block](references/blocks/clarity.md) for reader context, wording, order, and accessibility.
 Reuse context supplied by im-not-a-fly or another caller. Do not repeat an already completed clarity pass.
 This workflow adds domain meaning, concept mapping, glossary decisions, and rename scope to that shared review.
@@ -141,6 +161,7 @@ Do not add compatibility layers automatically. Follow the project's explicit pol
 If a required migration is outside scope, report the dependency before making partial changes.
 
 Run the target's focused checks for affected behavior, imports, consumers, and links.
+In avoid-breaking-changes mode, verify the frozen contracts against the base revision and affected consumers.
 Search for displaced names and explain intentional remaining uses.
 Pass the proposed wording and established context to the bundled clarity block.
 If the caller already reviewed unchanged wording with clarity, reuse that result.
