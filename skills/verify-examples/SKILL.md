@@ -19,8 +19,8 @@ Separate runnable code from pseudocode, schematic output, and illustrative fixtu
 If a core input is missing, report it before dependent execution.
 Read matching source, exports, versioned CLI help, tests, and official documentation where needed.
 Reconcile checkout behavior with the release the reader can install.
-Use a small private ledger for evidence, checked revision, expected result, and unresolved questions.
-Keep this ledger outside public content and generated downloads.
+Use small private evidence notes for sources, checked revision, expected result, and unresolved questions.
+Keep these evidence notes outside public content and generated downloads.
 
 ## Run the reader's path
 

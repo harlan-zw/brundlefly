@@ -24,7 +24,7 @@ Find approved splash assets, package metadata, supported tools, public entry poi
 Research the adoption reason before drafting Why. Read [positioning guidance](references/positioning.md) for research and interview decisions.
 Check the actual source and CLI help before describing behavior or choosing setup commands.
 Distinguish the checkout from a published release. Do not claim registry availability from a package name alone.
-Keep an evidence ledger outside the repository for uncertain claims and checks.
+Keep evidence notes outside the repository for uncertain claims and checks.
 Ask only when missing information changes the reader's task materially.
 
 ## Build the reader's path
@@ -95,7 +95,7 @@ Keep concise discovery links, contribution rules, attribution, and licenses wher
 Apply [clarity](references/blocks/clarity.md) to the technical sections, preserving the story's deliberate opening.
 Use [verify examples](references/blocks/verify-examples.md) for runnable setup and usage examples.
 Apply [claim fidelity](references/blocks/claim-fidelity.md) against supplied wording and inspected evidence after edits.
-For a new README, compare claims with the evidence ledger rather than assuming an earlier draft exists.
+For a new README, compare claims with the evidence notes rather than assuming an earlier draft exists.
 These blocks are bundled here. No sibling Skill installation is required.
 
 Use plain words and direct sentences. Preserve required sections and the chosen feature presentation.

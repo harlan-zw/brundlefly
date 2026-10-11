@@ -29,6 +29,11 @@ Verify material facts and relevant assumptions before rewriting. Recheck them af
 Preserve scope, uncertainty, dates, units, attribution, prerequisites, and required wording in every genre.
 Never invent an actor, experience, example, or supporting detail to make writing concrete.
 
+For product naming review, use an available slop-naming-recovery Skill when requested or appropriate.
+Pass the established reader context. The extension owns product understanding, glossary proposals, and approved rename scope.
+The bundled clarity block retains wording and accessibility review. This Skill works without the naming extension.
+Ordinary prose edits do not authorize a repository rename.
+
 ## Choose how to communicate
 
 Route each section by its purpose. A file can combine a story with technical detail.

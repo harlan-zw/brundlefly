@@ -15,12 +15,16 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | im-a-fly | skills/im-a-fly | Compresses text for agents while preserving substantial meaning | im-a-fly |
 | readme | skills/readme | Writes repository READMEs with researched positioning and working setup | readme |
 | glossary | skills/glossary | Creates and audits canonical names and meanings | glossary |
+| slop-naming-recovery | skills/slop-naming-recovery | Reviews generic names against user tasks and proposes business terms | slop-naming-recovery |
 | copywriting | skills/copywriting | Creates and audits voice and canonical wording | copywriting |
 | clarity | skills/clarity | Block Skill used by human-facing prose, guide, README, copy, naming, and PR workflows | clarity |
 | claim-fidelity | skills/claim-fidelity | Block Skill used by prose, guide, README, compression, and PR workflows | claim-fidelity |
 | verify-examples | skills/verify-examples | Block Skill used by technical-guide and readme | verify-examples |
 | Workflow Skill | skills/ | Owns a complete text task and loads applicable bundled blocks | Workflow Skill |
 | Block Skill | skills/ | Owns one focused pass and also works independently | Block Skill |
+| Guide format | skills/technical-guide/references/guide-primitives.md | Presents an explanation through a code example, diagram, or screenshot | Guide format |
+| Evidence notes | skills/technical-guide; skills/readme; skills/verify-examples | Private sources, scope, revisions, checks, and unresolved questions supporting a writing task | Evidence notes |
+| Edge decoration strength | website/layers/brand/shared/catalogue.ts; BrandSurface | Preset density controls edge artwork opacity and corner size | Edge decoration strength |
 | fly | Public story | Names the agent in the mascot's metaphor | fly |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
 | human connection | Public story | Gives the writing its purpose | human connection |
@@ -58,6 +62,12 @@ Use readme for this skill, rather than readme-writer or readme-guide.
 glossary owns creating and auditing GLOSSARY.md. It does not create other root documents automatically.
 Use glossary rather than terminology-manager or naming-guide for this Skill.
 
+slop-naming-recovery finds generic technical names that hide business meaning and proposes names grounded in user tasks.
+It extends im-not-a-fly with product understanding and naming review, and also works alone.
+It reviews implicit names and approved glossary terms. Glossary owns recording canonical naming decisions.
+Use the owner's requested name rather than name-for-users or architectural-slop-recovery.
+The word slop describes a naming problem, never the author or every technical term.
+
 copywriting owns creating and auditing COPY.md and writing against its wording decisions.
 Use copywriting rather than brand-voice or copy-guide for this Skill.
 It works without glossary or im-not-a-fly installed. Supplied document rules remain authoritative.
@@ -70,6 +80,30 @@ Both use the same Agent Skills format and live directly under skills.
 Use Block Skill rather than helper Skill, subskill, or primitive for these installable passes.
 Use Workflow Skill rather than parent Skill for the complete task.
 Bundled blocks are local reference copies. They do not require sibling Skills to be installed.
+
+### Guide format
+
+A way to present a guide's explanation, such as a code example, diagram, or screenshot.
+Use Guide format when choosing how to answer a reader question.
+Use guide format in ordinary prose.
+It replaces primitive for this selection task.
+Required content and supporting evidence remain separate concepts.
+
+### Evidence notes
+
+Private notes linking claims and example checks to sources, revisions, scope, results, and unresolved questions.
+Use evidence notes for the working record maintained during guide, README, and example verification tasks.
+It replaces working ledger, evidence ledger, and private ledger for this concept.
+Keep these notes outside published content and generated public downloads.
+The name does not require a new file, database, or fixed template.
+
+### Edge decoration strength
+
+Controls how prominent a surface's decorative edges appear through artwork opacity and corner size.
+Use Edge decoration strength for the brand-kit control and its explanation.
+The version 1 preset field and component prop use density.
+Do not use Density as the public label for this control.
+Do not describe it as piece count, spacing, or content density.
 
 ### clarity
 

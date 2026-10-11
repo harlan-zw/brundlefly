@@ -20,6 +20,7 @@ The layer supplies tokens, fonts, Nuxt UI overrides, public art, and composition
   mascot adds the canonical skinned relief. framing supports center or left composition.
 
 The composer exports a complete Vue example and a versioned JSON preset.
+Edge decoration strength controls artwork opacity and corner size. Its preset field and component prop use `density`.
 Parse imported presets with parsePreset before rendering them.
 Use standard Nuxt UI controls inside surfaces. They share the layer tokens.
 Keep content 32px inward on desktop and 24px inward on mobile.

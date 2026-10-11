@@ -99,7 +99,7 @@ The example action appears above the fields, before the user enters input.
 ## Modular brand kit
 
 The kit uses these functional navigation labels: “Compose”, “Materials”, “Parts”, and “Motion”.
-Composer controls: “Material”, “Edges”, “Density”, “Layout”, “Action”, “Corners”, “Wing”, “None”.
+Composer controls: “Material”, “Edges”, “Edge decoration strength”, “Layout”, “Action”, “Corners”, “Wing”, “None”.
 Composer actions: “Copy Vue”, “Copy preset”, “Import preset”, “Reset”, “Download kit”.
 Preset input label: “Preset JSON”.
 Preset error: “Use a preset exported from this kit. Check its material, edges, layout, and density.”

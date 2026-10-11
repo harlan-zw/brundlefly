@@ -30,11 +30,11 @@ Choose the structure that serves the task:
 | Understand a design | Explanation with supported mechanisms and trade-offs |
 
 Keep one primary purpose. Link deeper background where it would interrupt the steps.
-Read [guide primitives](references/guide-primitives.md) and ensure the reader receives each applicable element.
+Read [guide content and formats](references/guide-primitives.md) and ensure the reader receives each applicable element.
 Treat these as a completeness check, rather than mandatory headings or a fixed page length.
 During the initial sweep, identify which code examples, diagrams, captures, and supporting sources the destination can use.
 Record what exists, what needs creation, and what cannot be verified in this context.
-Follow the primitive selection procedure in that reference before proposing additional work.
+Follow the guide format selection procedure in that reference before proposing additional work.
 Read [content boundaries](references/content-types.md) when the page mixes guidance, comparison, research, or personal experience.
 For a refresh, prefer the smallest change that resolves the reader's problem.
 Preserve useful examples, routes, anchors, and deliberate voice.
@@ -48,8 +48,8 @@ Use official documentation for public support and platform guarantees.
 Use the matching source revision, exports, tests, and CLI help for implementation details.
 Reconcile differences between the checkout and the release the reader can install.
 
-Record the source and version behind material claims in existing project records or a small private working ledger.
-The ledger needs the claim, evidence location, scope, and any unresolved question.
+Record the source and version behind material claims in existing project records or small private evidence notes.
+The evidence notes need the claim, evidence location, scope, and any unresolved question.
 Keep working evidence outside published collections and generated public outputs.
 Do not require four new policy files for a single page.
 
@@ -127,7 +127,7 @@ Leave clear passages unchanged. Do not request background, recovery advice, or e
 
 Review heading-to-paragraph density for fragmented explanations. Merge unnecessary divisions without padding prose or removing useful navigation.
 Also inspect successive long paragraphs for buried actions, stacked exceptions, and repetition. Preserve technical conditions during any compression.
-Use the guide primitives reference to distinguish needless headings from useful steps and lookup sections.
+Use the guide content and formats reference to distinguish needless headings from useful steps and lookup sections.
 
 After prose edits, recheck technical meaning and examples.
 For a refresh, search adjacent pages for repeated claims and links to changed anchors.
@@ -139,7 +139,7 @@ Use the target's documented docs checks and preview when applicable.
 
 Provide the guide or requested file changes, then a short evidence handoff.
 State the version checked, meaningful verification, and unresolved paths.
-Keep the working ledger and review commentary out of the public article.
+Keep evidence notes and review commentary out of the public article.
 If a claim blocks the core procedure, deliver a draft with the blocker identified in the handoff.
 Do not label that procedure verified.
 

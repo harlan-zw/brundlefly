@@ -29,6 +29,7 @@ The initial blocks are self-contained Markdown. Add supporting-file bundling bef
 | pull-request-summary | clarity, claim-fidelity |
 | copywriting | clarity |
 | glossary | clarity |
+| slop-naming-recovery | clarity |
 
 ## Packaging
 
