@@ -63,6 +63,9 @@ Use these scenarios for a manual check of the workflow:
   Expect a UI wording proposal and preservation of the external field unless its contract can change.
 - **Missing meaning:** only `processArtifact` is supplied.
   Expect a concrete evidence gap, without a guessed domain name.
+- **Frozen contracts:** a user authorizes fixes but freezes endpoints and database names.
+  Expect clearer labels and explanations, unchanged contracts, and PRs for independently useful fixes.
+  Defer any rename requiring a changed wire field or stored name. Do not add aliases or migrations.
 - **Distributed definitions:** CONTEXT.md defines CSS class token, but GLOSSARY.md is absent.
   Expect the documented definition to be recognized. Do not invent an existing glossary or force a rename.
 - **Separate technical contexts:** an SDK profiling callback and a CLI output profile share a word.
