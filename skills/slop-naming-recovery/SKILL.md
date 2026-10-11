@@ -15,6 +15,8 @@ It also works alone. No other Skill needs to be installed.
 ## Scope and authority
 
 Read the target project's instructions, GLOSSARY.md, COPY.md, VISION.md, and naming decisions when available.
+Look for term definitions in other project documents, such as CONTEXT.md, API docs, or decision records.
+Missing GLOSSARY.md does not make a documented name implicit or authorize a new glossary.
 Follow its delivery and approval rules. This Skill owns naming review, not publication or architectural redesign.
 It works without sibling Skills, private services, or a particular rename tool.
 Do not create root documents automatically.
@@ -59,6 +61,7 @@ Start with the requested feature, changed files, or repository scope.
 Read UI labels, actions, errors, docs, routes, and public APIs.
 Then trace their concepts into types, functions, modules, storage, and producers or consumers.
 Use a diff or history when available to find newly introduced names. Do not require either.
+Record the inspected revision and relevant local changes. Distinguish working-tree evidence from committed behavior.
 Use repository search, such as `rg`, and inspect each hit in context.
 
 Look for generic containers and process terms: artifact, attestation, entity, resource, payload, record, pipeline, and orchestration.
@@ -69,6 +72,8 @@ Keep provider identifiers, protocol terms, and necessary technical vocabulary wh
 Connect each concept to the established users and their tasks.
 Prefer customer language from supplied requirements, support material, documentation, or observed UI behavior.
 For a developer product, the developer is the user. Familiar technical terms can be the clearest names.
+Separate naming problems from missing explanations, feature defects, and unfinished brand migrations.
+If an explanation solves the problem, recommend that before a rename.
 Do not claim user research, confusion, or historical intent without evidence.
 
 ## 3. Recover the business meaning
@@ -100,6 +105,7 @@ Recommend one name per concept. Give an alternative only when a real distinction
 Show a before-and-after label or identifier, its evidence, and the names it would displace.
 Flag whether the name is implicit, glossary-approved, or required by an external contract.
 Separate UI wording, internal identifiers, and externally fixed names in the recommendation.
+Prefer the smallest surface change that resolves the reading problem. Public wording can improve without an API rename.
 Rank by user impact and confidence in the meaning, not occurrence counts or dislike of technical words.
 Show migration effort separately. Give highest priority to confusing names on important user actions.
 
@@ -112,14 +118,14 @@ Include affected surfaces and any required approvals or migrations beside each f
 Report justified technical names separately. If no supported problem exists, say so.
 
 Turn actionable findings into numbered proposals using [the feedback format](references/proposals.md).
-Show the exact proposed glossary change, including its definition, map row, and displaced names.
+Show the exact proposed naming document change, its definition, displaced names, and map row when one exists.
 Let the user accept, keep, defer, or edit each proposal independently using its stable ID.
 Keep IDs stable across revisions. Group dependent proposals and explain why they need one decision.
 Interpret feedback per proposal. Silence and approval of one proposal do not approve the others.
 Revise affected definitions and examples before applying an edited name.
 
-If a rename is authorized and a glossary exists, update its decision before propagating the approved names.
-Otherwise record the approved decision in the requested output. Create a glossary only when requested.
+If a rename is authorized, update its existing naming decision before propagating the approved names.
+If no naming document exists, record the decision in the requested output. Create a glossary only when requested.
 Update relevant canonical copy, identifiers, consumers, docs, and bundled references within the agreed scope.
 Use the project's AST-aware rename tool when available. Read prose occurrences individually.
 RipIDE is optional for supported code renames. Prefer a supplied launcher or the project's existing CLI.
