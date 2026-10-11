@@ -91,9 +91,9 @@ Create or audit COPY.md, or write copy against it. Even I follow it.
 
 #### [slop-naming-recovery](skills/slop-naming-recovery/SKILL.md)
 
-Find generic technical names that hide what users do.
+Extend im-not-a-fly with names grounded in what the product helps users do. It also works alone.
 
-- 🔍 **Checks the meaning**: reviews code, user tasks, and glossary entries, including names added without a decision.
+- 🔍 **Product first**: understands the purpose, audience, and user language before reviewing code and glossary names.
 - 🧭 **Names the use case**: proposes concrete business terms with before-and-after examples and source evidence.
 - ✋ **Easy feedback**: shows numbered glossary changes you can accept, keep, or edit before approved renames.
 
@@ -274,7 +274,7 @@ Audit GLOSSARY.md against this repository. Keep established names and propose fi
 ### Recover names from user tasks
 
 Use slop-naming-recovery when technical labels hide the business meaning of a feature or code concept.
-It checks implicit names and glossary-approved terms, then proposes changes grounded in the actual user task.
+It starts with the product's purpose, audience, and user language, then checks implicit and glossary-approved names.
 
 ```text
 Use slop-naming-recovery to audit this feature's names. Trace artifact and attestation into code and UI.

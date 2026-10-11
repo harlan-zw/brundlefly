@@ -9,6 +9,8 @@ license: MIT
 Find names that describe implementation while hiding what a person needs to understand or do.
 Recommend names grounded in the product's business use cases. Show evidence before adopting them.
 Treat naming slop as a problem in the name, never a judgment about its author.
+This Skill extends im-not-a-fly's reader-focused editing with a deeper product naming review.
+It also works alone. No other Skill needs to be installed.
 
 ## Scope and authority
 
@@ -26,7 +28,29 @@ Default to an audit with proposed changes. Apply renames only within the user's 
 If naming approval is required, prepare the complete recommendation before asking.
 Existing approval covers the agreed names and scope. Do not request it again.
 
-## 1. Find names and their users
+## 1. Understand the product and its language
+
+Before collecting names, establish what the application fundamentally helps people accomplish.
+For a collection, library, or CLI, identify the equivalent purpose and user tasks.
+Read the product vision, requirements, README, important user journeys, and supplied customer evidence.
+Trace representative actions into code to confirm the promised behavior.
+Do not infer the product's purpose solely from its current glossary or technical architecture.
+
+Write a short, evidence-backed account of:
+
+- Who uses the product, their starting knowledge, and the problem that brings them here.
+- The main outcome they want and the actions they take to reach it.
+- What the product does for them, including important limits and distinctions.
+- The language they already use for those tasks and how the product should speak to them.
+
+Ground language choices in audience evidence and supplied voice rules.
+Use familiar task words, explicit actors, and concrete outcomes. Preserve necessary domain language.
+If customer language is unavailable, label the proposed language as an inference.
+Do not invent research, personas, business purposes, or capabilities.
+If the fundamental purpose remains unclear, report the missing evidence before recommending names.
+Use this account as the basis for every later proposal. Word searches alone cannot establish a naming problem.
+
+## 2. Find names and their users
 
 Start with the requested feature, changed files, or repository scope.
 Read UI labels, actions, errors, docs, routes, and public APIs.
@@ -44,7 +68,7 @@ Prefer customer language from supplied requirements, support material, documenta
 For a developer product, the developer is the user. Familiar technical terms can be the clearest names.
 Do not claim user research, confusion, or historical intent without evidence.
 
-## 2. Recover the business meaning
+## 3. Recover the business meaning
 
 Read [the naming checks and examples](references/naming-checks.md).
 For each candidate, answer:
@@ -61,7 +85,7 @@ Map the current term to its definition, code owner, user task, and public wordin
 Separate different concepts that share a name. Identify synonyms for the same concept.
 Treat internal-only names as candidates too, especially when they name a feature or supply UI strings.
 
-## 3. Propose and rank names
+## 4. Propose and rank names
 
 Prefer an established, accurate business term from the project before introducing a new one.
 Use concrete object names and task verbs. Name what the thing means or does for its user.
@@ -76,7 +100,7 @@ Separate UI wording, internal identifiers, and externally fixed names in the rec
 Rank by user impact and confidence in the meaning, not occurrence counts or dislike of technical words.
 Show migration effort separately. Give highest priority to confusing names on important user actions.
 
-## 4. Deliver or apply the recovery
+## 5. Deliver or apply the recovery
 
 Lead with the strongest supported finding. Keep the audit easy to scan.
 Use a table: Current name | User task | Proposed name | Evidence | Impact /100 | Effort S/M/L | Confidence /100.

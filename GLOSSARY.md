@@ -60,6 +60,7 @@ glossary owns creating and auditing GLOSSARY.md. It does not create other root d
 Use glossary rather than terminology-manager or naming-guide for this Skill.
 
 slop-naming-recovery finds generic technical names that hide business meaning and proposes names grounded in user tasks.
+It extends im-not-a-fly with product understanding and naming review, and also works alone.
 It reviews implicit names and approved glossary terms. Glossary owns recording canonical naming decisions.
 Use the owner's requested name rather than name-for-users or architectural-slop-recovery.
 The word slop describes a naming problem, never the author or every technical term.

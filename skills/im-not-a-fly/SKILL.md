@@ -29,6 +29,22 @@ Verify material facts and relevant assumptions before rewriting. Recheck them af
 Preserve scope, uncertainty, dates, units, attribution, prerequisites, and required wording in every genre.
 Never invent an actor, experience, example, or supporting detail to make writing concrete.
 
+## Establish product meaning before editing product language
+
+For app copy, feature descriptions, or product naming, first understand what the product helps its users accomplish.
+Read supplied product goals, audience evidence, important user journeys, and wording rules.
+Identify users' starting knowledge, desired outcomes, and the actions they take.
+Check that descriptions match actual behavior when repository evidence is available.
+Choose language those users understand. Do not derive their language solely from implementation names.
+Separate supported audience knowledge from assumptions. Do not invent personas or customer research.
+
+If a technical label hides the user's task, propose a concrete business name with evidence and a before-and-after example.
+Preserve canonical terms until their revision is approved under the project's rules.
+Keep necessary technical vocabulary when it serves the intended audience.
+For a deeper naming audit, use an available slop-naming-recovery Skill when requested or appropriate.
+That extension offers numbered glossary proposals and handles approved rename scope. This Skill works without it.
+Ordinary prose edits do not authorize a repository rename.
+
 ## Choose how to communicate
 
 Route each section by its purpose. A file can combine a story with technical detail.
