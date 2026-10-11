@@ -3,6 +3,8 @@
 Give the user a decision they can review without opening the codebase.
 Lead with a ranked summary, then show each proposal in a small, numbered block.
 Show at most three proposals in the first feedback round. Keep the remaining findings in the report.
+This limits presentation, not discovery or already authorized fixes.
+Complete the requested inspection before choosing which findings to show first.
 Maintain stable IDs such as N1 and N2, even when their priority changes.
 Follow a supplied feedback format when the user prefers one.
 

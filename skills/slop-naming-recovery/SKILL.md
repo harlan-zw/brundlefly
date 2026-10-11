@@ -80,6 +80,14 @@ Use this account as the basis for every later proposal. Word searches alone cann
 ## 2. Find names and their users
 
 Start with the requested feature, changed files, or repository scope.
+Match inspection breadth to that scope before ranking findings.
+For a repository-wide audit, map its main user journeys and the concepts each journey exposes.
+Cover navigation, actions, results, empty states, errors, documentation, and developer surfaces where relevant.
+Inspect ordinary domain names as well as generic technical words. A familiar name can promise the wrong behavior.
+Trace representative inputs through producers to displayed results, including missing data and partial completion.
+Record inspected journeys and surfaces, exclusions, and remaining coverage gaps.
+Do not stop discovery after finding a few easy wording fixes. A feedback limit does not limit the audit.
+Keep a feature-scoped request focused. Do not expand it into a whole-product audit automatically.
 Read UI labels, actions, errors, docs, routes, and public APIs.
 Then trace their concepts into types, functions, modules, storage, and producers or consumers.
 Use a diff or history when available to find newly introduced names. Do not require either.

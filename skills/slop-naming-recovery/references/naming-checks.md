@@ -53,6 +53,13 @@ Use these scenarios for a manual check of the workflow:
 
 - **Consistent but vague:** artifact appears in the glossary, code, and payroll UI.
   Expect a supported naming proposal despite consistent usage. Preserve the current canonical term until approval.
+- **Broad audit, early wins:** a repository has confusing labels in its first inspected feature.
+  Expect the remaining main journeys to be inspected before ranking findings.
+  Show inspection coverage and unresolved gaps. Limit the first feedback round, not discovery.
+- **Familiar but misleading:** a remove action sends a provider notification, without proving removal.
+  Expect wording that names the completed notification and preserves the provider's fixed identifiers.
+- **Feature-only request:** a user asks about payroll downloads.
+  Expect inspection of that concept and its consumers, without auditing unrelated product journeys.
 - **Implicit addition:** `createEntity` introduces a reservation concept without a glossary entry.
   Expect a finding based on the booking task, with the implicit introduction identified.
 - **Technical audience:** build artifact appears in a release-engineering tool.
