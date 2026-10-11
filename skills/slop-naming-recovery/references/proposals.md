@@ -30,12 +30,17 @@ Follow a supplied feedback format when the user prefers one.
 ```
 
 Adapt the diff to the target glossary's actual format. Preserve unrelated entries.
-Show the exact Map row change as well. Do not present a generic template as the target's real diff.
-If no glossary exists, label this a proposed term entry. Create no file until authorized.
+Show the exact Map row change when the target glossary has a Map.
+If no Map exists, omit it unless the user requests one.
+If another document owns terminology, show the exact proposed edit there and identify its existing authority.
+If no naming document exists, show a standalone proposed term entry. Create no file until authorized.
+Keep a wording-only proposal separate from an optional identifier or contract rename.
+State what accepting the proposal changes and which names remain intentional.
 
 **Before → after:** Download artifact → Download payslip; `generateArtifact` → `generatePayslip`.
 **Affected surfaces:** Glossary, payroll download, generator, and its consumers.
 **Contract cost:** Name any affected stored values, public exports, routes, or provider identifiers.
+**Approval scope:** State the exact surfaces this decision authorizes. Give a broader API rename its own decision.
 **Keep instead:** Retains existing wording, with the reading problem described above.
 
 This is an illustrative proposal. Its confidence and names are not scores for an uninspected repository.
