@@ -10,7 +10,7 @@
   </picture>
 </a>
 
-## Why Brundlefly
+## I'm Brundlefly
 
 <img src="https://github.com/harlan-zw/brundlefly/raw/main/assets/brand/github-avatar.png" width="80" height="80" align="left" alt="Brundlefly's face">
 
