@@ -53,7 +53,7 @@ function reset() { preset.value = { ...defaultPreset }; text.value = ''; result.
         <label for="material">Material</label><select id="material" v-model="preset.material"><option v-for="material in materials" :key="material" :value="material">{{ material }}</option></select>
         <label for="edges">Edges</label><select id="edges" v-model="preset.edges"><option v-for="edge in edges" :key="edge" :value="edge">{{ edge }}</option></select>
         <label for="layout">Layout</label><select id="layout" v-model="preset.layout"><option v-for="layout in layouts" :key="layout" :value="layout">{{ layout }}</option></select>
-        <label for="density">Density <output>{{ preset.density }}</output></label><input id="density" v-model.number="preset.density" type="range" min="0" max="1" step="0.05">
+        <label for="density">Edge decoration strength <output>{{ preset.density }}</output></label><input id="density" v-model.number="preset.density" type="range" min="0" max="1" step="0.05">
         <UButton type="button" variant="ghost" @click="reset">Reset</UButton>
         <details>
           <summary>Import preset</summary>

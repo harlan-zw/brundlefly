@@ -16,7 +16,7 @@ Cite the specific supporting page beside an external claim.
 Prefer authoritative links beside the claims they support, without a separate "Sources" section by default.
 Use a source list only when the destination requires it or it helps the reader's task.
 Keep detailed provenance and verification records in private working evidence.
-For code-backed claims, record a file and revision in the working ledger.
+For code-backed claims, record a file and revision in the evidence notes.
 Separate documented behavior, directly observed behavior, and assumptions.
 Recheck changeable claims before delivery.
 
@@ -39,10 +39,10 @@ Do not replace execution evidence with a successful lint or build.
 
 ## Verify, repair, then repeat
 
-Before execution, map each material claim and selected primitive to a check and supporting evidence.
+Before execution, map each material claim and selected guide format to a check and supporting evidence.
 Keep the original draft and the checked revision separately in private working files.
 
-| Primitive or claim | Check |
+| Guide format or claim | Check |
 | --- | --- |
 | Runnable example | Run documented setup, commands, and inputs; compare actual outputs with promised results |
 | Protocol behavior | Check applicable status, headers, body, and conditions against the governing specification |

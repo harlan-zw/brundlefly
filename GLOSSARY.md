@@ -22,6 +22,9 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | verify-examples | skills/verify-examples | Block Skill used by technical-guide and readme | verify-examples |
 | Workflow Skill | skills/ | Owns a complete text task and loads applicable bundled blocks | Workflow Skill |
 | Block Skill | skills/ | Owns one focused pass and also works independently | Block Skill |
+| Guide format | skills/technical-guide/references/guide-primitives.md | Presents an explanation through a code example, diagram, or screenshot | Guide format |
+| Evidence notes | skills/technical-guide; skills/readme; skills/verify-examples | Private sources, scope, revisions, checks, and unresolved questions supporting a writing task | Evidence notes |
+| Edge decoration strength | website/layers/brand/shared/catalogue.ts; BrandSurface | Preset density controls edge artwork opacity and corner size | Edge decoration strength |
 | fly | Public story | Names the agent in the mascot's metaphor | fly |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
 | human connection | Public story | Gives the writing its purpose | human connection |
@@ -77,6 +80,30 @@ Both use the same Agent Skills format and live directly under skills.
 Use Block Skill rather than helper Skill, subskill, or primitive for these installable passes.
 Use Workflow Skill rather than parent Skill for the complete task.
 Bundled blocks are local reference copies. They do not require sibling Skills to be installed.
+
+### Guide format
+
+A way to present a guide's explanation, such as a code example, diagram, or screenshot.
+Use Guide format when choosing how to answer a reader question.
+Use guide format in ordinary prose.
+It replaces primitive for this selection task.
+Required content and supporting evidence remain separate concepts.
+
+### Evidence notes
+
+Private notes linking claims and example checks to sources, revisions, scope, results, and unresolved questions.
+Use evidence notes for the working record maintained during guide, README, and example verification tasks.
+It replaces working ledger, evidence ledger, and private ledger for this concept.
+Keep these notes outside published content and generated public downloads.
+The name does not require a new file, database, or fixed template.
+
+### Edge decoration strength
+
+Controls how prominent a surface's decorative edges appear through artwork opacity and corner size.
+Use Edge decoration strength for the brand-kit control and its explanation.
+The version 1 preset field and component prop use density.
+Do not use Density as the public label for this control.
+Do not describe it as piece count, spacing, or content density.
 
 ### clarity
 

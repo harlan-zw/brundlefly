@@ -21,7 +21,8 @@ Materials may exist alone. They must never imply a different mascot anatomy.
 
 Choose a layout. Add surfaces. Attach edge parts. Place labelled controls inside each surface.
 Use darkness between pieces. Keep dense flesh, bristles, and slime at the edges.
-Scale the composition by changing layout and density, rather than stretching artwork.
+Change the layout and edge decoration strength rather than stretching artwork.
+Edge decoration strength controls artwork opacity and corner size. The preset field and component prop use `density`.
 The layout responds to its container, so a nested preview behaves like a standalone page.
 
 | Piece | Inputs | Purpose |

@@ -1,4 +1,4 @@
-# Guide primitives
+# Guide content and formats
 
 Every guide gives the reader these elements, explicitly or through clear context:
 
@@ -53,7 +53,7 @@ When capture is unavailable, provide explicit capture instructions or mark a dra
 Keep a screenshot of a demo log distinct from a screenshot of browser developer tools.
 Code, screenshots, and diagrams are optional tools. Include each when it answers a reader question.
 
-## Select primitives during the initial sweep
+## Choose guide formats during the initial review
 
 Separate the reader's needs above from the formats available in the destination.
 A missing image does not remove the need to explain an observable result.
@@ -68,20 +68,20 @@ Keep a small private inventory:
 | Candidate | Record |
 | --- | --- |
 | Existing example, diagram, capture, or source | Location, reader question, freshness, and reuse limits |
-| New primitive using existing support | Required code or capture, verification method, and authorization |
-| Primitive requiring new support | Missing renderer, component, hosting, access, or fixture |
-| Unavailable primitive | Constraint and a supported way to explain the same point |
+| New guide format using existing support | Required code or capture, verification method, and authorization |
+| Guide format requiring new support | Missing renderer, component, hosting, access, or fixture |
+| Unavailable guide format | Constraint and a supported way to explain the same point |
 
 Choose the smallest set that answers the reader's questions.
-Use an existing primitive only when its evidence and context match this guide.
+Use an existing guide format only when its evidence and context match this guide.
 Do not add every available format or treat repository assets as proof of an unrelated example.
 
-When a useful primitive needs creation, propose it before building it.
+When a useful guide format needs creation, propose it before building it.
 State its reader benefit, destination, required work, verification method, and cost or access needs.
 Ask whether to build it or use a supported alternative.
 Bundle related proposals into one decision. Continue work that does not depend on the answer.
 If the request already authorizes that exact creation, proceed without asking again.
 New components, dependencies, services, public uploads, and production changes require their own authorized scope.
 
-Record the selected primitives and their verification limits in private working evidence.
+Record the selected guide formats and their verification limits in private evidence notes.
 Use those selections to plan the checks. Do not turn the inventory into mandatory published headings.
