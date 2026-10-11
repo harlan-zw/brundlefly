@@ -45,7 +45,7 @@ For text an agent will act on: Markdown files, instructions, docs, and context. 
 - ⚖️ **Checked both ways**: every source rule maps to the result, and every result rule maps back to the source.
 - 🚫 **No dialects**: plain compact Markdown, with no invented abbreviations or decoding legend.
 
-### The other five
+### The other six
 
 Each one does a narrower job.
 
@@ -89,6 +89,14 @@ Create or audit COPY.md, or write copy against it. Even I follow it.
 - 🎚️ **Fits the reader**: a button, an error, and a hero use the wording and context their reader needs.
 - 🚷 **Banned language**: each ban carries its reason, so near misses get caught too.
 
+#### [slop-naming-recovery](skills/slop-naming-recovery/SKILL.md)
+
+Find generic technical names that hide what users do.
+
+- 🔍 **Checks the meaning**: reviews code, user tasks, and glossary entries, including names added without a decision.
+- 🧭 **Names the use case**: proposes concrete business terms with before-and-after examples and source evidence.
+- ✋ **Keeps decisions explicit**: preserves required technical terms and proposes revisions before adopting new names.
+
 ### Focused blocks
 
 Use a Workflow Skill for a complete task. Use a Block Skill for one focused pass.
@@ -97,7 +105,7 @@ Each block also works as a separate Skill.
 
 | Block Skill | Focus | Used by |
 | --- | --- | --- |
-| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Clear wording, reading order, and accessible structure | im-not-a-fly, technical-guide, readme, copywriting, glossary, pull-request-summary |
+| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Clear wording, reading order, and accessible structure | im-not-a-fly, technical-guide, readme, copywriting, glossary, pull-request-summary, slop-naming-recovery |
 | [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty | im-not-a-fly, technical-guide, readme, im-a-fly, pull-request-summary |
 | [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results | technical-guide, readme |
 
@@ -152,7 +160,7 @@ Then ask your agent:
 Use im-not-a-fly to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
 ```
 
-If you want the whole collection, install all ten Skills:
+If you want the whole collection, install all eleven Skills:
 
 ```sh
 skilld add harlan-zw/brundlefly --all
@@ -261,6 +269,16 @@ It maps concepts to their public names and identifies vocabulary drift. Approve 
 
 ```text
 Audit GLOSSARY.md against this repository. Keep established names and propose fixes for any drift.
+```
+
+### Recover names from user tasks
+
+Use slop-naming-recovery when technical labels hide the business meaning of a feature or code concept.
+It checks implicit names and glossary-approved terms, then proposes changes grounded in the actual user task.
+
+```text
+Use slop-naming-recovery to audit this feature's names. Trace artifact and attestation into code and UI.
+Propose names based on user tasks. Show evidence and affected surfaces before renaming.
 ```
 
 ### Keep voice and wording consistent
