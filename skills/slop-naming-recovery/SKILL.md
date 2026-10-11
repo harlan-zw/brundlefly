@@ -28,6 +28,10 @@ Default to an audit with proposed changes. Apply renames only within the user's 
 If naming approval is required, prepare the complete recommendation before asking.
 Existing approval covers the agreed names and scope. Do not request it again.
 
+Use [the bundled clarity block](references/blocks/clarity.md) for reader context, wording, order, and accessibility.
+Reuse context supplied by im-not-a-fly or another caller. Do not repeat an already completed clarity pass.
+This workflow adds business meaning, concept mapping, glossary decisions, and rename scope to that shared review.
+
 ## 1. Understand the product and its language
 
 Before collecting names, establish what the application fundamentally helps people accomplish.
@@ -38,13 +42,12 @@ Do not infer the product's purpose solely from its current glossary or technical
 
 Write a short, evidence-backed account of:
 
-- Who uses the product, their starting knowledge, and the problem that brings them here.
+- Which user problem the product addresses, using the reader context established by clarity.
 - The main outcome they want and the actions they take to reach it.
 - What the product does for them, including important limits and distinctions.
 - The language they already use for those tasks and how the product should speak to them.
 
-Ground language choices in audience evidence and supplied voice rules.
-Use familiar task words, explicit actors, and concrete outcomes. Preserve necessary domain language.
+Ground proposed business terms in audience evidence and supplied voice rules.
 If customer language is unavailable, label the proposed language as an inference.
 Do not invent research, personas, business purposes, or capabilities.
 If the fundamental purpose remains unclear, report the missing evidence before recommending names.
@@ -63,7 +66,7 @@ These are search prompts, not a ban list. Find other vague names from the produc
 Exclude generated files, dependencies, and unrelated ordinary uses.
 Keep provider identifiers, protocol terms, and necessary technical vocabulary when they express the audience's actual task.
 
-Identify who uses each concept and what they do with it.
+Connect each concept to the established users and their tasks.
 Prefer customer language from supplied requirements, support material, documentation, or observed UI behavior.
 For a developer product, the developer is the user. Familiar technical terms can be the clearest names.
 Do not claim user research, confusion, or historical intent without evidence.
@@ -102,7 +105,7 @@ Show migration effort separately. Give highest priority to confusing names on im
 
 ## 5. Deliver or apply the recovery
 
-Lead with the strongest supported finding. Keep the audit easy to scan.
+Lead with the strongest supported finding.
 Use a table: Current name | User task | Proposed name | Evidence | Impact /100 | Effort S/M/L | Confidence /100.
 Link evidence to file lines or supplied sources. Explain scores briefly and name missing evidence.
 Include affected surfaces and any required approvals or migrations beside each finding.
@@ -131,6 +134,7 @@ If a required migration is outside scope, report the dependency before making pa
 
 Run the target's focused checks for affected behavior, imports, consumers, and links.
 Search for displaced names and explain intentional remaining uses.
-Review the proposed wording with [the bundled clarity block](references/blocks/clarity.md).
+Pass the proposed wording and established context to the bundled clarity block.
+If the caller already reviewed unchanged wording with clarity, reuse that result.
 Check that each new name preserves meaning and lets its intended user predict the next action.
 Report executed checks separately from source inspection and untested user understanding.
