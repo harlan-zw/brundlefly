@@ -1,13 +1,15 @@
 ---
 name: slop-naming-recovery
-description: "Find generic technical names that obscure user tasks and propose names grounded in business use cases. Use when vague terms enter code, features, UI copy, or GLOSSARY.md, including implicit names and explicitly approved terms."
+description: "Find generic technical names that obscure user tasks and propose names grounded in the product domain. Use when vague terms enter code, features, UI copy, or GLOSSARY.md, including implicit names and explicitly approved terms."
 license: MIT
 ---
 
 # Slop naming recovery
 
 Find names that describe implementation while hiding what a person needs to understand or do.
-Recommend names grounded in the product's business use cases. Show evidence before adopting them.
+Recommend names grounded in the product's domain and users' actual tasks. Show evidence before adopting them.
+The product domain means the objects, actions, and decisions users work with.
+For example: bookings, payroll, source symbols, and import paths.
 Treat naming slop as a problem in the name, never a judgment about its author.
 This Skill extends im-not-a-fly's reader-focused editing with a deeper product naming review.
 It also works alone. No other Skill needs to be installed.
@@ -32,7 +34,7 @@ Existing approval covers the agreed names and scope. Do not request it again.
 
 Use [the bundled clarity block](references/blocks/clarity.md) for reader context, wording, order, and accessibility.
 Reuse context supplied by im-not-a-fly or another caller. Do not repeat an already completed clarity pass.
-This workflow adds business meaning, concept mapping, glossary decisions, and rename scope to that shared review.
+This workflow adds domain meaning, concept mapping, glossary decisions, and rename scope to that shared review.
 
 ## 1. Understand the product and its language
 
@@ -49,9 +51,9 @@ Write a short, evidence-backed account of:
 - What the product does for them, including important limits and distinctions.
 - The language they already use for those tasks and how the product should speak to them.
 
-Ground proposed business terms in audience evidence and supplied voice rules.
+Ground proposed names in audience evidence and supplied voice rules.
 If customer language is unavailable, label the proposed language as an inference.
-Do not invent research, personas, business purposes, or capabilities.
+Do not invent research, personas, product purposes, or capabilities.
 If the fundamental purpose remains unclear, report the missing evidence before recommending names.
 Use this account as the basis for every later proposal. Word searches alone cannot establish a naming problem.
 
@@ -76,14 +78,14 @@ Separate naming problems from missing explanations, feature defects, and unfinis
 If an explanation solves the problem, recommend that before a rename.
 Do not claim user research, confusion, or historical intent without evidence.
 
-## 3. Recover the business meaning
+## 3. Recover the domain meaning
 
 Read [the naming checks and examples](references/naming-checks.md).
 For each candidate, answer:
 
 - Who creates, views, changes, or relies on this thing?
 - What user action produces it, and what action does it enable?
-- What business object, decision, or outcome does it represent?
+- What object, decision, or outcome does it represent for this user?
 - Which distinctions, relationships, and lifecycle states must the name preserve?
 - Where does the name reach users, and where could an internal name reach them next?
 
@@ -95,7 +97,7 @@ Treat internal-only names as candidates too, especially when they name a feature
 
 ## 4. Propose and rank names
 
-Prefer an established, accurate business term from the project before introducing a new one.
+Prefer an established, accurate domain term from the project before introducing a new one.
 Use concrete object names and task verbs. Name what the thing means or does for its user.
 Do not replace one vague label with another, such as changing every artifact to a resource.
 Avoid cute metaphors, invented jargon, and names that imply unsupported capabilities or completed actions.

@@ -94,7 +94,7 @@ Create or audit COPY.md, or write copy against it. Even I follow it.
 Extend im-not-a-fly with names grounded in what the product helps users do. It also works alone.
 
 - 🔍 **Product first**: understands the purpose, audience, and user language before reviewing code and glossary names.
-- 🧭 **Names the use case**: proposes concrete business terms with before-and-after examples and source evidence.
+- 🧭 **Names the use case**: proposes names grounded in user tasks, with before-and-after examples and source evidence.
 - ✋ **Easy feedback**: shows numbered glossary changes you can accept, keep, or edit before approved renames.
 
 ### Focused blocks
@@ -273,7 +273,7 @@ Audit GLOSSARY.md against this repository. Keep established names and propose fi
 
 ### Recover names from user tasks
 
-Use slop-naming-recovery when technical labels hide the business meaning of a feature or code concept.
+Use slop-naming-recovery when technical labels hide what a feature or code concept means to its users.
 It starts with the product's purpose, audience, and user language, then checks implicit and glossary-approved names.
 
 ```text

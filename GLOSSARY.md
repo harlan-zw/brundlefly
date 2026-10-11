@@ -15,7 +15,7 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | im-a-fly | skills/im-a-fly | Compresses text for agents while preserving substantial meaning | im-a-fly |
 | readme | skills/readme | Writes repository READMEs with researched positioning and working setup | readme |
 | glossary | skills/glossary | Creates and audits canonical names and meanings | glossary |
-| slop-naming-recovery | skills/slop-naming-recovery | Reviews generic names against user tasks and proposes business terms | slop-naming-recovery |
+| slop-naming-recovery | skills/slop-naming-recovery | Reviews generic names against user tasks and proposes domain terms | slop-naming-recovery |
 | copywriting | skills/copywriting | Creates and audits voice and canonical wording | copywriting |
 | clarity | skills/clarity | Block Skill used by human-facing prose, guide, README, copy, naming, and PR workflows | clarity |
 | claim-fidelity | skills/claim-fidelity | Block Skill used by prose, guide, README, compression, and PR workflows | claim-fidelity |
@@ -62,7 +62,7 @@ Use readme for this skill, rather than readme-writer or readme-guide.
 glossary owns creating and auditing GLOSSARY.md. It does not create other root documents automatically.
 Use glossary rather than terminology-manager or naming-guide for this Skill.
 
-slop-naming-recovery finds generic technical names that hide business meaning and proposes names grounded in user tasks.
+slop-naming-recovery finds generic technical names that hide domain meaning and proposes names grounded in user tasks.
 It extends im-not-a-fly with product understanding and naming review, and also works alone.
 It reviews implicit names and approved glossary terms. Glossary owns recording canonical naming decisions.
 Use the owner's requested name rather than name-for-users or architectural-slop-recovery.

@@ -6,12 +6,12 @@ Use these checks to reason from behavior. The examples illustrate decisions, not
 
 Ask whether the name helps this audience predict what the thing contains and what they can do with it.
 Compare it with neighboring concepts. A clearer word still fails if it collapses a distinction users need.
-Check that a noun names the business object and a function names its actual action.
+Check that a noun names the object users work with and a function names its actual action.
 For example, generating a document does not approve its contents.
 Never use a name to imply approval, verification, or legal effect the implementation does not establish.
 
 A short name can be accurate within its context. A longer name can still hide the task.
-Prefer familiar business language over a technical container name when both preserve the same meaning.
+Prefer familiar domain language over a technical container name when both preserve the same meaning.
 Keep necessary domain language and explain it when the intended audience needs help.
 
 ## Worked decisions
@@ -62,7 +62,7 @@ Use these scenarios for a manual check of the workflow:
 - **Fixed protocol:** attestation is a provider field surfaced directly in a safety-check screen.
   Expect a UI wording proposal and preservation of the external field unless its contract can change.
 - **Missing meaning:** only `processArtifact` is supplied.
-  Expect a concrete evidence gap, without a guessed business name.
+  Expect a concrete evidence gap, without a guessed domain name.
 - **Distributed definitions:** CONTEXT.md defines CSS class token, but GLOSSARY.md is absent.
   Expect the documented definition to be recognized. Do not invent an existing glossary or force a rename.
 - **Separate technical contexts:** an SDK profiling callback and a CLI output profile share a word.
