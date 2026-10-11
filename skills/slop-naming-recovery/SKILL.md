@@ -84,10 +84,22 @@ Link evidence to file lines or supplied sources. Explain scores briefly and name
 Include affected surfaces and any required approvals or migrations beside each finding.
 Report justified technical names separately. If no supported problem exists, say so.
 
+Turn actionable findings into numbered proposals using [the feedback format](references/proposals.md).
+Show the exact proposed glossary change, including its definition, map row, and displaced names.
+Let the user accept, keep, defer, or edit each proposal independently using its stable ID.
+Keep IDs stable across revisions. Group dependent proposals and explain why they need one decision.
+Interpret feedback per proposal. Silence and approval of one proposal do not approve the others.
+Revise affected definitions and examples before applying an edited name.
+
 If a rename is authorized and a glossary exists, update its decision before propagating the approved names.
 Otherwise record the approved decision in the requested output. Create a glossary only when requested.
 Update relevant canonical copy, identifiers, consumers, docs, and bundled references within the agreed scope.
 Use the project's AST-aware rename tool when available. Read prose occurrences individually.
+RipIDE is optional for supported code renames. Prefer a supplied launcher or the project's existing CLI.
+Read its local instructions and command help before use. Do not require a personal checkout or sibling Skill.
+Review an uncertain target with a dry run, then apply the approved mapping with type verification enabled.
+Use RipIDE for supported symbols and file renames. Edit glossary entries, prose, and UI wording in context.
+If the tool fails, report the failure. Do not claim the rename passed or disable verification to force it.
 Do not blindly replace stored values, routes, exports, provider fields, or protocol identifiers.
 Inspect compatibility requirements and migration needs before changing these surfaces.
 Do not add compatibility layers automatically. Follow the project's explicit policy.

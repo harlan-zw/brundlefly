@@ -95,7 +95,7 @@ Find generic technical names that hide what users do.
 
 - 🔍 **Checks the meaning**: reviews code, user tasks, and glossary entries, including names added without a decision.
 - 🧭 **Names the use case**: proposes concrete business terms with before-and-after examples and source evidence.
-- ✋ **Keeps decisions explicit**: preserves required technical terms and proposes revisions before adopting new names.
+- ✋ **Easy feedback**: shows numbered glossary changes you can accept, keep, or edit before approved renames.
 
 ### Focused blocks
 
