@@ -24,6 +24,8 @@ Keep necessary domain language and explain it when the intended audience needs h
 | attestation | A security API accepts a signed statement defined by an external protocol | Keep the protocol field; explain its purpose in UI | Signature and protocol semantics remain explicit |
 | entity | A booking app tracks a guest's reservation | Reservation; `cancelReservation` | Separate the reservation from the guest and payment |
 | pipeline | A seller prepares, reviews, and publishes a product listing | Listing publication process | Keep distinct steps if they affect recovery or permissions |
+| No payload | The crawler has no payload-size measurement for a page | Payload not measured | Missing measurement, separate from a measured absence |
+| No sessions from this link | A capped analytics query returns no matching referring-domain row | No matching domain row in the returned data | Missing row, separate from zero; domain attribution, separate from an individual link |
 
 These names depend on the stated behavior and audience.
 If an artifact includes both a payslip and tax documents, do not rename the entire container Payslip.
@@ -79,5 +81,15 @@ Use these scenarios for a manual check of the workflow:
   Expect a check for audience overlap and a keep-or-explain option before proposing an API rename.
 - **Wording-only repair:** a CLI says cross-realm import for a relative runtime import between app and server files.
   Expect precise app/server wording without silently renaming its check ID or suppression syntax.
+- **Metric proxy:** a dashboard calls a proxy measurement the metric it estimates, under a deliberate naming decision.
+  Expect the reader to identify the measured metric before relying on its value or action.
+  Keep or explain the name when nearby wording preserves that distinction.
+  Acknowledge the decision and present evidence before proposing a revision. Preserve fixed fields separately.
+- **Mixed measurement total:** a card adds measured visits and projected demand, then labels the sum as visits at risk.
+  Expect the source, unit, population, and risk or gain meaning to be traced before proposing copy.
+  Report the aggregation defect separately. A new label cannot make unlike values additive.
+- **Stale definition:** a glossary describes a current feature as unbuilt or names a retired pricing model.
+  Expect current producers and decisions to support a definition repair, while accurate names stay.
+  Do not propose a code rename merely to match the stale definition.
 
 These scenarios check judgment. File shape and keyword presence cannot prove a naming recommendation is useful.
