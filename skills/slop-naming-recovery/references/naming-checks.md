@@ -58,6 +58,12 @@ Use these scenarios for a manual check of the workflow:
   Show inspection coverage and unresolved gaps. Limit the first feedback round, not discovery.
 - **Familiar but misleading:** a remove action sends a provider notification, without proving removal.
   Expect wording that names the completed notification and preserves the provider's fixed identifiers.
+- **Different measurement windows:** a dashboard combines current readings with an older reading and calls the set complete.
+  Expect the measurement dates to be traced before proposing a full-result label.
+  Show missing current measurements separately. Historical availability does not establish current coverage.
+- **Generated public wording:** an approved output name appears in email, but readiness notices and downloads use older names.
+  Expect generated messages, shared pages, previews, download names, and handoffs to be checked alongside literal labels.
+  Keep fixed routes and serialized values separate from public wording.
 - **Feature-only request:** a user asks about payroll downloads.
   Expect inspection of that concept and its consumers, without auditing unrelated product journeys.
 - **Implicit addition:** `createEntity` introduces a reservation concept without a glossary entry.
