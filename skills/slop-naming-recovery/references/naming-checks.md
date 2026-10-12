@@ -109,6 +109,8 @@ Do not rename unrelated stored values or silently select a replacement card.
 A label can be accurate on one screen while another consumer overstates the same measurement.
 Trace the producer through verdicts, metric rows, copied reports, downloads, and API results in the requested scope.
 Record each consumer's source, selected dates, measured inputs, and denominator.
+Check that thresholds, units, percentile notation, and statistical meaning belong to the metric actually measured.
+A per-run lab value must not inherit a field percentile label or another metric's rating bands.
 Inspect the actual consumer; do not infer its behavior from a shared helper or matching label.
 
 Consider a dashboard that assesses three field metrics: LCP, INP, and CLS.
@@ -126,7 +128,10 @@ For a date-window check, select August with complete passing field measurements.
 Include poor September measurements outside the selected window.
 The copied report must describe August and agree with its displayed metric rows.
 If the export rebuilds its verdict from unfiltered history, the screen and report can contradict each other.
-Prove the selected window at the real consumer boundary, including its metric values and source label.
+Prove the selected window at the real consumer boundary, including values, units, rating bands, source, and statistic.
+For example, relabeling a lab INP surrogate as TBT requires checking its thresholds and removing unsupported field p75 notation.
+Assert the actual per-run statistic or measured percentile; do not transfer statistical meaning with a label change.
+Preserve valid field INP semantics. Use supported thresholds from the target project; report unresolved scoring decisions.
 
 Keep source identity explicit when field measurements and lab measurements share a screen.
 CrUX reports aggregated field data; RUM reports collected user measurements; Lighthouse supplies lab results.
