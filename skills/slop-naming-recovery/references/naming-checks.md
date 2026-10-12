@@ -87,3 +87,49 @@ Use these scenarios for a manual check of the workflow:
   Expect precise app/server wording without silently renaming its check ID or suppression syntax.
 
 These scenarios check judgment. File shape and keyword presence cannot prove a naming recommendation is useful.
+
+## Removing a saved display choice
+
+An approved removal can leave a stored selection that changes the remaining interface.
+Trace the removed choice through saved preferences, selection limits, and empty fallback controls.
+
+For example, a dashboard removes a card because its total adds values with different units.
+An existing saved layout still selects that card.
+The card disappears, but its key consumes the card limit and hides Add metric controls.
+Removing its label did not complete the approved removal.
+
+Exercise the actual layout consumer with that saved selection, an empty selection, and a valid selection.
+Check that users can add a replacement and that unrelated saved choices remain intact.
+Follow the project's stored-data policy before changing preferences.
+A retired-key alias is not required merely to discard an unsupported display choice.
+Do not rename unrelated stored values or silently select a replacement card.
+
+## Following a measurement into its verdict
+
+A label can be accurate on one screen while another consumer overstates the same measurement.
+Trace the producer through verdicts, metric rows, copied reports, downloads, and API results in the requested scope.
+Record each consumer's source, selected dates, measured inputs, and denominator.
+Inspect the actual consumer; do not infer its behavior from a shared helper or matching label.
+
+Consider a dashboard that assesses three field metrics: LCP, INP, and CLS.
+If only LCP is measured and passes, an unqualified Passing label claims more than the inputs establish.
+A percentage calculated from that subset also needs its measured denominator.
+Use the project's existing missing-data wording when it fits.
+A truthful verdict may require representing measurement coverage in the result before changing the label.
+Keep that repair within the user's authority. Report material scoring decisions rather than inventing them.
+
+Exercise complete good data, partial data, no data, and poor measured data through the exported behavior.
+Do not silently redesign the numerical score while repairing its claim.
+A score and a verdict can have different requirements; inspect both.
+
+For a date-window check, select August with complete passing field measurements.
+Include poor September measurements outside the selected window.
+The copied report must describe August and agree with its displayed metric rows.
+If the export rebuilds its verdict from unfiltered history, the screen and report can contradict each other.
+Prove the selected window at the real consumer boundary, including its metric values and source label.
+
+Keep source identity explicit when field measurements and lab measurements share a screen.
+CrUX reports aggregated field data; RUM reports collected user measurements; Lighthouse supplies lab results.
+Missing field measurements do not turn lab results into field measurements.
+Preserve these distinctions in verdicts, explanations, and exports.
+Name the sources actually present in the target product; this example does not require all three.

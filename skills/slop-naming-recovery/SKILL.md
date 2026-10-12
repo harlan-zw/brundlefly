@@ -168,6 +168,9 @@ Inspect compatibility requirements and migration needs before changing these sur
 Do not add compatibility layers automatically. Follow the project's explicit policy.
 If a required migration is outside scope, report the dependency before making partial changes.
 
+Use [the saved-choice and measurement examples](references/naming-checks.md#removing-a-saved-display-choice) when a removal or verdict affects consumers.
+Check saved selections and real report boundaries, including dates, missing inputs, denominators, and source identity.
+
 Run the target's focused checks for affected behavior, imports, consumers, and links.
 In avoid-breaking-changes mode, verify the frozen contracts against the base revision and affected consumers.
 Search for displaced names and explain intentional remaining uses.
