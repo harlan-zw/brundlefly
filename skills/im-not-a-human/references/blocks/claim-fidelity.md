@@ -55,6 +55,9 @@ Keep the author's supplied voice and experience. Never claim their experience as
 
 ## Return the comparison
 
+Predict the attention available for the report. Lead with consequential meaning changes and uncertainties; keep minor differences brief.
+Keep the complete comparison in private evidence. Concise reporting must not weaken the comparison itself.
+
 Report concrete mismatches, their consequences, and any permitted omissions that matter to the result.
 If no mismatch remains, state the comparison scope and any unavailable checks.
 Keep review notes outside the transformed text when the requested format excludes them.

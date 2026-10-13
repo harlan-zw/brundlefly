@@ -53,9 +53,17 @@ For text an agent will act on: Markdown files, instructions, docs, and context. 
 - ⚖️ **Checked both ways**: every source rule maps to the result, and every result rule maps back to the source.
 - 🚫 **No dialects**: plain compact Markdown, with no invented abbreviations or decoding legend.
 
-### The other six
+### Other Workflow Skills
 
 Each one does a narrower job.
+
+#### [release-notes](https://skilld.dev/gh/harlan-zw/brundlefly/release-notes)
+
+Write or revise release notes from verified changes. Give the reader enough to decide whether to upgrade.
+
+- 🔍 **Important changes first**: predicts reader attention before choosing scope, order, and depth.
+- 🧪 **Checked claims**: verifies consumer changes, migration actions, measurements, and examples.
+- 📤 **Fits the destination**: keeps GitHub concise and links to detail when an article needs more space.
 
 #### [technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide)
 
@@ -113,9 +121,9 @@ Each block also works as a separate Skill.
 
 | Block Skill | Focus | Used by |
 | --- | --- | --- |
-| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Clear wording, reading order, and accessible structure | im-part-human, technical-guide, readme, copywriting, glossary, pull-request-summary, slop-naming-recovery |
-| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty | im-part-human, technical-guide, readme, im-not-a-human, pull-request-summary |
-| [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results | technical-guide, readme |
+| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Reader attention, clear wording, reading order, and accessible structure | im-part-human, technical-guide, readme, copywriting, glossary, pull-request-summary, slop-naming-recovery, release-notes |
+| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty | im-part-human, technical-guide, readme, im-not-a-human, pull-request-summary, release-notes |
+| [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results | technical-guide, readme, release-notes |
 
 For example:
 
