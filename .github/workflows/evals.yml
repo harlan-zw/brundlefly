@@ -3,11 +3,11 @@ name: Evaluation runner
 on:
   push:
     paths:
-      - 'evals/**'
+      - 'evals/writing/**'
       - '.github/workflows/evals.yml'
   pull_request:
     paths:
-      - 'evals/**'
+      - 'evals/writing/**'
       - '.github/workflows/evals.yml'
 
 permissions:
@@ -21,4 +21,4 @@ jobs:
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 24
-      - run: node --test evals/core.test.ts evals/ui/core.test.ts
+      - run: node --test evals/writing/core.test.ts evals/writing/ui/core.test.ts

@@ -54,7 +54,7 @@ Newly authored or adapted evaluation cases require owner approval before inclusi
 Collection triage and source inspection are not writing-quality evaluations.
 Published examples are permissible research inputs under the owner's source policy; preserve their provenance and licenses.
 Public examples may already occur in model training data. Disclose this limitation.
-Reuse the [existing writing pilot](../../evals/README.md) for initial human calibration.
+Reuse the [existing writing pilot](../../evals/writing/README.md) for initial human calibration.
 Keep its historical snapshots distinct from current skill revisions.
 
 ## What each comparison must establish

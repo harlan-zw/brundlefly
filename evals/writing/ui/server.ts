@@ -23,7 +23,7 @@ import {
 import type { Pair } from "./core.ts";
 import { generate } from "./opencode.ts";
 
-const root = fileURLToPath(new URL("../../", import.meta.url));
+const root = fileURLToPath(new URL("../../../", import.meta.url));
 const scratch = resolve(
   process.env.EVAL_SCRATCH ??
     join(process.env.HOME!, "scratch/brundlefly-review-ui"),
@@ -35,10 +35,10 @@ const model = process.env.EVAL_GENERATOR ?? "zai-coding-plan/glm-5.3-flash";
 const port = Number(process.env.PORT ?? 4318);
 const host = `127.0.0.1:${port}`;
 const existing = JSON.parse(
-  await readFile(join(root, "evals/results/development-revised.json"), "utf8"),
+  await readFile(join(root, "evals/writing/results/development-revised.json"), "utf8"),
 );
 const heldAside = JSON.parse(
-  await readFile(join(root, "evals/results/holdout-revised.json"), "utf8"),
+  await readFile(join(root, "evals/writing/results/holdout-revised.json"), "utf8"),
 );
 const reviewInputs = [...existing.results, ...heldAside.results].filter(
   (item: { id: string }) =>
@@ -89,7 +89,7 @@ execFileSync(
     "--minify",
     `--outfile=${join(scratch, "app.js")}`,
   ],
-  { cwd: join(root, "evals"), stdio: "inherit" },
+  { cwd: join(root, "evals/writing"), stdio: "inherit" },
 );
 // Completed local guide runs survive a server restart without entering the repository.
 for (const file of await readdir(scratch)) {
@@ -260,8 +260,8 @@ const server = createServer((request, response) => {
       return;
     }
     const files: Record<string, [string, string]> = {
-      "/": ["evals/ui/index.html", "text/html"],
-      "/style.css": ["evals/ui/style.css", "text/css"],
+      "/": ["evals/writing/ui/index.html", "text/html"],
+      "/style.css": ["evals/writing/ui/style.css", "text/css"],
       "/mascot.png": ["assets/brand/github-avatar.png", "image/png"],
     };
     const file = files[url.pathname];

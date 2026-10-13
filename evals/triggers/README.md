@@ -2,7 +2,7 @@
 
 These cases check whether an agent selects the right Brundlefly Skill for a request.
 They measure selection, not writing quality.
-[Skill quality](../docs/ideas/skill-quality.md) owns writing-quality comparisons.
+[Skill quality](../../docs/ideas/skill-quality.md) owns writing-quality comparisons, and the [writing pilot](../writing/README.md) runs them.
 
 ## Cases
 
@@ -29,7 +29,7 @@ claude plugin eval . --ablation none --model haiku --runs 1 --max-cost-usd 5 --n
 - `--max-cost-usd 5` stops new runs at 5 USD of list-price spend.
 - `--tag holdout`, `--tag im-not-a-human`, or `--case 'im-*'` narrows the run.
 
-Reports go to `skill-evals/results/`, which Git ignores.
+Reports go to `evals/triggers/results/`, which Git ignores.
 
 ## Limits
 

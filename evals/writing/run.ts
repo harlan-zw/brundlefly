@@ -9,7 +9,7 @@ import type { Verdict } from './core.ts';
 const root = fileURLToPath(new URL('.', import.meta.url));
 const phase = process.argv[2];
 const variantMode = process.argv[3] ?? 'initial';
-if (!['development', 'holdout'].includes(phase) || !['initial', 'revised', 'current'].includes(variantMode)) throw Error('Usage: node evals/run.ts development|holdout initial|revised|current');
+if (!['development', 'holdout'].includes(phase) || !['initial', 'revised', 'current'].includes(variantMode)) throw Error('Usage: node evals/writing/run.ts development|holdout initial|revised|current');
 const scratch = process.env.EVAL_SCRATCH;
 if (!scratch) throw Error('Set EVAL_SCRATCH outside the repository');
 await mkdir(scratch, { recursive: true });
@@ -71,7 +71,7 @@ for (const item of cases) {
   if (!line?.startsWith(`- ${item.label} ->`) || line.match(/`([^`]+)`/)?.[1] !== item.text) throw Error('Case differs from its published source');
 }
 const stopSlop = await read('sources/stop-slop.md') + '\n' + await read('sources/stop-slop-phrases.md') + '\n' + await read('sources/stop-slop-structures.md') + '\n' + await read('sources/stop-slop-examples.md');
-const skillRoot = await realpath(join(root, '../skills/im-part-human'));
+const skillRoot = await realpath(join(root, '../../skills/im-part-human'));
 const currentBundle = variantMode === 'current' ? await loadInstructionBundle(async path => {
   const file = await realpath(join(skillRoot, path));
   if (isOutsideRepository(skillRoot, file)) throw Error(`Reference is outside the Skill: ${path}`);
