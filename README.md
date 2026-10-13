@@ -89,7 +89,7 @@ Create or audit COPY.md, or write copy against it. Even I follow it.
 - 🎚️ **Fits the reader**: a button, an error, and a hero use the wording and context their reader needs.
 - 🚷 **Banned language**: each ban carries its reason, so near misses get caught too.
 
-#### [slop-naming-recovery](skills/slop-naming-recovery/SKILL.md)
+#### [slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery)
 
 Extend im-part-human with names grounded in what the product helps users do. It also works alone.
 
