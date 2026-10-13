@@ -4,8 +4,8 @@ Review five existing writing pairs or generate a focused guide comparison throug
 Requires Node 24+, pnpm, and an authenticated OpenCode installation.
 
 ```sh
-pnpm --dir evals install --frozen-lockfile
-pnpm --dir evals review
+pnpm --dir evals/writing install --frozen-lockfile
+pnpm --dir evals/writing review
 ```
 
 Open http://127.0.0.1:4318.
@@ -77,6 +77,6 @@ Do not expose it through a public proxy or deploy it as an authenticated service
 Public hosting, multi-user review, and aggregate quality claims need a separate design.
 
 ```sh
-pnpm --dir evals test
-pnpm --dir evals typecheck
+pnpm --dir evals/writing test
+pnpm --dir evals/writing typecheck
 ```

@@ -7,9 +7,9 @@ import { isOutsideRepository } from './core.ts';
 
 const [mode, inputFile, outputFile, responsesFile, humansFile] = process.argv.slice(2);
 if (!['prepare', 'score'].includes(mode) || !inputFile || !outputFile || (mode === 'score' && !responsesFile)) {
-  throw Error('Usage: node evals/calibrate.ts prepare|score INPUT OUTPUT [RESPONSES] [HUMANS]');
+  throw Error('Usage: node evals/writing/calibrate.ts prepare|score INPUT OUTPUT [RESPONSES] [HUMANS]');
 }
-const repository = await realpath(fileURLToPath(new URL('../', import.meta.url)));
+const repository = await realpath(fileURLToPath(new URL('../../', import.meta.url)));
 const output = resolve(outputFile);
 const outputDirectory = await realpath(dirname(output));
 if (!isOutsideRepository(repository, outputDirectory)) throw Error('Write calibration output outside the repository.');

@@ -293,10 +293,10 @@ Use copywriting to audit COPY.md and the README. Flag changed taglines and misma
 
 ### Compare writing edits
 
-Read the [writing evaluation](evals/REPORT.md) for comparisons with
+Read the [writing evaluation](evals/writing/REPORT.md) for comparisons with
 [Humanizer](https://github.com/blader/humanizer/blob/225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8/SKILL.md)
 and [Stop Slop](https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe8471220585162991eaeb970e9/SKILL.md).
-Use the [pilot instructions](evals/README.md) and [review UI setup](evals/ui/README.md) for local comparisons.
+Use the [pilot instructions](evals/writing/README.md) and [review UI setup](evals/writing/ui/README.md) for local comparisons.
 The [quality plan](docs/ideas/skill-quality.md) explains comparison scope and human review requirements.
 
 ### Use the brand assets
@@ -313,7 +313,7 @@ Generation prompts live in assets/prompts.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before adding a Skill.
 Each Skill must work when its directory is copied alone.
-After you change a description, run the [trigger evals](skill-evals/README.md).
+After you change a description, run the [trigger evals](evals/triggers/README.md).
 
 ## License
 

@@ -29,7 +29,7 @@ When a block needs supporting files, extend the bundling step before adding depe
 
 Validate each Skill against the specification with `uvx --from skills-ref agentskills validate skills/<name>`.
 Check local loading with skilld run and inspect the returned metadata and instructions.
-Give each new Skill three development trigger cases and one held-out case in `skill-evals/`.
+Give each new Skill three development trigger cases and one held-out case in `evals/triggers/`.
 After you change a description, run the trigger evals and compare the `dev` and `holdout` tags.
 For writing Skills, review rewrites for changed facts, scope, uncertainty, and voice.
 Prefer real before-and-after examples over word-count or file-shape assertions.

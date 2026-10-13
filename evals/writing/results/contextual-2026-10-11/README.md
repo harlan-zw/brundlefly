@@ -69,10 +69,10 @@ Create the scratch directory before writing calibration output.
 
 ```sh
 mkdir -p "$HOME/scratch/brundlefly-contextual-replay"
-node evals/calibrate.ts score \
-  evals/results/contextual-2026-10-11/inputs.json \
+node evals/writing/calibrate.ts score \
+  evals/writing/results/contextual-2026-10-11/inputs.json \
   "$HOME/scratch/brundlefly-contextual-replay/scores.json" \
-  evals/results/contextual-2026-10-11/responses.json
+  evals/writing/results/contextual-2026-10-11/responses.json
 ```
 
 This recomputes scores from frozen responses. It does not rerun generation or model judgments.
