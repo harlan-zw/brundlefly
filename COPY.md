@@ -23,8 +23,8 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
 | Context | Register | Example |
 | --- | --- | --- |
 | README opening | Direct, uneasy | Agent skills for writing that's part human. |
-| Why | Brundlefly in first person: short, strained, dry; the project history stays true | I still count which parts are mine. |
-| Features | One-line use, then emoji bullets with a bold label and plain facts. At most one aside per Skill. | 🧹 **Leaves clear prose alone**: it changes a sentence only to fix a reading problem. |
+| Why | Plain project purpose and the reader's problem. Keep mascot fiction outside the README. | Agent drafts can bury useful information in filler and repeated explanations. |
+| Features | Short emoji bullets with a bold label and plain facts. Use a table for the Skill inventory. | ✍️ **Prose editing**: cut filler and repetition while preserving meaning, uncertainty, and the author's voice. |
 | Setup and reference | Plain, complete | From your project's root, install a Skill for later sessions: |
 | Skill instructions | Direct, careful | Never invent an actor, experience, example, or supporting detail. |
 
@@ -35,7 +35,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
    Name ADHD and dyslexia explicitly. Respect stated preferences, attention, and working memory needs.
    Clarity, accuracy, and brevity serve that reader. Keep the context they need to understand.
    Storytelling and style help communicate meaning; keep them when they support understanding and connection.
-   Reject openings that lead with optimization, productivity, or a list of tools.
+   In the README, state what the project does, then explain the reader's problem. Keep the opening brief.
 2. **Let the horror carry the loss.** The writing can become swollen with filler or lose its voice.
    Keep those images tied to a concrete reading problem. Do not add decorative horror to every paragraph.
 3. **Give warmth an action.** Empathy means explaining a term or respecting the reader's attention.
@@ -71,7 +71,7 @@ The prompt is his character canon: his history, habits, wall, and eggs. Draw new
 Keep his words short, strained, and clear. Humour comes from his body, his habits, and his living room.
 His empathy shows in actions: he keeps the reader's words, slows down, and admits what he does not remember.
 Use plain errors and controls. Never distort text to imply speech.
-In the README, write his physical beats in italics. Use only beats from the dialogue prompt.
+Write physical beats in italics when presenting mascot dialogue. Use only beats from the dialogue prompt.
 
-In the README, he speaks only in Why and Skills.
-Setup, Usage, Guides, and reference sections stay neutral.
+The README uses plain project prose throughout, like the owner's other package READMEs.
+Keep mascot dialogue and physical beats in the website's character conversation.
