@@ -13,6 +13,8 @@ import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
+import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
+import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
 import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
@@ -259,7 +261,16 @@ watch(canvas, async (element) => {
   let faceElapsed = 0
   let lastReaction = reaction
   let reactionStarted = 0
-  const reactionWing = mascot.root.getObjectByName('left-wing')
+  const leftHand = mascot.root.getObjectByName('left-hand')!
+  const rightHand = mascot.root.getObjectByName('right-hand')!
+  const light = new Vector3(...sceneLayout.opening.position)
+  const eggClusters = sceneLayout.eggs.map(([x, z]) => new Vector3(x, -1.9, z))
+  // A habit's eye cue becomes a world point. Eggs resolve to the nearer cluster.
+  const cueTarget = (cue: EyeCue) => cue === 'Palm' ? rightHand.getWorldPosition(new Vector3())
+    : cue === 'Claw' ? leftHand.getWorldPosition(new Vector3())
+      : cue === 'Light' ? light
+        : cue === 'Ceiling' ? figure.position.clone().add(new Vector3(0, 6, 0.5))
+          : eggClusters.reduce((near, egg) => egg.distanceTo(figure.position) < near.distanceTo(figure.position) ? egg : near)
   let lastTime = 0
   let looping = false
   let renderWidth = 0
@@ -312,18 +323,20 @@ watch(canvas, async (element) => {
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
-    // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera.
+    // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
+    const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
+    const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
+    if (habit) layers.push(habit)
+    const mannerism = poseMannerisms(layers)
+    // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
     const eyes = !faceMotion ? { _tag: 'Ahead' } as const
-      : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
-    mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose, eyes,
+      : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
+        : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
+    mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose, eyes, mannerism,
       speaking: faceMotion ? speaking : 0,
       brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
         : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
       squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 })
-    const reactionAge = faceElapsed - reactionStarted
-    if (paused && faceMotion && beat === 'One wing twitches.' && reactionWing && reactionAge < 0.8) {
-      reactionWing.rotation.y += Math.sin(reactionAge / 0.8 * Math.PI) * Math.exp(-reactionAge * 2) * 0.08
-    }
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
     const corners = [new Vector3(-1.1, -1.25, 0), new Vector3(1.1, 1.3, 0)].map(value => figure.localToWorld(value).project(camera))

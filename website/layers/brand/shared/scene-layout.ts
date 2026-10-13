@@ -5,6 +5,8 @@ export const sceneLayout = {
   walk: [[1.35, 0.8], [-1.25, 0.6], [-0.75, -0.65], [0.9, -0.7]],
   // Seconds he stands at each walk point before moving on.
   walkPauses: [2.6, 3.8, 1.8, 4.4],
+  // What he does at each walk point. The second stop sits nearest an egg cluster.
+  walkHabits: ['CheckPalm', 'GlanceEggs', 'WipeEye', 'ListenCeiling'],
   eggs: [[-2.8, 2], [2.95, -0.25]],
   camera: { desktop: [0, 0.75, 10.4], portrait: [0, 1.1, 15.2], target: [0, -0.35, -2.1] },
 } as const
