@@ -35,8 +35,9 @@ I could use something to do.
 
 ### [im-part-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human)
 
-For text a person will read: blogs, docs, release notes, tweets, email, or copy. The name is aspirational.
+For text a person will read: blogs, docs, tweets, email, or copy. The name is aspirational.
 Empathy and accessibility guide the edit. Aim for clarity, accuracy, and brevity without losing needed context.
+Use [release-notes](#release-notes) to create or substantially revise release notes. Use im-part-human for wording-only edits.
 
 - 🔍 **Reader first**: considers who the reader is, what they know, and what they need. Reviews wording, then structure.
 - 🧬 **Keeps what's yours**: meaning, facts, claim scope, uncertainty, and voice survive the edit.

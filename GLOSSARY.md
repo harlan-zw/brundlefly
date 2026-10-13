@@ -24,7 +24,7 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | Workflow Skill | skills/ | Owns a complete text task and loads applicable bundled blocks | Workflow Skill |
 | Block Skill | skills/ | Owns one focused pass and also works independently | Block Skill |
 | Guide format | skills/technical-guide/references/guide-primitives.md | Presents an explanation through a code example, diagram, or screenshot | Guide format |
-| Evidence notes | skills/technical-guide; skills/readme; skills/verify-examples | Private sources, scope, revisions, checks, and unresolved questions supporting a writing task | Evidence notes |
+| Evidence notes | skills/technical-guide; skills/readme; skills/release-notes; skills/verify-examples | Private sources, scope, revisions, checks, and unresolved questions supporting a writing task | Evidence notes |
 | Edge decoration strength | website/layers/brand/shared/catalogue.ts; BrandSurface | Preset density controls edge artwork opacity and corner size | Edge decoration strength |
 | fly | Public story | Names the agent in the mascot's metaphor | fly |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
@@ -96,7 +96,7 @@ Required content and supporting evidence remain separate concepts.
 ### Evidence notes
 
 Private notes linking claims and example checks to sources, revisions, scope, results, and unresolved questions.
-Use evidence notes for the working record maintained during guide, README, and example verification tasks.
+Use evidence notes for the working record maintained during guide, README, release-note, and example verification tasks.
 It replaces working ledger, evidence ledger, and private ledger for this concept.
 Keep these notes outside published content and generated public downloads.
 The name does not require a new file, database, or fixed template.
