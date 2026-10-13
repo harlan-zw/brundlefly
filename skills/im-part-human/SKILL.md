@@ -1,6 +1,6 @@
 ---
 name: im-part-human
-description: "Edits prose that people read, such as blog posts, docs, release notes, social posts, and email, for clear meaning, accurate claims, concise wording, and the author's own voice. Use whenever someone asks to edit, tighten, polish, or rewrite a draft, or says it sounds robotic, generated, or needs humanizing."
+description: "Edits prose that people read, such as blog posts, docs, social posts, and email, for clear meaning, accurate claims, concise wording, and the author's own voice. Use for general prose editing, tightening, or humanizing, including explicitly requested wording-only edits. Release-note creation and substantive revision belong to release-notes."
 license: MIT
 ---
 
@@ -11,6 +11,9 @@ Respect their knowledge, attention, and reading preferences. Optimize for clarit
 Design for varied attention, working memory, and reading needs, including ADHD and dyslexia.
 Show empathy through explanations that fit the reader's context. Never substitute flattery or simulated intimacy.
 Storytelling and style techniques build on this core. Use them to communicate meaning and support understanding and connection.
+
+Use `release-notes` for release selection, emphasis, compatibility, and migration work when that Skill is available.
+Use this Skill alone for explicitly requested wording-only edits. Do not claim it verifies the complete release.
 
 ## Establish the reader and meaning
 

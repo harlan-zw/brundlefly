@@ -172,7 +172,7 @@ Then ask your agent:
 Use im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
 ```
 
-To install all eleven Skills:
+To install the complete collection:
 
 ```sh
 npx skilld add harlan-zw/brundlefly --all
