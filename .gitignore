@@ -26,3 +26,6 @@ website/apps/brand-kit/.nuxt/
 website/apps/brand-kit/.output/
 website/apps/brand-kit/node_modules/
 website/apps/brand-kit/dist
+
+# Claude plugin eval runs write reports here.
+skill-evals/results/
