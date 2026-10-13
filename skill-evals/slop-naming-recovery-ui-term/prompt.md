@@ -1,7 +1,7 @@
 ---
-tags: [trigger, slop-naming-recovery]
-max_turns: 3
-timeout_seconds: 180
+tags: [trigger, dev, slop-naming-recovery]
+max_turns: 8
+timeout_seconds: 300
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
 
