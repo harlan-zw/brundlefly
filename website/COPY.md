@@ -156,6 +156,7 @@ Collection, skill, and installation replies reuse the canonical assets above.
 Brand kit replies use “Brand kit” with a link to the kit.
 Luna generates conversational replies and three visitor choices. Replies do not execute a Skill.
 The first three selected exchanges reuse Luna's precomputed replies with the same speech, movement, mood, choices, and links.
+Cached replies pause for 200 ms before speech and movement begin.
 Typed messages and later branches use live generation.
 Choices that require the visitor's own writing or personal details open “Your text”.
 Never supply an invented sentence or personal fact as a visitor choice.

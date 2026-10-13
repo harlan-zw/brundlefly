@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
-import { onClickOutside, useEventListener, useMediaQuery, usePreferredReducedMotion, useResizeObserver, useScroll } from '@vueuse/core'
+import { onClickOutside, useEventListener, useMediaQuery, usePreferredReducedMotion, useResizeObserver, useScroll, useTimeoutFn } from '@vueuse/core'
 import { dialogueCopy } from '#shared/conversation'
 import type { ConversationHistoryMessage, ConversationReply } from '#shared/conversation'
 import presetData from '#shared/dialogue-presets.generated.json'
@@ -28,7 +28,7 @@ onClickOutside(noticeAnchor, () => { notice.value = false })
 const mode = ref<'Choices' | 'Compose'>('Choices')
 const history = ref<ConversationHistoryMessage[]>([])
 const visited = ref(false)
-const request = shallowRef<{ _tag: 'Idle' } | { _tag: 'Pending', controller: AbortController }>({ _tag: 'Idle' })
+const request = shallowRef<{ _tag: 'Idle' } | { _tag: 'Pending', controller: AbortController } | { _tag: 'PresetPending', next: Extract<ConversationTurn, { _tag: 'Preset' }>, text: string }>({ _tag: 'Idle' })
 const failedVisit = ref(false)
 const touchScreen = useMediaQuery('(pointer: coarse)')
 const reduced = usePreferredReducedMotion()
@@ -43,12 +43,6 @@ const focusReply = () => {
 const { arrivedState, measure } = useScroll(conversation)
 useResizeObserver(conversation, measure)
 watch([reply, () => request.value._tag, mode], measure, { flush: 'post' })
-
-const cancel = () => {
-  if (request.value._tag === 'Pending') request.value.controller.abort()
-  request.value = { _tag: 'Idle' }
-  emit('pending', false)
-}
 
 // Both local and generated replies use the same history, focus, sound, and scene events.
 const present = async (next: Exclude<ConversationTurn, { _tag: 'Empty' }>, kind: 'visit' | 'dialogue', suppliedText: string) => {
@@ -68,8 +62,24 @@ const present = async (next: Exclude<ConversationTurn, { _tag: 'Empty' }>, kind:
   focusReply()
 }
 
+// A brief breath gives cached replies his normal pacing. Closing cancels the queued reply.
+const { start: startPreset, stop: stopPreset } = useTimeoutFn(() => {
+  const pending = request.value
+  if (pending._tag !== 'PresetPending' || !open) return
+  request.value = { _tag: 'Idle' }
+  emit('pending', false)
+  void present(pending.next, 'dialogue', pending.text)
+}, 200, { immediate: false })
+
+const cancel = () => {
+  if (request.value._tag === 'Pending') request.value.controller.abort()
+  stopPreset()
+  request.value = { _tag: 'Idle' }
+  emit('pending', false)
+}
+
 const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value) => {
-  if (request.value._tag === 'Pending') return
+  if (request.value._tag !== 'Idle') return
   const message = suppliedText.trim()
   if (kind === 'dialogue' && (!message || suppliedText.length > 1000)) {
     error.value = message ? dialogueCopy.length : dialogueCopy.empty
@@ -138,11 +148,13 @@ watch([reply, () => request.value._tag, error, failedVisit, mode], async () => {
 }, { flush: 'pre' })
 
 const choose = (choice: string, index: number) => {
-  if (request.value._tag === 'Pending') return
+  if (request.value._tag !== 'Idle') return
   if (turn.value._tag === 'Preset' && presets._tag === 'Ok') {
     const selected = resolvePresetChoice(presets.value, turn.value.id, index)
     if (selected._tag === 'Reply') {
-      void present({ _tag: 'Preset', id: selected.id, reply: selected.reply }, 'dialogue', choice)
+      request.value = { _tag: 'PresetPending', next: { _tag: 'Preset', id: selected.id, reply: selected.reply }, text: choice }
+      emit('pending', true)
+      startPreset()
       return
     }
     if (selected._tag === 'Compose') { void compose(); return }
@@ -164,7 +176,7 @@ const back = async () => {
   ownChoice.value?.focus()
 }
 useEventListener('keydown', (event: KeyboardEvent) => {
-  if (!open || mode.value !== 'Choices' || !reply.value || request.value._tag === 'Pending' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+  if (!open || mode.value !== 'Choices' || !reply.value || request.value._tag !== 'Idle' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
   if (event.target instanceof HTMLElement && (event.target.isContentEditable || event.target.closest('input,textarea,select'))) return
   if (event.key === '4') { event.preventDefault(); void compose(); return }
   const choice = reply.value.choices[Number(event.key) - 1]
@@ -187,7 +199,7 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
         <button class="speech-close" type="button" aria-label="Close" @click="emit('close')">×</button>
       </div>
     </header>
-    <div ref="conversation" class="speech-conversation" :class="{ 'speech-more': !arrivedState.bottom }" aria-label="Conversation" :aria-busy="request._tag === 'Pending'">
+    <div ref="conversation" class="speech-conversation" :class="{ 'speech-more': !arrivedState.bottom }" aria-label="Conversation" :aria-busy="request._tag !== 'Idle'">
       <p v-if="reply" class="speech-utterance">{{ reply.text }}</p>
       <p v-if="reply?.beat" class="speech-beat" aria-label="Brundlefly's movement">{{ reply.beat }}</p>
       <div v-if="reply?.links.length" class="speech-links">
@@ -196,10 +208,10 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
       <p v-if="request._tag === 'Pending'" class="speech-pending" role="status">{{ dialogueCopy.loading }}</p>
       <ol v-if="reply && mode === 'Choices'" ref="choiceList" class="speech-choices" aria-label="Your reply">
         <li v-for="(choice, index) in reply.choices" :key="`${index}:${choice}`">
-          <button type="button" :disabled="request._tag === 'Pending'" @click="choose(choice, index)"><span aria-hidden="true">{{ index + 1 }}.</span>{{ choice }}</button>
+          <button type="button" :disabled="request._tag !== 'Idle'" @click="choose(choice, index)"><span aria-hidden="true">{{ index + 1 }}.</span>{{ choice }}</button>
         </li>
         <li>
-          <button ref="ownChoice" class="speech-own" type="button" :disabled="request._tag === 'Pending'" @click="compose"><span aria-hidden="true">4.</span>Your text</button>
+          <button ref="ownChoice" class="speech-own" type="button" :disabled="request._tag !== 'Idle'" @click="compose"><span aria-hidden="true">4.</span>Your text</button>
         </li>
       </ol>
     </div>
@@ -209,8 +221,8 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
       <div class="speech-compose">
         <button v-if="reply" class="speech-back" type="button" @click="back">Back</button>
         <textarea id="speech-input" ref="input" v-model="text" rows="1" maxlength="1000" placeholder="Your text" :aria-invalid="Boolean(error)" :aria-describedby="error ? 'speech-error' : undefined" @input="error = ''" />
-        <button v-if="failedVisit" class="speech-retry" type="button" :disabled="request._tag === 'Pending'" @click="receive('visit')">Try again</button>
-        <button class="speech-send" type="submit" :disabled="request._tag === 'Pending'">Send</button>
+        <button v-if="failedVisit" class="speech-retry" type="button" :disabled="request._tag !== 'Idle'" @click="receive('visit')">Try again</button>
+        <button class="speech-send" type="submit" :disabled="request._tag !== 'Idle'">Send</button>
       </div>
       <p v-if="error" id="speech-error" class="speech-error" role="alert">{{ error }}</p>
     </form>
