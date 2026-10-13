@@ -1,5 +1,18 @@
 # Glossary workflows
 
+## Contents
+
+- The relationship map is mandatory
+  - Read the decision records before drawing
+  - Check every ban against the schema
+  - Watch for the same word on two axes
+- Commit scopes
+- Format
+- Workflows
+  - `init`: bootstrap from an existing codebase
+  - `audit`: find drift
+  - `add <term>`
+
 ## The relationship map is mandatory
 
 A flat list of terms records what each word means on its own. It cannot record what the reader actually needs: **how the terms relate**, and therefore which distinctions are load-bearing and which are drift.
@@ -10,7 +23,7 @@ The map answers four questions a list cannot:
 
 1. **Production**: what makes this thing, and what does it make? A term that is produced by another term is not a synonym for it, however similar the words look.
 2. **Storage and ownership**: which table, which module or layer. Two terms in two tables owned by two teams are two concepts, whatever the UI calls them.
-3. **Cardinality**: 1—1, 1—N, N—N, and whether the constraint is *enforced* (a unique index) or merely conventional. An enforced 1—1 kills entire classes of naming question outright.
+3. **Cardinality**: 1:1, 1:N, N:N, and whether the constraint is *enforced* (a unique index) or merely conventional. An enforced 1:1 kills entire classes of naming question outright.
 4. **Surface crossing**: which customer-facing word each internal term surfaces under. This is where drift lives, and it is invisible in a list because the list has one row per term, not one row per crossing.
 
 **The table is the mandatory part of the map; the diagram is optional.** Filling one `Customer word` cell per row is what exposes a collision, because the column forces you to answer per term and two identical cells are visible at a glance. Draw the diagram on top only when 3 or more terms converge on one word, or a pipeline branches. Use a diagram only when it makes the relationships easier to understand.
@@ -22,12 +35,12 @@ The map answers four questions a list cannot:
 ```md
 | Term | Table | Owner | Cardinality | Customer word |
 | --- | --- | --- | --- | --- |
-| Finding | `findings` | `pro/audit` | Audit 1—N Finding | "issue" |
-| Page Issue | `site_page_issues` | `pro/sites` | Site 1—N, by path | "issue" |
-| Ticket | `sprint_tickets` | `pro/sprint` | Sprint 1—N Ticket | "issue" |
+| Finding | `findings` | `pro/audit` | Audit 1:N Finding | "issue" |
+| Page Issue | `site_page_issues` | `pro/sites` | Site 1:N, by path | "issue" |
+| Ticket | `sprint_tickets` | `pro/sprint` | Sprint 1:N Ticket | "issue" |
 ```
 
-Mark an enforced constraint as enforced: `Site 1—1 Sprint (uniqueIndex)` ends a whole line of questioning that `Site 1—1 Sprint` leaves open.
+Mark an enforced constraint as enforced: `Site 1:1 Sprint (uniqueIndex)` ends a whole line of questioning that `Site 1:1 Sprint` leaves open.
 
 *Library, CLI, or SDK:* a term's switching cost is who imports it, not what stores it. Cardinality is usually a type parameter rather than a constraint, so it earns no column.
 
@@ -48,7 +61,7 @@ Never ask for an ASCII containment tree. A tree cannot render a node with two pa
 
 ### Read the decision records before drawing
 
-**A glossary harvested only from schema and UI will misread deliberate decisions as drift.** This is the single most expensive mistake in this skill. Before writing the map, read `docs/adr/`, `docs/decisions/`, or whatever the project's decision log is called, and grep it for each candidate term.
+**A glossary harvested only from schema and UI will misread deliberate decisions as drift.** This is the single most expensive mistake in this Skill. Before writing the map, read `docs/adr/`, `docs/decisions/`, or whatever the project's decision log is called, and grep it for each candidate term.
 
 An umbrella word that an accepted ADR chose on purpose is a *ratified* umbrella, not accretion, and proposing to "fix" it wastes the user's time and burns credibility. The evidence trail runs: schema says what is stored, UI says what is shown, **the decision log says which of those was chosen and why**. Only the third distinguishes a deliberate collapse from a silent one.
 
@@ -105,9 +118,9 @@ Do not invent the vocabulary. Recover the one already in use, then pick winners.
 
 **Harvest three surfaces separately, and do the customer one first.** A schema is engineering vocabulary. It is evidence of what the team calls things, not of what the product calls them, and it may have drifted from the business names years ago. Starting from tables produces a tidy glossary that quietly contradicts the UI.
 
-0. **Find the glossary that already exists.** Before harvesting anything, grep the repo for an informal one: a Vocabulary, Terminology, Naming, Say/Don't say, or Copy section in `COPY.md`, `CONTEXT.md`, `STYLE.md`, `CONTRIBUTING.md`, `README.md`, or the docs tree. Projects that care about wording usually wrote one down without calling it `GLOSSARY.md`. Missing this ships a third competing list and is the worst outcome this skill can produce. Never silently override a wording decision someone already made, and never write a second list beside an existing one without saying which wins.
+0. **Find the glossary that already exists.** Before harvesting anything, grep the repo for an informal one: a Vocabulary, Terminology, Naming, Say/Don't say, or Copy section in `COPY.md`, `CONTEXT.md`, `STYLE.md`, `CONTRIBUTING.md`, `README.md`, or the docs tree. Projects that care about wording usually wrote one down without calling it `GLOSSARY.md`. Missing this ships a third competing list and is the worst outcome this Skill can produce. Never silently override a wording decision someone already made, and never write a second list beside an existing one without saying which wins.
 
-   **0.5. Decide how you relate to what you found, and record the decision.** Three outcomes, and the skill will not choose for you:
+   **0.5. Decide how you relate to what you found, and record the decision.** Three outcomes, and the Skill will not choose for you:
    - **Point to it**: the existing list is complete and better established than anything you would write. Cite it as authoritative, cover only what it omits, and say so in the intro.
    - **Fold it in**: the existing list is partial or scattered. Move it in verbatim, credit where it came from, and leave a pointer behind in the old file so the two cannot drift.
    - **Supersede it**: the existing list is stale or contradicted by shipped surfaces. Say which entries you are overriding and why, one line each.
@@ -121,7 +134,7 @@ Do not invent the vocabulary. Recover the one already in use, then pick winners.
 6. **Diff the surfaces and lead with the mismatch.** Where they disagree, that table is the most valuable output of `init`, more than the term list. Expect the internal surface to draw distinctions the UI collapses: three tables surfacing under one customer word is the common shape, and one of those words is usually already in a route. Then check the decision log: a ratified umbrella is recorded, never reopened.
 7. Present each cluster with a recommended canonical term and the evidence. **Ask before writing.** Naming is the user's call, not the agent's, and a surface mismatch is a product decision, not a refactor.
 
-   **When you cannot ask** (subagent, non-interactive run, no user present): write the draft anyway and put every decision you would have asked about into `## Open questions`, with its evidence and options. Never silently pick a winner and present the file as settled. Blocking produces nothing; guessing quietly is the failure this whole skill exists to stop.
+   **When you cannot ask** (subagent, non-interactive run, no user present): write the draft anyway and put every decision you would have asked about into `## Open questions`, with its evidence and options. Never silently pick a winner and present the file as settled. Blocking produces nothing; guessing quietly is the failure this whole Skill exists to stop.
 8. Build the map before writing any definitions: the table always, a Mermaid diagram if it earns one. Filling a `Customer word` cell per row is what exposes a collision; a list will not.
 9. Write `GLOSSARY.md` with every rejected variant recorded on the `Never:` line. Where a mismatch is unresolved, record both terms, mark which surface each governs, and put the decision in `## Open questions`. Never resolve it by picking the one that reads better; never ban a word that is still the live customer-facing name for something, and never ban a word the database stores as a value.
 
@@ -140,7 +153,7 @@ User-visible (fix now):
   docs/guide/setup.md:31   "campaign"     -> Sprint
   server/api/sprint.ts:88  throw new Error('batch failed')     -> 'Sprint failed'
 
-Internal identifiers (lower tier, ripast can rename):
+Internal identifiers (lower tier, AST rename):
   lib/queue.ts:12  runBatch()  -> runSprint()
 
 Needs a human read (may be ordinary English):

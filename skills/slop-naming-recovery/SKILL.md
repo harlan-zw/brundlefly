@@ -1,6 +1,6 @@
 ---
 name: slop-naming-recovery
-description: "Find generic technical names that obscure user tasks and propose names grounded in the product domain. Use when vague terms enter code, features, UI copy, or GLOSSARY.md, including implicit names and explicitly approved terms."
+description: "Finds generic technical names that obscure user tasks and proposes names grounded in the product domain. Use when vague terms enter code, features, UI copy, or GLOSSARY.md, including implicit names and explicitly approved terms."
 license: MIT
 ---
 
@@ -17,7 +17,6 @@ Read the target project's instructions, GLOSSARY.md, COPY.md, VISION.md, and nam
 Look for term definitions in other project documents, such as CONTEXT.md, API docs, or decision records.
 Missing GLOSSARY.md does not make a documented name implicit or authorize a new glossary.
 Follow its delivery and approval rules. This Skill owns naming review, not publication or architectural redesign.
-It works without sibling Skills, private services, or a particular rename tool.
 Do not create root documents automatically.
 
 Review documented and implicit names. Consistent canonical terms can still confuse users.

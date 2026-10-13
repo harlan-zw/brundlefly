@@ -2,6 +2,15 @@
 
 Use these checks to reason from behavior. The examples illustrate decisions, not universal replacements.
 
+## Contents
+
+- Test a candidate against its task
+- Worked decisions
+- Evidence and uncertainty
+- Review scenarios
+- Removing a saved display choice
+- Following a measurement into its verdict
+
 ## Test a candidate against its task
 
 Ask whether the name helps this audience predict what the thing contains and what they can do with it.

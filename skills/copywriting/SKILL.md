@@ -1,6 +1,6 @@
 ---
 name: copywriting
-description: "Create or audit COPY.md and write user-visible strings against it. Use before writing marketing copy, UI labels, error messages, empty states, meta tags, or email, and when copy has drifted from the canonical strings."
+description: "Creates or audits COPY.md and writes user-visible strings against it. Use before writing marketing copy, UI labels, error messages, empty states, meta tags, or email, and when copy has drifted from the canonical strings."
 license: MIT
 ---
 
@@ -16,7 +16,7 @@ Keep approved wording exact. If it creates a reading problem, propose a change r
 
 ## Ownership and dependencies
 
-This Skill works when copied alone. Read the target project's instructions before editing.
+Read the target project's instructions before editing.
 Respect its branch, worktree, publication, and approval rules. This Skill does not own delivery.
 Create or audit COPY.md only. Do not create GLOSSARY.md or VISION.md automatically.
 
@@ -28,11 +28,13 @@ Use the approved wording and register. Treat a new canonical string with the sam
 
 ## Boundaries
 
+Copywriting governs **sentences a user reads**: the exact wording, the register per surface, and the banned language.
+A supplied `GLOSSARY.md` governs what a concept is called. `VISION.md` governs what may be claimed.
 Use the target project's supplied document ownership rules.
 When they disagree: `VISION.md` wins over everything, `GLOSSARY.md` wins on a product noun, and
 `COPY.md` wins on the sentence around it.
 
-Read a supplied GLOSSARY.md before naming a concept. Read this Skill before writing a sentence.
+Read a supplied GLOSSARY.md before naming a concept.
 If no glossary exists, preserve established names and ask about new concepts rather than generating another artifact.
 
 ## Rules
@@ -59,7 +61,6 @@ Rule 5 protects wording decisions that nobody has approved yet.
 
 Identify who reads each surface, what they already know, and what they need to understand or do.
 Apply [clarity](references/blocks/clarity.md), including ADHD and dyslexia guidance, before accepting new copy or a proposed correction.
-The block is bundled here. No sibling Skill installation is required.
 Keep labels brief and specific. Put instructions, conditions, and consequences beside the action they explain.
 Explain errors without blame. Give a supported recovery action when one exists.
 Preserve required wording, register, and meaningful links. Recheck canonical assets after editorial changes.
@@ -73,10 +74,3 @@ Use init for a requested missing copy file, audit for drift, and write for a spe
 Ask only about unresolved voice or canonical wording decisions. Existing explicit approval remains valid.
 Preserve approved strings exactly. Prepare proposed wording before requesting approval.
 Review prose directly, or use an available im-not-a-fly Skill optionally. Recheck canonical wording afterward.
-
-## Scope
-
-Copywriting governs **sentences a user reads**: the exact wording, the register per surface, and
-the banned language. It does not govern what a concept is called, which is
-a supplied `GLOSSARY.md`, and it does not govern what may be claimed, which is
-`VISION.md`. When a noun and a sentence disagree, the noun wins.
