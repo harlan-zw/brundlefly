@@ -10,7 +10,10 @@
     "kit:build": "NUXT_APP_BASE_URL=/brand-kit/ nuxt generate apps/brand-kit",
     "postinstall": "nuxt prepare",
     "typecheck": "node scripts/sync-persona.ts && cf workers types && tsc -p tsconfig.worker.json && nuxt typecheck && nuxt typecheck apps/brand-kit",
-    "test": "node scripts/sync-persona.ts && node --test test/*.test.ts",
+    "test": "pnpm presets:check && node --test test/*.test.ts",
+    "presets:serve": "node scripts/sync-persona.ts && vite --config scripts/dialogue-generator.vite.ts",
+    "presets:generate": "node scripts/sync-persona.ts && node scripts/generate-dialogue-presets.ts",
+    "presets:check": "node scripts/sync-persona.ts && node scripts/check-dialogue-presets.ts",
     "preview:cloudflare": "node scripts/sync-persona.ts && node scripts/initialize-local-dialogue.ts && vite --host 127.0.0.1",
     "check": "pnpm test && pnpm typecheck && pnpm build"
   },

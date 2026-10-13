@@ -2,6 +2,7 @@
 
 The Worker serves the static scene and two same-origin APIs.
 `GET /api/visit` assigns an anonymous session's daily ordinal and seeded greeting.
+It includes the opening index so the browser can select the matching precomputed branch.
 `POST /api/dialogue` sends bounded history and text to GPT-6 Luna through AI Gateway.
 
 The configuration declares `AI`, `DIALOGUE_DB`, and `ASSETS` bindings.
@@ -21,3 +22,8 @@ Atomic quota reservations limit daily requests and rapid repeat submissions.
 Gateway logs omit raw dialogue. D1 stores anonymous ordinals and quota records.
 Each visit removes records older than the previous seven UTC dates. Idle deployments retain metadata until another visit.
 Only speech drives the voice. Movement cues remain silent.
+
+The first three selected exchanges resolve from generated public replies in the browser.
+They use no inference quota. Typed messages and deeper branches keep the bounded live API path.
+The maintenance generator uses the same AI request builder and output parser.
+Its loopback entrypoint has only the AI binding and never enters the production build.

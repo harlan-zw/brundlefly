@@ -235,6 +235,24 @@ Before release, evaluate longer conversations, repeated refusals, visitor number
 
 ## Integration with the current site
 
+### Precomputed replies
+
+The first three selected exchanges use precomputed Luna replies.
+Generation uses the canonical prompt and the live request builder, Gateway settings, and parser.
+Speech, movement, mood, visitor choices, and links retain the live reply format.
+The generation context supplies no visitor ordinal. The live greeting keeps its verified count.
+The generated conversation graph stores explicit destinations for each choice.
+Choices requiring visitor text open the existing text field. They never supply invented personal details.
+Typed messages and choices beyond the generated depth use live inference with the recent conversation history.
+
+The request builder limits suggested choices to available dialogue, short lines, listed movements, and supplied links.
+It excludes unsupported scene actions, whole documents, browsing, installation, and Skill execution.
+Review generated options and their replies before publishing the graph.
+The graph check rejects stale source hashes, malformed replies, missing branches, unknown links, and unknown movements.
+The website README documents the local generator and its checkpoint directory.
+
+### Worker and storage
+
 The Worker serves static Nuxt exports and same-origin `/api/dialogue` and `/api/visit` handlers.
 A Workers AI binding routes Luna through the dedicated `brundlefly` AI Gateway.
 The build extracts this system prompt into a server-only module. No provider key reaches the browser.

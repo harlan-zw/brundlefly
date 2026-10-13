@@ -66,6 +66,12 @@ const openings: Opening[] = [
     choices: ['Are you all right?', 'What is this place?', 'I was promised useful Skills.'] },
 ]
 export const openingReply = (count: number): ConversationReply => {
-  const { line, ...opening } = openings[count % openings.length]!
-  return { text: `You're my ${ordinal(count)} visitor today. ${line}`, ...opening, links: [] }
+  const opening = openingSeed(openingIndex(count))
+  return { ...opening, text: `You're my ${ordinal(count)} visitor today. ${opening.text}` }
 }
+export const openingIndex = (count: number) => count % openings.length
+export const openingSeed = (index: number): ConversationReply => {
+  const { line, ...opening } = openings[index]!
+  return { text: line, ...opening, links: [] }
+}
+export const openingSeeds = (): ConversationReply[] => openings.map((_, index) => openingSeed(index))
