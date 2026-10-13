@@ -25,3 +25,10 @@ jobs:
         with:
           node-version: 24
       - run: node scripts/sync-blocks.ts --check
+
+  spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: for skill in skills/*/; do uvx --from skills-ref==0.1.1 agentskills validate "$skill"; done
