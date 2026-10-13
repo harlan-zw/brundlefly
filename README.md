@@ -56,158 +56,61 @@ For text an agent will act on: Markdown files, instructions, docs, and context. 
 
 ### Other Workflow Skills
 
-Each one does a narrower job.
-
-#### [release-notes](https://skilld.dev/gh/harlan-zw/brundlefly/release-notes)
-
-Write or revise release notes from verified changes. Give the reader enough to decide whether to upgrade.
-
-- 🔍 **Important changes first**: predicts reader attention before choosing scope, order, and depth.
-- 🧪 **Checked claims**: verifies consumer changes, migration actions, measurements, and examples.
-- 📤 **Fits the destination**: keeps GitHub concise and links to detail when an article needs more space.
-
-#### [technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide)
-
-Research, write, or refresh a technical guide. I tried the ceiling without testing it first. Learn from me.
-
-- 🧭 **Fits the reader's task**: a tutorial, how-to, reference, or explanation, chosen from what the reader needs.
-- 🧪 **Verified examples**: runs safe examples against current code and official sources, and reports checks it could not run.
-- 🩹 **Small refreshes**: fixes the reader's problem and keeps useful examples, anchors, and voice.
-
-#### [pull-request-summary](https://skilld.dev/gh/harlan-zw/brundlefly/pull-request-summary)
-
-Draft or check a PR description. Reviewers deserve to know what changed. So do I, most mornings.
-
-- 🔎 **Grounded in the diff**: gives reviewers needed context and checks claims against the change and repository conventions.
-- 📋 **Follows your template**: keeps required sections, checklists, and AI disclosures.
-- 📤 **Text only**: returns the description, and your delivery workflow publishes it.
-
-#### [readme](https://skilld.dev/gh/harlan-zw/brundlefly/readme)
-
-Write or refresh a README. Every project should explain why it exists. I'm still working on mine.
-
-- 📖 **Story with a purpose**: researches why the project exists so the reader can understand why it matters.
-- 🛠️ **Checked setup**: reads the source and CLI help before describing a command.
-- 🗺️ **A reader's path**: splash, Why, features, and setup, then guides and API.
-
-#### [glossary](https://skilld.dev/gh/harlan-zw/brundlefly/glossary)
-
-Create or audit GLOSSARY.md. One name per thing. I share mine with the collection.
-
-- 📚 **Clear meanings**: uses familiar terms where possible, explains unfamiliar ones, and keeps one name per concept.
-- 🔗 **Relationship map**: shows how terms relate, which is where ambiguity hides.
-- ✋ **No silent names**: proposes a new term and waits for approval.
-
-#### [copywriting](https://skilld.dev/gh/harlan-zw/brundlefly/copywriting)
-
-Create or audit COPY.md, or write copy against it. Even I follow it.
-
-- 🔒 **Canonical strings**: approved taglines and copy are never paraphrased.
-- 🎚️ **Fits the reader**: a button, an error, and a hero use the wording and context their reader needs.
-- 🚷 **Banned language**: each ban carries its reason, so near misses get caught too.
-
-#### [slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery)
-
-Extend im-part-human with names grounded in what the product helps users do. It also works alone. Names get lost easily. I lost most of mine.
-
-- 🔍 **Product first**: understands the purpose, audience, and user language before reviewing code and glossary names.
-- 🧭 **Names the use case**: proposes names grounded in user tasks, with before-and-after examples and source evidence.
-- ✋ **Easy feedback**: shows numbered glossary changes you can accept, keep, or edit before approved renames.
-
-### Focused blocks
-
-Use a Workflow Skill for a complete task. Use a Block Skill for one focused pass.
-Each workflow includes the blocks it needs, so it still works when installed alone.
-Each block also works as a separate Skill.
-
-| Block Skill | Focus | Used by |
-| --- | --- | --- |
-| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Reader attention, clear wording, reading order, and accessible structure | im-part-human, technical-guide, readme, copywriting, glossary, pull-request-summary, slop-naming-recovery, release-notes |
-| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty | im-part-human, technical-guide, readme, im-not-a-human, pull-request-summary, release-notes |
-| [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results | technical-guide, readme, release-notes |
-
-For example:
-
-```text
-Use claim-fidelity to compare this rewrite with its source. Report changed meaning without editing either passage.
-```
+| Skill | Use |
+| --- | --- |
+| <a id="release-notes"></a>[release-notes](https://skilld.dev/gh/harlan-zw/brundlefly/release-notes) | Write release notes from verified changes and explain required upgrades. |
+| [technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide) | Write or refresh technical guides with verified examples. |
+| [pull-request-summary](https://skilld.dev/gh/harlan-zw/brundlefly/pull-request-summary) | Draft or check a PR description against the diff and template. |
+| [readme](https://skilld.dev/gh/harlan-zw/brundlefly/readme) | Explain a project and verify its setup instructions. |
+| [glossary](https://skilld.dev/gh/harlan-zw/brundlefly/glossary) | Create or audit GLOSSARY.md for consistent names and meanings. |
+| [copywriting](https://skilld.dev/gh/harlan-zw/brundlefly/copywriting) | Create or audit COPY.md and write against its approved wording. |
+| [slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery) | Review names against user tasks and propose clearer terms. |
 
 ## Setup
 
-Start with one Skill for the task in front of you. You can add others later.
-A Skill gives your agent instructions for that task. You choose the text and review the result.
-You do not need to clone this repository.
+From your project's root, install one Skill with [skilld](https://skilld.dev):
 
-For host plugins, jump to [Claude Code](#claude-code-plugin) or [Cursor](#cursor-plugin).
+```sh
+npx skilld install harlan-zw/brundlefly/im-part-human
+```
+
+skilld pins the source commit and detects agent targets.
+To select one, add `--agent codex`, `--agent claude-code`, or `--agent cursor`. Add `--global` for all projects.
+For the collection, run `npx skilld add harlan-zw/brundlefly --all`. To update, run `npx skilld update`.
+
+<details>
+<summary><b>Other setup options</b></summary>
 
 ### Run once
 
-Paste this into your agent. It reads the Skill for this task and installs nothing.
+Give your agent the Skill URL and a task:
 
 ```text
 Read https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human.md and use it to edit docs/intro.md.
 Keep its facts, uncertainty, and my voice. Show me the proposed edit.
 ```
 
-Your agent needs to be able to fetch a web page.
-Replace `docs/intro.md` with your file, or paste a draft in the same message.
-For another Skill, replace `im-part-human` in the URL with a name from [Skills](#skills).
-The page links each supporting file, and your agent fetches one when the Skill needs it.
-Some fetch tools return a summary of a long page. To give your agent the full instructions every time, install the Skill.
-
-### Install with skilld
-
-[skilld](https://skilld.dev) installs a Skill into your project and pins its source commit.
-From your project's root, run:
-
-```sh
-npx skilld install harlan-zw/brundlefly/im-part-human
-```
-
-skilld detects your agent targets. If it cannot, add `--agent codex`, `--agent claude-code`, or `--agent cursor`.
-To use the Skill across projects, add `--global`.
-
-Then ask your agent:
-
-```text
-Use im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
-```
-
-To install the complete collection:
-
-```sh
-npx skilld add harlan-zw/brundlefly --all
-```
-
-The Workflow Skills include the blocks they need. You do not need to install those blocks separately.
-
-To update installed Skills to their latest source commit:
-
-```sh
-npx skilld update
-```
+Your agent needs web access and must fetch supporting files when requested. Replace the file or paste your draft.
+For another Skill, change the name in the URL. Install if your fetch tool summarizes the instructions.
 
 ### Install with skills
 
-The [skills CLI](https://github.com/vercel-labs/skills) from [skills.sh](https://skills.sh) installs Skills straight from GitHub.
-From your project's root, run:
+From your project's root, use the [skills CLI](https://github.com/vercel-labs/skills) from [skills.sh](https://skills.sh):
 
 ```sh
 npx skills add harlan-zw/brundlefly --skill im-part-human
 ```
 
-Leave out `--skill` to choose from the full list. Add `-a codex` or `-a claude-code` to pick an agent, and `-g` to install globally.
+Leave out `--skill` to choose Skills. Add `-a codex` or `-a claude-code` for an agent, or `-g` globally.
 
 ### Claude Code plugin
-
-Install all Workflow Skills and Block Skills as one plugin:
 
 ```text
 /plugin marketplace add harlan-zw/brundlefly
 /plugin install brundlefly@brundlefly
 ```
 
-After installation, name a Skill with its plugin namespace:
+Then name a Skill with its plugin namespace:
 
 ```text
 /brundlefly:im-part-human Edit this draft. Preserve its facts, uncertainty, and voice.
@@ -217,61 +120,61 @@ After installation, name a Skill with its plugin namespace:
 
 In Cursor's Customize panel, choose **From GitHub Repository** and enter `harlan-zw/brundlefly`.
 Install the Brundlefly plugin from the imported marketplace.
-It contains the same Workflow Skills and Block Skills.
 
 ### ChatGPT and Codex plugin
 
-For Codex, use [skilld](#install-with-skilld) or [skills](#install-with-skills) above.
-If you are developing a ChatGPT plugin locally, follow [OpenAI's packaging guide](https://developers.openai.com/plugins/build/plugins).
+Codex uses skilld or skills above. For local ChatGPT plugins, follow [OpenAI's packaging guide](https://developers.openai.com/plugins/build/plugins).
+
+</details>
 
 ## Usage
 
-Tell your agent which text to work on and what must survive the edit.
-With installed Skills, describe the task in plain words. Name a Skill when you want to choose it explicitly.
+Name the text and what must stay. Describe the task, or name an installed Skill:
 
 ```text
 Use im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
-```
-
-For a one-off task, give the agent the Skill's page and your request:
-
-```text
-Read https://skilld.dev/gh/harlan-zw/brundlefly/readme.md and use it to refresh README.md.
-Keep the project story separate from setup. Verify the examples.
 ```
 
 Review the result before publishing it.
 
 ## Guides
 
-### Edit prose without losing your voice
+<details>
+<summary><b>Edit prose without losing your voice</b></summary>
 
-Use im-part-human for a draft or a named file. State what the reader needs and which facts or phrasing must stay.
-Keep supplied personal experience in its author's voice. Separate storytelling from technical instructions.
+Use im-part-human for a draft or file. State the reader's needs and which facts, phrasing, or experience must stay.
 
 ```text
 Use im-part-human on this draft. Keep the personal story, cut filler, and preserve the uncertainty in my claims.
 ```
 
-### Verify a technical guide
+</details>
 
-Use technical-guide to check a tutorial against current code and official sources.
-It uses the target project's tools, runs safe examples, and reports unavailable checks.
+<details>
+<summary><b>Verify a technical guide</b></summary>
+
+Use technical-guide to check current code and official sources. It runs safe examples and reports unavailable checks.
 
 ```text
 Refresh this tutorial against the supported release. Verify its commands and examples.
 ```
 
-### Draft a pull request description
+</details>
 
-Give pull-request-summary the diff, repository conventions, and applicable template.
-It returns the description text, and your delivery workflow publishes it. If you paste the diff and template, it needs no GitHub access.
+<details>
+<summary><b>Draft a pull request description</b></summary>
+
+Supply the diff, repository conventions, and template. The Skill returns text; your delivery workflow publishes it.
+Paste the inputs to use it without GitHub access.
 
 ```text
 Use pull-request-summary to check this description against the diff and template. Return the revised text.
 ```
 
-### Compress text for agents
+</details>
+
+<details>
+<summary><b>Compress text for agents</b></summary>
 
 Use im-not-a-human when agent instructions take too much context.
 Preserve conditions and exceptions, even when they cost tokens.
@@ -280,35 +183,44 @@ Preserve conditions and exceptions, even when they cost tokens.
 Reduce tokens in AGENTS.md. Preserve every rule, exception, and working link.
 ```
 
-### Write a README with a story and useful setup
+</details>
 
-Use readme to explain why the project exists, then give the reader a clear first task.
-Keep the human story in Why and technical detail in its own sections.
+<details>
+<summary><b>Write a README with a story and useful setup</b></summary>
+
+Use readme to explain the project's purpose, then give a clear first task. Keep story and setup separate.
 
 ```text
 Refresh README.md. Ground Why in the supplied project history. Verify setup and make the guides easy to find.
 ```
 
-### Establish names and meanings
+</details>
 
-Use glossary to create or audit GLOSSARY.md.
-It maps concepts to their public names and identifies vocabulary drift. Approve unresolved naming choices before adopting them.
+<details>
+<summary><b>Establish names and meanings</b></summary>
+
+Use glossary to create or audit GLOSSARY.md. Review names and meanings; approve unresolved choices before adopting them.
 
 ```text
 Audit GLOSSARY.md against this repository. Keep established names and propose fixes for any drift.
 ```
 
-### Recover names from user tasks
+</details>
 
-Use slop-naming-recovery when technical labels hide what a feature or code concept means to its users.
-It starts with the product's purpose, audience, and user language, then checks implicit and glossary-approved names.
+<details>
+<summary><b>Recover names from user tasks</b></summary>
+
+Use slop-naming-recovery when technical labels hide a feature's meaning. It reviews names against purpose, audience, and user language.
 
 ```text
 Use slop-naming-recovery to audit this feature's names. Trace artifact and attestation into code and UI.
 Propose names based on user tasks. Show evidence and affected surfaces before renaming.
 ```
 
-### Keep voice and wording consistent
+</details>
+
+<details>
+<summary><b>Keep voice and wording consistent</b></summary>
 
 Use copywriting to create or audit COPY.md, or to write against its approved strings.
 It preserves canonical wording and matches the voice to the surface.
@@ -318,7 +230,10 @@ Neither copywriting nor glossary creates VISION.md or other root documents unles
 Use copywriting to audit COPY.md and the README. Flag changed taglines and mismatched voice before rewriting.
 ```
 
-### Compare writing edits
+</details>
+
+<details>
+<summary><b>Compare writing edits</b></summary>
 
 Read the [writing evaluation](evals/writing/REPORT.md) for comparisons with
 [Humanizer](https://github.com/blader/humanizer/blob/225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8/SKILL.md)
@@ -326,7 +241,10 @@ and [Stop Slop](https://github.com/hardikpandya/stop-slop/blob/8da1f030185bdfe84
 Use the [pilot instructions](evals/writing/README.md) and [review UI setup](evals/writing/ui/README.md) for local comparisons.
 The [quality plan](docs/ideas/skill-quality.md) explains comparison scope and human review requirements.
 
-### Use the brand assets
+</details>
+
+<details>
+<summary><b>Use the brand assets</b></summary>
 
 Use the [README banner](assets/brand/github-banner-overhang-gross.png),
 [GitHub avatar](assets/brand/github-avatar.png), or [social preview](assets/brand/github-social-preview.jpg).
@@ -335,6 +253,23 @@ The [character sheet](assets/brand/character-sheet.png) supplies anatomy referen
 
 High-resolution originals live in assets/source. Earlier concepts live in assets/archive.
 Generation prompts live in assets/prompts.
+
+</details>
+
+## Focused blocks
+
+Workflow Skills bundle the blocks they need. Install a Block Skill for one focused pass.
+See [repository conventions](docs/arch/conventions.md#workflow-skills-and-block-skills) for the bundle map.
+
+| Block Skill | Focus |
+| --- | --- |
+| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Reader attention, clear wording, reading order, and accessible structure. |
+| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty. |
+| [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results. |
+
+```text
+Use claim-fidelity to compare this rewrite with its source. Report changed meaning without editing either passage.
+```
 
 ## Contribute
 
