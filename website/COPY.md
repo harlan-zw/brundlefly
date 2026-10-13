@@ -156,6 +156,7 @@ Oversized input uses “Keep your text under 1,001 characters.”
 Collection, skill, and installation replies reuse the canonical assets above.
 Brand kit replies use “Brand kit” with a link to the kit.
 Luna generates conversational replies and three visitor choices. Replies do not execute a Skill.
+The server supplies the complete Skill catalog and each Skill's purpose. Use that catalog for availability claims.
 The first three selected exchanges reuse Luna's precomputed replies with the same speech, movement, mood, choices, and links.
 Cached replies pause for 200 ms before speech and movement begin.
 Typed messages and later branches use live generation.
