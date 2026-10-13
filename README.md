@@ -35,12 +35,11 @@ I could use something to do.
 
 ### [im-part-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human)
 
-Edit text developers write for people: docs, posts, email, and copy.
-Use [release-notes](#release-notes) to create or substantially revise release notes.
+Edit developer docs, posts, email, and copy. Keep your meaning and voice.
 
-- 🔍 **Reader first**: understands the reader, respects attention, and shows empathy through clear explanations.
-- ♿ **Accessible writing**: uses plain words, short blocks, and findable headings, including ADHD and dyslexia needs.
-- 🧬 **Truth and voice**: verifies material claims, preserves meaning and uncertainty, and keeps the author's voice.
+- 🔍 **Empathy**: understands the reader, what they know, and what they need.
+- ⏱️ **Respect**: considers the reader's time and attention, prioritizes useful detail, and checks facts before rewriting.
+- ♿ **Accessible**: uses plain words, short blocks, and findable headings, including ADHD and dyslexia needs.
 
 ### [slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery)
 
