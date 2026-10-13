@@ -1,6 +1,6 @@
 ---
 name: clarity
-description: "Reviews text for clear wording, useful order, and accessible structure. Use for a focused clarity pass without changing claims, voice, or the document's purpose."
+description: "Reviews and repairs text that is hard to follow: unclear wording, buried answers, dense paragraphs, and structure that is hard to scan, including for readers with ADHD or dyslexia. Use whenever someone asks to make a passage clearer, easier to scan, or answer-first without changing its claims or voice."
 license: MIT
 ---
 

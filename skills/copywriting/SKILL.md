@@ -1,6 +1,6 @@
 ---
 name: copywriting
-description: "Creates or audits COPY.md and writes user-visible strings against it. Use before writing marketing copy, UI labels, error messages, empty states, meta tags, or email, and when copy has drifted from the canonical strings."
+description: "Writes user-visible product strings against COPY.md, and creates or audits that file. Use whenever someone asks for UI copy such as a button label, error message, toast, empty state, or meta description, for marketing copy, or for a check that product descriptions have drifted apart."
 license: MIT
 ---
 

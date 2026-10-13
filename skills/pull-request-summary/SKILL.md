@@ -1,6 +1,6 @@
 ---
 name: pull-request-summary
-description: "Drafts, edits, or checks pull request description text against the actual change and repository conventions. Use before publishing a PR body, when its scope changes, or as the description gate inside a delivery Skill."
+description: "Drafts, revises, or checks a pull request description against the actual diff and the repository's template. Use whenever someone asks for a PR description or body, wants one updated after the scope changed, or wants it checked before publishing, including inside a delivery Skill."
 license: MIT
 ---
 

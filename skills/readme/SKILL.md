@@ -1,6 +1,6 @@
 ---
 name: readme
-description: "Creates or refreshes a repository README with a splash, project story, supported positioning, features, setup, and relevant guides or API reference. Use when writing a README, explaining why a project exists or why to adopt it, or aligning its documentation with repository conventions."
+description: "Creates or refreshes a repository README: splash, project story, supported positioning, features, verified setup, and guides or API reference. Use whenever someone asks to write a README, explain why to adopt a project, or fix an outdated README section such as install or quickstart steps."
 license: MIT
 ---
 

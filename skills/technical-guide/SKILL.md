@@ -1,6 +1,6 @@
 ---
 name: technical-guide
-description: "Researches, writes, verifies, or refreshes technical guides against current code and official sources. Use for tutorials, how-to guides, developer documentation, or stale instructions that need working examples."
+description: "Writes, verifies, or refreshes technical guides: tutorials, how-to guides, and developer documentation, checked against current code and official sources. Use whenever someone asks for a tutorial or how-to, asks to document how developers do a task, or asks to update stale docs, even when the guide looks short."
 license: MIT
 ---
 
