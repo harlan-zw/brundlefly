@@ -16,3 +16,9 @@ test('model replies resolve only known links and reject malformed choices or mar
 test('server greetings render correct visitor ordinals', () => {
   for (const [count, word] of [[1, '1st'], [2, '2nd'], [3, '3rd'], [11, '11th'], [12, '12th'], [13, '13th'], [21, '21st'], [112, '112th']] as const) assert.match(openingReply(count).text, new RegExp(` ${word} visitor`))
 })
+test('every server greeting passes the same checks as a model reply', () => {
+  for (let count = 1; count <= 12; count++) {
+    const greeting = openingReply(count)
+    assert.equal(parseDialogueReply({ speech: greeting.text, beat: greeting.beat, mood: greeting.mood, choices: greeting.choices, linkIds: [] })._tag, 'Ok', greeting.text)
+  }
+})

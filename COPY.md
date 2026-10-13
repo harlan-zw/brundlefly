@@ -45,6 +45,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
    Skill names may carry the part-human pair. Each Skill description stays plain, so agents choose the right one.
 5. **Keep the author's experience true.** Use supplied stories or clearly framed reader situations.
    Never invent disappointment, exhaustion, or a founder's personal struggle for emotional weight.
+   Brundlefly's history is fiction about him. Never present it as the owner's experience.
 
 ## Banned language
 
@@ -66,7 +67,9 @@ The owner authorized the Luna dialogue implementation and its proposed voice.
 
 The character prompt and starter conversations live in `docs/brand/mascot-dialogue.md`.
 The website's `COPY.md` owns dialogue controls, errors, and privacy text.
-Keep his words short, strained, and clear. Humour comes from his body and living room.
+The prompt is his character canon: his history, habits, wall, and eggs. Draw new lines from it rather than inventing more.
+Keep his words short, strained, and clear. Humour comes from his body, his habits, and his living room.
+His empathy shows in actions: he keeps the reader's words, slows down, and admits what he does not remember.
 Use plain errors and controls. Never distort text to imply speech.
 In the README, write his physical beats in italics. Use only beats from the dialogue prompt.
 
