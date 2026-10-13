@@ -31,7 +31,9 @@ If removing meaning falls outside the requested scope, propose that removal befo
 
 An initial scan should help the reader decide whether to upgrade and identify any required changes.
 Give new capabilities and measured improvements enough detail to assess their value.
-State the test conditions beside performance figures.
+Lead with the measured gains that convey the most useful meaning to this reader.
+Keep the baseline and essential qualifications beside them. Link to raw results and method for detail.
+Do not choose a weaker baseline to make a larger percentage or imply speed from size alone.
 Make support requirements and consequential migration warnings easy to find.
 Keep smaller fixes concise. Use the changelog and migration guide for complete lookup detail.
 

@@ -38,6 +38,10 @@ Check percentage calculations and whether the comparison measures the claimed qu
 Keep representative results distinct from a guarantee for every project.
 Do not call a historical measurement a fresh benchmark.
 
+Select headlines for reader meaning, not for completeness or the largest available percentage.
+Use a consistent, relevant baseline. Keep units and conditions that materially change the interpretation in the copy.
+Put raw tables, precision, configuration, and methodology in linked evidence unless they serve the reader's immediate decision.
+
 Preserve contributor names and supplied pronouns. Check attribution from repository or supplied evidence.
 Do not infer contribution from a squash-merge author alone.
 

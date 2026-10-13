@@ -52,7 +52,11 @@ Do not repeat the same feature in the introduction, highlights, upgrade section,
 Repeat only the condition or warning needed at the point of action.
 
 Keep exact versions, package names, commands, links, attribution, and meaningful qualifications.
-Put test conditions beside performance figures. Distinguish measured outcomes from expected benefits.
+Lead with the few measured gains that best explain the improvement to this reader.
+Prefer a clear headline over raw tables, decimal precision, and methodology in the main notes.
+Keep the baseline and any condition that changes the claim's meaning beside the headline.
+Link to benchmarks for raw results and method. Do not choose a weaker baseline just to make a larger percentage.
+Distinguish measured outcomes from expected benefits. A smaller bundle alone does not prove faster page loads.
 Describe supported before-and-after behavior instead of generic praise or promises.
 Never invent an author's experience, feelings, or team membership to make the prose sound personal.
 
