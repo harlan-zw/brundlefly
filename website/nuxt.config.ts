@@ -16,7 +16,7 @@ export default defineNuxtConfig({
         { property: 'og:description', content: 'Self-contained Agent Skills focused on empathy and accessibility in writing.' },
         { property: 'og:type', content: 'website' },
         { property: 'og:url', content: 'https://brundlefly.dev/' },
-        { property: 'og:image', content: 'https://brundlefly.dev/brand/github-banner-overhang-gross.png' },
+        { property: 'og:image', content: 'https://brundlefly.dev/brand/github-social-preview.jpg' },
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/brand/github-avatar.png' },

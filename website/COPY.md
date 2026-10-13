@@ -27,6 +27,7 @@ Do not add a promotional slogan.
 | readme | Write a README that explains why the project matters and helps the reader complete a first task. |
 | glossary | Create or audit GLOSSARY.md so readers can understand product terms and their meanings. |
 | copywriting | Create or audit COPY.md, then write consistent copy around what the reader knows and needs. |
+| slop-naming-recovery | Extend im-part-human with names grounded in what the product helps users do. It also works alone. |
 | clarity | Review wording, reading order, and accessibility, including ADHD and dyslexia needs, while preserving claims and voice. |
 | claim-fidelity | Compare a rewrite with its source for changed claims, conditions, uncertainty, and attribution. |
 | verify-examples | Check runnable documentation examples against their stated setup and promised outcomes. |
