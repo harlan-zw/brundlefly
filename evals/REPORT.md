@@ -21,7 +21,7 @@ These counts use the revised pass, where all editors receive fresh judgments und
 Original editor outputs stay fixed. The revised skill gets one fresh generation for each case.
 Identical outputs share one judgment within each pass.
 
-write-human is now im-not-a-fly. Editor IDs keep the name used when each run happened.
+write-human, later im-not-a-fly, is now im-part-human. Editor IDs keep the name used when each run happened.
 
 | Editor | All five checks, development | All five checks, held aside | Point preservation check |
 | --- | --- | --- | --- |

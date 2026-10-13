@@ -1,14 +1,13 @@
 ---
 name: readme
-description: "Create or refresh a repository README with a splash, project story, supported positioning, features, setup, and relevant guides or API reference. Use when writing a README, explaining why a project exists or why to adopt it, or aligning its documentation with repository conventions."
+description: "Creates or refreshes a repository README with a splash, project story, supported positioning, features, setup, and relevant guides or API reference. Use when writing a README, explaining why a project exists or why to adopt it, or aligning its documentation with repository conventions."
 license: MIT
 ---
 
 # README
 
 Help a reader decide whether the project fits, then complete its first useful task.
-This skill works without a sibling skill or personal checkout.
-If im-not-a-fly is available, use it for the final prose review.
+If im-part-human is available, use it for the final prose review.
 It is optional; do not install it automatically.
 
 ## Inspect the project
@@ -55,7 +54,7 @@ Name relevant alternatives and connect the author's supported choice to the read
 Shared goals are legitimate. Do not invent failed trials, missing features, or superiority to justify building something.
 Put capability lists in Features and usage details in Setup or Guides.
 Keep story and technical detail in separate sections. Review their purposes separately.
-If using im-not-a-fly, request storytelling for Why and clear technical explanation for the task and reference sections.
+If using im-part-human, request storytelling for Why and clear technical explanation for the task and reference sections.
 When working alone, keep the same boundary: connect supported origins in Why; state prerequisites and actions directly in Setup.
 Never carry narrative suspense or character arcs into instructions. Never bury a required step in the story.
 Keep approved adoption reasons and useful evidence links. Removing filler must not erase their information.
@@ -77,11 +76,11 @@ Explain that choice briefly in the handoff. Do not invent abstract benefits or a
 Give setup commands a working directory and explain their expected result.
 Use the project's package manager and documented runtime.
 Show one common path before alternatives. Identify optional tools where they appear.
-For a skill collection, show how to load or copy a complete skill and give an example request.
+For a Skill collection, show how to load or copy a complete Skill and give an example request.
 Lead with installing the collection, then asking for a task in natural language.
-Explain that the agent matches installed descriptions to the task. Keep explicit skill selection as an optional override.
+Explain that the agent matches installed descriptions to the task. Keep explicit Skill selection as an optional override.
 Check the host's discovery behavior before promising automatic activation. Do not present standard discovery as a unique feature.
-Check for an existing destination before copying. Avoid nesting or replacing an installed skill without the reader's choice.
+Check for an existing destination before copying. Avoid nesting or replacing an installed Skill without the reader's choice.
 Do not invent a runtime API for a Markdown-only collection.
 
 Decide guides and API coverage separately. A docs directory alone proves neither exists.
@@ -96,7 +95,6 @@ Apply [clarity](references/blocks/clarity.md) to the technical sections, preserv
 Use [verify examples](references/blocks/verify-examples.md) for runnable setup and usage examples.
 Apply [claim fidelity](references/blocks/claim-fidelity.md) against supplied wording and inspected evidence after edits.
 For a new README, compare claims with the evidence notes rather than assuming an earlier draft exists.
-These blocks are bundled here. No sibling Skill installation is required.
 
 Use plain words and direct sentences. Preserve required sections and the chosen feature presentation.
 Keep product names, approved copy, commands, and links exact unless evidence supports a correction.

@@ -2,8 +2,8 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 
 // These copies let every workflow work without sibling Skills installed.
 const consumers = {
-  clarity: ['im-not-a-fly', 'technical-guide', 'readme', 'copywriting', 'glossary', 'pull-request-summary', 'slop-naming-recovery'],
-  'claim-fidelity': ['im-not-a-fly', 'technical-guide', 'readme', 'im-a-fly', 'pull-request-summary'],
+  clarity: ['im-part-human', 'technical-guide', 'readme', 'copywriting', 'glossary', 'pull-request-summary', 'slop-naming-recovery'],
+  'claim-fidelity': ['im-part-human', 'technical-guide', 'readme', 'im-not-a-human', 'pull-request-summary'],
   'verify-examples': ['technical-guide', 'readme'],
 } as const
 

@@ -1,13 +1,13 @@
 ---
 name: clarity
-description: Review text for clear wording, useful order, and accessible structure. Use for a focused clarity pass without changing claims, voice, or the document's purpose.
+description: "Reviews text for clear wording, useful order, and accessible structure. Use for a focused clarity pass without changing claims, voice, or the document's purpose."
 license: MIT
 ---
 
 # Clarity
 
 Help the intended reader find the point and understand the next action.
-This block reviews wording and structure. It does not run a full style rewrite or verify factual truth.
+This pass reviews wording and structure. It does not run a full style rewrite or verify factual truth.
 Follow the target's instructions, terminology, canonical wording, and requested output format.
 Installing this Skill does not authorize publication or unrelated edits.
 

@@ -1,6 +1,6 @@
 # Research and design
 
-Research reviewed on 2026-10-04. These sources motivate the design; they do not validate this skill.
+Research reviewed on 2026-10-04. These sources motivate the design; they do not validate this Skill.
 
 ## Decision
 
@@ -8,7 +8,7 @@ Use conservative semantic rewriting with a bidirectional meaning audit for edita
 Keep exact spans and structural relationships intact. Measure tokens with the intended reader's tokenizer.
 Accept smaller savings when further cuts change a fact, rule, or decision.
 
-This recommendation is an engineering inference from the research and the skill's requirements.
+This recommendation is an engineering inference from the research and the Skill's requirements.
 No cited study establishes a universally best compressor for arbitrary Markdown instructions.
 
 ## Evidence
@@ -24,7 +24,7 @@ The method improves benchmark performance and efficiency relative to earlier app
 Token retention still requires task-specific evaluation when exact constraints matter.
 
 Implication: word rarity or perplexity alone is insufficient justification for deleting a rule or qualifier.
-Do not require a trained compressor for this portable Markdown skill.
+Do not require a trained compressor for this portable Markdown Skill.
 
 ### Semantic rewriting
 
@@ -45,7 +45,7 @@ Implication: a smaller document or a correct answer to one question cannot prove
 
 [Separating Constraint Compliance from Semantic Accuracy, December 2025 preprint](https://arxiv.org/abs/2512.17920) evaluates those dimensions separately.
 It reports different effects of compression on constraint compliance and semantic accuracy in its experimental setup.
-Treat its conclusions as provisional. Do not generalize its numerical results to this skill.
+Treat its conclusions as provisional. Do not generalize its numerical results to this Skill.
 Implication: verify allowed actions, exceptions, and obligations separately from factual answers.
 
 ### Context organization
@@ -77,7 +77,7 @@ Keep the core instructions short and load detailed checks or research only when 
 ## Evaluation limits
 
 The worked examples are review fixtures, not independent model trials.
-Do not reuse a paper's compression ratio as this skill's performance claim.
+Do not reuse a paper's compression ratio as this Skill's performance claim.
 Before making comparative claims, test unseen documents with the intended reader models.
 Include dense files, long procedures, exceptions, multilingual text, and protected Markdown constructs.
 Score factual answers, instruction decisions, unsupported additions, structural integrity, and measured token reduction separately.

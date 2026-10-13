@@ -1,6 +1,6 @@
 ---
 name: technical-guide
-description: "Research, write, verify, or refresh technical guides against current code and official sources. Use for tutorials, how-to guides, developer documentation, or stale instructions that need working examples."
+description: "Researches, writes, verifies, or refreshes technical guides against current code and official sources. Use for tutorials, how-to guides, developer documentation, or stale instructions that need working examples."
 license: MIT
 ---
 
@@ -102,7 +102,6 @@ Use exact names and stated pronouns; otherwise use a username or singular they.
 For runnable examples, apply [verify examples](references/blocks/verify-examples.md).
 Use [clarity](references/blocks/clarity.md) for the editorial review.
 After prose edits, apply [claim fidelity](references/blocks/claim-fidelity.md) against the draft and inspected evidence.
-These blocks are bundled here. No sibling Skill installation is required.
 
 For procedural content, run safe examples from the documented starting state when the environment permits.
 Use the actual documented commands and record their results.
@@ -149,7 +148,6 @@ If publication is authorized, check contribution rules for restrictions on AI-au
 If those rules prohibit the contribution, stop publication and tell the operator.
 Include an early plain authorship sentence naming the operator and actual human review state in a public artifact.
 Ask before publication if either is unknown. Never claim review from an intention to review later.
-This skill needs no sibling skills or private infrastructure.
 
 ## Background
 

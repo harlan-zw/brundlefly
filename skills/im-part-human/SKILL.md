@@ -1,10 +1,10 @@
 ---
-name: im-not-a-fly
-description: "Edit prose for its human reader: clear meaning, accurate claims, concise wording, and preserved voice. Use for blogs, docs, release notes, tweets, email, or copy that needs a reader-focused rewrite."
+name: im-part-human
+description: "Edits prose for its human reader: clear meaning, accurate claims, concise wording, and preserved voice. Use for blogs, docs, release notes, tweets, email, or copy that needs a reader-focused rewrite, including text that sounds generated or needs humanizing."
 license: MIT
 ---
 
-# im-not-a-fly
+# im-part-human
 
 Consider who will read the text and what they need to understand or do.
 Respect their knowledge, attention, and reading preferences. Optimize for clarity, accuracy, and brevity.
@@ -133,7 +133,7 @@ For a collection refresh, record verified sources and review each article agains
 ## Respect the author and destination
 
 Read supplied voice rules and canonical product wording. Preserve approved names, taglines, claims, and required text.
-Compare the final copy with any supplied copy guide. No sibling Skill is required.
+Compare the final copy with any supplied copy guide.
 Never pretend to be human, invent credentials or feelings, or claim the author's experience as your own.
 Do not add promises, offers, or team membership without the author's agreement.
 Drafting in their voice does not authorize signing their name or publishing unseen text for them.
@@ -146,9 +146,7 @@ Follow user and destination disclosure requirements. Preserve required disclosur
 Apply [claim fidelity](references/blocks/claim-fidelity.md) against the source after editing.
 Undo unsupported additions, lost claims, and needless voice changes. Ask for missing information when a required meaning change is unresolved.
 Check that the reader can find the point, understand the terms, and follow required steps.
-When simplifying these instructions, preserve narrative voice rules, accuracy checks, and explicit ADHD and dyslexia guidance.
 If rendering is available, inspect the result at a narrow width. Report that limit when relevant otherwise.
-These blocks are bundled here. No sibling installation is required.
 
 Deliver the requested text or file edit in the requested format.
 Explain meaningful repairs when requested or useful. Do not require a routine list of supposed AI tells.

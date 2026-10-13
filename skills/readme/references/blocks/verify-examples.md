@@ -1,13 +1,13 @@
 ---
 name: verify-examples
-description: Check documentation examples against their stated setup and promised outcomes. Use for commands, code, or configuration that readers should be able to run, without rewriting the whole guide.
+description: "Checks documentation examples against their stated setup and promised outcomes. Use for commands, code, or configuration that readers should be able to run, without rewriting the whole guide."
 license: MIT
 ---
 
 # Verify examples
 
 Check a reader's runnable examples against the documented starting state and promised result.
-This block owns example verification and requested repairs. It does not write or review the whole guide.
+This pass owns example verification and requested repairs. It does not write or review the whole guide.
 Follow the target's instructions, supported version, package manager, and documented checks.
 
 ## Establish the example contract

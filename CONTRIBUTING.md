@@ -3,7 +3,13 @@
 Each skill lives at skills/name/SKILL.md.
 Use lowercase letters, numbers, and single hyphens in its name.
 The frontmatter name must match its directory.
-Include a description stating what it does and when to use it.
+Write the description in third person: what the Skill does, then when to use it.
+
+Keep SKILL.md under 500 lines. Move detailed material into references.
+Link each reference directly from SKILL.md. Do not build chains of references.
+Give a reference file over 100 lines a Contents list after its introduction.
+Keep packaging facts out of Skill instructions. This file and the repository conventions record them.
+When simplifying im-part-human, preserve narrative voice rules, accuracy checks, and explicit ADHD and dyslexia guidance.
 
 Bundle required references, scripts, and templates inside the skill directory.
 Keep optional tool requirements explicit.
@@ -22,6 +28,7 @@ Never edit the generated files in references/blocks by hand.
 Run `node scripts/sync-blocks.ts --check` before submission. CI checks the same copies.
 When a block needs supporting files, extend the bundling step before adding dependent references.
 
+Validate each Skill against the specification with `uvx --from skills-ref agentskills validate skills/<name>`.
 Check local loading with skilld run and inspect the returned metadata and instructions.
 For writing skills, review rewrites for changed facts, scope, uncertainty, and voice.
 Prefer real before-and-after examples over word-count or file-shape assertions.

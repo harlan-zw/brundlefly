@@ -22,10 +22,10 @@ The initial blocks are self-contained Markdown. Add supporting-file bundling bef
 
 | Workflow Skill | Bundled Block Skills |
 | --- | --- |
-| im-not-a-fly | clarity, claim-fidelity |
+| im-part-human | clarity, claim-fidelity |
 | technical-guide | clarity, claim-fidelity, verify-examples |
 | readme | clarity, claim-fidelity, verify-examples |
-| im-a-fly | claim-fidelity |
+| im-not-a-human | claim-fidelity |
 | pull-request-summary | clarity, claim-fidelity |
 | copywriting | clarity |
 | glossary | clarity |
@@ -50,14 +50,14 @@ This follows [Hyperframes' packaging](https://github.com/heygen-com/hyperframes/
 adapted to [OpenAI's portable format](https://developers.openai.com/plugins/build/plugins)
 and [Cursor's repository import](https://cursor.com/docs/reference/plugins).
 
-im-not-a-fly adapts the owner's humanize-writing instructions.
+im-part-human adapts the owner's humanize-writing instructions.
 Its personal skill links are replaced by self-contained source and copy-review rules.
 It preserves the upstream MIT notice in its own directory.
 
 readme owns README structure, positioning, and reader-path checks.
 It carries its own positioning reference and a short writing checklist.
-It can use an available im-not-a-fly skill for a prose review, without requiring it.
-Keep readme's positioning reference separate from im-not-a-fly's instructions and references.
+It can use an available im-part-human skill for a prose review, without requiring it.
+Keep readme's positioning reference separate from im-part-human's instructions and references.
 
 The optional Nuxt website lives in website, outside the installable skill directories.
 It has its own dependency graph and Cloudflare deployment workflow.

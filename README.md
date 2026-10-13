@@ -25,7 +25,7 @@ I'm stuck in this cave, tending my eggs. I could use something to do.
 
 ## Skills
 
-### [im-not-a-fly](https://skilld.dev/gh/harlan-zw/brundlefly/im-not-a-fly)
+### [im-part-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human)
 
 For text a person will read: blogs, docs, release notes, tweets, email, or copy. The name is aspirational.
 Empathy and accessibility guide the edit. Aim for clarity, accuracy, and brevity without losing needed context.
@@ -36,7 +36,7 @@ Empathy and accessibility guide the edit. Aim for clarity, accuracy, and brevity
 - 📖 **Meaning through story**: keeps storytelling when it helps understanding and connection; keeps instructions direct.
 - ♿ **ADHD and dyslexia**: uses plain words, short blocks, and findable headings; respects stated reading preferences.
 
-### [im-a-fly](https://skilld.dev/gh/harlan-zw/brundlefly/im-a-fly)
+### [im-not-a-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-not-a-human)
 
 For text an agent will act on: Markdown files, instructions, docs, and context. No arguments there.
 
@@ -91,7 +91,7 @@ Create or audit COPY.md, or write copy against it. Even I follow it.
 
 #### [slop-naming-recovery](skills/slop-naming-recovery/SKILL.md)
 
-Extend im-not-a-fly with names grounded in what the product helps users do. It also works alone.
+Extend im-part-human with names grounded in what the product helps users do. It also works alone.
 
 - 🔍 **Product first**: understands the purpose, audience, and user language before reviewing code and glossary names.
 - 🧭 **Names the use case**: proposes names grounded in user tasks, with before-and-after examples and source evidence.
@@ -105,8 +105,8 @@ Each block also works as a separate Skill.
 
 | Block Skill | Focus | Used by |
 | --- | --- | --- |
-| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Clear wording, reading order, and accessible structure | im-not-a-fly, technical-guide, readme, copywriting, glossary, pull-request-summary, slop-naming-recovery |
-| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty | im-not-a-fly, technical-guide, readme, im-a-fly, pull-request-summary |
+| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Clear wording, reading order, and accessible structure | im-part-human, technical-guide, readme, copywriting, glossary, pull-request-summary, slop-naming-recovery |
+| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty | im-part-human, technical-guide, readme, im-not-a-human, pull-request-summary |
 | [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results | technical-guide, readme |
 
 For example:
@@ -131,7 +131,7 @@ Then paste this request into your agent:
 
 ```text
 Run this command:
-skilld run harlan-zw/brundlefly/im-not-a-fly --json
+skilld run harlan-zw/brundlefly/im-part-human --json
 Then use those instructions to edit docs/intro.md.
 Keep its facts, uncertainty, and my voice. Show me the proposed edit.
 ```
@@ -146,18 +146,18 @@ Review the proposed edit before keeping it.
 If you want the Skill available in later sessions, run this from your project's root:
 
 ```sh
-skilld install harlan-zw/brundlefly/im-not-a-fly
+skilld install harlan-zw/brundlefly/im-part-human
 ```
 
 skilld installs into the current project and detects your agent targets.
 If it cannot detect your agent, select it with `--agent codex`, `--agent claude-code`, or `--agent cursor`.
 To use the Skill across projects, add `--global`.
-Replace `im-not-a-fly` with another name from [Skills](#skills) for a different task.
+Replace `im-part-human` with another name from [Skills](#skills) for a different task.
 
 Then ask your agent:
 
 ```text
-Use im-not-a-fly to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
+Use im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
 ```
 
 If you want the whole collection, install all eleven Skills:
@@ -180,7 +180,7 @@ Install all Workflow Skills and Block Skills as one plugin:
 After installation, name a Skill with its plugin namespace:
 
 ```text
-/brundlefly:im-not-a-fly Edit this draft. Preserve its facts, uncertainty, and voice.
+/brundlefly:im-part-human Edit this draft. Preserve its facts, uncertainty, and voice.
 ```
 
 ### Cursor plugin
@@ -200,7 +200,7 @@ Tell your agent which text to work on and what must survive the edit.
 With installed Skills, describe the task in plain words. Name a Skill when you want to choose it explicitly.
 
 ```text
-Use im-not-a-fly to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
+Use im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
 ```
 
 For a one-off task, give the agent both the load command and your request:
@@ -219,11 +219,11 @@ Review the result before publishing it.
 
 ### Edit prose without losing your voice
 
-Use im-not-a-fly for a draft or a named file. State what the reader needs and which facts or phrasing must stay.
+Use im-part-human for a draft or a named file. State what the reader needs and which facts or phrasing must stay.
 Keep supplied personal experience in its author's voice. Separate storytelling from technical instructions.
 
 ```text
-Use im-not-a-fly on this draft. Keep the personal story, cut filler, and preserve the uncertainty in my claims.
+Use im-part-human on this draft. Keep the personal story, cut filler, and preserve the uncertainty in my claims.
 ```
 
 ### Verify a technical guide
@@ -246,7 +246,7 @@ Use pull-request-summary to check this description against the diff and template
 
 ### Compress text for agents
 
-Use im-a-fly when agent instructions take too much context.
+Use im-not-a-human when agent instructions take too much context.
 Preserve conditions and exceptions, even when they cost tokens.
 
 ```text

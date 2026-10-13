@@ -1,6 +1,6 @@
 ---
 name: glossary
-description: "Create or audit GLOSSARY.md. Use before naming product concepts, writing user-visible terms, renaming concepts, or checking vocabulary drift and banned terms."
+description: "Creates or audits GLOSSARY.md. Use before naming product concepts, writing user-visible terms, renaming concepts, or checking vocabulary drift and banned terms."
 license: MIT
 ---
 
@@ -15,7 +15,7 @@ Use one established term for each concept. Consistency alone does not prove the 
 
 ## Ownership and dependencies
 
-This Skill works when copied alone. Read the target project's instructions before editing.
+Read the target project's instructions before editing.
 Respect its branch, worktree, publication, and approval rules. This Skill does not own delivery.
 Create or audit GLOSSARY.md only. Do not create COPY.md or VISION.md automatically.
 
@@ -42,7 +42,6 @@ Rule 4 protects naming decisions that nobody has approved yet.
 Identify who uses each term and which distinctions they need to understand.
 Explain unfamiliar concepts in plain words. Show their relationships and actual use without circular definitions or new synonyms.
 Apply [clarity](references/blocks/clarity.md), including ADHD and dyslexia guidance, to definitions and relationship explanations.
-The block is bundled here. No sibling Skill installation is required.
 Keep map labels, table cells, and definitions easy to scan. Retain complete relationships and exact public identifiers.
 Preserve established names and casing. If a name confuses readers, show the problem and propose a change for approval.
 Do not rename public surfaces or remove required maps to make the glossary shorter.
@@ -59,6 +58,6 @@ Keep unresolved choices in Open questions. Do not silently make them canonical.
 
 ## Scope
 
-Glossary governs **nouns for product concepts**: what a thing is called. It does not govern voice, tone, or sentence style. A supplied `COPY.md` owns those. Read it directly; no sibling Skill is required. When they disagree on a product noun, the glossary wins; on the sentence around it, `COPY.md` wins.
+Glossary governs **nouns for product concepts**: what a thing is called. It does not govern voice, tone, or sentence style. A supplied `COPY.md` owns those. Read it directly. When they disagree on a product noun, the glossary wins; on the sentence around it, `COPY.md` wins.
 
 A term list found inside a `COPY.md` belongs here, not there. Step 0 of `init` already greps for one; fold it in and leave a pointer behind.
