@@ -6105,5 +6105,19 @@
         }
       ]
     }
+  ],
+  "catalog": [
+    "brand-kit",
+    "im-part-human",
+    "technical-guide",
+    "pull-request-summary",
+    "im-not-a-human",
+    "readme",
+    "glossary",
+    "copywriting",
+    "slop-naming-recovery",
+    "clarity",
+    "claim-fidelity",
+    "verify-examples"
   ]
 }

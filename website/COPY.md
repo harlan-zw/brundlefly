@@ -159,6 +159,7 @@ Luna generates conversational replies and three visitor choices. Replies do not 
 The first three selected exchanges reuse Luna's precomputed replies with the same speech, movement, mood, choices, and links.
 Cached replies pause for 200 ms before speech and movement begin.
 Typed messages and later branches use live generation.
+If the Skill catalog changes, replies with Skill links use live generation until their presets are regenerated.
 Choices that require the visitor's own writing or personal details open “Your text”.
 Never supply an invented sentence or personal fact as a visitor choice.
 The fourth choice is “Your text”. It opens the text field. “Back” returns to the choices.

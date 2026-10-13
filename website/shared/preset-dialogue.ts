@@ -1,9 +1,9 @@
-import { parseDialogueReply } from './conversation.ts'
+import { linkIds, parseDialogueReply } from './conversation.ts'
 import type { ConversationReply, Result } from './conversation.ts'
 
 export type PresetTarget = { _tag: 'Reply'; id: string } | { _tag: 'Compose' } | { _tag: 'Live' }
 export type PresetNode = { id: string; reply: ConversationReply; targets: [PresetTarget, PresetTarget, PresetTarget] }
-export type PresetGraph = { sourceHash: string; depth: number; model: string; roots: string[]; nodes: ReadonlyMap<string, PresetNode> }
+export type PresetGraph = { sourceHash: string; catalog: string[]; depth: number; model: string; roots: string[]; nodes: ReadonlyMap<string, PresetNode> }
 export type PresetSelection = { _tag: 'Reply'; id: string; reply: ConversationReply } | { _tag: 'Compose' } | { _tag: 'Live'; text: string } | { _tag: 'Unavailable' }
 export type ConversationTurn = { _tag: 'Empty' } | { _tag: 'Generated'; reply: ConversationReply } | { _tag: 'Preset'; id: string; reply: ConversationReply }
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -12,6 +12,7 @@ const fail = (message: string): Result<PresetGraph> => ({ _tag: 'Err', message }
 
 export const parsePresetGraph = (value: unknown): Result<PresetGraph> => {
   if (!record(value) || value.version !== 1 || typeof value.sourceHash !== 'string' || !/^[a-f0-9]{64}$/.test(value.sourceHash)
+    || !Array.isArray(value.catalog) || !value.catalog.length || !value.catalog.every(entry => typeof entry === 'string' && linkIds.includes(entry)) || new Set(value.catalog).size !== value.catalog.length
     || typeof value.depth !== 'number' || !Number.isInteger(value.depth) || value.depth < 1 || value.depth > 5
     || typeof value.model !== 'string' || !Array.isArray(value.roots) || !value.roots.length || !value.roots.every(id)
     || !Array.isArray(value.nodes) || !value.nodes.length) return fail('Invalid conversation presets.')
@@ -33,16 +34,17 @@ export const parsePresetGraph = (value: unknown): Result<PresetGraph> => {
   for (const node of nodes.values()) for (const target of node.targets) {
     if (target._tag === 'Reply' && !nodes.has(target.id)) return fail(`Missing preset ${target.id}.`)
   }
-  return { _tag: 'Ok', value: { sourceHash: value.sourceHash, depth: value.depth, model: value.model, roots: value.roots, nodes } }
+  return { _tag: 'Ok', value: { sourceHash: value.sourceHash, catalog: value.catalog, depth: value.depth, model: value.model, roots: value.roots, nodes } }
 }
 
-export const resolvePresetChoice = (graph: PresetGraph, nodeId: string, choice: number): PresetSelection => {
+export const resolvePresetChoice = (graph: PresetGraph, nodeId: string, choice: number, catalog: readonly string[] = linkIds): PresetSelection => {
   const node = graph.nodes.get(nodeId)
   if (!node || !Number.isInteger(choice) || choice < 0 || choice > 2) return { _tag: 'Unavailable' }
   const target = node.targets[choice]!
   if (target._tag === 'Compose') return target
   if (target._tag === 'Live') return { _tag: 'Live', text: node.reply.choices[choice]! }
   const next = graph.nodes.get(target.id)
+  if (next?.reply.links.length && (graph.catalog.length !== catalog.length || graph.catalog.some(entry => !catalog.includes(entry)))) return { _tag: 'Live', text: node.reply.choices[choice]! }
   return next ? { _tag: 'Reply', id: next.id, reply: next.reply } : { _tag: 'Unavailable' }
 }
 

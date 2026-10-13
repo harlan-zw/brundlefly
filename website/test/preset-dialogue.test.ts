@@ -1,12 +1,25 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { choiceNeedsInput, parsePresetGraph, resolveOpeningPreset, resolvePresetChoice } from '../shared/preset-dialogue.ts'
+import { linkIds } from '../shared/conversation.ts'
 
 const reply = { speech: 'I can give you one line.', beat: 'A claw writes in the air.', mood: 'curious', choices: ['Write one about you.', 'Here is my sentence.', 'Tell me about the cave.'], linkIds: ['im-part-human'] }
-const fixture = () => ({ version: 1, sourceHash: 'a'.repeat(64), depth: 3, model: 'openai/gpt-6-luna', roots: ['opening-0'], nodes: [
+const fixture = () => ({ version: 1, sourceHash: 'a'.repeat(64), catalog: [...linkIds], depth: 3, model: 'openai/gpt-6-luna', roots: ['opening-0'], nodes: [
   { id: 'opening-0', reply, targets: [{ _tag: 'Reply', id: 'line' }, { _tag: 'Compose' }, { _tag: 'Live' }] },
   { id: 'line', reply: { ...reply, speech: 'The wall keeps the words I keep rewriting.' }, targets: [{ _tag: 'Live' }, { _tag: 'Compose' }, { _tag: 'Live' }] },
 ] })
+
+test('a new Skill catalog uses live dialogue for Skill replies without invalidating character replies', () => {
+  const data = fixture()
+  data.nodes[0]!.targets[2] = { _tag: 'Reply', id: 'character' }
+  data.nodes.push({ id: 'character', reply: { ...reply, speech: 'The cave still breathes.', linkIds: [] }, targets: [{ _tag: 'Live' }, { _tag: 'Compose' }, { _tag: 'Live' }] })
+  const parsed = parsePresetGraph(data)
+  if (parsed._tag === 'Err') throw new Error(parsed.message)
+  const expanded = [...linkIds, 'new-skill-fixture']
+  assert.deepEqual(resolvePresetChoice(parsed.value, 'opening-0', 0, expanded), { _tag: 'Live', text: reply.choices[0] })
+  assert.equal(resolvePresetChoice(parsed.value, 'opening-0', 2, expanded)._tag, 'Reply')
+  assert.equal(resolvePresetChoice(parsed.value, 'opening-0', 0, [...linkIds])._tag, 'Reply')
+})
 
 test('a preset delivers the complete generated reply with its movement, mood, and links', () => {
   const parsed = parsePresetGraph(fixture())

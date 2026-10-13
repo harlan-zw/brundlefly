@@ -249,6 +249,8 @@ The request builder limits suggested choices to available dialogue, short lines,
 It excludes unsupported scene actions, whole documents, browsing, installation, and Skill execution.
 Review generated options and their replies before publishing the graph.
 The graph check rejects stale source hashes, malformed replies, missing branches, unknown links, and unknown movements.
+The source hash uses the recorded generation catalog.
+If the current catalog differs, replies with Skill links use live generation. Character replies remain cached.
 The website README documents the local generator and its checkpoint directory.
 
 ### Worker and storage
