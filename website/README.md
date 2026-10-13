@@ -99,6 +99,9 @@ It runs on loopback only. The production build excludes its entrypoint.
 
 Run `pnpm presets:check` to check source hashes, complete branches, input choices, links, and movements.
 The test command includes this check. Prompt, model, settings, and opening changes require regeneration.
+The graph records the Skill catalog used during generation.
+If that catalog changes, replies containing Skill links use live generation until the graph is regenerated.
+Character replies keep using the cached graph. Every saved link must still exist in the current catalog.
 
 ## Modular brand kit
 

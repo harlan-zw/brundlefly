@@ -6,6 +6,7 @@ import { choiceNeedsInput, parsePresetGraph } from '../shared/preset-dialogue.ts
 import type { PresetTarget } from '../shared/preset-dialogue.ts'
 import type { ConversationHistoryMessage, ConversationReply } from '../shared/conversation.ts'
 import { MODEL, parseDialogueCompletion } from '../worker/index.ts'
+import { linkIds } from '../shared/conversation.ts'
 import { PRESET_DEPTH, presetOpenings, presetSourceHash } from './dialogue-preset-source.ts'
 
 const scratch = process.env.BRUNDLEFLY_PRESET_SCRATCH ?? join(homedir(), 'scratch', 'brundlefly-dialogue-presets')
@@ -74,7 +75,7 @@ for (const [index, reply] of presetOpenings().entries()) {
   roots.push(id)
   await expand(reply, id, 0, [{ role: 'assistant', content: reply.text }])
 }
-const graph = { version: 1, sourceHash, depth: PRESET_DEPTH, model: MODEL, roots, nodes }
+const graph = { version: 1, sourceHash, catalog: linkIds, depth: PRESET_DEPTH, model: MODEL, roots, nodes }
 const parsed = parsePresetGraph(graph)
 if (parsed._tag === 'Err') throw new Error(parsed.message)
 await writeFile(new URL('../shared/dialogue-presets.generated.json', import.meta.url), `${JSON.stringify(graph, null, 2)}\n`)

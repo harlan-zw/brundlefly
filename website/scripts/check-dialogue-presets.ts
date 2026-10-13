@@ -7,7 +7,7 @@ const data: unknown = JSON.parse(await readFile(new URL('../shared/dialogue-pres
 const parsed = parsePresetGraph(data)
 if (parsed._tag === 'Err') throw new Error(parsed.message)
 const graph = parsed.value
-if (graph.sourceHash !== presetSourceHash() || graph.model !== MODEL || graph.depth !== PRESET_DEPTH) throw new Error('Conversation presets need regeneration. Run pnpm presets:generate with the local generator.')
+if (graph.sourceHash !== presetSourceHash(graph.catalog) || graph.model !== MODEL || graph.depth !== PRESET_DEPTH) throw new Error('Conversation presets need regeneration. Run pnpm presets:generate with the local generator.')
 const openings = presetOpenings()
 if (graph.roots.length !== openings.length) throw new Error('Conversation presets do not cover every opening.')
 const visited = new Set<string>()
@@ -17,7 +17,7 @@ const visit = (id: string, depth: number) => {
   if (!node) throw new Error(`Missing conversation preset: ${id}.`)
   visited.add(id)
   for (let index = 0; index < 3; index++) {
-    const selected = resolvePresetChoice(graph, id, index)
+    const selected = resolvePresetChoice(graph, id, index, graph.catalog)
     if (choiceNeedsInput(node.reply.choices[index]!) !== (selected._tag === 'Compose')) throw new Error(`Preset input choice has an invalid destination: ${id}.`)
     if (selected._tag === 'Reply') {
       if (depth >= PRESET_DEPTH) throw new Error(`Preset exceeds the configured depth: ${id}.`)
