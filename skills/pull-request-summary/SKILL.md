@@ -32,6 +32,7 @@ If a required source is unavailable, return the specific gap instead of inventin
 Lead with the concrete problem or goal, then explain the resulting behavior.
 Let the diff carry routine implementation details.
 Scale detail to risk. Small changes normally need one to three sentences.
+Read [description examples](references/examples.md) for a revised generated body and a small change.
 Include migration steps, measured comparisons, or examples only when they help the reviewer decide.
 
 Follow the selected template and the caller's requirements.

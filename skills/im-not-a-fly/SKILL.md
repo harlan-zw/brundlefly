@@ -1,6 +1,6 @@
 ---
 name: im-not-a-fly
-description: "Edits prose for its human reader: clear meaning, accurate claims, concise wording, and preserved voice. Use for blogs, docs, release notes, tweets, email, or copy that needs a reader-focused rewrite."
+description: "Edits prose for its human reader: clear meaning, accurate claims, concise wording, and preserved voice. Use for blogs, docs, release notes, tweets, email, or copy that needs a reader-focused rewrite, including text that sounds generated or needs humanizing."
 license: MIT
 ---
 
