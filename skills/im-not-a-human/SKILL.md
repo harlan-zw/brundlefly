@@ -1,10 +1,10 @@
 ---
-name: im-a-fly
+name: im-not-a-human
 description: "Compresses text for agents without losing substantial meaning. Use for Markdown files, agent instructions, documentation, and context that need fewer tokens while preserving facts, constraints, and usable structure."
 license: MIT
 ---
 
-# im-a-fly
+# im-not-a-human
 
 Produce the shortest clear text that preserves the source's substantial meaning.
 Optimize agent comprehension and token count together. Do not chase a fixed compression ratio.

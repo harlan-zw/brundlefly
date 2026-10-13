@@ -71,7 +71,7 @@ for (const item of cases) {
   if (!line?.startsWith(`- ${item.label} ->`) || line.match(/`([^`]+)`/)?.[1] !== item.text) throw Error('Case differs from its published source');
 }
 const stopSlop = await read('sources/stop-slop.md') + '\n' + await read('sources/stop-slop-phrases.md') + '\n' + await read('sources/stop-slop-structures.md') + '\n' + await read('sources/stop-slop-examples.md');
-const skillRoot = await realpath(join(root, '../skills/im-not-a-fly'));
+const skillRoot = await realpath(join(root, '../skills/im-part-human'));
 const currentBundle = variantMode === 'current' ? await loadInstructionBundle(async path => {
   const file = await realpath(join(skillRoot, path));
   if (isOutsideRepository(skillRoot, file)) throw Error(`Reference is outside the Skill: ${path}`);
@@ -87,7 +87,7 @@ const edits = variantMode === 'initial' ? [
   ? [{ id: 'write-human-v1', instructions: await read('snapshots/write-human-v1.md') }]
   : [
     { id: 'no-skill', instructions: '' },
-    { id: 'im-not-a-fly-current', instructions: currentBundle!.instructions },
+    { id: 'im-part-human-current', instructions: currentBundle!.instructions },
     { id: 'humanizer', instructions: await read('sources/humanizer.md') },
     { id: 'stop-slop', instructions: stopSlop },
   ];

@@ -9,10 +9,10 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | Term | Location | Relationship | Public name |
 | --- | --- | --- | --- |
 | Brundlefly | Repository | Contains skills and brand assets | Brundlefly |
-| im-not-a-fly | skills/im-not-a-fly | First skill candidate | im-not-a-fly |
+| im-part-human | skills/im-part-human | First skill candidate | im-part-human |
 | technical-guide | skills/technical-guide | Creates and refreshes verified technical guides | technical-guide |
 | pull-request-summary | skills/pull-request-summary | Checks pull request description text | pull-request-summary |
-| im-a-fly | skills/im-a-fly | Compresses text for agents while preserving substantial meaning | im-a-fly |
+| im-not-a-human | skills/im-not-a-human | Compresses text for agents while preserving substantial meaning | im-not-a-human |
 | readme | skills/readme | Writes repository READMEs with researched positioning and working setup | readme |
 | glossary | skills/glossary | Creates and audits canonical names and meanings | glossary |
 | slop-naming-recovery | skills/slop-naming-recovery | Reviews generic names against user tasks and proposes domain terms | slop-naming-recovery |
@@ -39,8 +39,8 @@ The terms below preserve the owner's chosen tension: human connection inside som
 Brundlefly names the collection and its mascot.
 Use BRUNDLEFLY only for the uppercase wordmark.
 
-im-not-a-fly owns editing prose that people read.
-It replaces write-human, which replaced the imported humanize-writing name.
+im-part-human owns editing prose that people read.
+It replaces im-not-a-fly. Earlier names were write-human and the imported humanize-writing.
 
 technical-guide owns research, writing, and verification for a reader's technical task.
 Use this name for both creation and refresh. Do not name a second skill content-refresh for the same workflow.
@@ -49,28 +49,28 @@ pull-request-summary owns pull request description text and its convention check
 Delivery Skills call it and retain branch, publication, CI, and review policy.
 It replaces pr in this collection. Pull request remains GitHub's name for the artifact.
 
-im-a-fly owns meaning-preserving text compression for agents, including Markdown files.
-It replaces agentify-text. Use the owner's requested name for this skill.
+im-not-a-human owns meaning-preserving text compression for agents, including Markdown files.
+It replaces im-a-fly, which replaced agentify-text. Use the owner's requested name for this skill.
 
-im-not-a-fly and im-a-fly form a pair: text people read, and text agents act on.
+im-part-human and im-not-a-human form a pair: text people read, and text agents act on.
 Rename both together or neither.
 
 readme owns README creation and refresh, including setup and documentation routing.
-It works alone and can use im-not-a-fly as an optional prose review.
+It works alone and can use im-part-human as an optional prose review.
 Use readme for this skill, rather than readme-writer or readme-guide.
 
 glossary owns creating and auditing GLOSSARY.md. It does not create other root documents automatically.
 Use glossary rather than terminology-manager or naming-guide for this Skill.
 
 slop-naming-recovery finds generic technical names that hide domain meaning and proposes names grounded in user tasks.
-It extends im-not-a-fly with product understanding and naming review, and also works alone.
+It extends im-part-human with product understanding and naming review, and also works alone.
 It reviews implicit names and approved glossary terms. Glossary owns recording canonical naming decisions.
 Use the owner's requested name rather than name-for-users or architectural-slop-recovery.
 The word slop describes a naming problem, never the author or every technical term.
 
 copywriting owns creating and auditing COPY.md and writing against its wording decisions.
 Use copywriting rather than brand-voice or copy-guide for this Skill.
-It works without glossary or im-not-a-fly installed. Supplied document rules remain authoritative.
+It works without glossary or im-part-human installed. Supplied document rules remain authoritative.
 
 ### Workflow Skill and Block Skill
 
@@ -108,7 +108,7 @@ Do not describe it as piece count, spacing, or content density.
 ### clarity
 
 clarity owns a focused review of wording, reading order, and accessible structure.
-It preserves claims and deliberate voice. It does not verify factual truth or run the full im-not-a-fly workflow.
+It preserves claims and deliberate voice. It does not verify factual truth or run the full im-part-human workflow.
 Use clarity rather than clarity-review or readability for this Block Skill.
 
 ### claim-fidelity
@@ -155,7 +155,7 @@ Avoid soulless as a technical explanation. Name the actual loss of meaning or vo
 
 The agent, in the mascot's metaphor. Brundlefly is part human and part fly.
 Writing through an agent is part author and part agent.
-Use it in the public story and the paired Skill names.
+Use it in the public story.
 Do not use it as a label for a writer or a reader.
 
 ### mutation
@@ -176,6 +176,8 @@ Keep the purpose warm even when the presentation is harsh.
 
 Do not use Fleshware, Brundleware, or Spiralware as names for this collection.
 Those names belong to archived concepts.
+
+Do not use im-not-a-fly or im-a-fly for current Skills. They are former names.
 
 Do not call agents human, conscious, or empathetic as a claim about their inner experience.
 Do not use human connection to imply a measured outcome without evidence.

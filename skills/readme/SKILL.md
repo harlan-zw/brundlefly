@@ -7,7 +7,7 @@ license: MIT
 # README
 
 Help a reader decide whether the project fits, then complete its first useful task.
-If im-not-a-fly is available, use it for the final prose review.
+If im-part-human is available, use it for the final prose review.
 It is optional; do not install it automatically.
 
 ## Inspect the project
@@ -54,7 +54,7 @@ Name relevant alternatives and connect the author's supported choice to the read
 Shared goals are legitimate. Do not invent failed trials, missing features, or superiority to justify building something.
 Put capability lists in Features and usage details in Setup or Guides.
 Keep story and technical detail in separate sections. Review their purposes separately.
-If using im-not-a-fly, request storytelling for Why and clear technical explanation for the task and reference sections.
+If using im-part-human, request storytelling for Why and clear technical explanation for the task and reference sections.
 When working alone, keep the same boundary: connect supported origins in Why; state prerequisites and actions directly in Setup.
 Never carry narrative suspense or character arcs into instructions. Never bury a required step in the story.
 Keep approved adoption reasons and useful evidence links. Removing filler must not erase their information.

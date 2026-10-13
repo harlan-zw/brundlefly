@@ -5,7 +5,7 @@
 - The register table is mandatory
 - Canonical assets earn their place by being reused
 - Banned language needs a reason, not just a list
-- Relationship to im-not-a-fly
+- Relationship to im-part-human
 - Format
 - Workflows
   - `init`: bootstrap from what already ships
@@ -75,14 +75,14 @@ is the defect, not the code.
 Read supplied global writing rules and apply them within their scope.
 Do not duplicate them in every COPY.md. Record the product-specific wording decisions here.
 
-## Relationship to im-not-a-fly
+## Relationship to im-part-human
 
 They run in sequence and neither replaces the other.
 
 - **This Skill decides what the sentence has to say**: which register, which canonical asset,
   which banned word, which claim `VISION.md` permits.
 - **The bundled clarity block checks reading effort.** Apply [clarity](blocks/clarity.md) while preserving canonical wording and register.
-  Use im-not-a-fly for an optional fuller prose review when available. Do not require or install it automatically.
+  Use im-part-human for an optional fuller prose review when available. Do not require or install it automatically.
 
 Draft against `COPY.md`, review the prose, then check the result
 still matches `COPY.md`. That last check matters, because the prose review rewrites structure
@@ -194,7 +194,7 @@ Register mismatch (needs a human read):
    with the string you are about to write as its example.
 3. Reach for a canonical asset before writing a new sentence. Most requests for a meta
    description are a request for the one that already exists.
-4. Draft, then apply the bundled clarity block. Use an available im-not-a-fly Skill for optional fuller review.
+4. Draft, then apply the bundled clarity block. Use an available im-part-human Skill for optional fuller review.
 5. Re-check the reviewed result against `COPY.md`. The prose review improves prose and does not
    know about your canonical assets, so it will sometimes paraphrase one.
 6. Show the user the string and the register row you wrote it against. Never publish under

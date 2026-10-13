@@ -9,7 +9,7 @@ license: MIT
 Find implementation names that hide users' tasks. Recommend domain names with evidence before adopting them.
 The domain comprises users' objects, actions, and decisions: bookings, payroll, source symbols, and import paths.
 Treat naming slop as a problem in the name, never a judgment about its author.
-This Skill extends im-not-a-fly's reader-focused editing with product naming review, and also works alone.
+This Skill extends im-part-human's reader-focused editing with product naming review, and also works alone.
 
 ## Scope and authority
 
@@ -36,7 +36,7 @@ For database changes outside this mode, read the same section before preparing a
 Freeze only requested boundaries. Defer blocked renames and complete independent fixes.
 
 Use [the bundled clarity block](references/blocks/clarity.md) for reader context, wording, order, and accessibility.
-Reuse context supplied by im-not-a-fly or another caller. Do not repeat an already completed clarity pass.
+Reuse context supplied by im-part-human or another caller. Do not repeat an already completed clarity pass.
 Add domain meaning, concept mapping, glossary decisions, and rename scope to that review.
 
 ## 1. Understand the product and its language
