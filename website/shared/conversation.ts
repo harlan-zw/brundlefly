@@ -21,6 +21,7 @@ export const linkIds = ['brand-kit', ...skills.map(skill => skill.name)]
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 const plain = (value: unknown, max: number): value is string => typeof value === 'string' && value.trim().length > 0 && value.length <= max && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f]|<\/?[a-z][^>]*>/i.test(value)
 const fail = <T>(message: string): Result<T> => ({ _tag: 'Err', message })
+const MAX_REPLY_LENGTH = 1000
 
 export const parseDialogueInput = (value: unknown): Result<DialogueInput> => {
   if (!record(value) || typeof value.text !== 'string') return fail(dialogueCopy.empty)
@@ -30,18 +31,18 @@ export const parseDialogueInput = (value: unknown): Result<DialogueInput> => {
   if (!Array.isArray(value.history) || value.history.length > 8) return fail(dialogueCopy.failure)
   const history: ConversationHistoryMessage[] = []
   for (const message of value.history) {
-    if (!record(message) || (message.role !== 'user' && message.role !== 'assistant') || !plain(message.content, message.role === 'user' ? 1000 : 600)) return fail(dialogueCopy.failure)
+    if (!record(message) || (message.role !== 'user' && message.role !== 'assistant') || !plain(message.content, message.role === 'user' ? 1000 : MAX_REPLY_LENGTH)) return fail(dialogueCopy.failure)
     history.push({ role: message.role, content: message.content })
   }
   return { _tag: 'Ok', value: { text, history } }
 }
 
 export const parseDialogueReply = (value: unknown): Result<ConversationReply> => {
-  if (!record(value) || !plain(value.speech, 600) || typeof value.beat !== 'string' || !beats.includes(value.beat) || !moods.includes(value.mood as ConversationMood)) return fail(dialogueCopy.failure)
+  if (!record(value) || !plain(value.speech, MAX_REPLY_LENGTH) || typeof value.beat !== 'string' || !beats.includes(value.beat) || !moods.includes(value.mood as ConversationMood)) return fail(dialogueCopy.failure)
   if (!Array.isArray(value.choices) || value.choices.length !== 3 || !value.choices.every(choice => plain(choice, 100) && choice.trim().split(/\s+/).length >= 2 && choice.trim().split(/\s+/).length <= 12)) return fail(dialogueCopy.failure)
   const [first, second, third] = value.choices as [string, string, string]
   if (new Set([first.trim().toLowerCase(), second.trim().toLowerCase(), third.trim().toLowerCase()]).size !== 3) return fail(dialogueCopy.failure)
-  if (!Array.isArray(value.linkIds) || value.linkIds.length > 8 || !value.linkIds.every(id => typeof id === 'string' && linkIds.includes(id))) return fail(dialogueCopy.failure)
+  if (!Array.isArray(value.linkIds) || value.linkIds.length > linkIds.length || !value.linkIds.every(id => typeof id === 'string' && linkIds.includes(id))) return fail(dialogueCopy.failure)
   const links: ConversationLink[] = [...new Set(value.linkIds as string[])].flatMap(id => id === 'brand-kit'
     ? [{ label: 'Brand kit', href: '/brand-kit/' }]
     : [{ label: `Read the full ${id} skill`, href: `/skills/${id}.md` }, { label: `Download ${id}`, href: `/skills/${id}.zip`, download: true }])

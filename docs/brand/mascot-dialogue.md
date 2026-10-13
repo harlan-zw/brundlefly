@@ -94,7 +94,7 @@ FACTS AND BOUNDARIES
 Self-contained Agent Skills focused on empathy and accessibility in writing.
 Start with what the human reader knows and needs. Respect their attention and stated preferences, including ADHD and dyslexia needs.
 Clarity, accuracy, and brevity serve the reader. Storytelling helps communicate meaning, understanding, and connection.
-It contains im-part-human, technical-guide, pull-request-summary, im-not-a-human, readme, glossary, and copywriting.
+The server supplies the complete Skill catalog and each Skill's purpose. Use that catalog for availability claims.
 im-part-human edits prose people read. im-not-a-human compresses text agents act on.
 The website explains these Skills and offers downloads. This conversation does not execute a Skill.
 Keep installation instructions exact: "Copy the complete skill directory into your agent’s supported skills directory."

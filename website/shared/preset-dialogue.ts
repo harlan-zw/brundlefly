@@ -57,5 +57,8 @@ export const resolveOpeningPreset = (graph: PresetGraph, reply: ConversationRepl
 
 // A button can ask to supply text. It cannot stand in for that text or a personal fact.
 export const choiceNeedsInput = (choice: string): boolean => /\b(?:here(?:['’]s| is| are) (?:my|the)|(?:my|the) (?:first|opening) (?:line|sentence)|make it (?:more )?personal|(?:read|review|edit|look at|help with) my (?:sentence|line|text|draft|paragraph|writing))\b/i.test(choice)
-  || /\b(?:I|let me)\b.{0,20}\b(?:share|paste|send|show|give|read)\b.{0,25}\b(?:sentence|line|text|draft|paragraph|writing|detail|example|it)\b/i.test(choice)
+  || /\b(?:I|let me)\b.{0,20}\b(?:share|paste|send|show|give|read)\b.{0,25}\b(?:sentence|line|text|draft|paragraph|writing|detail|example|it|scraps|words|notes)\b/i.test(choice)
   || /\b(?:I['’]ll|I will|let me) (?:tell|explain|describe)\b/i.test(choice)
+  || /\b(?:edit|rewrite|revise|loosen|shorten|tighten|polish|check|fix|improve|strengthen)\b.{0,25}\b(?:this|my) (?:first |opening )?(?:sentence|line|draft|text|writing)\b/i.test(choice)
+  || /\b(?:help|make) it sound (?:more )?like me\b/i.test(choice)
+  || /\bhelp me (?:make|rewrite|revise|improve|edit|loosen) it\b/i.test(choice)
