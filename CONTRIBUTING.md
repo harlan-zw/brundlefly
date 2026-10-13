@@ -13,6 +13,7 @@ Use a Workflow Skill for a complete task and a Block Skill for one focused pass.
 Both live directly under skills. Group detailed reference material inside its owning Skill.
 Before adding a block, define its input, output, trigger, and limits.
 Keep each block useful when installed alone.
+Give each new Skill three trigger cases in skill-evals.
 
 Edit block instructions in their own SKILL.md.
 The consumer map in scripts/sync-blocks.ts declares which workflows bundle each block.

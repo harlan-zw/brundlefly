@@ -6,5 +6,6 @@
   "homepage": "https://brundlefly.dev",
   "repository": "https://github.com/harlan-zw/brundlefly",
   "license": "MIT",
-  "keywords": ["writing", "editing", "documentation", "agent-skills"]
+  "keywords": ["writing", "editing", "documentation", "agent-skills"],
+  "experimental": { "evals": "skill-evals" }
 }
