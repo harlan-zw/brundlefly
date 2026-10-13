@@ -33,7 +33,11 @@ I could use something to do.
 
 ## Skills
 
-### [im-part-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human)
+### [/im-part-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human)
+
+```text
+Use this Skill: https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human
+```
 
 Edit developer docs, posts, email, and copy. Keep your meaning and voice.
 
@@ -41,7 +45,11 @@ Edit developer docs, posts, email, and copy. Keep your meaning and voice.
 - ⏱️ **Respect**: considers the reader's time and attention, prioritizes useful detail, and checks facts before rewriting.
 - ♿ **Accessible**: uses plain words, short blocks, and findable headings, including ADHD and dyslexia needs.
 
-### [slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery)
+### [/slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery)
+
+```text
+Use this Skill: https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery
+```
 
 Fix slop naming that leaks from code into your UI.
 
@@ -53,30 +61,15 @@ Fix slop naming that leaks from code into your UI.
 
 | Skill | Use |
 | --- | --- |
-| <a id="im-not-a-human"></a>[im-not-a-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-not-a-human) | Compress text for agents while preserving every rule, condition, and exception. |
-| <a id="release-notes"></a>[release-notes](https://skilld.dev/gh/harlan-zw/brundlefly/release-notes) | Write release notes from verified changes and explain required upgrades. |
-| [technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide) | Write or refresh technical guides with verified examples. |
-| [pull-request-summary](https://skilld.dev/gh/harlan-zw/brundlefly/pull-request-summary) | Draft or check a PR description against the diff and template. |
-| [readme](https://skilld.dev/gh/harlan-zw/brundlefly/readme) | Explain a project and verify its setup instructions. |
-| [glossary](https://skilld.dev/gh/harlan-zw/brundlefly/glossary) | Create or audit GLOSSARY.md for consistent names and meanings. |
-| [copywriting](https://skilld.dev/gh/harlan-zw/brundlefly/copywriting) | Create or audit COPY.md and write against its approved wording. |
+| <a id="im-not-a-human"></a>[/im-not-a-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-not-a-human) | Compress text for agents while preserving every rule, condition, and exception. |
+| <a id="release-notes"></a>[/release-notes](https://skilld.dev/gh/harlan-zw/brundlefly/release-notes) | Write release notes from verified changes and explain required upgrades. |
+| [/technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide) | Write or refresh technical guides with verified examples. |
+| [/pull-request-summary](https://skilld.dev/gh/harlan-zw/brundlefly/pull-request-summary) | Draft or check a PR description against the diff and template. |
+| [/readme](https://skilld.dev/gh/harlan-zw/brundlefly/readme) | Explain a project and verify its setup instructions. |
+| [/glossary](https://skilld.dev/gh/harlan-zw/brundlefly/glossary) | Create or audit GLOSSARY.md for consistent names and meanings. |
+| [/copywriting](https://skilld.dev/gh/harlan-zw/brundlefly/copywriting) | Create or audit COPY.md and write against its approved wording. |
 
 ## Setup
-
-From your project's root, install one Skill with [skilld](https://skilld.dev):
-
-```sh
-npx skilld install harlan-zw/brundlefly/im-part-human
-```
-
-skilld pins the source commit and detects agent targets.
-To select one, add `--agent codex`, `--agent claude-code`, or `--agent cursor`. Add `--global` for all projects.
-For the collection, run `npx skilld add harlan-zw/brundlefly --all`. To update, run `npx skilld update`.
-
-<details>
-<summary><b>Other setup options</b></summary>
-
-### Run once
 
 Give your agent the Skill URL and a task:
 
@@ -85,8 +78,16 @@ Read https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human.md and use it to e
 Keep its facts, uncertainty, and my voice. Show me the proposed edit.
 ```
 
-Your agent needs web access and must fetch supporting files when requested. Replace the file or paste your draft.
-For another Skill, change the name in the URL. Install if your fetch tool summarizes the instructions.
+Your agent needs web access and must fetch supporting files when requested.
+
+Or, from your project's root, install one Skill with [skilld](https://skilld.dev):
+
+```sh
+npx skilld install harlan-zw/brundlefly/im-part-human
+```
+
+<details>
+<summary><b>Other setup options</b></summary>
 
 ### Install with skills
 
@@ -127,7 +128,7 @@ Codex uses skilld or skills above. For local ChatGPT plugins, follow [OpenAI's p
 Name the text and what must stay. Describe the task, or name an installed Skill:
 
 ```text
-Use im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
+Use /im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
 ```
 
 Review the result before publishing it.
@@ -135,20 +136,20 @@ Review the result before publishing it.
 ## Guides
 
 <details>
-<summary><b>Edit prose without losing your voice</b></summary>
+<summary><b>✍️ Edit prose without losing your voice</b></summary>
 
-Use im-part-human for a draft or file. State the reader's needs and which facts, phrasing, or experience must stay.
+Use [/im-part-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human) for a draft or file. State the reader's needs and which facts, phrasing, or experience must stay.
 
 ```text
-Use im-part-human on this draft. Keep the personal story, cut filler, and preserve the uncertainty in my claims.
+Use /im-part-human on this draft. Keep the personal story, cut filler, and preserve the uncertainty in my claims.
 ```
 
 </details>
 
 <details>
-<summary><b>Verify a technical guide</b></summary>
+<summary><b>🧪 Verify a technical guide</b></summary>
 
-Use technical-guide to check current code and official sources. It runs safe examples and reports unavailable checks.
+Use [/technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide) to check current code and official sources. It runs safe examples and reports unavailable checks.
 
 ```text
 Refresh this tutorial against the supported release. Verify its commands and examples.
@@ -157,21 +158,21 @@ Refresh this tutorial against the supported release. Verify its commands and exa
 </details>
 
 <details>
-<summary><b>Draft a pull request description</b></summary>
+<summary><b>📋 Draft a pull request description</b></summary>
 
 Supply the diff, repository conventions, and template. The Skill returns text; your delivery workflow publishes it.
 Paste the inputs to use it without GitHub access.
 
 ```text
-Use pull-request-summary to check this description against the diff and template. Return the revised text.
+Use /pull-request-summary to check this description against the diff and template. Return the revised text.
 ```
 
 </details>
 
 <details>
-<summary><b>Compress text for agents</b></summary>
+<summary><b>🗜️ Compress text for agents</b></summary>
 
-Use im-not-a-human when agent instructions take too much context.
+Use [/im-not-a-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-not-a-human) when agent instructions take too much context.
 Preserve conditions and exceptions, even when they cost tokens.
 
 ```text
@@ -181,9 +182,9 @@ Reduce tokens in AGENTS.md. Preserve every rule, exception, and working link.
 </details>
 
 <details>
-<summary><b>Write a README with a story and useful setup</b></summary>
+<summary><b>📖 Write a README with a story and useful setup</b></summary>
 
-Use readme to explain the project's purpose, then give a clear first task. Keep story and setup separate.
+Use [/readme](https://skilld.dev/gh/harlan-zw/brundlefly/readme) to explain the project's purpose, then give a clear first task. Keep story and setup separate.
 
 ```text
 Refresh README.md. Ground Why in the supplied project history. Verify setup and make the guides easy to find.
@@ -192,9 +193,9 @@ Refresh README.md. Ground Why in the supplied project history. Verify setup and 
 </details>
 
 <details>
-<summary><b>Establish names and meanings</b></summary>
+<summary><b>📚 Establish names and meanings</b></summary>
 
-Use glossary to create or audit GLOSSARY.md. Review names and meanings; approve unresolved choices before adopting them.
+Use [/glossary](https://skilld.dev/gh/harlan-zw/brundlefly/glossary) to create or audit GLOSSARY.md. Review names and meanings; approve unresolved choices before adopting them.
 
 ```text
 Audit GLOSSARY.md against this repository. Keep established names and propose fixes for any drift.
@@ -203,32 +204,32 @@ Audit GLOSSARY.md against this repository. Keep established names and propose fi
 </details>
 
 <details>
-<summary><b>Recover names from user tasks</b></summary>
+<summary><b>🧭 Recover names from user tasks</b></summary>
 
-Use slop-naming-recovery when technical labels hide a feature's meaning. It reviews names against purpose, audience, and user language.
+Use [/slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery) when technical labels hide a feature's meaning. It reviews names against purpose, audience, and user language.
 
 ```text
-Use slop-naming-recovery to audit this feature's names. Trace artifact and attestation into code and UI.
+Use /slop-naming-recovery to audit this feature's names. Trace artifact and attestation into code and UI.
 Propose names based on user tasks. Show evidence and affected surfaces before renaming.
 ```
 
 </details>
 
 <details>
-<summary><b>Keep voice and wording consistent</b></summary>
+<summary><b>🎚️ Keep voice and wording consistent</b></summary>
 
-Use copywriting to create or audit COPY.md, or to write against its approved strings.
+Use [/copywriting](https://skilld.dev/gh/harlan-zw/brundlefly/copywriting) to create or audit COPY.md, or to write against its approved strings.
 It preserves canonical wording and matches the voice to the surface.
-Neither copywriting nor glossary creates VISION.md or other root documents unless you ask.
+Neither [/copywriting](https://skilld.dev/gh/harlan-zw/brundlefly/copywriting) nor [/glossary](https://skilld.dev/gh/harlan-zw/brundlefly/glossary) creates VISION.md or other root documents unless you ask.
 
 ```text
-Use copywriting to audit COPY.md and the README. Flag changed taglines and mismatched voice before rewriting.
+Use /copywriting to audit COPY.md and the README. Flag changed taglines and mismatched voice before rewriting.
 ```
 
 </details>
 
 <details>
-<summary><b>Compare writing edits</b></summary>
+<summary><b>🔍 Compare writing edits</b></summary>
 
 Read the [writing evaluation](evals/writing/REPORT.md) for comparisons with
 [Humanizer](https://github.com/blader/humanizer/blob/225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8/SKILL.md)
@@ -239,7 +240,7 @@ The [quality plan](docs/ideas/skill-quality.md) explains comparison scope and hu
 </details>
 
 <details>
-<summary><b>Use the brand assets</b></summary>
+<summary><b>🎨 Use the brand assets</b></summary>
 
 Use the [README banner](assets/brand/github-banner-overhang-gross.png),
 [GitHub avatar](assets/brand/github-avatar.png), or [social preview](assets/brand/github-social-preview.jpg).
@@ -258,12 +259,12 @@ See [repository conventions](docs/arch/conventions.md#workflow-skills-and-block-
 
 | Block Skill | Focus |
 | --- | --- |
-| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Reader attention, clear wording, reading order, and accessible structure. |
-| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty. |
-| [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results. |
+| [/clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Reader attention, clear wording, reading order, and accessible structure. |
+| [/claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty. |
+| [/verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results. |
 
 ```text
-Use claim-fidelity to compare this rewrite with its source. Report changed meaning without editing either passage.
+Use /claim-fidelity to compare this rewrite with its source. Report changed meaning without editing either passage.
 ```
 
 ## Contribute
