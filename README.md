@@ -238,7 +238,7 @@ Refresh this tutorial against the supported release. Verify its commands and exa
 ### Draft a pull request description
 
 Give pull-request-summary the diff, repository conventions, and applicable template.
-It returns description text. The caller owns publication; supplied inputs need no GitHub integration.
+It returns the description text, and your delivery workflow publishes it. If you paste the diff and template, it needs no GitHub access.
 
 ```text
 Use pull-request-summary to check this description against the diff and template. Return the revised text.
@@ -285,7 +285,7 @@ Propose names based on user tasks. Show evidence and affected surfaces before re
 
 Use copywriting to create or audit COPY.md, or to write against its approved strings.
 It preserves canonical wording and matches the voice to the surface.
-Neither copywriting nor glossary creates VISION.md or a root document set automatically.
+Neither copywriting nor glossary creates VISION.md or other root documents unless you ask.
 
 ```text
 Use copywriting to audit COPY.md and the README. Flag changed taglines and mismatched voice before rewriting.
@@ -311,14 +311,15 @@ Generation prompts live in assets/prompts.
 
 ## Contribute
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before adding a skill.
-Each skill must work when its directory is copied alone.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before adding a Skill.
+Each Skill must work when its directory is copied alone.
+After you change a description, run the [trigger evals](skill-evals/README.md).
 
 ## License
 
-The skill instructions use the [MIT license](LICENSE.md).
+The Skill instructions use the [MIT license](LICENSE.md).
 
 ## Website
 
-The [Nuxt website](website/README.md) uses canonical artwork and browser-local skill guidance.
-Each skill download includes its required references and license.
+The [Nuxt website](website/README.md) uses canonical artwork and browser-local Skill guidance.
+Each Skill download includes its required references and license.
