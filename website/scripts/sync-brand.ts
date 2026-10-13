@@ -6,7 +6,7 @@ import { defaultPreset, parts, palette } from '../layers/brand/shared/catalogue.
 const source = new URL('../../assets/brand/', import.meta.url)
 const target = new URL('../public/brand/', import.meta.url)
 await mkdir(target, { recursive: true })
-await Promise.all(['github-banner-overhang-gross.png', 'github-avatar.png', 'character.png'].map(name =>
+await Promise.all(['github-banner-overhang-gross.png', 'github-social-preview.jpg', 'github-avatar.png', 'character.png'].map(name =>
   copyFile(new URL(name, source), new URL(name, target)),
 ))
 await cp(new URL('kit/', source), new URL('kit/', target), { recursive: true })

@@ -7,6 +7,14 @@ test('input rejects oversized history, system roles, empty text, and excess text
   assert.deepEqual(parseDialogueInput({ text: ' Hello ', history: [{ role: 'assistant', content: 'Welcome.' }] }), { _tag: 'Ok', value: { text: 'Hello', history: [{ role: 'assistant', content: 'Welcome.' }] } })
 })
 const valid = { speech: 'The wing has opinions.', beat: 'One wing twitches.', mood: 'curious', choices: ['Does it hurt?', 'Can you fly?', 'Show me the Skills.'], linkIds: ['im-part-human'] }
+test('naming replies offer the complete slop-naming-recovery download', () => {
+  const result = parseDialogueReply({ ...valid, linkIds: ['slop-naming-recovery'] })
+  assert.equal(result._tag, 'Ok')
+  if (result._tag === 'Ok') assert.deepEqual(result.value.links, [
+    { label: 'Read the full slop-naming-recovery skill', href: '/skills/slop-naming-recovery.md' },
+    { label: 'Download slop-naming-recovery', href: '/skills/slop-naming-recovery.zip', download: true },
+  ])
+})
 test('model replies resolve only known links and reject malformed choices or markup', () => {
   const result = parseDialogueReply(valid)
   assert.equal(result._tag, 'Ok')
