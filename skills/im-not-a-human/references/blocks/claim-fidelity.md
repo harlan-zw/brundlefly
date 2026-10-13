@@ -1,6 +1,6 @@
 ---
 name: claim-fidelity
-description: "Compares a rewrite, summary, paraphrase, or translation with its source and reports changed claims, dropped conditions, weakened rules, and altered attribution or uncertainty. Use whenever someone asks whether a rewrite changed the meaning, kept every condition, or is safe to accept, even for a short passage."
+description: "Compares a rewrite, summary, paraphrase, or translation with its source and reports changed claims, dropped conditions, weakened rules, and altered attribution or uncertainty. Use whenever someone asks whether a summary or rewrite changed any claims or meaning, kept every condition, or is safe to accept, even for a short passage."
 license: MIT
 ---
 
