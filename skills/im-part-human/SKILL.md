@@ -1,6 +1,6 @@
 ---
 name: im-part-human
-description: "Edits prose for its human reader: clear meaning, accurate claims, concise wording, and preserved voice. Use for blogs, docs, release notes, tweets, email, or copy that needs a reader-focused rewrite, including text that sounds generated or needs humanizing."
+description: "Edits prose that people read, such as blog posts, docs, release notes, social posts, and email, for clear meaning, accurate claims, concise wording, and the author's own voice. Use whenever someone asks to edit, tighten, polish, or rewrite a draft, or says it sounds robotic, generated, or needs humanizing."
 license: MIT
 ---
 

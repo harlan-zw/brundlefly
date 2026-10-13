@@ -1,6 +1,6 @@
 ---
 name: verify-examples
-description: "Checks documentation examples against their stated setup and promised outcomes. Use for commands, code, or configuration that readers should be able to run, without rewriting the whole guide."
+description: "Runs documentation examples, such as commands, code snippets, curl calls, and quickstarts, from their stated setup and checks the promised output. Use whenever someone asks whether the examples in a guide, README, or tutorial still work, without rewriting the whole document."
 license: MIT
 ---
 

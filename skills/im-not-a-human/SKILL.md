@@ -1,6 +1,6 @@
 ---
 name: im-not-a-human
-description: "Compresses text for agents without losing substantial meaning. Use for Markdown files, agent instructions, documentation, and context that need fewer tokens while preserving facts, constraints, and usable structure."
+description: "Compresses text that agents read, such as AGENTS.md, CLAUDE.md, system prompts, Skill files, and context, into fewer tokens without losing any rule or fact. Use whenever someone asks to shorten, shrink, or cut tokens from instructions or prompts while keeping every constraint."
 license: MIT
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: glossary
-description: "Creates or audits GLOSSARY.md. Use before naming product concepts, writing user-visible terms, renaming concepts, or checking vocabulary drift and banned terms."
+description: "Creates, extends, or audits GLOSSARY.md, the record of what each product concept is called. Use whenever someone wants one name for a concept, adds a term, wants synonyms such as job, task, and run to stop drifting, or checks naming across the UI, API, and docs."
 license: MIT
 ---
 
