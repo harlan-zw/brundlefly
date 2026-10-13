@@ -127,40 +127,36 @@ Use claim-fidelity to compare this rewrite with its source. Report changed meani
 
 Start with one Skill for the task in front of you. You can add others later.
 A Skill gives your agent instructions for that task. You choose the text and review the result.
-
-Use [skilld](https://skilld.dev) with Codex or another supported agent.
-For host-specific installation, jump to [Claude Code](#claude-code-plugin) or [Cursor](#cursor-plugin).
 You do not need to clone this repository.
+
+For host plugins, jump to [Claude Code](#claude-code-plugin) or [Cursor](#cursor-plugin).
 
 ### Run once
 
-If you do not have skilld, follow its [CLI setup](https://skilld.dev).
-Then paste this request into your agent:
+Paste this into your agent. It reads the Skill for this task and installs nothing.
 
 ```text
-Run this command:
-skilld run harlan-zw/brundlefly/im-part-human --json
-Then use those instructions to edit docs/intro.md.
+Read https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human.md and use it to edit docs/intro.md.
 Keep its facts, uncertainty, and my voice. Show me the proposed edit.
 ```
 
-Replace `docs/intro.md` with your file, or supply a draft in the same message.
-This loads the Skill for this task without installing it or changing your project's setup.
-Your agent follows the instructions and reads the supporting files it needs.
-Review the proposed edit before keeping it.
+Your agent needs to be able to fetch a web page.
+Replace `docs/intro.md` with your file, or paste a draft in the same message.
+For another Skill, replace `im-part-human` in the URL with a name from [Skills](#skills).
+The page links each supporting file, and your agent fetches one when the Skill needs it.
+Some fetch tools return a summary of a long page. To give your agent the full instructions every time, install the Skill.
 
-### Install
+### Install with skilld
 
-If you want the Skill available in later sessions, run this from your project's root:
+[skilld](https://skilld.dev) installs a Skill into your project and pins its source commit.
+From your project's root, run:
 
 ```sh
-skilld install harlan-zw/brundlefly/im-part-human
+npx skilld install harlan-zw/brundlefly/im-part-human
 ```
 
-skilld installs into the current project and detects your agent targets.
-If it cannot detect your agent, select it with `--agent codex`, `--agent claude-code`, or `--agent cursor`.
+skilld detects your agent targets. If it cannot, add `--agent codex`, `--agent claude-code`, or `--agent cursor`.
 To use the Skill across projects, add `--global`.
-Replace `im-part-human` with another name from [Skills](#skills) for a different task.
 
 Then ask your agent:
 
@@ -168,13 +164,30 @@ Then ask your agent:
 Use im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
 ```
 
-If you want the whole collection, install all eleven Skills:
+To install all eleven Skills:
 
 ```sh
-skilld add harlan-zw/brundlefly --all
+npx skilld add harlan-zw/brundlefly --all
 ```
 
 The Workflow Skills include the blocks they need. You do not need to install those blocks separately.
+
+To update installed Skills to their latest source commit:
+
+```sh
+npx skilld update
+```
+
+### Install with skills
+
+The [skills CLI](https://github.com/vercel-labs/skills) from [skills.sh](https://skills.sh) installs Skills straight from GitHub.
+From your project's root, run:
+
+```sh
+npx skills add harlan-zw/brundlefly --skill im-part-human
+```
+
+Leave out `--skill` to choose from the full list. Add `-a codex` or `-a claude-code` to pick an agent, and `-g` to install globally.
 
 ### Claude Code plugin
 
@@ -199,7 +212,7 @@ It contains the same Workflow Skills and Block Skills.
 
 ### ChatGPT and Codex plugin
 
-For Codex, use the [skilld install](#install) above.
+For Codex, use [skilld](#install-with-skilld) or [skills](#install-with-skills) above.
 If you are developing a ChatGPT plugin locally, follow [OpenAI's packaging guide](https://developers.openai.com/plugins/build/plugins).
 
 ## Usage
@@ -211,16 +224,13 @@ With installed Skills, describe the task in plain words. Name a Skill when you w
 Use im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
 ```
 
-For a one-off task, give the agent both the load command and your request:
+For a one-off task, give the agent the Skill's page and your request:
 
 ```text
-Run skilld run harlan-zw/brundlefly/readme --json, then use those instructions to refresh README.md.
+Read https://skilld.dev/gh/harlan-zw/brundlefly/readme.md and use it to refresh README.md.
 Keep the project story separate from setup. Verify the examples.
 ```
 
-skilld run loads instructions; it does not perform the edit itself.
-The agent reads any references named by the Skill before doing the work.
-For remote supporting files, use the exact read commands and revision returned by skilld.
 Review the result before publishing it.
 
 ## Guides
