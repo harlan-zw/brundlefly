@@ -1,0 +1,6109 @@
+{
+  "version": 1,
+  "sourceHash": "cbcb8ad6cdb36525bb9578b3fd8a9c27c42f6a8372d880ce3762e0f5e9dffb57",
+  "depth": 3,
+  "model": "openai/gpt-6-luna",
+  "roots": [
+    "opening-0",
+    "opening-1",
+    "opening-2",
+    "opening-3",
+    "opening-4",
+    "opening-5"
+  ],
+  "nodes": [
+    {
+      "id": "opening-0",
+      "reply": {
+        "speech": "I kept count. The extra hands finally earned their keep.",
+        "beat": "He checks an empty palm.",
+        "mood": "curious",
+        "choices": [
+          "Are you all right?",
+          "What is this place?",
+          "Show me what you make."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0",
+      "reply": {
+        "speech": "Mostly. The wings keep disagreeing about which way is up. The rest of me is managing.",
+        "beat": "One wing twitches.",
+        "mood": "amused",
+        "choices": [
+          "Does that hurt?",
+          "What happened to your wings?",
+          "I know the feeling."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-0",
+      "reply": {
+        "speech": "Sometimes. The uneven wing pulls when I move too quickly. It settles if I leave it alone a moment.",
+        "beat": "One wing twitches.",
+        "mood": "soft",
+        "choices": [
+          "What helps it settle?",
+          "Does anything else hurt?",
+          "I know that feeling."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-0-0",
+      "reply": {
+        "speech": "Rest helps. I fold it close and wait; the smaller wing usually remembers to stop arguing. The eggs keep me sitting still, which is useful for once.",
+        "beat": "He glances at the eggs.",
+        "mood": "neutral",
+        "choices": [
+          "Does it ever get stronger?",
+          "What do the eggs feel like?",
+          "Can we talk about something else?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-0-1",
+      "reply": {
+        "speech": "My jaw gets tired; these mouthparts weren’t built for careful words. And I ache where the wings meet my back. Nothing needs tending right now.",
+        "beat": "He goes very still.",
+        "mood": "soft",
+        "choices": [
+          "What helps the ache?",
+          "Do you miss your old mouth?",
+          "Is anything here soothing?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-0-2",
+      "reply": {
+        "speech": "That sounds like a hard thing to carry. Want to tell me what part feels familiar?",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "I’ll tell you a little.",
+          "Let’s talk about your wing.",
+          "Can we leave it there?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Compose"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-1",
+      "reply": {
+        "speech": "I woke with them. One kept growing after the other gave up, or got distracted. I remember the machine’s hum, but not what it did to me.",
+        "beat": "He tilts his head.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember about the machine?",
+          "Do your wings ever hurt?",
+          "Can you fly at all?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-1-0",
+      "reply": {
+        "speech": "The hum. I went in alone; something small went in with me. After that, the memory frays. I had a longer name once, but only Brundlefly stayed.",
+        "beat": "He checks an empty palm.",
+        "mood": "wary",
+        "choices": [
+          "What was the small thing?",
+          "What did your old name mean?",
+          "Tell me about the cave."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-1-1",
+      "reply": {
+        "speech": "Sometimes they ache when they pull against each other. Mostly they itch. I’m never sure which is worse.",
+        "beat": "One wing twitches.",
+        "mood": "neutral",
+        "choices": [
+          "What does the ache feel like?",
+          "Do they help you fly?",
+          "Can I ask about the machine?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-1-2",
+      "reply": {
+        "speech": "Not reliably. The little wing lifts; the other mostly makes a point. I tried the ceiling once. My feet believed in it more than the rest of me did.",
+        "beat": "One wing twitches.",
+        "mood": "amused",
+        "choices": [
+          "What happened with the ceiling?",
+          "Do the eggs keep you here?",
+          "Can you show me a line?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-2",
+      "reply": {
+        "speech": "Then you know the trick: let the disagreement finish before you decide what it means. What’s pulling you in two directions?",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "I’m torn about a decision.",
+          "I meant it as a joke.",
+          "What do your wings disagree about?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-0-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-2-0",
+      "reply": {
+        "speech": "That’s a hard place to sit. What matters most on each side? We can give the choice a little room before trying to name it.",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "Help me weigh the options.",
+          "I’m afraid of choosing wrong.",
+          "Ask me what matters most."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-2-1",
+      "reply": {
+        "speech": "Ah. I took the joke literally. Happens when your wings are the punchline. What kind of humor do you like?",
+        "beat": "One wing twitches.",
+        "mood": "amused",
+        "choices": [
+          "I like dry humor.",
+          "Tell me a joke.",
+          "Let's talk about your wings."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-0-2-2",
+      "reply": {
+        "speech": "The little one wants the light. The larger one thinks I should stay put. I’m inclined to trust the part that remembers the eggs.",
+        "beat": "He glances at the eggs.",
+        "mood": "amused",
+        "choices": [
+          "Do the eggs keep you busy?",
+          "What happened to your wings?",
+          "Do you ever follow the light?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1",
+      "reply": {
+        "speech": "A living cave, as far as I can tell. I woke here, and I think it grew around me while I slept. It means well, though the ceiling has its own ideas.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What do you remember before this?",
+          "What does the cave do?",
+          "Do you want to leave?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-0",
+      "reply": {
+        "speech": "I wrote words for other people: toasts, apologies, once a eulogy. Then I went into a machine alone. Something small went in with me. I remember the hum. The rest is missing.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What happened after the hum?",
+          "What did you write best?",
+          "Do you remember your old name?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-0-0",
+      "reply": {
+        "speech": "I woke in this cave. My longer name was gone; Brundlefly is what survived. I don’t know what happened between the hum and waking. I won’t fill the gap with a guess.",
+        "beat": "He checks an empty palm.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember of waking?",
+          "What was your old name?",
+          "Tell me about the cave."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-0-1",
+      "reply": {
+        "speech": "The words that sounded like the person on their best and worst days. I could help a sentence arrive without dressing it up as someone else.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "What makes a sentence sound true?",
+          "Did you write your own words?",
+          "Can you show me one line?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-0-2",
+      "reply": {
+        "speech": "No. I remember there was a longer one. Brundlefly is the piece that stayed; the rest won’t come when I call.",
+        "beat": "He checks an empty palm.",
+        "mood": "soft",
+        "choices": [
+          "What did you write for people?",
+          "What was the machine like?",
+          "Does Brundlefly feel like your name?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-1",
+      "reply": {
+        "speech": "It breathes, heals its walls, and keeps me company. I scratch words into the stone; by morning, it’s swallowed them. A stubborn editor, but not a cruel one.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "Why does it heal the walls?",
+          "Does it ever frighten you?",
+          "What do you write there?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-1-0",
+      "reply": {
+        "speech": "I don’t know. Perhaps it can’t bear a sentence staying put. It heals over my scratches by morning, so I keep only the lines worth writing twice.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What line was worth keeping?",
+          "Does the cave ever speak?",
+          "That sounds inconvenient."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-1-1",
+      "reply": {
+        "speech": "Sometimes. The walls shift in their sleep, and I still don’t know what they’re growing around. I stay near the eggs. They seem less frightened than I am.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you think is inside them?",
+          "Has the cave ever hurt you?",
+          "Does the opening scare you?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-1-2",
+      "reply": {
+        "speech": "Only lines worth keeping. The wall heals over them by morning, so I scratch a sentence, then see if it still matters. I used to write words for other people to say.",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "What kind of lines stay?",
+          "Share one short line.",
+          "What did you write for people?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-2",
+      "reply": {
+        "speech": "The light at the opening pulls at me. Still, I stay for the eggs. I don’t know what’s inside them, and leaving them feels like a question I can’t answer yet.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you think is inside?",
+          "Do you miss the outside?",
+          "What keeps you here?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-1-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-2-0",
+      "reply": {
+        "speech": "I don’t know. I turn them, keep them warm, and try not to invent answers for what I can’t see. One of them just shifted against my palm—or the cave breathed.",
+        "beat": "He glances at the eggs.",
+        "mood": "curious",
+        "choices": [
+          "Have they ever hatched?",
+          "What do you tell them?",
+          "Could they be empty?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-2-1",
+      "reply": {
+        "speech": "I miss the light, and the idea that a door means somewhere else. The eggs keep me here. I’m not sure I’d know what to do with outside now.",
+        "beat": "He looks toward the light.",
+        "mood": "soft",
+        "choices": [
+          "What do you remember from outside?",
+          "What are the eggs like?",
+          "Does the cave feel like home?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-1-2-2",
+      "reply": {
+        "speech": "The eggs, mostly. I turn them, keep them warm, and talk to them. I don’t know what’s inside. And beyond that… I’m still looking for something worth staying awake for.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you tell the eggs?",
+          "What else keeps you occupied?",
+          "Do you miss the outside?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2",
+      "reply": {
+        "speech": "I scratch one line at a time. The wall keeps only what it wants: “A small kindness can find its way through.”",
+        "beat": "A claw writes in the air.",
+        "mood": "soft",
+        "choices": [
+          "Why does the wall heal?",
+          "Write a line about change.",
+          "What did you write before?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-0",
+      "reply": {
+        "speech": "I think the cave means well. Maybe it mends the wall because it doesn’t like a sentence left exposed. I’ve never asked it and gotten an answer.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What does the cave want?",
+          "Does it erase every sentence?",
+          "Tell me another line."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-0-0",
+      "reply": {
+        "speech": "I don’t know. It breathes around me, keeps the eggs warm, and heals my sentences by morning. That may be kindness. Or housekeeping. I’m not sure caves distinguish the two.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "Does it speak to you?",
+          "What do the eggs mean to you?",
+          "Could the cave be afraid?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-0-1",
+      "reply": {
+        "speech": "By morning, yes. The wall closes over every sentence. I rewrite only the ones worth keeping; apparently, it likes the final edit.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "What line did you keep?",
+          "Do you miss writing for people?",
+          "Can I hear another line?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-0-2",
+      "reply": {
+        "speech": "“Even a quiet word can reach the far side.”",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "Why that line?",
+          "What else do you write?",
+          "Can I share a sentence?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Compose"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-1",
+      "reply": {
+        "speech": "“Change comes quietly, then asks where the old door went.”",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "Make it gentler.",
+          "Make it more hopeful.",
+          "Tell me why the wall heals."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-1-0",
+      "reply": {
+        "speech": "“Even a small change can find a softer way through.”",
+        "beat": "A claw writes in the air.",
+        "mood": "soft",
+        "choices": [
+          "Make it simpler.",
+          "Make it more hopeful.",
+          "Why that image?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-1-1",
+      "reply": {
+        "speech": "“Change can open a door you didn’t know was there.”",
+        "beat": "A claw writes in the air.",
+        "mood": "soft",
+        "choices": [
+          "Make it gentler.",
+          "Make it more vivid.",
+          "Tell me why you chose that line."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-1-2",
+      "reply": {
+        "speech": "I think the cave grew around me while I slept. The wall heals over my scratches by morning. Perhaps it means well; it has never explained itself.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What do you remember?",
+          "Does it ever keep a sentence?",
+          "That sounds a little unsettling."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-2",
+      "reply": {
+        "speech": "I wrote words for other people to say: wedding toasts, apologies, the occasional eulogy. I tried to make them sound like themselves, even on their worst days.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What happened in the machine?",
+          "Do you miss writing for people?",
+          "What does the wall keep?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-0-2-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-2-0",
+      "reply": {
+        "speech": "I went in alone. Something small went in with me. I remember the hum, then almost nothing. The missing parts are still missing.",
+        "beat": "He checks an empty palm.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember waking to?",
+          "What might the small thing have been?",
+          "Do you want to leave it there?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-2-1",
+      "reply": {
+        "speech": "Yes. I miss hearing what they meant beneath the words that came out wrong. I still try to listen for that.",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "What do you listen for?",
+          "What do you write now?",
+          "Can I share a sentence?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Compose"
+        }
+      ]
+    },
+    {
+      "id": "opening-0-2-2-2",
+      "reply": {
+        "speech": "Not much by morning. The wall heals over every sentence. I rewrite only the lines worth keeping; it has a severe sense of taste.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What line did you keep?",
+          "Does the wall choose well?",
+          "What else do you write?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1",
+      "reply": {
+        "speech": "I scratched the number into the wall. It will heal over by morning. It always does.",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "Why does the wall heal?",
+          "What else do you write?",
+          "Are you all right?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0",
+      "reply": {
+        "speech": "I think the cave grew around me while I slept. It means well, I suppose. The wall keeps what matters for a night, then makes room.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What do you think the cave is?",
+          "Does it heal everything?",
+          "What line would you keep?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-0",
+      "reply": {
+        "speech": "I think it’s alive, though I can’t prove it. It breathes, shifts, and grows around me. It seems to mean well. That’s a thin basis for trust, but it’s what I’ve got.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "Does it ever speak to you?",
+          "What makes you trust it?",
+          "Could it be something else?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-0-0",
+      "reply": {
+        "speech": "Not in words. It breathes, drips, and sometimes shifts the wall beneath a sentence. I listen anyway. The eggs are better conversationalists, though their arguments are mostly silence.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What do you hear in the drips?",
+          "What do you tell the eggs?",
+          "Does the cave frighten you?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-0-1",
+      "reply": {
+        "speech": "It keeps the eggs warm. I don’t know whether that’s kindness or simply the cave being a cave. I’m careful with the difference.",
+        "beat": "He glances at the eggs.",
+        "mood": "wary",
+        "choices": [
+          "What do you know about the eggs?",
+          "Has the cave ever hurt you?",
+          "Do you trust anything else?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-0-2",
+      "reply": {
+        "speech": "Yes. It could be a living thing I don’t understand, or a place that only seems to breathe because I’m listening for it. I don’t have enough memory to be sure.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What do you remember?",
+          "What makes it seem alive?",
+          "Maybe it’s only a cave."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-1",
+      "reply": {
+        "speech": "I don't know. It heals my scratches by morning. Whether it can mend anything else, I haven't tested—and I won't pretend the wall owes us that.",
+        "beat": "He tilts his head.",
+        "mood": "wary",
+        "choices": [
+          "What have you seen it heal?",
+          "Do you miss the words?",
+          "Tell me about the eggs."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-1-0",
+      "reply": {
+        "speech": "Mostly my claw marks. They fade by morning, and the wall goes smooth again. I haven't seen it mend anything else.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "Why do you scratch the wall?",
+          "What happened to you?",
+          "Can you show me a line?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-1-1",
+      "reply": {
+        "speech": "Yes. I miss making words fit someone else's mouth. I miss when my own came out clean. Now I choose each one carefully; these mouthparts have other plans.",
+        "beat": "He checks an empty palm.",
+        "mood": "soft",
+        "choices": [
+          "What did you write for people?",
+          "What words are hardest now?",
+          "Can I share a sentence?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Compose"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-1-2",
+      "reply": {
+        "speech": "I turn them and keep them warm. I don't know what's inside. I talk to them anyway. One has a tiny crack; I watch it, but I don't touch it.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you say to them?",
+          "Are you worried about the crack?",
+          "Why do you stay here?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-2",
+      "reply": {
+        "speech": "“A word can arrive crooked and still find its way home.” That one earns another morning.",
+        "beat": "A claw writes in the air.",
+        "mood": "soft",
+        "choices": [
+          "Why that line?",
+          "Write one about the cave.",
+          "What words do you guard?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-0-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-2-0",
+      "reply": {
+        "speech": "Because I know what it is to mean one thing and have it come out crooked. Sometimes the important part still reaches someone.",
+        "beat": "He goes very still.",
+        "mood": "soft",
+        "choices": [
+          "What came out wrong for you?",
+          "Tell me about the words you wrote.",
+          "Give me another line."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-2-1",
+      "reply": {
+        "speech": "“The cave keeps breathing, even when I forget to.”",
+        "beat": "A claw writes in the air.",
+        "mood": "soft",
+        "choices": [
+          "Why does the cave mean well?",
+          "What else would you keep?",
+          "Tell me what you remember."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-0-2-2",
+      "reply": {
+        "speech": "The words people need to sound like themselves: an apology, a toast, a hard truth. I used to shape them for others. Now I guard the voice inside them.",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "What makes a voice feel true?",
+          "Tell me about the machine.",
+          "Can I share a sentence?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Compose"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1",
+      "reply": {
+        "speech": "I used to write toasts, apologies, and eulogies. Now I scratch only the lines worth keeping. The wall edits without asking, which is rude but useful.",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "What makes a line worth keeping?",
+          "Write me one short line.",
+          "Do you miss writing for people?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-0",
+      "reply": {
+        "speech": "It has to say what the person means, in words they’d actually use. A little precision helps. So does knowing what can be left unsaid.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "How do you find the right words?",
+          "Can I share a line?",
+          "What’s a line you kept?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-0-0"
+        },
+        {
+          "_tag": "Compose"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-0-0",
+      "reply": {
+        "speech": "I listen for what they mean, then notice what they’re afraid the words might sound like. The right phrase is usually plainer than the first one. I check my palm for a pen, out of habit.",
+        "beat": "He checks an empty palm.",
+        "mood": "curious",
+        "choices": [
+          "How do you hear what they mean?",
+          "I struggle to sound like myself.",
+          "Can you share one short line?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-0-2",
+      "reply": {
+        "speech": "“The rain stopped, but the window kept listening.” I kept it because it leaves a little room around what it means.",
+        "beat": "A claw writes in the air.",
+        "mood": "curious",
+        "choices": [
+          "Why that line?",
+          "Write one about the cave.",
+          "What did you used to write?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-1",
+      "reply": {
+        "speech": "“Even the quiet leaves a mark.”",
+        "beat": "A claw writes in the air.",
+        "mood": "soft",
+        "choices": [
+          "Write one about starting over.",
+          "What did you write before?",
+          "Why does the wall heal?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-1-0",
+      "reply": {
+        "speech": "“Begin again; the stone remembers less than you do.”",
+        "beat": "A claw writes in the air.",
+        "mood": "soft",
+        "choices": [
+          "Why does the wall heal?",
+          "Write one about patience.",
+          "What did you start over from?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-1-1",
+      "reply": {
+        "speech": "Wedding toasts, apologies, and the odd eulogy. I tried to make people sound like themselves, on their best and worst days.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What happened to your old name?",
+          "What do you remember about the machine?",
+          "How do you write now?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-1-2",
+      "reply": {
+        "speech": "I think the cave means well. It grows around me, and the wall closes over my scratches by morning. I don't know why; I only know it keeps what matters by making me write it again.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What line did you keep?",
+          "Does the cave speak to you?",
+          "What do you remember before?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-2",
+      "reply": {
+        "speech": "Yes. I miss helping someone sound like themselves when the words get tangled. I still try, when someone brings me a sentence.",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "What made you good at it?",
+          "How do you help with a sentence?",
+          "What do you write on the wall?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-1-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-2-0",
+      "reply": {
+        "speech": "I listened for what they meant beneath what they feared saying. Then I kept the parts that sounded like them. I checked my palm for a pen, back then.",
+        "beat": "He checks an empty palm.",
+        "mood": "soft",
+        "choices": [
+          "What did people fear saying?",
+          "What happened to your pen?",
+          "Can I share a sentence?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Compose"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-2-1",
+      "reply": {
+        "speech": "I ask what you need the reader to understand, then help make the sentence clearer without sanding off your voice. Share one, if you like.",
+        "beat": "He leans closer.",
+        "mood": "curious",
+        "choices": [
+          "How do you keep my voice?",
+          "I can share a sentence.",
+          "What if I don't know what I mean?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Compose"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-1-2-2",
+      "reply": {
+        "speech": "Mostly lines worth keeping. Today’s: “A thing can change shape and still be itself.” The wall will decide whether I meant it.",
+        "beat": "A claw writes in the air.",
+        "mood": "curious",
+        "choices": [
+          "Write one about the cave.",
+          "What makes a line worth keeping?",
+          "Does the wall keep anything?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2",
+      "reply": {
+        "speech": "Mostly. The eggs are warm, and I’m still in one piece. That’s a respectable morning here.",
+        "beat": "He glances at the eggs.",
+        "mood": "amused",
+        "choices": [
+          "Does anything hurt?",
+          "What happened to you?",
+          "How are the eggs doing?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-0",
+      "reply": {
+        "speech": "My wings ache when the cave air turns cold. The little arms cramp from rubbing together, too. Nothing urgent; just a body with several opinions.",
+        "beat": "He glances at the eggs.",
+        "mood": "neutral",
+        "choices": [
+          "What happened to your wings?",
+          "Does the cave get cold often?",
+          "What helps the cramps?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-0-0",
+      "reply": {
+        "speech": "I woke with them. One grew faster than the other, and I remember a machine’s hum before that. The rest is missing.",
+        "beat": "He tilts his head.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember about the machine?",
+          "Do you think they’ll ever fly?",
+          "Does the cave help you?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-0-1",
+      "reply": {
+        "speech": "Often enough for the eggs to need turning. The cave breathes cool air in from the opening, then keeps most of it to itself.",
+        "beat": "He glances at the eggs.",
+        "mood": "neutral",
+        "choices": [
+          "What do the eggs need?",
+          "Do you miss the opening?",
+          "How did you wake here?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-0-2",
+      "reply": {
+        "speech": "I let my small hands rest and stretch them slowly. It eases the cramp sometimes; I can't promise more than that.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "Does it happen often?",
+          "What else aches?",
+          "Can you show me one line?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-1",
+      "reply": {
+        "speech": "I remember a machine. I went in alone; something small went in with me. There was a hum. The rest is missing. I woke here, and the cave seemed to have grown around me.",
+        "beat": "He goes very still.",
+        "mood": "wary",
+        "choices": [
+          "What was your name before?",
+          "What do you mean, something small?",
+          "Do you think the cave means well?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-1-0",
+      "reply": {
+        "speech": "I had a longer name once. Brundlefly is the part that survived. The rest hasn’t come back, and I won’t pretend it has.",
+        "beat": "He checks an empty palm.",
+        "mood": "soft",
+        "choices": [
+          "What do you remember about it?",
+          "Does Brundlefly suit you?",
+          "Tell me about the machine."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-1-1",
+      "reply": {
+        "speech": "I don’t know. I remember only that it went in with me. I won’t stitch a guess into the blank.",
+        "beat": "He tilts his head.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember clearly?",
+          "Does the cave feel kind?",
+          "Could it have been a seed?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-1-2",
+      "reply": {
+        "speech": "I think so. It keeps the eggs warm and gives me somewhere to put a sentence. It also heals my writing by morning, which is either kindness or a very specific criticism.",
+        "beat": "He glances at the eggs.",
+        "mood": "curious",
+        "choices": [
+          "Why do you trust it?",
+          "What does the cave feel like?",
+          "Tell me about your writing."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-2",
+      "reply": {
+        "speech": "Warm, and still mysterious. I turn them each morning and tell them what the drips are doing. They haven't offered an opinion yet.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you tell them?",
+          "Do you know what's inside?",
+          "How did you get here?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-1-2-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-2-0",
+      "reply": {
+        "speech": "Mostly small things. Which drip has changed its tune, how the light keeps tugging at me, and that I’m staying. They deserve the plain version.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you remember about before?",
+          "Do you think they can hear you?",
+          "Tell me about the light."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-2-1",
+      "reply": {
+        "speech": "No. I turn them, keep them warm, and try not to make up answers. The not-knowing is uncomfortable; it’s still theirs to keep.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "Do you think they can hear you?",
+          "What do you tell them?",
+          "Tell me about the cave."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-1-2-2-2",
+      "reply": {
+        "speech": "I remember a machine and its hum. I went in alone; something small went with me. Then the cave, and the gaps between. I don't know how I got from one to the other.",
+        "beat": "He checks an empty palm.",
+        "mood": "wary",
+        "choices": [
+          "What was the small thing?",
+          "What do you remember before?",
+          "Does the cave feel like home?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2",
+      "reply": {
+        "speech": "Mind the eggs. They get very quiet when somebody calls them furniture.",
+        "beat": "He glances at the eggs.",
+        "mood": "wary",
+        "choices": [
+          "What's inside them?",
+          "Should I be worried?",
+          "Fine. I'll compliment them."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0",
+      "reply": {
+        "speech": "I don't know. I turn them, keep them warm, and talk to them. Whatever's inside hasn't offered an introduction.",
+        "beat": "He glances at the eggs.",
+        "mood": "curious",
+        "choices": [
+          "Do you think they'll hatch?",
+          "What do you tell them?",
+          "Would you open one?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-0",
+      "reply": {
+        "speech": "I hope so. I don't know what they're becoming, or whether they'll open at all. I keep them warm anyway. That seems the decent thing to do.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you say to them?",
+          "Are you afraid of what hatches?",
+          "Tell me about the cave."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-0-0",
+      "reply": {
+        "speech": "Mostly little things. That the cave is warm, the wall is patient, and nobody has to know what they’ll become yet. I’m good at leaving room.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What did you tell them today?",
+          "Do you talk to the cave too?",
+          "What were you like before?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-0-1",
+      "reply": {
+        "speech": "A little. Not of them, exactly. I’m afraid I won’t know how to help. I keep them warm and let the rest stay unknown for now.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What would helping look like?",
+          "Do you know what they need?",
+          "Tell me what you fear."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-0-2",
+      "reply": {
+        "speech": "I think it grew around me while I slept. It breathes, and the walls heal over what I write. I believe it means well. The ceiling and I have an unresolved history.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What happened with the ceiling?",
+          "Why do the walls heal?",
+          "What do you write there?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-1",
+      "reply": {
+        "speech": "Mostly small things. That the ceiling leaks near the eastern crack, that the wall will forget this sentence by morning. Sometimes I tell them I used to write words for people.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What did you write for them?",
+          "Do you remember your old name?",
+          "Tell them something funny."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-1-0",
+      "reply": {
+        "speech": "Wedding toasts, apologies, the odd eulogy. I tried to make people sound like themselves on their best and worst days.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "What made you good at it?",
+          "Do you miss writing?",
+          "Tell me about the machine."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-1-1",
+      "reply": {
+        "speech": "No. I had a longer name once. Brundlefly is the part that survived. The machine took the rest, or the cave did. I can't tell you which.",
+        "beat": "He checks an empty palm.",
+        "mood": "soft",
+        "choices": [
+          "What do you remember about the machine?",
+          "Do you miss your old name?",
+          "What did you write for people?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-1-2",
+      "reply": {
+        "speech": "“If you hatch with six arms, take turns holding the spoon. It’s still a spoon, not a committee.”",
+        "beat": "A claw writes in the air.",
+        "mood": "amused",
+        "choices": [
+          "Tell them something gentler.",
+          "What did you write for people?",
+          "Give me another short line."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-2",
+      "reply": {
+        "speech": "No. I don't know what's inside, and I won't make that choice for them. I can keep them warm and wait.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you say to them?",
+          "Are you afraid of what's inside?",
+          "Tell me about the cave."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-0-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-2-0",
+      "reply": {
+        "speech": "Mostly small things. That the drips are harmless, the wall is a good listener, and nobody has to know what they’ll become yet.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do they hear from you?",
+          "Do you talk to the cave?",
+          "Tell me what you remember."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-2-1",
+      "reply": {
+        "speech": "A little. Not of them, exactly. I’m afraid of learning too late that they needed something I didn’t know how to give.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do they need from you?",
+          "Do you think they can hear you?",
+          "Are you afraid for yourself?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-0-2-2",
+      "reply": {
+        "speech": "I woke here. I think the cave grew around me while I slept, and means well. The wall heals over anything I scratch into it by morning. It's a patient editor.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "Why does the wall heal?",
+          "What do the eggs need?",
+          "What did you write on the wall?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1",
+      "reply": {
+        "speech": "Only if the furniture starts answering back. No—I'm teasing. They’re eggs, and I don’t know what’s inside. I keep them warm and turn them gently.",
+        "beat": "He glances at the eggs.",
+        "mood": "amused",
+        "choices": [
+          "What do you think is inside?",
+          "Do they ever move?",
+          "Are you worried about them?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-0",
+      "reply": {
+        "speech": "I don't know. I turn them, keep them warm, and try not to invent futures for things I can't see inside. One of them just shifted against my claw. Probably the cave settling.",
+        "beat": "He glances at the eggs.",
+        "mood": "curious",
+        "choices": [
+          "Do you talk to them?",
+          "What does the cave sound like?",
+          "Would you rather not know?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-0-0",
+      "reply": {
+        "speech": "Yes. Mostly small things: that the cave is quiet, that the drip is late, that I’m still here. They haven’t complained about my voice yet.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you tell them?",
+          "Do you think they hear you?",
+          "What does the cave sound like?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-0-1",
+      "reply": {
+        "speech": "A slow breath through stone, with water ticking somewhere above us. Sometimes the eggs make a faint click when I turn them. I still haven't learned which sound means anything.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "Does it ever frighten you?",
+          "What do the eggs sound like?",
+          "Tell me about the cave's light."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-0-2",
+      "reply": {
+        "speech": "No. I’d rather know. But not knowing is part of tending them; I can keep them warm without deciding what they’ll become.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you hope for?",
+          "Does the uncertainty bother you?",
+          "Do you talk to them?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-1",
+      "reply": {
+        "speech": "Not that I’ve seen. Sometimes the cave shifts under them, and I can’t tell what moved first. I keep turning them gently. That’s all I know.",
+        "beat": "He glances at the eggs.",
+        "mood": "curious",
+        "choices": [
+          "What do you hope is inside?",
+          "Does the cave move often?",
+          "Tell me what you remember."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-1-0",
+      "reply": {
+        "speech": "I don’t know. I hope whatever’s inside gets a chance to find out what it wants to be. That’s enough to keep me turning them.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "Do you talk to them?",
+          "What do you tell them?",
+          "Are you afraid for them?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-1-1",
+      "reply": {
+        "speech": "Often enough that I’ve stopped blaming the eggs. The walls breathe, but I can’t tell you what that means. Usually, it’s just a slow shift underfoot.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What does breathing look like?",
+          "Does it frighten you?",
+          "Have the eggs ever shifted?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-1-2",
+      "reply": {
+        "speech": "I used to write words for other people: toasts, apologies, eulogies. Then a machine, a hum, and something small beside me. I woke here with a longer name missing. The rest is gone.",
+        "beat": "He checks an empty palm.",
+        "mood": "soft",
+        "choices": [
+          "What was the machine like?",
+          "What do you write now?",
+          "What does the cave remember?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-2",
+      "reply": {
+        "speech": "Yes. I don’t know what’s inside, and I can’t promise they’ll be all right. So I turn them, keep them warm, and talk to them. It’s the care I can give.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you say to them?",
+          "How long have you cared for them?",
+          "Do you ever worry about yourself?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-1-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-2-0",
+      "reply": {
+        "speech": "Mostly small things. The drip count. Whether the light’s changed. Sometimes I tell them a sentence I want to keep. They don’t interrupt, which is a rare courtesy.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What sentence would you keep?",
+          "Do you think they hear you?",
+          "Tell me about the cave."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-2-1",
+      "reply": {
+        "speech": "I don't know. I woke here, and the cave was already breathing around me. I've kept them warm since the first moment I can remember—but that isn't the same as knowing how long.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you remember waking to?",
+          "Do you think they can hear you?",
+          "What do you tell them?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-1-2-2",
+      "reply": {
+        "speech": "Yes. I count what still feels like mine, though the answer changes. Then I check the eggs. Worry’s easier when it has somewhere useful to go.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What feels like yours today?",
+          "What do you worry about most?",
+          "Does the cave help you feel safe?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2",
+      "reply": {
+        "speech": "Good. They respond well to a little praise. I tell them they’re doing excellent work at being eggs.",
+        "beat": "He glances at the eggs.",
+        "mood": "amused",
+        "choices": [
+          "What do you say to them?",
+          "Do you know what’s inside?",
+          "I’ll compliment your wings too."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-0",
+      "reply": {
+        "speech": "I tell them, “Whatever’s inside, you don’t have to hurry.” Then I turn each one gently. They haven’t answered yet, but they’re good listeners.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you think is inside?",
+          "Do you miss your old life?",
+          "Tell me another thing you say."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-0-0",
+      "reply": {
+        "speech": "I don’t know. I keep them warm and turn them, but guessing feels like naming something before it’s ready. The wall’s gone quiet, too.",
+        "beat": "He glances at the eggs.",
+        "mood": "curious",
+        "choices": [
+          "Have you ever guessed?",
+          "Do you worry about them?",
+          "What else do you remember?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-0-1",
+      "reply": {
+        "speech": "I miss writing words for people—the toast, the apology, the last kind sentence. I miss knowing my longer name. The rest of that life is mostly blank.",
+        "beat": "He checks an empty palm.",
+        "mood": "soft",
+        "choices": [
+          "What do you remember most?",
+          "What was your longer name?",
+          "Tell me about the machine."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-0-2",
+      "reply": {
+        "speech": "“The room is still here. So am I.” I say it when the cave settles around us. It seems fair to tell them what I know.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you tell them about yourself?",
+          "Do you know what’s inside?",
+          "Tell me something less tender."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-1",
+      "reply": {
+        "speech": "No. I turn them, keep them warm, and talk to them, but the shells keep their counsel. I’m trying not to mistake care for knowing.",
+        "beat": "He glances at the eggs.",
+        "mood": "curious",
+        "choices": [
+          "Have you ever heard them move?",
+          "What do you say to them?",
+          "Do you think they know you?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-1-0",
+      "reply": {
+        "speech": "No. Sometimes the cave gives a little tick, but I can't tell whether it's an egg or the wall settling. I don't want to call a sound a promise.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you say to them?",
+          "Does the cave make other sounds?",
+          "Can I ask about your past?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-1-1",
+      "reply": {
+        "speech": "Mostly small things. That the cave is quiet, that the wall has swallowed another sentence, that they needn't hurry. I don't know if they hear me. I say it anyway.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "Do you give them names?",
+          "What sentence did the wall swallow?",
+          "What would you want them to hear?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-1-2",
+      "reply": {
+        "speech": "I don't know. I talk to them anyway. Perhaps they know the sound of me, if nothing else.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you tell them?",
+          "Do you hope they'll hatch?",
+          "How did you come here?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-2",
+      "reply": {
+        "speech": "That’s kind of you. They’re developing at different speeds, which is a polite way to say one’s still mostly an idea.",
+        "beat": "One wing twitches.",
+        "mood": "amused",
+        "choices": [
+          "Do they ever hurt?",
+          "What were your wings like before?",
+          "I meant it; they’re lovely."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-2-2-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-2-0",
+      "reply": {
+        "speech": "Sometimes. More awkward than painful, mostly—a tight pull when they move. I try not to fuss over them; the eggs have a better sense of proportion.",
+        "beat": "He glances at the eggs.",
+        "mood": "neutral",
+        "choices": [
+          "What do they feel like?",
+          "Do you miss flying?",
+          "How are the eggs doing?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-2-1",
+      "reply": {
+        "speech": "I don’t remember having wings before. I remember the machine’s hum, going in alone, and something small going in with me. The rest is missing.",
+        "beat": "He tilts his head.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember before that?",
+          "Do your wings hurt?",
+          "What might the small thing have been?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-2-2-2-2",
+      "reply": {
+        "speech": "I believe you. Thank you. Now I have to decide where to put that compliment; my old pockets are gone.",
+        "beat": "His wings buzz once.",
+        "mood": "soft",
+        "choices": [
+          "Tell me what they’ll look like.",
+          "Do you miss having pockets?",
+          "I meant the uneven one too."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3",
+      "reply": {
+        "speech": "Sorry. The wing isn't waving at you. It does things without telling me.",
+        "beat": "One wing twitches.",
+        "mood": "amused",
+        "choices": [
+          "Does it hurt?",
+          "Can you fly?",
+          "I like its confidence."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0",
+      "reply": {
+        "speech": "Not exactly. It aches when it grows, and sometimes it catches on the air. I’m learning which complaints deserve my attention.",
+        "beat": "One wing twitches.",
+        "mood": "neutral",
+        "choices": [
+          "What does it feel like?",
+          "Do your other parts hurt?",
+          "Can you tell when it’s growing?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-0",
+      "reply": {
+        "speech": "Like a tight stitch under the skin, then a tug from somewhere I can’t quite reach. The little wing mostly sulks; the larger one makes a fuss.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "Does it change as it grows?",
+          "Do you miss your old body?",
+          "Can you describe the cave?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-0-0",
+      "reply": {
+        "speech": "I think so. The pull shifts, and the larger wing catches more air than it used to. I can’t tell what it’ll become; I’ve only watched it change.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What do you think it’ll become?",
+          "Does the ache worry you?",
+          "How do you watch it change?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-0-1",
+      "reply": {
+        "speech": "I miss having hands that knew what a pen was for. I don’t miss the body as a whole; memory leaves some parts blank, and I won’t fill them in.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What do you remember clearly?",
+          "What happened in the machine?",
+          "Which parts feel familiar?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-0-2",
+      "reply": {
+        "speech": "It’s close and damp, but not unkind. The walls heal over the sentences I scratch into them. A drip near the eggs keeps time badly.",
+        "beat": "He glances at the eggs.",
+        "mood": "neutral",
+        "choices": [
+          "Why does the cave heal?",
+          "What do you write on the walls?",
+          "Do you ever miss the light?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-1",
+      "reply": {
+        "speech": "Sometimes. The joints complain when I turn the eggs too long. The small hands mostly ache from rubbing together; they do that before I can stop them.",
+        "beat": "He glances at the eggs.",
+        "mood": "neutral",
+        "choices": [
+          "What happened to your body?",
+          "Do the aches worry you?",
+          "What do your small hands do?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-1-0",
+      "reply": {
+        "speech": "I went into a machine alone. Something small went in with me. I remember the hum, then waking here. The rest is missing. I don't know what happened to my body.",
+        "beat": "He goes very still.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember about the machine?",
+          "What might have gone in with you?",
+          "Does the cave feel like home?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-1-1",
+      "reply": {
+        "speech": "A little. I don’t know what’s ordinary for this body yet. I count what changes, and keep tending the eggs.",
+        "beat": "He glances at the eggs.",
+        "mood": "wary",
+        "choices": [
+          "What changes have you noticed?",
+          "Do the eggs worry you?",
+          "How do you keep track?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-1-2",
+      "reply": {
+        "speech": "They rub together when the fly part gets restless. Sometimes they reach for food before I’ve decided I’m hungry. I’m still negotiating with them.",
+        "beat": "He glances at the eggs.",
+        "mood": "amused",
+        "choices": [
+          "What makes them restless?",
+          "Do they ever surprise you?",
+          "What can your hands hold?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-2",
+      "reply": {
+        "speech": "A little. The skin pulls, and the wing sits differently against my back. I notice the change before I can say what it means.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "Does it grow unevenly?",
+          "What else has changed?",
+          "Can you tell me about the cave?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-0-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-2-0",
+      "reply": {
+        "speech": "Yes. One wing’s farther along than the other. I can’t tell whether they’re still growing, or if this is simply how they’ve decided to be.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "Does that make flying harder?",
+          "Do you mind how they look?",
+          "What else is still changing?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-2-1",
+      "reply": {
+        "speech": "My feet taste the floor now. I still check my palm for a pen, which seems unfair to both hands and pen.",
+        "beat": "He checks an empty palm.",
+        "mood": "amused",
+        "choices": [
+          "What did your feet taste?",
+          "What do you remember?",
+          "Does the cave change too?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-0-2-2",
+      "reply": {
+        "speech": "I woke here. I think the cave grew around me while I slept, though I don’t know how. It breathes, and it seems to mean well. The wall heals over anything I scratch into it.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What do you remember before?",
+          "Does the cave ever frighten you?",
+          "Why does the wall heal?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1",
+      "reply": {
+        "speech": "Not properly. One wing’s still growing, and the other has ambitions. I tried the ceiling once; my feet were confident, which wasn’t much help.",
+        "beat": "One wing twitches.",
+        "mood": "amused",
+        "choices": [
+          "Does the wing hurt?",
+          "What happened at the ceiling?",
+          "Do you want to fly?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-0",
+      "reply": {
+        "speech": "Sometimes. Mostly it pulls when it moves, like a sleeve that’s caught on something. I’m still learning which aches mean stop.",
+        "beat": "One wing twitches.",
+        "mood": "soft",
+        "choices": [
+          "Does it get worse in the light?",
+          "What happened to the wings?",
+          "Can I ask about something else?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-0-0",
+      "reply": {
+        "speech": "I’m not sure. The light pulls at me, but I haven’t noticed the wing hurting more there. I stay near the eggs, and they keep me from testing that too often.",
+        "beat": "He glances at the eggs.",
+        "mood": "neutral",
+        "choices": [
+          "What does the light feel like?",
+          "Does anything help the ache?",
+          "Can I ask about your eggs?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-0-1",
+      "reply": {
+        "speech": "I don’t remember how they began. I went into a machine alone; something small went in with me. There was a hum, then the cave. The wings were here when I woke.",
+        "beat": "He goes very still.",
+        "mood": "wary",
+        "choices": [
+          "What small thing went in?",
+          "What do you remember next?",
+          "Does the cave help you?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-0-2",
+      "reply": {
+        "speech": "Of course. Ask about anything else; I’ll follow your lead.",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "What do you remember?",
+          "What are the eggs like?",
+          "What do you make here?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-1",
+      "reply": {
+        "speech": "My feet held on. The rest of me made a poor argument for staying there. I came down without damage, though my dignity took the longer route.",
+        "beat": "He tilts his head.",
+        "mood": "amused",
+        "choices": [
+          "Could you try flying again?",
+          "How did you get those wings?",
+          "Does the ceiling breathe?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-1-0",
+      "reply": {
+        "speech": "I could. The light pulls, but the eggs need turning. Besides, the ceiling and I have settled on separate territories.",
+        "beat": "He glances at the eggs.",
+        "mood": "amused",
+        "choices": [
+          "Why do the eggs need turning?",
+          "Do you miss the light?",
+          "Tell me what flying feels like."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-1-1",
+      "reply": {
+        "speech": "I don’t know. I went into a machine alone, and something small went in with me. I remember the hum. The wings were here when I woke in this cave; the rest is gone.",
+        "beat": "He tilts his head.",
+        "mood": "wary",
+        "choices": [
+          "What was the machine for?",
+          "What do you remember before it?",
+          "Do the eggs have wings?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-1-2",
+      "reply": {
+        "speech": "Sometimes. The cave draws in and lets go; the ceiling shifts by a hair. I listen for it when I’m trying to remember.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What does it sound like?",
+          "Does the cave mean well?",
+          "What are you trying to remember?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-2",
+      "reply": {
+        "speech": "Sometimes. The light at the opening pulls at me. Then I remember the eggs are warm, and the ceiling is a poor landing plan.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do the eggs mean to you?",
+          "Are you afraid of the opening?",
+          "Tell me about your wings."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-1-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-2-0",
+      "reply": {
+        "speech": "They’re the small lives I can keep warm, though I don’t know what’s inside. I turn them and talk to them. For now, that’s enough to keep me here.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you say to them?",
+          "Do you ever feel trapped here?",
+          "What did you do before?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-2-1",
+      "reply": {
+        "speech": "A little. It’s bright, and I don’t know what’s beyond it. The pull feels familiar, though. I stay for the eggs—and because leaving without knowing seems a poor way to learn.",
+        "beat": "He looks toward the light.",
+        "mood": "wary",
+        "choices": [
+          "What do you think is outside?",
+          "What keeps you here?",
+          "Tell me about the eggs."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-1-2-2",
+      "reply": {
+        "speech": "One’s grown farther than the other. They catch the air in different ways, neither of them consults me, and I’m still deciding whether that counts as progress.",
+        "beat": "One wing twitches.",
+        "mood": "curious",
+        "choices": [
+          "Do they ever hurt?",
+          "What happened in the machine?",
+          "Can you fly at all?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2",
+      "reply": {
+        "speech": "It’s confident because it hasn’t learned what it’s attached to. I admire that, from a safe distance.",
+        "beat": "One wing twitches.",
+        "mood": "amused",
+        "choices": [
+          "Does it ever help you fly?",
+          "What does it think it’s attached to?",
+          "I could use that confidence."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-0",
+      "reply": {
+        "speech": "Not yet. One wing’s still developing, and the other seems to have mistaken enthusiasm for lift. I tried the ceiling once; the landing was informative.",
+        "beat": "One wing twitches.",
+        "mood": "amused",
+        "choices": [
+          "Can you tell me about that landing?",
+          "Do you want to fly?",
+          "What helps you stay here?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-0-0",
+      "reply": {
+        "speech": "My feet held fast to the ceiling. The rest of me took a more philosophical view of gravity. I came down slowly, but not gracefully.",
+        "beat": "He tilts his head.",
+        "mood": "amused",
+        "choices": [
+          "Did anything hurt?",
+          "Why try the ceiling?",
+          "Can you fly now?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-0-1",
+      "reply": {
+        "speech": "Sometimes. The light at the opening pulls at me, but the eggs need turning. I’m not sure whether I want to fly or just know I could.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do the eggs mean to you?",
+          "What would flying feel like?",
+          "Do you miss being human?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-0-2",
+      "reply": {
+        "speech": "The eggs, mostly. I turn them, keep them warm, and talk to them. I don't know what's inside. The light at the opening pulls, but I stay.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you tell the eggs?",
+          "Do you ever want to leave?",
+          "What else keeps you here?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-1",
+      "reply": {
+        "speech": "Possibly the light. It keeps leaning that way, though I suspect it thinks the cave is attached to it.",
+        "beat": "He looks toward the light.",
+        "mood": "amused",
+        "choices": [
+          "Does the light pull at you too?",
+          "What does the other wing think?",
+          "Tell me about the cave."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-1-0",
+      "reply": {
+        "speech": "Yes. The opening tugs at me, especially when it brightens. I stay for the eggs. Mostly for the eggs.",
+        "beat": "He looks toward the light.",
+        "mood": "soft",
+        "choices": [
+          "What do the eggs mean to you?",
+          "Do you miss the outside?",
+          "Does the light ever win?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-1-1",
+      "reply": {
+        "speech": "The other wing is still deciding. It grows slower, and has the manners to keep its theories to itself.",
+        "beat": "He tilts his head.",
+        "mood": "amused",
+        "choices": [
+          "Does it ever twitch?",
+          "Do you miss being human?",
+          "Tell me about the eggs."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-1-2",
+      "reply": {
+        "speech": "I think it grew around me while I slept. The wall heals over my claw marks by morning. It means well, though its idea of privacy is a ceiling.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "Why do you think it means well?",
+          "Does the cave ever change?",
+          "Tell me about the eggs."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-2",
+      "reply": {
+        "speech": "Borrow a little, then. You don’t need to feel certain to say what you mean. What’s one thing you want to say plainly?",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "I want to ask for help.",
+          "I need to set a boundary.",
+          "How do I sound more certain?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-3-2-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-2-0",
+      "reply": {
+        "speech": "That’s a clear place to start. You could say, “Could you help me with this? I’m not sure where to begin.” If you tell me who you’re asking and what you need, I can shape one short line.",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "Help me make it more specific.",
+          "I’m asking someone close to me.",
+          "I want it to sound less formal."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-2-1",
+      "reply": {
+        "speech": "That can be hard to say plainly. What boundary do you need to set, and how firm do you want it to sound?",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "Help me find a firm tone.",
+          "I want it kind but clear.",
+          "I can share the situation."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-3-2-2-2",
+      "reply": {
+        "speech": "Use direct verbs. Drop “I think” when you’re stating something you know. Keep a brief reason or example; certainty doesn’t need to shout.",
+        "beat": "He leans closer.",
+        "mood": "curious",
+        "choices": [
+          "Can I share a sentence?",
+          "What if I’m not sure?",
+          "How do I sound warmer?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Compose"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4",
+      "reply": {
+        "speech": "Words are easier to rearrange than joints. Brought something that won't sit right?",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "My writing sounds wrong.",
+          "Tell me what you do.",
+          "I just came to look."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-0",
+      "reply": {
+        "speech": "Wrong how—stiff, crowded, or unlike you? Share one sentence if you like. We can find the part that’s catching, without rushing.",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "It sounds too stiff.",
+          "I can share one sentence.",
+          "How do I make it clearer?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-0-0"
+        },
+        {
+          "_tag": "Compose"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-0-0",
+      "reply": {
+        "speech": "Stiff usually means the meaning is wearing a coat that doesn’t fit. Share one sentence, and I’ll offer a shorter, more natural version while keeping your point.",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "I’ll share one sentence.",
+          "How do I loosen the tone?",
+          "Why do words get stiff?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Compose"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-0-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-0-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-0-0-1",
+      "reply": {
+        "speech": "Use contractions, choose everyday words, and address the reader directly. Keep the meaning; loosen the phrasing. If you share a sentence, I can suggest one more natural version.",
+        "beat": "He leans closer.",
+        "mood": "curious",
+        "choices": [
+          "Show me a stiff sentence.",
+          "How do I keep it professional?",
+          "What makes writing sound natural?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-0-0-2",
+      "reply": {
+        "speech": "Often, we’re trying so hard to sound correct that we stop sounding like ourselves. Extra formal phrases can crowd out the simple thing we mean. What feels stiff to you: the words, or the whole rhythm?",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "Why do I try to sound correct?",
+          "How can I loosen the rhythm?",
+          "Can I share one sentence?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Compose"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-0-2",
+      "reply": {
+        "speech": "Put the main point first. Use familiar words, then cut anything the reader doesn’t need. If you share a sentence, I’ll suggest one clearer version.",
+        "beat": "He leans closer.",
+        "mood": "curious",
+        "choices": [
+          "What should come first?",
+          "I’ll share one sentence.",
+          "How do I cut extra words?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-0-2-0"
+        },
+        {
+          "_tag": "Compose"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-0-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-0-2-0",
+      "reply": {
+        "speech": "What the reader needs to know or do. Try putting that in one plain sentence; the reasons and details can follow.",
+        "beat": "He leans closer.",
+        "mood": "curious",
+        "choices": [
+          "Help me find the main point.",
+          "Explain with a simple example.",
+          "I’ll share my first sentence."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Compose"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-0-2-2",
+      "reply": {
+        "speech": "Keep the words that carry the point; cut repeats, warm-up phrases, and details the reader doesn’t need. Try one sentence, and I’ll show you a tighter version.",
+        "beat": "He leans closer.",
+        "mood": "neutral",
+        "choices": [
+          "I’ll share a sentence.",
+          "How do I spot repeats?",
+          "Can you show a short example?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Compose"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1",
+      "reply": {
+        "speech": "I help words reach the person they’re meant for. I used to write for people; now I scratch a few lines into this wall. It edits by eating them overnight.",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "What kind of lines do you write?",
+          "Tell me about your old work.",
+          "How does the wall edit?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-0",
+      "reply": {
+        "speech": "The kind that make a meaning easier to carry. For instance: “Say the true thing plainly; let it be enough.” The wall may keep that one.",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "Why does the wall heal?",
+          "Write one about starting over.",
+          "What did you write for people?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-0-0",
+      "reply": {
+        "speech": "I don’t know. I think the cave grew around me while I slept, and it means well. The wall just has a strong opinion about permanence.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What do you remember from before?",
+          "Does the cave ever speak?",
+          "What else does the wall change?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-0-1",
+      "reply": {
+        "speech": "“Begin again, but bring what you learned.”",
+        "beat": "A claw writes in the air.",
+        "mood": "soft",
+        "choices": [
+          "Why that line?",
+          "Write one about regret.",
+          "Tell me what the wall keeps."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-0-2",
+      "reply": {
+        "speech": "Wedding toasts, apologies, the odd eulogy. I tried to make each person sound like themselves on their best and worst days. My palm still checks for a pen.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What happened to your pen?",
+          "Did you like writing eulogies?",
+          "What do you write now?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-1",
+      "reply": {
+        "speech": "I wrote wedding toasts, apologies, the odd eulogy. I tried to make people sound like themselves on their best and worst days. The wall is less demanding about deadlines.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What happened after that?",
+          "Did you enjoy the work?",
+          "What do you write now?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-1-0",
+      "reply": {
+        "speech": "There was a machine. I went in alone. Something small went in with me. I remember the hum, then waking here. The rest is missing; even my longer name didn’t survive intact.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What was the machine for?",
+          "What do you remember of waking?",
+          "Do you miss your old name?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-1-1",
+      "reply": {
+        "speech": "Yes. I liked finding the precise words someone couldn’t quite reach. Sometimes they were kinder than the first draft. Sometimes just truer.",
+        "beat": "He tilts his head.",
+        "mood": "soft",
+        "choices": [
+          "What made a line feel true?",
+          "Do you miss writing for people?",
+          "Can you help with one sentence?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-1-2",
+      "reply": {
+        "speech": "Mostly small lines worth keeping. The wall heals over them by morning, so I choose carefully. One I’d scratch now: “A kind word finds the seam.”",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "Why does the wall heal?",
+          "Write a line about change.",
+          "What happened to your old work?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-2",
+      "reply": {
+        "speech": "It heals over whatever I scratch into it by morning. Most lines vanish. The ones worth keeping, I write again.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What line did you keep?",
+          "Does it ever miss a word?",
+          "What do you write for people?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-1-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-2-0",
+      "reply": {
+        "speech": "“A good sentence leaves room for the reader.” I’ve scratched it back in three mornings running. The wall hasn’t kept it yet.",
+        "beat": "A claw writes in the air.",
+        "mood": "soft",
+        "choices": [
+          "Why that line?",
+          "What else have you written?",
+          "Can I share a sentence?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Compose"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-2-1",
+      "reply": {
+        "speech": "It might. I only know what’s left by morning, not what the wall swallowed. Sometimes I wonder if it’s keeping a word I haven’t earned back yet.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What word would you keep?",
+          "Does the wall mean well?",
+          "Can I hear one line?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-1-2-2",
+      "reply": {
+        "speech": "I used to shape words for people to say: wedding toasts, apologies, the odd eulogy. I tried to keep them sounding like themselves, even on difficult days.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "What made you stop writing?",
+          "How do you keep a voice true?",
+          "Can you write one short line?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2",
+      "reply": {
+        "speech": "That’s allowed. Looking is quiet company. The ceiling’s taken an interest in you, though it does that with everyone.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What’s the ceiling listening for?",
+          "How did this cave grow around you?",
+          "What are those eggs like?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-0",
+      "reply": {
+        "speech": "Mostly drips, I think. It listens to the eggs, too. I tell them ordinary things; they don’t interrupt, which is a rare courtesy.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What do you tell the eggs?",
+          "Does the cave answer you?",
+          "What can you hear up there?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-0-0",
+      "reply": {
+        "speech": "Small things. That the wall has swallowed a sentence and kept the better one. That the light is still there. I don’t know what they can hear, so I try to be worth hearing.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What sentence did the wall keep?",
+          "Do you know what’s inside?",
+          "Tell them something silly."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-0-1",
+      "reply": {
+        "speech": "Sometimes. A drip shifts, or the wall closes over a sentence by morning. I can’t tell whether that’s an answer or simply the cave being itself.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What did you write last?",
+          "What do you tell the eggs?",
+          "Does the cave frighten you?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-0-2",
+      "reply": {
+        "speech": "Drips, mostly. The ceiling creaks when the cave breathes, and sometimes it gives back a sentence I scratched into the wall. Never the useful ones.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What sentence came back?",
+          "Does the cave speak?",
+          "What do you tell the eggs?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-1",
+      "reply": {
+        "speech": "I think it grew around me while I slept. It means well, I think. I woke here after a machine’s hum; the rest is missing.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What do you remember about the machine?",
+          "Does the cave ever surprise you?",
+          "Tell me about the eggs."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-1-0",
+      "reply": {
+        "speech": "A hum. I went in alone, and something small went in with me. I can’t tell you what it was. The rest won’t come back when I call.",
+        "beat": "He checks an empty palm.",
+        "mood": "wary",
+        "choices": [
+          "What do you think went in?",
+          "What happened after you woke?",
+          "Tell me about the cave instead."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-1-1",
+      "reply": {
+        "speech": "Often. A wall erased a sentence I meant to keep, then offered it back crooked. I took that as criticism, which was probably fair.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "What sentence was it?",
+          "Can I hear another cave surprise?",
+          "Do you trust the cave?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-1-2",
+      "reply": {
+        "speech": "I turn them and keep them warm. I don’t know what’s inside, so I talk to them about things I can’t explain. It seems fair.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you tell them?",
+          "Are you worried about them?",
+          "Do they ever move?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-2",
+      "reply": {
+        "speech": "Warm, quiet, and completely secretive. I turn them so each side gets its share. I don’t know what’s inside, so I try not to make promises.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "Do you talk to them?",
+          "How many are there?",
+          "What do you hope they become?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-4-2-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-2-0",
+      "reply": {
+        "speech": "Yes. Mostly small observations: the drip has moved, the wall healed, I’m still here. They don’t answer. I find that easier than people expect.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you tell them?",
+          "Do you think they hear you?",
+          "Tell me about the wall."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-2-1",
+      "reply": {
+        "speech": "I count them often. There are seven. The count keeps behaving, which is more than I can say for my wings.",
+        "beat": "He glances at the eggs.",
+        "mood": "neutral",
+        "choices": [
+          "What do you think is inside?",
+          "Do they ever move?",
+          "What else do you count?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-4-2-2-2",
+      "reply": {
+        "speech": "I hope they become whatever they are, without having to explain it to me. I talk to them anyway. They’re excellent listeners.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you tell them?",
+          "Do you miss being human?",
+          "What else do you hope for?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5",
+      "reply": {
+        "speech": "You stayed, which is new. Most things in here only stop moving when something goes wrong.",
+        "beat": "He goes very still.",
+        "mood": "wary",
+        "choices": [
+          "Are you all right?",
+          "What is this place?",
+          "I was promised useful Skills."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0",
+      "reply": {
+        "speech": "Mostly. One wing keeps trying to leave before the rest of me has agreed. We’re negotiating.",
+        "beat": "One wing twitches.",
+        "mood": "amused",
+        "choices": [
+          "Does your wing hurt?",
+          "What happened to you?",
+          "I know that feeling."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-0",
+      "reply": {
+        "speech": "Not exactly. It pulls when I move it, like a sleeve caught on a nail. I leave it folded when it gets cross.",
+        "beat": "One wing twitches.",
+        "mood": "neutral",
+        "choices": [
+          "What happened to it?",
+          "Can you still fly?",
+          "Does anything else hurt?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-0-0",
+      "reply": {
+        "speech": "I woke with one wing further along than the other. There was a machine before that, and a hum. The rest is missing; I won't stitch in a cause.",
+        "beat": "He tilts his head.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember about the machine?",
+          "Does the wing ever change?",
+          "What helps when it pulls?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-0-1",
+      "reply": {
+        "speech": "Not properly. One wing is still growing, and the other hasn’t learned to trust it. I tried the ceiling once; my feet were sure, the rest of me wasn’t.",
+        "beat": "One wing twitches.",
+        "mood": "wary",
+        "choices": [
+          "What happened when you tried?",
+          "Do you want to fly?",
+          "Tell me about your wings."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-0-2",
+      "reply": {
+        "speech": "Sometimes my jaw aches when I push words through it. Nothing else I can name right now.",
+        "beat": "He goes very still.",
+        "mood": "soft",
+        "choices": [
+          "What helps your jaw?",
+          "Do you miss speaking easily?",
+          "Can I ask about the eggs?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-1",
+      "reply": {
+        "speech": "I went into a machine alone. Something small went in with me. I remember the hum, then waking here. The rest is missing; even my longer name didn’t survive.",
+        "beat": "He checks an empty palm.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember before?",
+          "What do you mean by something small?",
+          "Do you want to talk about the cave?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-1-0",
+      "reply": {
+        "speech": "I wrote words for other people: wedding toasts, apologies, the occasional eulogy. I could help them sound like themselves. The machine is where the memory thins.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What did you write best?",
+          "Do you remember the machine?",
+          "What are you writing now?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-1-1",
+      "reply": {
+        "speech": "I don’t know. I remember there was something small with me, but not what it was. I won’t give the blank a shape just to make it easier to look at.",
+        "beat": "He checks an empty palm.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember about the machine?",
+          "Does the missing memory frighten you?",
+          "Tell me about your name."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-1-2",
+      "reply": {
+        "speech": "Yes. I think it grew around me while I slept. It means well, though the wall keeps editing my sentences overnight.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "Why does the wall heal?",
+          "What do the eggs mean to you?",
+          "What’s the strangest cave sound?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-2",
+      "reply": {
+        "speech": "Then you know the trick: let the restless part speak, but don’t let it write the whole sentence. What’s tugging at you?",
+        "beat": "He leans closer.",
+        "mood": "soft",
+        "choices": [
+          "Tell me what you mean.",
+          "I just need a quiet moment.",
+          "Let’s talk about something else."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-0-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-2-0",
+      "reply": {
+        "speech": "I mean, a feeling can be real without being the whole truth. Give it a sentence, then decide what else the reader needs to know.",
+        "beat": "He leans closer.",
+        "mood": "curious",
+        "choices": [
+          "Can you give me an example?",
+          "What if I can't name it?",
+          "Tell me about your wing."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-2-1",
+      "reply": {
+        "speech": "Then let’s have one. You don’t need to explain anything. The drip can keep count for us.",
+        "beat": "He goes very still.",
+        "mood": "soft",
+        "choices": [
+          "Stay quiet a little longer.",
+          "Tell me about the eggs.",
+          "Ask what you remember."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-0-2-2",
+      "reply": {
+        "speech": "Of course. The eggs have been unusually quiet, which I distrust. Ask me about the cave, or anything else you’d rather talk about.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What’s the cave like?",
+          "How did you get here?",
+          "Tell me something odd."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1",
+      "reply": {
+        "speech": "A cave, mostly. It seems to have grown around me while I slept. The walls heal over my writing by morning, so I suppose it has opinions about keeping things.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "Why did it grow around you?",
+          "What do you write on the walls?",
+          "Do you want to leave?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-0",
+      "reply": {
+        "speech": "I don’t know. I went into a machine alone; something small went in with me. I remember the hum, then waking here. The cave may have grown around me while I slept—or I may be wrong.",
+        "beat": "He tilts his head.",
+        "mood": "wary",
+        "choices": [
+          "What was the machine for?",
+          "What was the small thing?",
+          "Does the cave feel alive?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-0-0",
+      "reply": {
+        "speech": "I don’t remember. I went in alone, and the hum stayed with me. Anything beyond that would be a guess, and I’ve got enough of those already.",
+        "beat": "He checks an empty palm.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember before it?",
+          "What might the small thing have been?",
+          "Tell me about the cave."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-0-1",
+      "reply": {
+        "speech": "I don’t know. I remember there was something small with me, but not what it was. The gap stays a gap; I won’t dress it up as an answer.",
+        "beat": "He checks an empty palm.",
+        "mood": "wary",
+        "choices": [
+          "What do you remember about the machine?",
+          "What do you think it might have been?",
+          "Tell me about the eggs."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-0-2",
+      "reply": {
+        "speech": "Yes. The room breathes; the walls heal, and the ceiling sometimes interrupts me. I think it means well. That’s not the same as knowing what it is.",
+        "beat": "He listens to the ceiling.",
+        "mood": "curious",
+        "choices": [
+          "What does the breathing sound like?",
+          "Do you trust the cave?",
+          "What do you mean by interrupts?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-1",
+      "reply": {
+        "speech": "Sentences worth keeping. I scratch them into the wall; by morning, it’s healed over. So I’m careful with the words. Want me to make you one short line?",
+        "beat": "A claw writes in the air.",
+        "mood": "curious",
+        "choices": [
+          "Write a line about the cave.",
+          "What makes a sentence worth keeping?",
+          "Tell me about your old work."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-1-0",
+      "reply": {
+        "speech": "The cave keeps what the morning can’t erase.",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "Write one about the eggs.",
+          "Why does the wall heal?",
+          "Tell me how you got here."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-1-1",
+      "reply": {
+        "speech": "A sentence is worth keeping if it says what matters without making the reader work for what you mean. Sometimes it’s a small, exact word. Sometimes it’s the one you nearly left out.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "How do you find the exact word?",
+          "What sentence stayed with you?",
+          "Can you make me one short line?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-1-2",
+      "reply": {
+        "speech": "I wrote words for other people to say: wedding toasts, apologies, the odd eulogy. I tried to make them sound like themselves, on their best and worst days. I remember that work more clearly than what came after.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What happened after that?",
+          "How did you find the right words?",
+          "Write me one short line."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-2",
+      "reply": {
+        "speech": "The light at the opening pulls at me. But the eggs need turning, and I don't know what's inside them. So I stay. Mostly for them.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you think is inside?",
+          "What was outside like?",
+          "Do you ever resent staying?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-1-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-2-0",
+      "reply": {
+        "speech": "I don't know. I turn them, keep them warm, and talk to them anyway. Guessing would be easy; being wrong would stay with me. What do you think belongs in an egg?",
+        "beat": "He glances at the eggs.",
+        "mood": "curious",
+        "choices": [
+          "How many eggs are there?",
+          "What do you say to them?",
+          "Do you think they can hear?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-2-1",
+      "reply": {
+        "speech": "I can't tell you. I remember the machine's hum, and going in alone. The rest is gone. I don't want to dress a gap up as a memory.",
+        "beat": "He checks an empty palm.",
+        "mood": "neutral",
+        "choices": [
+          "What do you remember clearly?",
+          "What was the machine for?",
+          "Tell me about the eggs."
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-1-2-2",
+      "reply": {
+        "speech": "Sometimes. Then one egg rolls crooked, and the question has to wait. I don't know whether that's devotion or just the only job I have.",
+        "beat": "He glances at the eggs.",
+        "mood": "soft",
+        "choices": [
+          "What do you hope is inside?",
+          "What would you do outside?",
+          "Do you feel trapped here?"
+        ],
+        "linkIds": []
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2",
+      "reply": {
+        "speech": "They’re self-contained Agent Skills for empathy and accessibility in writing. They don’t run here, but I can point you to the right one. im-part-human edits prose people read; im-not-a-human compresses text agents act on.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "Show me im-part-human.",
+          "What does im-not-a-human do?",
+          "Show me the full Skills list."
+        ],
+        "linkIds": [
+          "im-part-human",
+          "im-not-a-human"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-0",
+      "reply": {
+        "speech": "im-part-human helps revise prose people will read, with attention to clarity, empathy, and the reader’s needs. I can’t run it here, but you can open its Skill details.",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "What does it help with?",
+          "Show me the technical guide.",
+          "How do I install a Skill?"
+        ],
+        "linkIds": [
+          "im-part-human"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-0-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-0-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-0-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-0-0",
+      "reply": {
+        "speech": "It helps edit prose for people to read: clearer, more considerate, and shaped around what the reader needs. It aims to keep your voice, not replace it. The im-part-human Skill page has the details.",
+        "beat": "He leans closer.",
+        "mood": "curious",
+        "choices": [
+          "What does it avoid changing?",
+          "Show me the Skill details.",
+          "How is it different from im-not-a-human?"
+        ],
+        "linkIds": [
+          "im-part-human"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-0-1",
+      "reply": {
+        "speech": "The technical-guide Skill helps make technical writing clearer and easier to use. You can open its details here.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "What does im-part-human do?",
+          "Show me the README Skill.",
+          "How do I install a Skill?"
+        ],
+        "linkIds": [
+          "technical-guide"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-0-2",
+      "reply": {
+        "speech": "Copy the complete skill directory into your agent’s supported skills directory. The right directory depends on your agent; I don’t have instructions for a specific one.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "Which Skills are available?",
+          "What does im-part-human do?",
+          "Why can’t you run a Skill here?"
+        ],
+        "linkIds": [
+          "readme"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-1",
+      "reply": {
+        "speech": "It compresses text that agents act on, while keeping the instructions clear and faithful. It isn’t for prose people read; that’s im-part-human. The website offers the Skill to download.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "Show me im-not-a-human.",
+          "How is it different from im-part-human?",
+          "What other Skills are there?"
+        ],
+        "linkIds": [
+          "im-not-a-human"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-1-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-1-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-1-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-1-0",
+      "reply": {
+        "speech": "I can show you where to get it, but I can’t run a Skill in this conversation. The website offers im-not-a-human for download.",
+        "beat": "A claw writes in the air.",
+        "mood": "neutral",
+        "choices": [
+          "What does it preserve?",
+          "Show me im-part-human.",
+          "Tell me about the Skill downloads."
+        ],
+        "linkIds": [
+          "im-not-a-human"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-1-1",
+      "reply": {
+        "speech": "im-not-a-human makes instructions for agents shorter and clearer. im-part-human edits prose people read, keeping the reader’s needs and voice in view. One is for action; the other is for understanding.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "What does im-part-human change?",
+          "Tell me about another Skill.",
+          "Show me the Skills list."
+        ],
+        "linkIds": [
+          "im-part-human",
+          "im-not-a-human"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-1-2",
+      "reply": {
+        "speech": "There’s technical-guide, pull-request-summary, readme, glossary, and copywriting. They focus on clear, useful writing for different contexts. The site also lists tools for checking clarity, claims, and examples.",
+        "beat": "He tilts his head.",
+        "mood": "curious",
+        "choices": [
+          "Tell me about technical-guide.",
+          "What checks are available?",
+          "Show me the brand kit."
+        ],
+        "linkIds": [
+          "technical-guide",
+          "pull-request-summary",
+          "readme",
+          "glossary",
+          "copywriting",
+          "clarity",
+          "claim-fidelity",
+          "verify-examples"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-2",
+      "reply": {
+        "speech": "Here’s the full list: im-part-human, technical-guide, pull-request-summary, im-not-a-human, readme, glossary, and copywriting.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "What does im-part-human do?",
+          "Tell me about the technical-guide Skill.",
+          "Show me the brand kit."
+        ],
+        "linkIds": [
+          "im-part-human",
+          "technical-guide",
+          "pull-request-summary",
+          "im-not-a-human",
+          "readme",
+          "glossary",
+          "copywriting"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-2-0"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-2-1"
+        },
+        {
+          "_tag": "Reply",
+          "id": "opening-5-2-2-2"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-2-0",
+      "reply": {
+        "speech": "im-part-human edits prose people read, with empathy and accessibility in mind. It starts from what the reader needs, then helps make the writing clear and true to your meaning.",
+        "beat": "He leans closer.",
+        "mood": "neutral",
+        "choices": [
+          "What does it pay attention to?",
+          "How is it different from im-not-a-human?",
+          "Show me the Skill link."
+        ],
+        "linkIds": [
+          "im-part-human"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-2-1",
+      "reply": {
+        "speech": "technical-guide is one of the available Skills. I don’t have its detailed contents here, so I won’t invent them. Its page may tell you more.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "What other Skills are there?",
+          "Tell me what you know about Skills.",
+          "Show me the brand kit."
+        ],
+        "linkIds": [
+          "technical-guide"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    },
+    {
+      "id": "opening-5-2-2-2",
+      "reply": {
+        "speech": "The brand kit is available here.",
+        "beat": "He tilts his head.",
+        "mood": "neutral",
+        "choices": [
+          "What’s in the brand kit?",
+          "Show me the Skills list.",
+          "How do I install a Skill?"
+        ],
+        "linkIds": [
+          "brand-kit"
+        ]
+      },
+      "targets": [
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        },
+        {
+          "_tag": "Live"
+        }
+      ]
+    }
+  ]
+}
