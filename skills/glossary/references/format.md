@@ -2,6 +2,13 @@
 
 `GLOSSARY.md` has four sections in this order: Map, Terms, Banned, Open questions. A repository that enforces commit scopes adds Scopes after Banned.
 
+## Contents
+
+- Map syntax
+- `## Open questions` format
+- `## Scopes` format
+- The rest
+
 ## Map syntax
 
 `## Map` is the first section, before any term definition. When a diagram helps, write it in Mermaid, which GitHub renders natively inside a fenced ```` ```mermaid ```` block in any `.md` file, plus the table from the section above. No image files, no external tooling, still a plain-text diff.
@@ -54,7 +61,7 @@ Rules for the map:
 - Redraw whenever a term is added or a collision is resolved.
 - **`## Map` holds three things and nothing else**: the table, an optional diagram, and the `Collisions` list. No narrative, no rationale, no per-term commentary. Reasoning about a term belongs in `## Terms`; reasoning about an unresolved choice belongs in `## Open questions`. The budget is on **prose, which should be zero**, not on the artefacts: a table needs one row per term and a diagram costs what it costs, so never drop a term or a required diagram to hit a line count.
 
-The worked examples in this skill use a Sprint/Finding/Ticket domain. They are illustrative only. Do not grep the target repo for the example's words.
+The worked examples in this Skill use a Sprint/Finding/Ticket domain. They are illustrative only. Do not grep the target repo for the example's words.
 
 ## `## Open questions` format
 

@@ -5,6 +5,14 @@ A human origin story can carry that explanation. It need not read like a competi
 An origin story still needs ecosystem context: what already exists and why the author chose to build this project.
 Keep that context brief and connected to the story. A feature matrix is optional.
 
+## Contents
+
+- Find the story
+- Establish the comparison
+- Decide whether to interview
+- Write the adoption case
+- Review Why
+
 ## Find the story
 
 Read supplied author notes, existing prose, and documented origins before drafting.
@@ -22,14 +30,14 @@ Do not turn the opening into a feature inventory or an evaluation report.
 
 Read supplied positioning, requirements, decision records, and examples before asking the owner.
 Preserve the owner's chosen audience. Concrete examples do not require narrowing the whole project to that audience.
-If a collection serves writing for people and agents, explain both tasks using its supported skills.
+If a collection serves writing for people and agents, explain both tasks using its supported Skills.
 Identify the reader's task, current workaround, and the cost or missing outcome that matters to them.
 Inspect relevant competing packages and the default approach without this package.
 For internal software, inspect the team's existing process, integrations, and required business rules.
 Bespoke fit can be the adoption reason. Do not force an internal tool into a public competitor comparison.
 Use current official documentation, source, and published results for material claims.
 Record the source revision and comparison scope in private working evidence.
-Compare the same task and dimensions across alternatives. Do not compare a whole collection with one narrow skill as peers.
+Compare the same task and dimensions across alternatives. Do not compare a whole collection with one narrow Skill as peers.
 
 Find the concrete gap, the package's supported response, and the resulting reader benefit.
 Distinguish shared features from differentiators. A useful combination can differentiate a package when individual features are common.
@@ -102,4 +110,4 @@ Keep necessary qualifications beside any claim they limit. Remove the whole clai
 
 Use supplied copy rules for sentence-level bans and the glossary for product-name bans.
 Follow each ban's scope and replacement. Do not ban a live product name, command, or identifier as generic language.
-If no wording guide exists, use these review questions without inventing one or requiring a personal skill.
+If no wording guide exists, use these review questions without inventing one or requiring a personal Skill.

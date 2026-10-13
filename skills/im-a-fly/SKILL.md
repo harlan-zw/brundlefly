@@ -1,6 +1,6 @@
 ---
 name: im-a-fly
-description: Compress text for agents without losing substantial meaning. Use for Markdown files, agent instructions, documentation, and context that need fewer tokens while preserving facts, constraints, and usable structure.
+description: "Compresses text for agents without losing substantial meaning. Use for Markdown files, agent instructions, documentation, and context that need fewer tokens while preserving facts, constraints, and usable structure."
 license: MIT
 ---
 
@@ -64,7 +64,6 @@ If a passage is already dense, exact, or ambiguous, keep it unchanged.
 
 Read [verification](references/verification.md) for review probes and worked examples.
 Apply [claim fidelity](references/blocks/claim-fidelity.md) to the complete source and candidate before accepting the compression.
-The block is bundled here and requires no sibling Skill installation.
 Compare the candidate with the original in both directions:
 
 - Every source claim and rule must map to the candidate, or to a truly equivalent retained duplicate.

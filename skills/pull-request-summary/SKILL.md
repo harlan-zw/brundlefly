@@ -1,6 +1,6 @@
 ---
 name: pull-request-summary
-description: "Draft, edit, or check pull request description text against the actual change and repository conventions. Use before publishing a PR body, when its scope changes, or as the description gate inside a delivery Skill."
+description: "Drafts, edits, or checks pull request description text against the actual change and repository conventions. Use before publishing a PR body, when its scope changes, or as the description gate inside a delivery Skill."
 license: MIT
 ---
 
@@ -32,6 +32,7 @@ If a required source is unavailable, return the specific gap instead of inventin
 Lead with the concrete problem or goal, then explain the resulting behavior.
 Let the diff carry routine implementation details.
 Scale detail to risk. Small changes normally need one to three sentences.
+Read [description examples](references/examples.md) for a revised generated body and a small change.
 Include migration steps, measured comparisons, or examples only when they help the reviewer decide.
 
 Follow the selected template and the caller's requirements.
@@ -68,7 +69,6 @@ Before removing substantial author material, explain the proposed loss and ask u
 Apply [claim fidelity](references/blocks/claim-fidelity.md) against the diff, supplied intent, and required template wording.
 For a revised body, also compare the preserved author material with the original body.
 For a new body, use the supplied evidence as the source. Do not assume an earlier description exists.
-The block is bundled here and requires no sibling Skill installation.
 
 Compare every factual claim with the diff and supplied evidence.
 Check that motivation, scope, consequences, and migration match the final change.

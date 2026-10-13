@@ -23,11 +23,10 @@ Distinguish approval to adopt a schema change from approval to execute its migra
 If a rename is authorized, update its existing naming decision before propagating the approved names.
 If no naming document exists, record the decision in the requested output. Create a glossary only when requested.
 Update relevant canonical copy, identifiers, consumers, docs, and bundled references within the agreed scope.
-Use the project's AST-aware rename tool when available. Read prose occurrences individually.
-RipIDE is optional for supported code renames. Prefer a supplied launcher or the project's existing CLI.
-Read its local instructions and command help before use. Do not require a personal checkout or sibling Skill.
+For symbols and file renames, use the project's AST-aware rename tool or RipIDE when available.
+Read its local instructions and command help before use. No particular tool is required.
 Review an uncertain target with a dry run, then apply the approved mapping with type verification enabled.
-Use RipIDE for supported symbols and file renames. Edit glossary entries, prose, and UI wording in context.
+Read prose occurrences individually. Edit glossary entries, prose, and UI wording in context.
 If the tool fails, report it. Never claim success or disable verification to force it.
 Do not blindly replace stored values, routes, exports, provider fields, or protocol identifiers.
 Inspect compatibility requirements and migration needs before changing these surfaces.

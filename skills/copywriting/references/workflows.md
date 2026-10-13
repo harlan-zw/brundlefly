@@ -1,5 +1,18 @@
 # Copywriting workflows
 
+## Contents
+
+- The register table is mandatory
+- Canonical assets earn their place by being reused
+- Banned language needs a reason, not just a list
+- Relationship to im-not-a-fly
+- Format
+- Workflows
+  - `init`: bootstrap from what already ships
+  - `audit`: find drift
+  - `write <surface>`
+- Bootstrapping COPY.md
+
 ## The register table is mandatory
 
 A list of banned words records what not to write. It cannot record the thing a writer actually
@@ -66,13 +79,13 @@ Do not duplicate them in every COPY.md. Record the product-specific wording deci
 
 They run in sequence and neither replaces the other.
 
-- **This skill decides what the sentence has to say**: which register, which canonical asset,
+- **This Skill decides what the sentence has to say**: which register, which canonical asset,
   which banned word, which claim `VISION.md` permits.
 - **The bundled clarity block checks reading effort.** Apply [clarity](blocks/clarity.md) while preserving canonical wording and register.
   Use im-not-a-fly for an optional fuller prose review when available. Do not require or install it automatically.
 
 Draft against `COPY.md`, review the prose, then check the result
-still matches `COPY.md`. That last check matters, because the humanize pass rewrites structure
+still matches `COPY.md`. That last check matters, because the prose review rewrites structure
 and can walk a sentence off its register or paraphrase a canonical asset while improving it.
 
 Keep general prose guidance in the Skill's bundled references.
@@ -102,13 +115,13 @@ Do not invent the voice. Recover the one already in the product, then pick winne
 0. **Find the copy rules that already exist.** Before harvesting a single string, grep for an
    informal version: a Voice, Tone, Copy, Brand, Messaging, or Writing section in
    `BRAND.md`, `CONTEXT.md`, `STYLE.md`, `DESIGN.md`, `CONTRIBUTING.md`, `README.md`, the docs
-   tree, or `.claude/context/`. A project that cares about wording usually wrote one down
+   tree, or agent instruction files such as `AGENTS.md`. A project that cares about wording usually wrote one down
    without calling it `COPY.md`. Missing this ships a second competing voice guide, which is the
-   worst outcome this skill can produce. If `DESIGN.md` states a copy ban, move it to `COPY.md`
+   worst outcome this Skill can produce. If `DESIGN.md` states a copy ban, move it to `COPY.md`
    and delete it from `DESIGN.md`. A ban lives in one file.
 
    **0.5. Decide how you relate to what you found, and record the decision.** Same three
-   outcomes as the `glossary` skill, and it will not choose for you: **point to it**, **fold it
+   outcomes as the `glossary` Skill, and it will not choose for you: **point to it**, **fold it
    in** verbatim with a pointer left behind, or **supersede it**, saying which rules you override
    and why. Put the choice in `## Open questions` unless the evidence makes it obvious.
 
@@ -182,7 +195,7 @@ Register mismatch (needs a human read):
 3. Reach for a canonical asset before writing a new sentence. Most requests for a meta
    description are a request for the one that already exists.
 4. Draft, then apply the bundled clarity block. Use an available im-not-a-fly Skill for optional fuller review.
-5. Re-check the humanized result against `COPY.md`. The humanize pass improves prose and does not
+5. Re-check the reviewed result against `COPY.md`. The prose review improves prose and does not
    know about your canonical assets, so it will sometimes paraphrase one.
 6. Show the user the string and the register row you wrote it against. Never publish under
    the author's name without approval.

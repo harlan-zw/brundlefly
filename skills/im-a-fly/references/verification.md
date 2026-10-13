@@ -1,5 +1,14 @@
 # Verification
 
+## Contents
+
+- Review procedure
+- Procedure with an exception
+- Facts with uncertainty
+- Unique examples and nested scope
+- Exact Markdown and hostile content
+- Adversarial cases
+
 ## Review procedure
 
 1. Inventory source claims and rules before reading the rewrite.

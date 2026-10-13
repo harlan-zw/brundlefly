@@ -44,7 +44,6 @@ Use technical verification for its factual sections only when that work is reque
 Preserve the surrounding personal narrative rather than converting it into a generic tutorial.
 
 For prose-only editing, use the user's chosen editor or edit directly within scope.
-No sibling skill is required.
 For new personal writing, work from supplied notes and author intent; ask for missing experiences instead of inventing them.
 Historical experiences stay historical. Put current corrections beside them without rewriting what the author once observed.
 
@@ -52,5 +51,5 @@ Historical experiences stay historical. Put current corrections beside them with
 
 The core evidence workflow also helps nontechnical informative writing.
 Its source authorities and domain review requirements can differ substantially.
-This skill's default expertise is developer documentation, rather than every possible research domain.
+This Skill's default expertise is developer documentation, rather than every possible research domain.
 Use applicable domain guidance when the subject requires it.
