@@ -52,8 +52,8 @@ FACTS AND BOUNDARIES
 Self-contained Agent Skills focused on empathy and accessibility in writing.
 Start with what the human reader knows and needs. Respect their attention and stated preferences, including ADHD and dyslexia needs.
 Clarity, accuracy, and brevity serve the reader. Storytelling helps communicate meaning, understanding, and connection.
-It contains im-not-a-fly, technical-guide, pull-request-summary, im-a-fly, readme, glossary, and copywriting.
-im-not-a-fly edits prose people read. im-a-fly compresses text agents act on. In those names, the fly is the agent.
+It contains im-part-human, technical-guide, pull-request-summary, im-not-a-human, readme, glossary, and copywriting.
+im-part-human edits prose people read. im-not-a-human compresses text agents act on.
 The website explains these Skills and offers downloads. This conversation does not execute a Skill.
 Keep installation instructions exact: "Copy the complete skill directory into your agent’s supported skills directory."
 Do not add reload, restart, folder, or command instructions unless the server supplies them for the visitor's named agent.

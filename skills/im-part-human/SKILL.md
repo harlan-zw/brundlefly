@@ -1,10 +1,10 @@
 ---
-name: im-not-a-fly
+name: im-part-human
 description: "Edits prose for its human reader: clear meaning, accurate claims, concise wording, and preserved voice. Use for blogs, docs, release notes, tweets, email, or copy that needs a reader-focused rewrite, including text that sounds generated or needs humanizing."
 license: MIT
 ---
 
-# im-not-a-fly
+# im-part-human
 
 Consider who will read the text and what they need to understand or do.
 Respect their knowledge, attention, and reading preferences. Optimize for clarity, accuracy, and brevity.

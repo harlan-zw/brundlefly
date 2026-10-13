@@ -42,7 +42,7 @@ Use the tagline exactly when the surface needs it. Do not generate a different s
    Reject vague claims that the product creates connection or makes an agent care.
 4. **Keep the grotesque outside the procedure.** Public introductions can be unsettling.
    Commands, errors, and reference material use established terms and predictable steps.
-   Skill names may carry the fly pair. Each Skill description stays plain, so agents choose the right one.
+   Skill names may carry the part-human pair. Each Skill description stays plain, so agents choose the right one.
 5. **Keep the author's experience true.** Use supplied stories or clearly framed reader situations.
    Never invent disappointment, exhaustion, or a founder's personal struggle for emotional weight.
 

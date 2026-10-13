@@ -74,4 +74,4 @@ Use init for a requested missing copy file, audit for drift, and write for a spe
 Read [copy examples](references/examples.md) before writing a surface or proposing a canonical asset change.
 Ask only about unresolved voice or canonical wording decisions. Existing explicit approval remains valid.
 Preserve approved strings exactly. Prepare proposed wording before requesting approval.
-Review prose directly, or use an available im-not-a-fly Skill optionally. Recheck canonical wording afterward.
+Review prose directly, or use an available im-part-human Skill optionally. Recheck canonical wording afterward.

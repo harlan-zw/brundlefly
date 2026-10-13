@@ -20,10 +20,10 @@ Do not add a promotional slogan.
 | Demo scope | Small, local demos of each skill’s workflow. Your input stays in this browser. |
 | Install heading | Use a skill |
 | Install text | Copy the complete skill directory into your agent’s supported skills directory. |
-| im-not-a-fly | Edit prose for its human reader: clear meaning, accessible structure, accurate claims, and preserved voice. |
+| im-part-human | Edit prose for its human reader: clear meaning, accessible structure, accurate claims, and preserved voice. |
 | technical-guide | Research, write, or refresh technical guides around the reader's task, with verified examples. |
 | pull-request-summary | Give reviewers the context they need through PR descriptions grounded in the change and repository conventions. |
-| im-a-fly | Compress text for agents |
+| im-not-a-human | Compress text for agents |
 | readme | Write a README that explains why the project matters and helps the reader complete a first task. |
 | glossary | Create or audit GLOSSARY.md so readers can understand product terms and their meanings. |
 | copywriting | Create or audit COPY.md, then write consistent copy around what the reader knows and needs. |

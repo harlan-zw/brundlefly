@@ -9,7 +9,7 @@ Keep SKILL.md under 500 lines. Move detailed material into references.
 Link each reference directly from SKILL.md. Do not build chains of references.
 Give a reference file over 100 lines a Contents list after its introduction.
 Keep packaging facts out of Skill instructions. This file and the repository conventions record them.
-When simplifying im-not-a-fly, preserve narrative voice rules, accuracy checks, and explicit ADHD and dyslexia guidance.
+When simplifying im-part-human, preserve narrative voice rules, accuracy checks, and explicit ADHD and dyslexia guidance.
 
 Bundle required references, scripts, and templates inside the skill directory.
 Keep optional tool requirements explicit.
