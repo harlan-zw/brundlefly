@@ -6,6 +6,7 @@ import { AnimationMixer, Color, Raycaster, SRGBColorSpace, Texture, Vector2, Vec
 import type { MeshStandardMaterial } from 'three'
 import { createMascotModel } from '../layers/brand/shared/mascot.ts'
 import { wanderingLook } from '../layers/brand/shared/eye-gaze.ts'
+import { poseMannerisms } from '../layers/brand/shared/mannerism.ts'
 
 // The head turns furthest at the end of the widest held glance on each side.
 const wanderTimes = Array.from({ length: 2130 }, (_, index) => index / 100)
@@ -472,4 +473,22 @@ test('mapped side walls take the shade of the artwork beside them', () => {
   assert.ok(lightWall <= tissue(light) + 1e-6, 'A wall must not read lighter than the tissue beside it.')
   assert.ok(darkWall <= tissue(dark) + 1e-6, 'A wall beside dark tissue must not glow as a pale halo.')
   model.dispose(); texture.dispose()
+})
+
+test('a mannerism moves his arm and the pose returns once it ends', () => {
+  const texture = new Texture()
+  const model = projectedMascot(texture, { width: 100, height: 100, data: new Uint8ClampedArray(100 * 100 * 4).fill(180) })
+  const elbow = model.skeleton.getBoneByName('right-elbow')!
+  const pose = (age?: number) => {
+    model.update({ time: 1, pressure: 0, pointer: new Vector2(), transform: 'squeeze', blink: 0,
+      mannerism: age === undefined ? undefined : poseMannerisms([{ mannerism: { _tag: 'CheckPalm' }, age }]) })
+    return elbow.rotation.toArray().slice(0, 3) as number[]
+  }
+  const rest = pose()
+  for (let frame = 0; frame < 30; frame++) pose(1.2)
+  const checking = pose(1.2)
+  assert.ok(Math.abs(checking[0]! - rest[0]!) > 0.1, 'Checking his palm must lift the forearm.')
+  assert.deepEqual(pose(), rest, 'The arm must return to rest without drift from earlier frames.')
+  model.dispose()
+  texture.dispose()
 })

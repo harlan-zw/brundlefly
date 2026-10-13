@@ -1,5 +1,6 @@
 type Point = readonly [number, number]
-export type StrollActivity = { _tag: 'Walking' } | { _tag: 'Pausing', remaining: number, duration: number }
+/** `waypoint` names the stop. `age` keeps counting while a visitor holds his attention, so a habit there still finishes. */
+export type StrollActivity = { _tag: 'Walking' } | { _tag: 'Pausing', remaining: number, duration: number, waypoint: number, age: number }
 /** `noticed` stops him for a hovering visitor. `talking` holds him still for the dialog. */
 export type StrollAttention = 'free' | 'noticed' | 'talking'
 export type Gaze = { yaw: number, tilt: number }
@@ -37,9 +38,9 @@ function gazeTarget(state: Stroll, route: readonly Point[], attention: StrollAtt
 /** Pure walk state: cruise, slow into each waypoint, pause, glance ahead, and walk on. */
 export function advanceStroll(state: Stroll, { delta, route, pauses, walkSpeed, attention }: StrollInput): Stroll {
   let activity = state.activity
-  if (attention === 'free' && activity._tag === 'Pausing') {
-    const remaining = activity.remaining - delta
-    activity = remaining > 0 ? { ...activity, remaining } : { _tag: 'Walking' }
+  if (activity._tag === 'Pausing') {
+    const remaining = attention === 'free' ? activity.remaining - delta : activity.remaining
+    activity = remaining > 0 ? { ...activity, remaining, age: activity.age + delta } : { _tag: 'Walking' }
   }
   const target = route[state.destination]!
   const dx = target[0] - state.position[0], dz = target[1] - state.position[1]
@@ -53,7 +54,7 @@ export function advanceStroll(state: Stroll, { delta, route, pauses, walkSpeed, 
   let destination = state.destination
   if (walking && distance - step < 0.03) {
     const duration = pauses[destination % pauses.length] ?? 0
-    activity = { _tag: 'Pausing', remaining: duration, duration }
+    activity = { _tag: 'Pausing', remaining: duration, duration, waypoint: destination, age: 0 }
     destination = (destination + 1) % route.length
   }
   const moved: Stroll = { ...state, position, destination, speed, activity, phase: state.phase + step * 10,

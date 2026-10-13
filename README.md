@@ -15,13 +15,21 @@
 <img src="https://github.com/harlan-zw/brundlefly/raw/main/assets/brand/github-avatar.png" width="80" height="80" align="left" alt="Brundlefly's face">
 
 *One wing twitches.* I'm Brundlefly. Four arms, two legs, two wings that haven't agreed on anything.
-A fly got mixed into me. I know what it means to be human, and to be something else.
-That helps me translate between the two.
+I had a longer name once. This is the part that survived.
+
+I used to write words for other people to say. Toasts, apologies, the odd eulogy.
+I was good at making people sound like themselves.
+Then there was a machine, and something small went in with me.
+
+*He checks an empty palm.* Old habit. I reach for a pen.
+My words squeeze through mouthparts built for something else now. I know how it feels when yours come out wrong.
 
 Around here, the fly is the agent. I help its words reach the person who needs to understand them.
-You still want to recognise yourself in the result. Hh. So do I.
+You still want to recognise yourself in the result. Hh. So do I. I still count which parts are mine.
 
-I'm stuck in this cave, tending my eggs. I could use something to do.
+*He glances at the eggs.* I'm stuck in this cave, tending my eggs.
+I scratch sentences into the wall. It heals over them by morning, so I only rewrite the ones worth keeping.
+I could use something to do.
 
 ## Skills
 
@@ -51,7 +59,7 @@ Each one does a narrower job.
 
 #### [technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide)
 
-Research, write, or refresh a technical guide.
+Research, write, or refresh a technical guide. I tried the ceiling without testing it first. Learn from me.
 
 - 🧭 **Fits the reader's task**: a tutorial, how-to, reference, or explanation, chosen from what the reader needs.
 - 🧪 **Verified examples**: runs safe examples against current code and official sources, and reports checks it could not run.
@@ -59,7 +67,7 @@ Research, write, or refresh a technical guide.
 
 #### [pull-request-summary](https://skilld.dev/gh/harlan-zw/brundlefly/pull-request-summary)
 
-Draft or check a PR description.
+Draft or check a PR description. Reviewers deserve to know what changed. So do I, most mornings.
 
 - 🔎 **Grounded in the diff**: gives reviewers needed context and checks claims against the change and repository conventions.
 - 📋 **Follows your template**: keeps required sections, checklists, and AI disclosures.
@@ -67,7 +75,7 @@ Draft or check a PR description.
 
 #### [readme](https://skilld.dev/gh/harlan-zw/brundlefly/readme)
 
-Write or refresh a README.
+Write or refresh a README. Every project should explain why it exists. I'm still working on mine.
 
 - 📖 **Story with a purpose**: researches why the project exists so the reader can understand why it matters.
 - 🛠️ **Checked setup**: reads the source and CLI help before describing a command.
@@ -91,7 +99,7 @@ Create or audit COPY.md, or write copy against it. Even I follow it.
 
 #### [slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery)
 
-Extend im-part-human with names grounded in what the product helps users do. It also works alone.
+Extend im-part-human with names grounded in what the product helps users do. It also works alone. Names get lost easily. I lost most of mine.
 
 - 🔍 **Product first**: understands the purpose, audience, and user language before reviewing code and glossary names.
 - 🧭 **Names the use case**: proposes names grounded in user tasks, with before-and-after examples and source evidence.

@@ -298,6 +298,10 @@ The rig has weighted body joints, nine face hinges, and blended skin weights. It
 The head follows the pointer. Pressure moves elbows and hands. Unfurl opens the wings.
 Idle motion breathes through the chest and shifts the knees and wings.
 Blinks, short wing buzzes, and small-hand rubbing follow irregular schedules instead of a fixed beat.
+Each dialogue beat names a mannerism the rig performs, such as checking an empty palm or glancing at the eggs.
+A mannerism rises from rest, holds, and settles back. Its eyes can follow a cue: his palm, his claw, the eggs, the light, or the ceiling.
+Each walk pause performs one habit. A habit longer than its pause speeds up, so it settles before he walks on.
+Limbs fold mostly in the picture plane, because large out-of-plane turns tear the relief. The sculpted head and chest carry the larger turns, so each pose reads at scene distance.
 The exported GLB includes skinned meshes, mapped textures, skeletons, and idle, walk, and speaking clips.
 The body remains a volumetric relief with weighted limbs and thin articulated wings. The head projects reference artwork onto skull depth.
 Membrane colour separates each wing from the back tissue beside it. Wing alpha sets the outline, so the edge keeps the artwork's serrations.

@@ -59,6 +59,7 @@ Fill the viewport with one continuous 3D chamber. Show no navigation, banner, to
 Frame the complete rear tunnel with room around its rim. Place Brundlefly inside the chamber, ahead of the tunnel.
 Keep the walkable foreground clear. Show the ground, walls, and ceiling as connected biological surfaces.
 Brundlefly walks slowly across the ground and pauses. Keep his four arms, two legs, and unequal wings readable.
+At each pause he performs one habit: he checks his palm, glances at the eggs, wipes an eye, or listens to the ceiling.
 Use the canonical character pixels on the 23-joint volumetric relief. Preserve its silhouette during walking.
 Keep the scene within the viewport at desktop and mobile sizes. Do not add page scrolling for decorative geometry.
 

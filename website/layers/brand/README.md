@@ -50,7 +50,8 @@ It is a volumetric relief. Its front artwork does not supply a modeled back or s
 
 The homepage fills the viewport with the chamber and walking Brundlefly. It shows no visible tool panels or navigation.
 Clicking Brundlefly opens a native local text dialog. The same named target supports Enter and Space.
-Conversation pauses walking. System reduced motion stops the walk and idle deformation.
+Conversation pauses walking. Each reply's beat plays as a mannerism from shared/mannerism.ts.
+System reduced motion and Motion off stop the walk, idle deformation, and mannerisms.
 The separate /brand-kit/ app keeps the composer, material controls, parts, and Motion lab.
 
 shared/world.ts exports createWorld(texture). It returns root, update({ time, pressure }), and dispose().

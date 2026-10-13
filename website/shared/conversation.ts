@@ -13,7 +13,9 @@ export const dialogueCopy = {
   limit: 'Give him a moment. Try again later.',
   empty: 'Add some text first.', length: 'Keep your text under 1,001 characters.',
 }
-export const beats = ['', 'One wing twitches.', 'He checks an empty palm.', 'He tilts his head.', 'His jaw catches.', 'He listens to the ceiling.']
+// Each beat is a mannerism the scene can perform. Human habits first, then fly habits.
+export const beats = ['', 'He checks an empty palm.', 'He tilts his head.', 'His jaw catches.', 'He leans closer.', 'A claw writes in the air.', 'He glances at the eggs.',
+  'One wing twitches.', 'His wings buzz once.', 'His small hands rub together.', 'He wipes an eye with his wrist.', 'He listens to the ceiling.', 'He looks toward the light.', 'He goes very still.']
 export const moods: ConversationMood[] = ['curious', 'wary', 'amused', 'soft', 'neutral']
 export const linkIds = ['brand-kit', ...skills.map(skill => skill.name)]
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -47,8 +49,23 @@ export const parseDialogueReply = (value: unknown): Result<ConversationReply> =>
 }
 
 export const ordinal = (count: number) => `${count}${count % 100 >= 11 && count % 100 <= 13 ? 'th' : count % 10 === 1 ? 'st' : count % 10 === 2 ? 'nd' : count % 10 === 3 ? 'rd' : 'th'}`
-export const openingReply = (count: number): ConversationReply => ({
-  text: `You're my ${ordinal(count)} visitor today. I kept count. The extra hands finally earned their keep.`,
-  beat: 'He checks an empty palm.', mood: 'curious',
-  choices: ['Are you all right?', 'What is this place?', 'Show me what you make.'], links: [],
-})
+type Opening = Omit<ConversationReply, 'text' | 'links'> & { line: string }
+// The verified count opens every greeting. The rest varies by visitor, so a reopened dialog keeps its opening.
+const openings: Opening[] = [
+  { line: 'I kept count. The extra hands finally earned their keep.', beat: 'He checks an empty palm.', mood: 'curious',
+    choices: ['Are you all right?', 'What is this place?', 'Show me what you make.'] },
+  { line: 'I scratched the number into the wall. It will heal over by morning. It always does.', beat: 'A claw writes in the air.', mood: 'neutral',
+    choices: ['Why does the wall heal?', 'What else do you write?', 'Are you all right?'] },
+  { line: 'Mind the eggs. They get very quiet when somebody calls them furniture.', beat: 'He glances at the eggs.', mood: 'wary',
+    choices: ["What's inside them?", 'Should I be worried?', "Fine. I'll compliment them."] },
+  { line: "Sorry. The wing isn't waving at you. It does things without telling me.", beat: 'One wing twitches.', mood: 'amused',
+    choices: ['Does it hurt?', 'Can you fly?', 'I like its confidence.'] },
+  { line: "Words are easier to rearrange than joints. Brought something that won't sit right?", beat: 'He leans closer.', mood: 'soft',
+    choices: ['My writing sounds wrong.', 'Tell me what you do.', 'I just came to look.'] },
+  { line: 'You stayed, which is new. Most things in here only stop moving when something goes wrong.', beat: 'He goes very still.', mood: 'wary',
+    choices: ['Are you all right?', 'What is this place?', 'I was promised useful Skills.'] },
+]
+export const openingReply = (count: number): ConversationReply => {
+  const { line, ...opening } = openings[count % openings.length]!
+  return { text: `You're my ${ordinal(count)} visitor today. ${line}`, ...opening, links: [] }
+}
