@@ -270,7 +270,8 @@ watch(canvas, async (element) => {
     : cue === 'Claw' ? leftHand.getWorldPosition(new Vector3())
       : cue === 'Light' ? light
         : cue === 'Ceiling' ? figure.position.clone().add(new Vector3(0, 6, 0.5))
-          : eggClusters.reduce((near, egg) => egg.distanceTo(figure.position) < near.distanceTo(figure.position) ? egg : near)
+          : nearestEggs()
+  const nearestEggs = () => eggClusters.reduce((near, egg) => egg.distanceTo(figure.position) < near.distanceTo(figure.position) ? egg : near)
   let lastTime = 0
   let looping = false
   let renderWidth = 0
@@ -327,7 +328,9 @@ watch(canvas, async (element) => {
     const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
     const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
     if (habit) layers.push(habit)
-    const mannerism = poseMannerisms(layers)
+    // Directional habits turn toward the nearer egg cluster. Screen right is +x.
+    const side = nearestEggs().x >= figure.position.x ? 1 : -1
+    const mannerism = poseMannerisms(layers.map(layer => ({ ...layer, side })))
     // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
     const eyes = !faceMotion ? { _tag: 'Ahead' } as const
       : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const

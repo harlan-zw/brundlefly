@@ -66,3 +66,9 @@ test('each walk pause performs its habit and settles before he walks on', () => 
   }
   assert.deepEqual([...new Set(finished)].sort(), [0, 1], 'He must finish a pause at both waypoints.')
 })
+
+test('glancing at the eggs turns his head toward the side they are on', () => {
+  const yaw = (side: 1 | -1) => poseMannerisms([{ mannerism: { _tag: 'GlanceEggs' }, age: 1.2, side }]).turns.head![1]
+  assert.ok(yaw(1) > 0.2, 'Eggs to screen right turn the head right.')
+  assert.ok(yaw(-1) < -0.2, 'Eggs to screen left turn the head left.')
+})
