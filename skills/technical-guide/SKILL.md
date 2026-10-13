@@ -22,6 +22,9 @@ Ask only when a missing choice changes the procedure or audience materially.
 
 Choose the structure that serves the task:
 
+Predict the attention this reader will give the task. Use it to choose scope and depth before drafting.
+Spend detail on the steps or concepts they need most. Keep complete prerequisites and warnings beside their use.
+
 | Reader needs | Structure |
 | --- | --- |
 | Learn by doing | Tutorial with a visible result after each stage |

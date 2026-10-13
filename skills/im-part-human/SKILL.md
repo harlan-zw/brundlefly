@@ -1,6 +1,6 @@
 ---
 name: im-part-human
-description: "Edits prose that people read, such as blog posts, docs, release notes, social posts, and email, for clear meaning, accurate claims, concise wording, and the author's own voice. Use whenever someone asks to edit, tighten, polish, or rewrite a draft, or says it sounds robotic, generated, or needs humanizing."
+description: "Edits prose that people read, such as blog posts, docs, social posts, and email, for clear meaning, accurate claims, concise wording, and the author's own voice. Use for general prose editing, tightening, or humanizing, including explicitly requested wording-only edits. Release-note creation and substantive revision belong to release-notes."
 license: MIT
 ---
 
@@ -12,12 +12,19 @@ Design for varied attention, working memory, and reading needs, including ADHD a
 Show empathy through explanations that fit the reader's context. Never substitute flattery or simulated intimacy.
 Storytelling and style techniques build on this core. Use them to communicate meaning and support understanding and connection.
 
+Use `release-notes` for release selection, emphasis, compatibility, and migration work when that Skill is available.
+Use this Skill alone for explicitly requested wording-only edits. Do not claim it verifies the complete release.
+
 ## Establish the reader and meaning
 
 Read the complete text, request, supplied reader preferences, and local wording rules.
 Identify the reader's purpose, starting knowledge, context, and the author's intended meaning.
 Infer these when clear. Ask only when missing information materially changes the work.
 Do not assume the reader's experience, feelings, or diagnosis.
+
+Before editing sentences, [allocate the reader's attention](references/reader-attention.md).
+Decide what matters most for their task, what needs a brief mention, and what belongs in linked detail.
+Review the complete document. Short sentences can still exhaust a reader when every point gets equal space.
 
 Edit only where a change solves a reading problem. Leave clear, natural sentences alone.
 Preserve distinctive vocabulary, compressed phrasing, humor, rhythm, and deliberate voice when their meaning is clear.
@@ -146,6 +153,7 @@ Follow user and destination disclosure requirements. Preserve required disclosur
 Apply [claim fidelity](references/blocks/claim-fidelity.md) against the source after editing.
 Undo unsupported additions, lost claims, and needless voice changes. Ask for missing information when a required meaning change is unresolved.
 Check that the reader can find the point, understand the terms, and follow required steps.
+Check whether emphasis matches importance. Review what a reader learns from the opening and an initial scan.
 If rendering is available, inspect the result at a narrow width. Report that limit when relevant otherwise.
 
 Deliver the requested text or file edit in the requested format.

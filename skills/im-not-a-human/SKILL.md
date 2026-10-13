@@ -89,6 +89,9 @@ Never silently truncate, drop a section, or weaken a rule to fit.
 
 ## Deliver
 
+Keep the human handoff proportionate to the reader's predicted attention. Lead with the result and consequential limits.
+This governs reporting, not permission to drop rules or meaning from the agent's text.
+
 Return the rewritten text or edited file paths, plus a short report outside the transformed content:
 
 - Measured before/after tokens and tokenizer, or clearly labelled proxy counts.

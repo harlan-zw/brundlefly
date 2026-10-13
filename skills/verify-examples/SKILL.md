@@ -57,6 +57,9 @@ Mark illustrative output as illustrative. Keep an unsupported core reader path i
 
 ## Return the evidence
 
+Predict attention for the handoff. Lead with failed reader paths and consequential limits; summarize routine successful checks.
+Keep the verification thorough even when the report is brief.
+
 State the version or revision, path that ran, observed outcome, and remaining limits.
 Distinguish executed examples from examples checked only against source.
 Keep detailed transcripts outside the public document. Report meaningful repairs when requested.

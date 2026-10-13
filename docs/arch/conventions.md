@@ -30,6 +30,7 @@ The initial blocks are self-contained Markdown. Add supporting-file bundling bef
 | copywriting | clarity |
 | glossary | clarity |
 | slop-naming-recovery | clarity |
+| release-notes | clarity, claim-fidelity, verify-examples |
 
 ## Packaging
 

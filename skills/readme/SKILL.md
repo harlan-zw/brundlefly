@@ -28,6 +28,9 @@ Ask only when missing information changes the reader's task materially.
 
 ## Build the reader's path
 
+Predict attention before allocating space. An initial scan should establish fit; the next read should reach a useful example.
+Give the adoption reason and common setup enough depth. Link specialist material instead of expanding every section equally.
+
 Use this order by default. Keep existing anchors when they remain useful.
 
 | Section | Reader need |

@@ -22,6 +22,7 @@ Do not add a promotional slogan.
 | Install text | Copy the complete skill directory into your agent’s supported skills directory. |
 | im-part-human | Edit prose for its human reader: clear meaning, accessible structure, accurate claims, and preserved voice. |
 | technical-guide | Research, write, or refresh technical guides around the reader's task, with verified examples. |
+| release-notes | Write release notes that help readers decide whether to upgrade and understand required changes. |
 | pull-request-summary | Give reviewers the context they need through PR descriptions grounded in the change and repository conventions. |
 | im-not-a-human | Compress text for agents |
 | readme | Write a README that explains why the project matters and helps the reader complete a first task. |

@@ -11,6 +11,7 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | Brundlefly | Repository | Contains skills and brand assets | Brundlefly |
 | im-part-human | skills/im-part-human | First skill candidate | im-part-human |
 | technical-guide | skills/technical-guide | Creates and refreshes verified technical guides | technical-guide |
+| release-notes | skills/release-notes | Writes verified release notes and upgrade guidance for the reader's decision | release-notes |
 | pull-request-summary | skills/pull-request-summary | Checks pull request description text | pull-request-summary |
 | im-not-a-human | skills/im-not-a-human | Compresses text for agents while preserving substantial meaning | im-not-a-human |
 | readme | skills/readme | Writes repository READMEs with researched positioning and working setup | readme |
@@ -19,11 +20,11 @@ The terms below preserve the owner's chosen tension: human connection inside som
 | copywriting | skills/copywriting | Creates and audits voice and canonical wording | copywriting |
 | clarity | skills/clarity | Block Skill used by human-facing prose, guide, README, copy, naming, and PR workflows | clarity |
 | claim-fidelity | skills/claim-fidelity | Block Skill used by prose, guide, README, compression, and PR workflows | claim-fidelity |
-| verify-examples | skills/verify-examples | Block Skill used by technical-guide and readme | verify-examples |
+| verify-examples | skills/verify-examples | Block Skill used by technical-guide, readme, and release-notes | verify-examples |
 | Workflow Skill | skills/ | Owns a complete text task and loads applicable bundled blocks | Workflow Skill |
 | Block Skill | skills/ | Owns one focused pass and also works independently | Block Skill |
 | Guide format | skills/technical-guide/references/guide-primitives.md | Presents an explanation through a code example, diagram, or screenshot | Guide format |
-| Evidence notes | skills/technical-guide; skills/readme; skills/verify-examples | Private sources, scope, revisions, checks, and unresolved questions supporting a writing task | Evidence notes |
+| Evidence notes | skills/technical-guide; skills/readme; skills/release-notes; skills/verify-examples | Private sources, scope, revisions, checks, and unresolved questions supporting a writing task | Evidence notes |
 | Edge decoration strength | website/layers/brand/shared/catalogue.ts; BrandSurface | Preset density controls edge artwork opacity and corner size | Edge decoration strength |
 | fly | Public story | Names the agent in the mascot's metaphor | fly |
 | Skill | skills/ | Self-contained Agent Skills directory | Skill |
@@ -44,6 +45,9 @@ It replaces im-not-a-fly. Earlier names were write-human and the imported humani
 
 technical-guide owns research, writing, and verification for a reader's technical task.
 Use this name for both creation and refresh. Do not name a second skill content-refresh for the same workflow.
+
+release-notes owns release text and its evidence, including changelogs and upgrade guidance.
+It replaces Harlan Agent Kit's release-notes Skill. The caller owns publication and release operations.
 
 pull-request-summary owns pull request description text and its convention checks.
 Delivery Skills call it and retain branch, publication, CI, and review policy.
@@ -92,7 +96,7 @@ Required content and supporting evidence remain separate concepts.
 ### Evidence notes
 
 Private notes linking claims and example checks to sources, revisions, scope, results, and unresolved questions.
-Use evidence notes for the working record maintained during guide, README, and example verification tasks.
+Use evidence notes for the working record maintained during guide, README, release-note, and example verification tasks.
 It replaces working ledger, evidence ledger, and private ledger for this concept.
 Keep these notes outside published content and generated public downloads.
 The name does not require a new file, database, or fixed template.

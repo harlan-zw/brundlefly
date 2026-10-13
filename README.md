@@ -35,8 +35,9 @@ I could use something to do.
 
 ### [im-part-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human)
 
-For text a person will read: blogs, docs, release notes, tweets, email, or copy. The name is aspirational.
+For text a person will read: blogs, docs, tweets, email, or copy. The name is aspirational.
 Empathy and accessibility guide the edit. Aim for clarity, accuracy, and brevity without losing needed context.
+Use [release-notes](#release-notes) to create or substantially revise release notes. Use im-part-human for wording-only edits.
 
 - 🔍 **Reader first**: considers who the reader is, what they know, and what they need. Reviews wording, then structure.
 - 🧬 **Keeps what's yours**: meaning, facts, claim scope, uncertainty, and voice survive the edit.
@@ -53,9 +54,17 @@ For text an agent will act on: Markdown files, instructions, docs, and context. 
 - ⚖️ **Checked both ways**: every source rule maps to the result, and every result rule maps back to the source.
 - 🚫 **No dialects**: plain compact Markdown, with no invented abbreviations or decoding legend.
 
-### The other six
+### Other Workflow Skills
 
 Each one does a narrower job.
+
+#### [release-notes](https://skilld.dev/gh/harlan-zw/brundlefly/release-notes)
+
+Write or revise release notes from verified changes. Give the reader enough to decide whether to upgrade.
+
+- 🔍 **Important changes first**: predicts reader attention before choosing scope, order, and depth.
+- 🧪 **Checked claims**: verifies consumer changes, migration actions, measurements, and examples.
+- 📤 **Fits the destination**: keeps GitHub concise and links to detail when an article needs more space.
 
 #### [technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide)
 
@@ -113,9 +122,9 @@ Each block also works as a separate Skill.
 
 | Block Skill | Focus | Used by |
 | --- | --- | --- |
-| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Clear wording, reading order, and accessible structure | im-part-human, technical-guide, readme, copywriting, glossary, pull-request-summary, slop-naming-recovery |
-| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty | im-part-human, technical-guide, readme, im-not-a-human, pull-request-summary |
-| [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results | technical-guide, readme |
+| [clarity](https://skilld.dev/gh/harlan-zw/brundlefly/clarity) | Reader attention, clear wording, reading order, and accessible structure | im-part-human, technical-guide, readme, copywriting, glossary, pull-request-summary, slop-naming-recovery, release-notes |
+| [claim-fidelity](https://skilld.dev/gh/harlan-zw/brundlefly/claim-fidelity) | Preserve claims, conditions, attribution, and uncertainty | im-part-human, technical-guide, readme, im-not-a-human, pull-request-summary, release-notes |
+| [verify-examples](https://skilld.dev/gh/harlan-zw/brundlefly/verify-examples) | Run documentation examples and check their promised results | technical-guide, readme, release-notes |
 
 For example:
 
@@ -164,7 +173,7 @@ Then ask your agent:
 Use im-part-human to edit docs/intro.md. Preserve its facts, uncertainty, and my voice.
 ```
 
-To install all eleven Skills:
+To install the complete collection:
 
 ```sh
 npx skilld add harlan-zw/brundlefly --all

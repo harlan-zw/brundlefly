@@ -28,6 +28,15 @@ Do not infer a diagnosis or claim that most readers have one. Respect stated rea
 Reader comprehension takes priority over stylistic variety.
 Brevity removes unnecessary words. Keep the explanations, conditions, and connections this reader needs.
 
+Reader attention is finite. Before writing or editing, predict how much attention this piece will receive.
+Use the reader, purpose, destination, and supplied preferences to make that prediction.
+Treat it as an editorial assumption, not a measured reading time.
+Let it govern scope, order, and depth across the complete output.
+Spend the most attention on what affects the reader's decision, understanding, or next action.
+Keep less important material brief, linked, or optional. Do not give every point equal space.
+Preserve critical conditions and warnings on the main reading path.
+Short sentences alone do not make an output worth the attention it requires.
+
 - **Start simple.** Lead with the answer or action. Then give the common case, an example, and deeper detail.
   For a story, preserve a deliberate narrative opening. Apply answer-first ordering to its technical sections.
   Define necessary terms before using them. Keep prerequisites and consequential warnings beside the action.
@@ -59,6 +68,7 @@ Do not use em dashes or hyphens as sentence punctuation in new prose.
 For review only, return concrete reading problems and proposed repairs. Leave the source unchanged.
 For an edit, change only passages with a reading problem. Explain meaningful repairs outside the edited text.
 Before delivery, check that the reader can find the answer, understand the terms, and follow the required steps.
+Check whether the whole output fits the predicted attention and gives the important points enough depth.
 Compare the result with the source for changed claims, conditions, uncertainty, and voice.
 If rendering is available, inspect the actual output at a narrow width. Otherwise report that limit when relevant.
 If no repair is needed, say so. Do not invent findings or claim an accessibility audit passed.
