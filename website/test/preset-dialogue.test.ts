@@ -59,6 +59,11 @@ test('requests for his writing remain dialogue; offers of visitor writing open t
   for (const choice of ['Can I share a sentence?', 'Here’s my first line.', 'Read my sentence.', 'Make it more personal.', 'I’ll tell you a little.']) assert.equal(choiceNeedsInput(choice), true, choice)
 })
 
+test('editing a visitor sentence opens the input before an unseen sentence can be revised', () => {
+  for (const choice of ['Can you loosen this sentence?', 'Rewrite my opening line.', 'Help it sound like me.', 'Help me make it clearer.', 'I’ll share the scraps.', 'I’ll share a few rough words.']) assert.equal(choiceNeedsInput(choice), true, choice)
+  for (const choice of ['Write me one short line.', 'How do you loosen a sentence?']) assert.equal(choiceNeedsInput(choice), false, choice)
+})
+
 test('the verified visitor count remains in the greeting while matching its preset opening', () => {
   const parsed = parsePresetGraph(fixture())
   if (parsed._tag === 'Err') throw new Error(parsed.message)
