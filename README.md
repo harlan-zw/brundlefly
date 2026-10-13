@@ -35,36 +35,32 @@ I could use something to do.
 
 ### [im-part-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-part-human)
 
-For text a person will read: blogs, docs, tweets, email, or copy. The name is aspirational.
-Empathy and accessibility guide the edit. Aim for clarity, accuracy, and brevity without losing needed context.
-Use [release-notes](#release-notes) to create or substantially revise release notes. Use im-part-human for wording-only edits.
+Edit text developers write for people: docs, posts, email, and copy.
+Use [release-notes](#release-notes) to create or substantially revise release notes.
 
-- 🔍 **Reader first**: considers who the reader is, what they know, and what they need. Reviews wording, then structure.
-- 🧬 **Keeps what's yours**: meaning, facts, claim scope, uncertainty, and voice survive the edit.
-- 🧹 **Leaves clear prose alone**: it changes a sentence only to fix a reading problem.
-- 📖 **Meaning through story**: keeps storytelling when it helps understanding and connection; keeps instructions direct.
-- ♿ **ADHD and dyslexia**: uses plain words, short blocks, and findable headings; respects stated reading preferences.
+- 🔍 **Reader first**: understands the reader, respects attention, and shows empathy through clear explanations.
+- ♿ **Accessible writing**: uses plain words, short blocks, and findable headings, including ADHD and dyslexia needs.
+- 🧬 **Truth and voice**: verifies material claims, preserves meaning and uncertainty, and keeps the author's voice.
 
-### [im-not-a-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-not-a-human)
+### [slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery)
 
-For text an agent will act on: Markdown files, instructions, docs, and context. No arguments there.
+Fix slop naming that leaks from code into your UI.
 
-- 🗜️ **Fewer tokens, same rules**: cuts filler and duplicates, and keeps every requirement, condition, and exception.
-- 🧷 **Protected Markdown**: frontmatter, code, commands, links, and anchors stay verbatim.
-- ⚖️ **Checked both ways**: every source rule maps to the result, and every result rule maps back to the source.
-- 🚫 **No dialects**: plain compact Markdown, with no invented abbreviations or decoding legend.
+- 🔍 **Product first**: traces code, UI, and glossary names against the product's purpose and users' tasks.
+- 🧭 **Clear domain names**: proposes names with before and after examples, source evidence, and affected surfaces.
+- ✋ **You choose**: gives numbered proposals to accept, keep, defer, or edit before approved renames.
 
 ### Other Workflow Skills
 
 | Skill | Use |
 | --- | --- |
+| <a id="im-not-a-human"></a>[im-not-a-human](https://skilld.dev/gh/harlan-zw/brundlefly/im-not-a-human) | Compress text for agents while preserving every rule, condition, and exception. |
 | <a id="release-notes"></a>[release-notes](https://skilld.dev/gh/harlan-zw/brundlefly/release-notes) | Write release notes from verified changes and explain required upgrades. |
 | [technical-guide](https://skilld.dev/gh/harlan-zw/brundlefly/technical-guide) | Write or refresh technical guides with verified examples. |
 | [pull-request-summary](https://skilld.dev/gh/harlan-zw/brundlefly/pull-request-summary) | Draft or check a PR description against the diff and template. |
 | [readme](https://skilld.dev/gh/harlan-zw/brundlefly/readme) | Explain a project and verify its setup instructions. |
 | [glossary](https://skilld.dev/gh/harlan-zw/brundlefly/glossary) | Create or audit GLOSSARY.md for consistent names and meanings. |
 | [copywriting](https://skilld.dev/gh/harlan-zw/brundlefly/copywriting) | Create or audit COPY.md and write against its approved wording. |
-| [slop-naming-recovery](https://skilld.dev/gh/harlan-zw/brundlefly/slop-naming-recovery) | Review names against user tasks and propose clearer terms. |
 
 ## Setup
 
