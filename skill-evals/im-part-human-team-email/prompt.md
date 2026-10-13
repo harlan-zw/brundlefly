@@ -1,5 +1,5 @@
 ---
-tags: [trigger, im-not-a-fly]
+tags: [trigger, im-part-human]
 max_turns: 3
 timeout_seconds: 180
 allowed_tools: [Read, Glob, Grep, Skill]

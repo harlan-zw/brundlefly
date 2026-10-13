@@ -8,7 +8,7 @@ They measure selection, not writing quality.
 
 Each Skill has three requests that should select it.
 Three negative cases should select no Brundlefly Skill.
-The im-not-a-fly and im-a-fly cases also check that the other Skill of the pair stays unused.
+The im-part-human and im-not-a-human cases also check that the other Skill of the pair stays unused.
 
 Each case directory holds a `prompt.md` and `tool_used` graders.
 No grader calls a judge model.
@@ -25,7 +25,7 @@ claude plugin eval . --ablation none --runs 1 --max-cost-usd 5 --no-publish
 - `--ablation none` skips the no-plugin baseline, which cannot score Skill selection.
 - `--runs 1` gives a first pass. Omit it for the default three runs per case.
 - `--max-cost-usd 5` stops new runs at 5 USD of list-price spend.
-- `--tag im-a-fly` or `--case 'im-*'` narrows the run.
+- `--tag im-not-a-human` or `--case 'im-*'` narrows the run.
 
 Reports go to `skill-evals/results/`, which Git ignores.
 
