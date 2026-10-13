@@ -19,6 +19,10 @@ Identify the reader's purpose, starting knowledge, context, and the author's int
 Infer these when clear. Ask only when missing information materially changes the work.
 Do not assume the reader's experience, feelings, or diagnosis.
 
+Before editing sentences, [allocate the reader's attention](references/reader-attention.md).
+Decide what matters most for their task, what needs a brief mention, and what belongs in linked detail.
+Review the complete document. Short sentences can still exhaust a reader when every point gets equal space.
+
 Edit only where a change solves a reading problem. Leave clear, natural sentences alone.
 Preserve distinctive vocabulary, compressed phrasing, humor, rhythm, and deliberate voice when their meaning is clear.
 Brevity removes unnecessary words and effort. Keep explanations, connections, and qualifications the reader needs.
@@ -146,6 +150,7 @@ Follow user and destination disclosure requirements. Preserve required disclosur
 Apply [claim fidelity](references/blocks/claim-fidelity.md) against the source after editing.
 Undo unsupported additions, lost claims, and needless voice changes. Ask for missing information when a required meaning change is unresolved.
 Check that the reader can find the point, understand the terms, and follow required steps.
+Check whether emphasis matches importance. Review what a reader learns from the opening and an initial scan.
 If rendering is available, inspect the result at a narrow width. Report that limit when relevant otherwise.
 
 Deliver the requested text or file edit in the requested format.
