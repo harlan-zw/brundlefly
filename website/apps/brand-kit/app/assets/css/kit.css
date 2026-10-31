@@ -1,4 +1,3 @@
-@source "../../../../../layers/brand/app";
 .kit-shell { max-width: 1600px; margin: auto; padding: 0 2.5rem 3rem; }
 .kit-skip { position: absolute; top: -100px; z-index: 20; background: var(--color-cream); color: var(--color-night); padding: 1rem; }
 .kit-skip:focus { top: 8px; }
