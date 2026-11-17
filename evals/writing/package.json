@@ -4,7 +4,7 @@
   "dependencies": {
     "dompurify": "^3.4.16",
     "marked": "^18.0.14",
-    "mermaid": "^12.0.0"
+    "mermaid": "^12.2.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
