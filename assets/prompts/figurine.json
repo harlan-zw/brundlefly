@@ -9,7 +9,10 @@
   ],
   "prompt": "None. The model takes view images and no text. The two views are the front and back views of the character sheet, cut out and enlarged two times with nearest-neighbour.",
   "settings": {
-    "views": ["front", "back"],
+    "views": [
+      "front",
+      "back"
+    ],
     "steps": 30,
     "guidance_scale": 5.0,
     "seed": 1234,
@@ -19,5 +22,20 @@
     "texture": false
   },
   "usage": "Base shape for the print model and the website model. assets/3d/brundlefly/build_from_mesh.py removes the bristle spikes for printing, thickens thin parts, adds the base, and projects the two views onto the vertex colours.",
-  "licence_note": "The Space runs Tencent's Hunyuan3D-2 multi-view model. Its community licence sets terms for the model and for use of its output. Nobody reviewed that licence for this project. Check it before commercial use of this mesh."
+  "licence_note": "The Space runs Tencent's Hunyuan3D-2 multi-view model. Its community licence sets terms for the model and for use of its output. Nobody reviewed that licence for this project. Check it before commercial use of this mesh.",
+  "side_views": {
+    "tool": "Codex CLI built-in image generation",
+    "date": "2026-11-18",
+    "files": [
+      "assets/3d/brundlefly/source/views/side-right.png",
+      "assets/3d/brundlefly/source/views/side-left.png"
+    ],
+    "references": [
+      "assets/brand/character-sheet.png",
+      "assets/3d/brundlefly/source/views/front.png",
+      "assets/3d/brundlefly/source/views/back.png"
+    ],
+    "prompt": "Make TWO images: the right side view and the left side view of the existing Brundlefly mascot, in the same pose, pixel-art style, palette, and level of detail as the attached character sheet and its front and back views. Strict orthographic side views on a pure black background. Right side: the figure faces the left edge, the nearest leg is dark segmented chitin with a clawed insect foot, the nearest wing is the larger wing. Left side: the figure faces the right edge, the nearest leg is rusty flesh with a human-like foot, the nearest wing is the smaller wing. Full body, standing, strongly hunched, long arm hanging beside the body, small arm held forward, mouthparts hanging in front of the chest, narrow blue-black eye with a teal glint, dark segmented plates along the back.",
+    "usage": "Colour for surfaces that face sideways. The shape was not generated from these views."
+  }
 }

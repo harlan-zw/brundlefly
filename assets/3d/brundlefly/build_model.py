@@ -748,7 +748,7 @@ def shade_colours(f, pts, idx, mats, lut):
         occlusion += np.clip(at(f.F, pts + normal * (reach / f.h)) / reach, 0.0, 1.0)
     occlusion = 0.42 + 0.58 * (occlusion / 2)
     if colour_fn is not None:
-        occlusion = 0.72 + 0.28 * (occlusion - 0.42) / 0.58       # the artwork is already shaded
+        occlusion = 0.86 + 0.14 * (occlusion - 0.42) / 0.58       # the artwork is already shaded
     # Creases: the relief depth is negative in a groove.
     crease = np.clip(1.0 + 0.6 * at(f.shade, pts) / mm(0.3), 0.42, 1.15) if hasattr(f, "shade") else 1.0
 

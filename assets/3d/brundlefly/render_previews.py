@@ -134,6 +134,8 @@ def main():
                 marker.color = (0.9, 0.05, 0.05, 1.0)
                 sc.collection.objects.link(marker)
                 markers.append(marker)
+        elif mode == "texture":
+            sh.color_type = "TEXTURE"
         else:
             sh.color_type = "VERTEX"
         paths = []

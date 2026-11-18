@@ -49,6 +49,8 @@ def parse():
     ap.add_argument("--max-growth", type=float, default=0.5, help="the most a thin part may grow on each side")
     ap.add_argument("--front-image", help="front view image, projected onto the vertex colours")
     ap.add_argument("--back-image", help="back view image, projected onto the vertex colours")
+    ap.add_argument("--right-image", help="optional view of the figure's right side")
+    ap.add_argument("--left-image", help="optional view of the figure's left side")
     ap.add_argument("--rebuild-back", action="store_true", help="replace the back with plates drawn from the character sheet")
     ap.add_argument("--dimples", action="store_true", help="add pilot dimples for hand-implanted bristles")
     ap.add_argument("--dump-field", action="store_true", help="also write field.npz, for measuring joints")
@@ -291,6 +293,25 @@ def add_dimples(f, zmax):
     return out
 
 
+def outer_background(dark):
+    """The dark pixels that connect to the image border. Dark eyes and dark chitin are not background."""
+    bg = np.zeros_like(dark)
+    bg[0], bg[-1], bg[:, 0], bg[:, -1] = dark[0], dark[-1], dark[:, 0], dark[:, -1]
+    for _ in range(8):
+        before = int(bg.sum())
+        for i in range(1, dark.shape[0]):
+            bg[i] |= dark[i] & bg[i - 1]
+        for i in range(dark.shape[0] - 2, -1, -1):
+            bg[i] |= dark[i] & bg[i + 1]
+        for j in range(1, dark.shape[1]):
+            bg[:, j] |= dark[:, j] & bg[:, j - 1]
+        for j in range(dark.shape[1] - 2, -1, -1):
+            bg[:, j] |= dark[:, j] & bg[:, j + 1]
+        if int(bg.sum()) == before:
+            break
+    return bg
+
+
 def load_view(path):
     """An image as linear RGB rows from bottom to top, with its figure mask and bounding box."""
     img = bpy.data.images.load(path)
@@ -299,7 +320,7 @@ def load_view(path):
     img.pixels.foreach_get(px)
     bpy.data.images.remove(img)
     rgb = px.reshape(h, w, 4)[..., :3]
-    figure = rgb.max(axis=2) > 0.08
+    figure = ~outer_background(rgb.max(axis=2) <= 0.08)
     ys, xs = np.nonzero(figure)
     linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
     # A blurred copy for surfaces that face sideways, where a sharp projection would streak.
@@ -311,45 +332,46 @@ def load_view(path):
     return {"rgb": rgb, "linear": linear, "soft": soft, "figure": figure, "box": (xs.min(), xs.max(), ys.min(), ys.max())}
 
 
-def register(view, f, mirror, window=None, start=None):
-    """Fit a sheet view to the model's outline: one scale, one offset in x, one in z.
+def register(view, f, mirror, window=None, start=None, axis=0):
+    """Fit a sheet view to the model's outline: one scale, one offset across, one in z.
 
-    The generator keeps the proportions of its input views, but not their exact frame.
-    window = (x0, x1, z0, z1) limits the fit to one region, such as the head. The scale
-    then stays as in start, and only the offsets are searched.
+    axis 0 fits a front or back view against the outline seen along Y. axis 1 fits a side
+    view against the outline seen along X. The generator keeps the proportions of its
+    input views, but not their exact frame. window = (u0, u1, z0, z1) limits the fit to
+    one region, such as the head. The scale then stays as in start.
     """
-    solid = (f.F < 0).any(axis=1)[::2, ::2]                       # outline seen along Y
-    xs, zs = f.ax[0][::2].astype(np.float64), f.ax[2][::2].astype(np.float64)
-    zin, xin = zs[solid.any(axis=0)], xs[solid.any(axis=1)]
-    zmin, xc = zin.min(), (xin.min() + xin.max()) / 2
+    solid = (f.F < 0).any(axis=1 - axis)[::2, ::2]
+    us, zs = f.ax[axis][::2].astype(np.float64), f.ax[2][::2].astype(np.float64)
+    zin, uin = zs[solid.any(axis=0)], us[solid.any(axis=1)]
+    zmin, uc = zin.min(), (uin.min() + uin.max()) / 2
     c0, c1, r0, r1 = view["box"]
     cc = (c0 + c1) / 2
     sign = -1.0 if mirror else 1.0
     mask = view["figure"]
-    X, Z = np.meshgrid(xs, zs, indexing="ij")
-    region = np.ones_like(solid) if window is None else (X >= window[0]) & (X <= window[1]) & (Z >= window[2]) & (Z <= window[3])
+    U, Z = np.meshgrid(us, zs, indexing="ij")
+    region = np.ones_like(solid) if window is None else (U >= window[0]) & (U <= window[1]) & (Z >= window[2]) & (Z <= window[3])
     if start is None:
         best = (-1.0, (zin.max() - zmin) / (r1 - r0), 0.0, 0.0)
-        passes = ((0.05, 4.0, 2.0, 9), (0.012, 1.0, 0.5, 7))
+        passes = ((0.06, 5.0, 2.5, 9), (0.015, 1.25, 0.6, 7))
     else:
         best = (-1.0, start["s"], start["tx"], start["tz"])
         passes = ((0.0, 4.0, 2.0, 17), (0.0, 0.5, 0.25, 9))
-    for span_s, span_x, span_z, steps in passes:
-        _, bs, bx, bz = best
+    for span_s, span_u, span_z, steps in passes:
+        _, bs, bu, bz = best
         scales = np.linspace(bs * (1 - span_s), bs * (1 + span_s), steps) if span_s else [bs]
         for s in scales:
-            for tx in np.linspace(bx - span_x, bx + span_x, steps):
+            for tu in np.linspace(bu - span_u, bu + span_u, steps):
                 for tz in np.linspace(bz - span_z, bz + span_z, steps):
-                    col = np.rint(cc + sign * (X - xc - tx) / s).astype(int)
+                    col = np.rint(cc + sign * (U - uc - tu) / s).astype(int)
                     row = np.rint(r0 + (Z - zmin - tz) / s).astype(int)
                     ok = (col >= 0) & (col < mask.shape[1]) & (row >= 0) & (row < mask.shape[0])
                     hit = np.zeros_like(solid)
                     hit[ok] = mask[row[ok], col[ok]]
                     iou = (hit & solid & region).sum() / max(((hit | solid) & region).sum(), 1)
                     if iou > best[0]:
-                        best = (iou, s, tx, tz)
-    iou, s, tx, tz = best
-    return {"iou": float(iou), "s": float(s), "tx": float(tx), "tz": float(tz), "xc": float(xc), "zmin": float(zmin), "cc": float(cc), "r0": float(r0), "sign": sign}
+                        best = (iou, s, tu, tz)
+    iou, s, tu, tz = best
+    return {"iou": float(iou), "s": float(s), "tx": float(tu), "tz": float(tz), "xc": float(uc), "zmin": float(zmin), "cc": float(cc), "r0": float(r0), "sign": sign}
 
 
 def blended_fit(body, head, z_low, z_high):
@@ -359,11 +381,20 @@ def blended_fit(body, head, z_low, z_high):
         w = w * w * (3 - 2 * w)
         return body["tx"] * (1 - w) + head["tx"] * w, body["tz"] * (1 - w) + head["tz"] * w
 
-    def to_image(x, z):
-        tx, tz = offsets(z)
-        return body["cc"] + body["sign"] * (x - body["xc"] - tx) / body["s"], body["r0"] + (z - body["zmin"] - tz) / body["s"]
+    def to_image(u, z):
+        tu, tz = offsets(z)
+        return body["cc"] + body["sign"] * (u - body["xc"] - tu) / body["s"], body["r0"] + (z - body["zmin"] - tz) / body["s"]
 
     return to_image
+
+
+# Each view: the model axis it lies across, the normal component that faces it, and if the image is mirrored.
+VIEW_SETUP = {
+    "front": {"axis": 0, "facing": (1, -1.0), "mirror": False},     # the camera looks along +Y
+    "back": {"axis": 0, "facing": (1, 1.0), "mirror": True},
+    "right": {"axis": 1, "facing": (0, -1.0), "mirror": False},     # the figure's right side, the figure faces image left
+    "left": {"axis": 1, "facing": (0, 1.0), "mirror": True},
+}
 
 
 def find_eyes(view, head_fit):
@@ -388,25 +419,41 @@ def find_eyes(view, head_fit):
     return sorted(eyes)
 
 
-def sheet_colour_fn(front, back, front_map, back_map):
-    """Vertex colours from the sheet's front and back views, projected along Y."""
-    flesh = bm.srgb_to_linear(bm.PALETTE[bm.FLESH])
+def sheet_colour_fn(views):
+    """Vertex or texel colours from the sheet views, each projected along its own axis.
 
-    def sample(view, to_image, x, z, sideways):
-        col, row = to_image(x, z)
-        col = np.clip(np.rint(col).astype(int), 0, view["figure"].shape[1] - 1)
-        row = np.clip(np.rint(row).astype(int), 0, view["figure"].shape[0] - 1)
-        colour = view["linear"][row, col] * (1 - sideways) + view["soft"][row, col] * sideways
-        return colour, view["figure"][row, col]
+    views maps a name from VIEW_SETUP to (image data, to_image function). A surface takes
+    its colour from the views it faces, weighted by how squarely it faces them.
+    """
+    flesh = bm.srgb_to_linear(bm.PALETTE[bm.FLESH])
+    has_sides = "right" in views or "left" in views
 
     def colour(xyz, normal):
-        sideways = np.clip(1.0 - np.abs(normal[:, 1]) / 0.55, 0.0, 1.0)[:, None]
-        cf, okf = sample(front, front_map, xyz[:, 0], xyz[:, 2], sideways)
-        cb, okb = sample(back, back_map, xyz[:, 0], xyz[:, 2], sideways)
-        weight = np.clip((normal[:, 1] + 0.25) / 0.5, 0.0, 1.0)[:, None]      # 0 faces the front, 1 faces the back
-        cf = np.where(okf[:, None], cf, np.where(okb[:, None], cb, flesh))
-        cb = np.where(okb[:, None], cb, np.where(okf[:, None], cf, flesh))
-        return cf * (1 - weight) + cb * weight
+        total = np.zeros((len(xyz), 1))
+        mixed = np.zeros((len(xyz), 3))
+        fallback = np.zeros((len(xyz), 3))
+        fallback_weight = np.zeros((len(xyz), 1))
+        for name, (view, to_image) in views.items():
+            setup = VIEW_SETUP[name]
+            component, direction = setup["facing"]
+            facing = np.clip(normal[:, component] * direction, 0.0, 1.0)
+            col, row = to_image(xyz[:, setup["axis"]], xyz[:, 2])
+            col = np.clip(np.rint(col).astype(int), 0, view["figure"].shape[1] - 1)
+            row = np.clip(np.rint(row).astype(int), 0, view["figure"].shape[0] - 1)
+            inside = view["figure"][row, col]
+            if has_sides:
+                sample = view["linear"][row, col]
+            else:                                   # with two views only, soften what faces sideways
+                sideways = np.clip(1.0 - np.abs(normal[:, 1]) / 0.55, 0.0, 1.0)[:, None]
+                sample = view["linear"][row, col] * (1 - sideways) + view["soft"][row, col] * sideways
+            weight = (facing ** 2 * inside)[:, None]
+            mixed += sample * weight
+            total += weight
+            loose = ((facing + 0.05) * inside)[:, None]     # a second choice for points that no view faces well
+            fallback += sample * loose
+            fallback_weight += loose
+        second = np.where(fallback_weight > 1e-6, fallback / np.maximum(fallback_weight, 1e-6), flesh)
+        return np.where(total > 1e-4, mixed / np.maximum(total, 1e-4), second)
 
     return colour
 
@@ -470,22 +517,33 @@ def main():
     zmax = float(solid_z.max())
     head = band_centre(f, zmax, 0.80, 0.99)
     eyes = []
+    images = {"front": args.front_image, "back": args.back_image, "right": args.right_image, "left": args.left_image}
     if args.front_image and args.back_image:
-        front, back = load_view(args.front_image), load_view(args.back_image)
-        fit_front, fit_back = register(front, f, mirror=False), register(back, f, mirror=True)
-        # The head gets its own offsets: a wing or a hand can pull the whole-body fit off the face.
-        window = (head[0] - 13.0, head[0] + 13.0, 0.62 * zmax, 0.97 * zmax)
-        head_front = register(front, f, mirror=False, window=window, start=fit_front)
-        head_back = register(back, f, mirror=True, window=window, start=fit_back)
-        stats["sheet_fit"] = {"front_overlap": round(fit_front["iou"], 3), "back_overlap": round(fit_back["iou"], 3),
-                              "head_front_overlap": round(head_front["iou"], 3), "head_shift_x_mm": round(head_front["tx"] - fit_front["tx"], 2)}
-        f.colour_fn = sheet_colour_fn(front, back, blended_fit(fit_front, head_front, 0.58 * zmax, 0.66 * zmax),
-                                      blended_fit(fit_back, head_back, 0.58 * zmax, 0.66 * zmax))
+        z_low, z_high = 0.58 * zmax, 0.66 * zmax
+        views, record, fits = {}, {}, {}
+        for name, path in images.items():
+            if not path:
+                continue
+            setup = VIEW_SETUP[name]
+            view = load_view(path)
+            body = register(view, f, mirror=setup["mirror"], axis=setup["axis"])
+            # The head gets its own offsets: a wing or a hand can pull the whole-body fit off the face.
+            centre = head[setup["axis"]]
+            window = (centre - 14.0, centre + 14.0, 0.62 * zmax, 0.97 * zmax)
+            head_fit = register(view, f, mirror=setup["mirror"], window=window, start=body, axis=setup["axis"])
+            views[name] = (view, blended_fit(body, head_fit, z_low, z_high))
+            record[name] = {"image": os.path.basename(path), "body": body, "head": head_fit}
+            fits[name] = (view, body, head_fit)
+        stats["sheet_fit"] = {name: {"overlap": round(r["body"]["iou"], 3), "head_overlap": round(r["head"]["iou"], 3)} for name, r in record.items()}
+        f.colour_fn = sheet_colour_fn(views)
+        # The export bakes the same projection into a texture, so it needs the fit.
+        stats["sheet_projection"] = {"views": record, "blend_z": [z_low, z_high]}
+        front, _, head_front = fits["front"]
         spots = find_eyes(front, head_front)
         if len(spots) == 2 and abs((spots[0][0] + spots[1][0]) / 2 - head[0]) > 1.0:
             half = (spots[1][0] - spots[0][0]) / 2                 # keep the spacing, centre it on the head
             spots = [(head[0] - half, spots[0][1]), (head[0] + half, spots[1][1])]
-            stats["sheet_fit"]["eyes_recentred"] = True
+            stats["sheet_fit"]["front"]["eyes_recentred"] = True
         eyes = add_eyes(f, spots, glints=not printing)
     if args.rebuild_back:
         rebuild_back(f, zmax)
@@ -511,6 +569,8 @@ def main():
     sc.unit_settings.scale_length = 0.001
     sc.unit_settings.length_unit = "MILLIMETERS"
     ob, mesh_scale, volume, extra = bm.field_to_mesh(f)
+    if "sheet_projection" in stats:
+        stats["sheet_projection"].update({"field_zmin": f.mesh_zmin, "mesh_scale": float(mesh_scale)})
     site = f.site_mm
     site["eyes"] = []
     for centre, radius in eyes:

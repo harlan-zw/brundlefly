@@ -17,6 +17,10 @@ import bmesh
 import bpy
 import numpy as np
 from mathutils import Vector
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import build_from_mesh as bfm  # noqa: E402  (the sheet projection lives there)
 from mathutils.bvhtree import BVHTree
 
 
@@ -30,6 +34,8 @@ def parse():
     ap.add_argument("--glb-tris", type=int, default=160000)
     ap.add_argument("--web", action="store_true", help="write brundlefly-web.glb only, from a web-variant build")
     ap.add_argument("--no-rig", action="store_true", help="web model without the skeleton")
+    ap.add_argument("--no-texture", action="store_true", help="web model with vertex colours and no texture")
+    ap.add_argument("--texture-size", type=int, default=2048)
     args, _ = ap.parse_known_args(argv)
     return args
 
@@ -227,13 +233,76 @@ def add_skeleton(body, joints, shift):
     return arm
 
 
+def bake_sheet_texture(body, projection, views_dir, size):
+    """Replace the vertex colours with a texture that carries the sheet at its own resolution.
+
+    Vertex colours can only be as sharp as the mesh is dense. A texture keeps every pixel
+    of the artwork. Cycles bakes the position and the normal of each texel, and the same
+    projection that colours the vertices then colours the texels.
+    """
+    scene = bpy.context.scene
+    for o in scene.objects:
+        o.select_set(False)
+    bpy.context.view_layer.objects.active = body
+    body.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(angle_limit=math.radians(78), island_margin=0.002)   # fewer islands, fewer split vertices
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+    material = body.data.materials[0]
+    nodes = material.node_tree.nodes
+    target = nodes.new("ShaderNodeTexImage")
+    scene.render.engine = "CYCLES"
+    scene.cycles.device = "CPU"
+    scene.cycles.samples = 1
+    passes = {}
+    for kind in ("POSITION", "NORMAL"):
+        image = bpy.data.images.new(f"bake-{kind}", size, size, alpha=True, float_buffer=True, is_data=True)
+        target.image = image
+        nodes.active = target
+        if kind == "NORMAL":
+            bpy.ops.object.bake(type="NORMAL", normal_space="OBJECT", margin=12)
+        else:
+            bpy.ops.object.bake(type="POSITION", margin=12)
+        px = np.empty(size * size * 4, dtype=np.float32)
+        image.pixels.foreach_get(px)
+        passes[kind] = px.reshape(size * size, 4)[:, :3].astype(np.float64)
+        bpy.data.images.remove(image)
+    position, normal = passes["POSITION"], passes["NORMAL"] * 2.0 - 1.0
+    baked = np.abs(position).sum(axis=1) > 1e-6
+
+    z_low, z_high = projection["blend_z"]
+    views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high))
+             for name, fit in projection["views"].items()}
+    colour = bfm.sheet_colour_fn(views)
+    field = position / projection["mesh_scale"]              # texel positions, back in the build's coordinates
+    field[:, 2] += projection["field_zmin"]
+    linear = np.tile(bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.FLESH]), (size * size, 1))
+    linear[baked] = colour(field[baked], normal[baked])
+    srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
+
+    albedo = bpy.data.images.new("Brundlefly-albedo", size, size, alpha=False)
+    albedo.pixels.foreach_set(np.concatenate([srgb, np.ones((size * size, 1))], axis=1).astype(np.float32).ravel())
+    albedo.pack()
+    target.image = albedo
+    bsdf = next(n for n in nodes if n.type == "BSDF_PRINCIPLED")
+    for link in list(bsdf.inputs["Base Color"].links):
+        material.node_tree.links.remove(link)
+    material.node_tree.links.new(target.outputs["Color"], bsdf.inputs["Base Color"])
+    for attribute in list(body.data.color_attributes):
+        body.data.color_attributes.remove(attribute)
+    return int(baked.sum())
+
+
 def export_web(src, args):
     """The website model. One root node, Y up after export, face toward +Z, soles at height zero.
 
     Children: the body, two eyeball nodes, and three anchor nodes. The contract is in PRINTING.md.
     """
     with open(os.path.join(os.path.dirname(args.blend), "build-stats.json")) as fh:
-        site = json.load(fh)["site"]
+        stats = json.load(fh)
+    site = stats["site"]
     px, py = site["pelvis_xy_mm"]
     scene = bpy.context.scene
 
@@ -244,6 +313,11 @@ def export_web(src, args):
     skin = body.data.materials[0]
     skin.name = "Brundlefly-skin"
     skin.use_backface_culling = True                 # exports as doubleSided false
+
+    textured = "sheet_projection" in stats and not args.no_texture
+    if textured:
+        texels = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size)
+        print(f"TEXTURE {args.texture_size} px, {texels} texels on the surface")
 
     root = bpy.data.objects.new("Brundlefly", None)
     scene.collection.objects.link(root)
@@ -303,6 +377,8 @@ def export_web(src, args):
     path = os.path.join(args.out, "brundlefly-web.glb")
     kwargs = dict(filepath=path, export_format="GLB", use_selection=True, export_apply=not rigged, export_cameras=False, export_lights=False,
                   export_animations=rigged, export_skins=rigged)
+    if textured:
+        kwargs.update(export_image_format="JPEG", export_image_quality=88)
     try:
         bpy.ops.export_scene.gltf(export_vertex_color="MATERIAL", **kwargs)
     except TypeError:

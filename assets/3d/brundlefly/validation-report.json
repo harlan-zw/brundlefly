@@ -212,9 +212,9 @@
    "Zero Faces": "0",
    "Zero Edges": "0",
    "Non-flat Faces": "0",
-   "Thin Faces": "22730",
+   "Thin Faces": "22633",
    "Sharp Edges": "0",
-   "Overhang Faces": "19973"
+   "Overhang Faces": "19958"
   },
   "passes_mesh_checks": true
  },
@@ -445,9 +445,9 @@
    "Zero Faces": "0",
    "Zero Edges": "0",
    "Non-flat Faces": "0",
-   "Thin Faces": "7355",
+   "Thin Faces": "7336",
    "Sharp Edges": "0",
-   "Overhang Faces": "19973"
+   "Overhang Faces": "19958"
   },
   "passes_mesh_checks": true
  },
@@ -476,10 +476,10 @@
   "checks": {
    "tip_1.5mm": {
     "diameter_mm": 1.5,
-    "thin_volume_mm3": 281.72,
+    "thin_volume_mm3": 281.7,
     "largest_regions": [
      {
-      "volume_mm3": 131.72,
+      "volume_mm3": 131.7,
       "centre_mm": [
        -15.8,
        11.3,
@@ -546,10 +546,10 @@
    },
    "limb_2.5mm": {
     "diameter_mm": 2.5,
-    "thin_volume_mm3": 906.89,
+    "thin_volume_mm3": 906.88,
     "largest_regions": [
      {
-      "volume_mm3": 260.78,
+      "volume_mm3": 260.77,
       "centre_mm": [
        -14.9,
        10.3,
@@ -616,7 +616,7 @@
    },
    "wall_1.6mm": {
     "diameter_mm": 1.6,
-    "thin_volume_mm3": 324.8,
+    "thin_volume_mm3": 324.78,
     "largest_regions": [
      {
       "volume_mm3": 154.92,
@@ -627,7 +627,7 @@
       ]
      },
      {
-      "volume_mm3": 138.22,
+      "volume_mm3": 138.2,
       "centre_mm": [
        -15.7,
        11.3,
@@ -690,11 +690,11 @@
   "profile": "0.2 mm layers, 0.4 mm nozzle, 3 walls, 15% gyroid infill",
   "without_supports": {
    "filament_cm3": 13.04,
-   "print_time": "2h 8m 17s"
+   "print_time": "2h 8m 13s"
   },
   "with_supports_45_degrees": {
    "filament_cm3": 31.83,
-   "print_time": "4h 13m 11s"
+   "print_time": "4h 13m 7s"
   },
   "support_filament_cm3": 18.79
  }

@@ -1,20 +1,20 @@
 # Brundlefly figurine: printing instructions
 
 This folder holds a 3D model of Brundlefly for printing and for the website, and the scripts that build it.
-The shape and the colours come from the front and back views of `assets/brand/character-sheet.png`.
+The shape comes from the front and back views of `assets/brand/character-sheet.png`. The colours come from those two views and from two side views drawn in the same style.
 
 ![Front view](previews/front.png)
 
 ## How the model is made
 
-1. `source/views/front.png` and `source/views/back.png` are the front and back views, cut from the character sheet.
+1. `source/views/front.png` and `source/views/back.png` are the front and back views, cut from the character sheet. `source/views/side-right.png` and `source/views/side-left.png` are side views that an image model drew from the sheet. The sheet has no side view.
 2. An image-to-3D model reads both views and returns a base mesh: `source/hunyuan3d-multiview-shape.glb`.
 3. `build_from_mesh.py` turns the base mesh into the print model and the website model in Blender:
    - It removes the bristle spikes. It keeps the thin wings and mouthparts.
    - For printing, it grows parts that are thinner than 1.6 mm, by up to 0.5 mm on each side, and it adds the base.
-   - It projects the two sheet views onto the vertex colours. The head gets its own image fit, so the face lines up.
+   - It projects the four views onto the vertex colours. Each surface takes its colour from the views that it faces. The head gets its own image fit, so the face lines up.
    - It adds two dark eyeballs where the sheet has its eyes.
-4. `export_model.py` writes the files. For the website model it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip.
+4. `export_model.py` writes the files. For the website model it bakes the four views into a texture, and it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip.
 5. `validate.ts` checks the print files.
 
 `assets/prompts/figurine.json` records the generator, the date, and the settings.
@@ -29,7 +29,7 @@ Read the licence note in that file before you sell prints of this mesh.
 | `brundlefly.blend` | Editable master. One Blender unit is one millimetre. |
 | `brundlefly-preview.glb` | Coloured preview of the print model, with the base. |
 | `brundlefly-web.glb` | Model for the website: rigged, no base, bristles kept, thin parts not thickened. |
-| `source/` | The generated base mesh, the two views it came from, and the joint positions for the skeleton. |
+| `source/` | The generated base mesh, the four view images, and the joint positions for the skeleton. |
 | `validation-report.json` | Output of `validate.ts` for the two STL files. |
 | `previews/` | Front, side, back, three-quarter, and top renders of the print model, one of the website model, and one pose test of the rig. |
 
@@ -110,7 +110,7 @@ To thicken further, rebuild with `--min-radius 1.0 --max-growth 0.7`. The figure
 - Shells: one. Volume: positive. Self-intersecting face pairs: zero.
 - Height: 80.00 mm and 100.00 mm.
 - Blender 3D Print Toolbox, check all: zero non-manifold edges, zero intersecting faces, one shell.
-- The toolbox also reports 22,730 thin faces and 19,973 overhang faces at 80 mm. Most thin faces are the wings. The overhang count agrees with the need for supports.
+- The toolbox also reports 22,633 thin faces and 19,958 overhang faces at 80 mm. Most thin faces are the wings. The overhang count agrees with the need for supports.
 - Mid-air start points: 37 at 80 mm.
 - Voxel thickness check at 0.25 mm pitch.
 - Stability: the centre of mass is 14.1 mm inside the footprint edge. The solid model tips at about 19 degrees.
@@ -146,7 +146,7 @@ These steps are untested on a printed part.
 
 - The figure stands on an integrated base. A printed figure on two thin legs does not stand without one.
 - One material prints no colour. The print shows shape only.
-- The generator saw the front and the back. The sides are its estimate, and the side colours are a blend of both views.
+- The generator saw the front and the back. The side shape is its estimate. It does not match the drawn side views well, so the side colours sit loosely on the side surfaces.
 - The print model has no bristles, and its thin parts are a little thicker than in the artwork.
 
 ## Website model
@@ -155,11 +155,11 @@ These steps are untested on a printed part.
 
 - glTF 2.0 binary, metres, Y up, face toward +Z. The soles are at height zero.
 - One root node, `Brundlefly`, with a scale of 0.001.
-- `Brundlefly-body`: 80,000 triangles, vertex colours in `COLOR_0`, material `Brundlefly-skin`, single sided, roughness 0.42.
-- The vertex colours are the sheet's front and back views, projected onto the mesh, with light baked shading.
+- `Brundlefly-body`: 64,000 triangles, texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
+- The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork.
 - `Brundlefly-eye-0` and `Brundlefly-eye-1`: eyeball nodes, material `Brundlefly-eye`. Eye 0 is on screen left and is the larger eye. The body mesh also has dark eyeballs under them.
 - `anchor-face`: an empty node at the front of the face.
-- No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 2.8 MB.
+- No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 3.8 MB.
 
 Skeleton:
 
@@ -182,7 +182,8 @@ The Flatpak apps reach the home folder only. Put `OUT` under your home folder.
 ```bash
 D=/abs/path/to/assets/3d/brundlefly
 OUT=$HOME/scratch/brundlefly-build
-VIEWS="--front-image $D/source/views/front.png --back-image $D/source/views/back.png"
+V=$D/source/views
+VIEWS="--front-image $V/front.png --back-image $V/back.png --right-image $V/side-right.png --left-image $V/side-left.png"
 flatpak run org.blender.Blender -b --factory-startup --python $D/build_from_mesh.py -- --source $D/source/hunyuan3d-multiview-shape.glb --out $OUT $VIEWS
 flatpak run org.blender.Blender -b --factory-startup --python $D/export_model.py -- --blend $OUT/brundlefly-work.blend --out $D --tris 200000 --glb-tris 120000
 flatpak run org.blender.Blender -b --factory-startup --python $D/render_previews.py -- --blend $D/brundlefly.blend --out $OUT/previews --modes colour --views front,three-quarter,side,back,top
@@ -191,7 +192,7 @@ node $D/validate.ts
 
 The renders are named `<view>-colour.png`. Copy them to `previews/<view>.png`.
 
-For the website model, add `--variant web` to the build and `--web --glb-tris 80000` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes.
+For the website model, add `--variant web` to the build and `--web --glb-tris 64000 --texture-size 1536` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes.
 
 `build_model.py` holds the field library that `build_from_mesh.py` uses. It also holds a first, script-built figure, which is retired.
 
