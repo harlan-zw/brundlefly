@@ -720,7 +720,10 @@ def main():
                 eye["x"] += shift
             head_front["tx"] += shift
             stats["sheet_fit"]["front"]["face_shift_mm"] = round(float(shift), 3)
-        stats["wing_trim_mm3"] = round(trim_small_wing(f, front, views["front"][1], zmax), 1)
+        # The print model keeps its wing. Its membrane is rebuilt from the removed thin parts, and
+        # the cut only frays the tip there: the thick leading edge is not a thin part.
+        if not printing:
+            stats["wing_trim_mm3"] = round(trim_small_wing(f, front, views["front"][1], zmax), 1)
         eyes = add_eyes(f, spots, head[0])
         erase_side_eyes(views)
     if args.rebuild_back:

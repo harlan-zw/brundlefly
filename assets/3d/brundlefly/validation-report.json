@@ -9,7 +9,7 @@
   ],
   "min_z_mm": 0,
   "triangles": 200000,
-  "volume_cm3": 25.22,
+  "volume_cm3": 25.18,
   "non_manifold_edges": 0,
   "boundary_edges": 0,
   "degenerate_faces": 0,
@@ -217,9 +217,9 @@
    "Zero Faces": "0",
    "Zero Edges": "0",
    "Non-flat Faces": "0",
-   "Thin Faces": "17533",
+   "Thin Faces": "18111",
    "Sharp Edges": "0",
-   "Overhang Faces": "20429"
+   "Overhang Faces": "20458"
   },
   "passes_mesh_checks": true
  },
@@ -232,7 +232,7 @@
   ],
   "min_z_mm": 0,
   "triangles": 200000,
-  "volume_cm3": 49.27,
+  "volume_cm3": 49.18,
   "non_manifold_edges": 0,
   "boundary_edges": 0,
   "degenerate_faces": 0,
@@ -450,21 +450,21 @@
    "Zero Faces": "0",
    "Zero Edges": "0",
    "Non-flat Faces": "0",
-   "Thin Faces": "6670",
+   "Thin Faces": "7665",
    "Sharp Edges": "0",
-   "Overhang Faces": "20430"
+   "Overhang Faces": "20459"
   },
   "passes_mesh_checks": true
  },
  "thickness_80mm": {
   "file": "brundlefly-80mm.stl",
   "pitch_mm": 0.25,
-  "solid_volume_cm3": 27.29,
+  "solid_volume_cm3": 27.24,
   "stability": {
    "centre_of_mass_mm": [
-    -0.16,
-    0.54,
-    35.15
+    -0.19,
+    0.51,
+    35.09
    ],
    "footprint_x_mm": [
     -32.8,
@@ -474,37 +474,29 @@
     -15.5,
     20.4
    ],
-   "margin_to_footprint_edge_mm": 16,
+   "margin_to_footprint_edge_mm": 15.98,
    "tip_angle_degrees": 24.5,
    "stands": true
   },
   "checks": {
    "tip_1.5mm": {
     "diameter_mm": 1.5,
-    "thin_volume_mm3": 270.14,
+    "thin_volume_mm3": 291.36,
     "largest_regions": [
      {
-      "volume_mm3": 133.23,
+      "volume_mm3": 142.8,
+      "centre_mm": [
+       19.5,
+       12.7,
+       64.2
+      ]
+     },
+     {
+      "volume_mm3": 133.22,
       "centre_mm": [
        -15.9,
        9.8,
        70.8
-      ]
-     },
-     {
-      "volume_mm3": 112.84,
-      "centre_mm": [
-       20.2,
-       13.5,
-       64
-      ]
-     },
-     {
-      "volume_mm3": 7.88,
-      "centre_mm": [
-       12,
-       3.9,
-       62.5
       ]
      },
      {
@@ -546,18 +538,26 @@
        7.1,
        59.5
       ]
+     },
+     {
+      "volume_mm3": 0.86,
+      "centre_mm": [
+       -2.4,
+       10.4,
+       34.8
+      ]
      }
     ]
    },
    "limb_2.5mm": {
     "diameter_mm": 2.5,
-    "thin_volume_mm3": 925.44,
+    "thin_volume_mm3": 937.72,
     "largest_regions": [
      {
-      "volume_mm3": 293.98,
+      "volume_mm3": 306.19,
       "centre_mm": [
-       19.5,
-       12.8,
+       19.1,
+       12.3,
        65.5
       ]
      },
@@ -621,18 +621,18 @@
    },
    "wall_1.6mm": {
     "diameter_mm": 1.6,
-    "thin_volume_mm3": 346.27,
+    "thin_volume_mm3": 362.22,
     "largest_regions": [
      {
-      "volume_mm3": 166.73,
+      "volume_mm3": 182.73,
       "centre_mm": [
-       19.1,
-       12.2,
-       63.5
+       19.2,
+       12.3,
+       63.8
       ]
      },
      {
-      "volume_mm3": 144.28,
+      "volume_mm3": 144.27,
       "centre_mm": [
        -15.8,
        9.7,
@@ -694,13 +694,13 @@
  "slice_80mm": {
   "profile": "0.2 mm layers, 0.4 mm nozzle, 3 walls, 15% gyroid infill",
   "without_supports": {
-   "filament_cm3": 14.09,
-   "print_time": "2h 10m 32s"
+   "filament_cm3": 14.04,
+   "print_time": "2h 10m 14s"
   },
   "with_supports_45_degrees": {
-   "filament_cm3": 34.12,
-   "print_time": "4h 23m 11s"
+   "filament_cm3": 34.08,
+   "print_time": "4h 22m 54s"
   },
-  "support_filament_cm3": 20.03
+  "support_filament_cm3": 20.04
  }
 }
