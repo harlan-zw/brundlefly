@@ -158,7 +158,8 @@ These steps are untested on a printed part.
 
 - glTF 2.0 binary, metres, Y up. The soles are at height zero.
 - The rest shape is the stance of `assets/brand/character.png`, which is also the stance of the site's relief rig: the body is turned 0.5 radians toward screen right, and the head faces +Z with a roll. `source/stance.json` holds the stance, and `export_model.py` bakes it in. The print model keeps the straight stand.
-- In this stance the figure is 72.2 mm tall for the 80 mm build. The body spans -31.4 to 30.5 mm in X and -26.3 to 24.8 mm in Z.
+- In this stance the figure is 77.5 mm tall for the 80 mm build. The body spans -29.9 to 29.9 mm in X and -26.3 to 30.7 mm in Z.
+- Through the relief rig's walk cycle the long hands stay at least 4.5 mm from the legs, and the small hands at least 1.2 mm.
 - One root node, `Brundlefly`, with a scale of 0.001.
 - `Brundlefly-body`: about 64,000 triangles. That count includes about 80 bristle hairs of three triangles each; a hair takes the skin weights of the vertex under it. Texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
 - The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork.
