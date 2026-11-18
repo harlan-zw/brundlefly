@@ -1,0 +1,20 @@
+{
+  "tool": "Hunyuan3D-2.1, public Hugging Face Space tencent/Hunyuan3D-2.1, endpoint /shape_generation",
+  "date": "2026-11-18",
+  "file": "assets/3d/brundlefly/source/hunyuan3d-shape.glb",
+  "references": [
+    "assets/brand/kit/lair/mascot-sculpt-reference.png"
+  ],
+  "prompt": "None. The model takes one image and no text.",
+  "settings": {
+    "steps": 30,
+    "guidance_scale": 5.0,
+    "seed": 1234,
+    "octree_resolution": 384,
+    "remove_background": true,
+    "num_chunks": 8000,
+    "texture": false
+  },
+  "usage": "Base shape for the print model and the website model. assets/3d/brundlefly/build_from_mesh.py removes the bristle spikes, thickens thin parts, and adds the base and the bristle dimples.",
+  "licence_note": "The Space runs Tencent's Hunyuan3D-2.1 model. Its community licence sets terms for the model and for use of its output. Nobody reviewed that licence for this project. Check it before commercial use of this mesh."
+}

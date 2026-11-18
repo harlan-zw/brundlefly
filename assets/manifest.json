@@ -111,38 +111,48 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 10777,
-    "sha256": "16ca3b40ba340b020fe1c3d59fbe10d4aec279c6148334c3ec899134c2b67df3"
+    "bytes": 11034,
+    "sha256": "f151b56e61c485d4d7087a04e4801a1c8ddb0c66d0a8b85cd4064972527c75f6"
+  },
+  {
+    "path": "assets/3d/brundlefly/__pycache__/build_model.cpython-313.pyc",
+    "bytes": 82401,
+    "sha256": "bca4b3339294afddc3322dab4d6f61a3bc7f8239e85fa48e5143ad71683d77fc"
   },
   {
     "path": "assets/3d/brundlefly/bristle-map.json",
-    "bytes": 3492,
-    "sha256": "fd72bb70a9399c24e7dec3a7b19174fea9972cf886560dcd9c74af2059111ea6"
+    "bytes": 2491,
+    "sha256": "c23f983323cdf67447b48a0546a907020e8f397ab4755b6d4b855dc9cdac25ba"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
-    "bytes": 9850084,
-    "sha256": "e9590ff88f052ee6b6d522a7276a2b08e569516f9b102fb8706ab0108d976fef"
+    "bytes": 10000084,
+    "sha256": "2d11fde21d0415cc3a50a273e837642fbfe3bebe19eaf390196dd0c8f5c4a68c"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-80mm.stl",
-    "bytes": 9850084,
-    "sha256": "87bcf36be07052664c99f2a0ea6a23e4dae58fb53bab20e738575bedab25272c"
+    "bytes": 10000084,
+    "sha256": "15641a5bd155ba0afb67cc0f5eb4d883a2221c065bbd0e70f0708d320c9ae6cd"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-preview.glb",
-    "bytes": 2880048,
-    "sha256": "773f16b8c57f0138e5e1feac3a287fe64b937dbc8920ed2d8f9122d5c2eb79f7"
+    "bytes": 2880716,
+    "sha256": "2ffa6b1a9f6d523fd8a9a63e71ed5be9171df3a65423d3d74d3abf278b65b215"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
-    "bytes": 1948392,
-    "sha256": "4c44b442caa79ac6b41fa091f08d59b88b0b87553e4ef5b657e1a326a400b902"
+    "bytes": 1921248,
+    "sha256": "01344e8a103dae25acf9d8b36e02f3d7533b0690e50107657209dae78aacc235"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
-    "bytes": 6380927,
-    "sha256": "657e6289ab0624a0b865a1e3ba48a92bdaf0fa0228c25f73f9a8bdad67133c0c"
+    "bytes": 6468691,
+    "sha256": "9c75639ac266aa887403c8dbfc990402a2b9c127e884e3a4d16219428c6178ea"
+  },
+  {
+    "path": "assets/3d/brundlefly/build_from_mesh.py",
+    "bytes": 12049,
+    "sha256": "6150e5a6f964884e46f37695b098c7c3c980fce05b1312bc175639ab71f30c13"
   },
   {
     "path": "assets/3d/brundlefly/build_model.py",
@@ -161,43 +171,48 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",
-    "bytes": 527926,
-    "sha256": "8498dba01a653e0930f5a3b15821e51f7050456546ee4b327cc8c45c20ed24f8"
+    "bytes": 516488,
+    "sha256": "2e88e4249e47734f02b954f28d68c941eab2ce9d35162eb95e2abea659d719e5"
   },
   {
     "path": "assets/3d/brundlefly/previews/bristle-map.png",
-    "bytes": 1187397,
-    "sha256": "3c4f99e9643a2698acfe11b4fd1be984eb8dbb9d91d804e2ee561eb484db4575"
+    "bytes": 1167469,
+    "sha256": "641996e6ae451774f40e90d99ef389ec05c207f2d0323c8c424ae3a324585ffe"
   },
   {
     "path": "assets/3d/brundlefly/previews/front.png",
-    "bytes": 532273,
-    "sha256": "0e122822822ed1bb96794c3414f4f6a7d8336c225e4ce4e185c0b73c6f0c2740"
+    "bytes": 517840,
+    "sha256": "c10377289960b85329b72b7bd8bdadc091386f230118d9e6ecfa44f9de917c16"
   },
   {
     "path": "assets/3d/brundlefly/previews/side.png",
-    "bytes": 493462,
-    "sha256": "7dd6d38c3d67453b106f989e63de0bc9f7b8ddfcb7cf8d2254e3036238289495"
+    "bytes": 494840,
+    "sha256": "c9655f868f1aa137947cdd4635c77630ccfcc036c34ab45fbc8c5b24aac225a4"
   },
   {
     "path": "assets/3d/brundlefly/previews/three-quarter.png",
-    "bytes": 537193,
-    "sha256": "0ba68e5d1d6a6bdbd6a8a33c0c72de10fb2a6b82cfd483d06ac90cef22ea80f2"
+    "bytes": 530308,
+    "sha256": "a7fc07daffa0feb8cff0af9e294c68bc3bb988c19ed86726c4fe93dbd598ff41"
   },
   {
     "path": "assets/3d/brundlefly/previews/top.png",
-    "bytes": 475568,
-    "sha256": "09baa03d432dc189dd507c9f0572c0b7d918f3500532c032cb6a3ca71489bf4d"
+    "bytes": 474555,
+    "sha256": "a6de1596dd4a6f184e4235287d3428a8ca14a94737b7046c01b38c025f397fd1"
   },
   {
     "path": "assets/3d/brundlefly/previews/web-three-quarter.png",
-    "bytes": 528689,
-    "sha256": "9131a74e69f00bf8f850678ec3bbbad033f2e7ca1b36c7e4ab270d92fa873ff2"
+    "bytes": 547572,
+    "sha256": "6e65609989b87eab7ea4a746d71551bb030b293712ef8b1dcacb034a754fd4cd"
   },
   {
     "path": "assets/3d/brundlefly/render_previews.py",
     "bytes": 5646,
     "sha256": "33c90422afa60babf8e130c1c39388299c03b123c978f8b671acaf67f36c5ba5"
+  },
+  {
+    "path": "assets/3d/brundlefly/source/hunyuan3d-shape.glb",
+    "bytes": 15215636,
+    "sha256": "ac786328594d52115fd1ae70f1493fde682eb1241108124ef3cb04f53c635edf"
   },
   {
     "path": "assets/3d/brundlefly/validate.ts",
@@ -211,7 +226,7 @@
   },
   {
     "path": "assets/3d/brundlefly/validation-report.json",
-    "bytes": 6207,
-    "sha256": "d333e79820afdf9ed05e3a40d28a3c5eb5f8bf630cc3704be4cb6087e25b4b12"
+    "bytes": 8654,
+    "sha256": "e75a96cdc99fb01b69a9d189bc5754b1841fcc626cc66404dde8f6761fdc6271"
   }
 ]
