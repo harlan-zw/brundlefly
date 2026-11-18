@@ -52,16 +52,17 @@ test('a figurine base leaves the scene and does not change the fit', () => {
 })
 
 test('a file without clips sways about its feet and rests at time zero', () => {
-  const { scene, body } = millimetreModel()
+  const { scene, node, body } = millimetreModel()
   const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
   assert.deepEqual(mascot.motion, { _tag: 'Sway' })
   const head = () => { mascot.root.updateMatrixWorld(true); return body.localToWorld(new Vector3(0, 40, 0)) }
-  const feet = () => { mascot.root.updateMatrixWorld(true); return mascot.root.children[0]!.getWorldPosition(new Vector3()) }
+  // The floor point under the file origin: the body's lowest face is 12 mm above that origin.
+  const feet = () => { mascot.root.updateMatrixWorld(true); return node.localToWorld(new Vector3(0, 12, 0)) }
   mascot.update(0)
   const rest = head()
   mascot.update(3)
   assert.ok(head().distanceTo(rest) > 0.005, 'The head must move during the sway.')
-  assert.ok(feet().length() < 1e-9, 'The sway pivot must stay on the floor origin.')
+  assert.ok(feet().length() < 1e-9, 'The floor point under his origin must not move.')
   mascot.update(0)
   assert.ok(head().distanceTo(rest) < 1e-9, 'Time zero must restore the authored pose.')
 })
