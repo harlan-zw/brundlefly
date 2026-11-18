@@ -1,13 +1,13 @@
-"""Build the print model from a generated base mesh.
+"""Build the print model and the website model from a generated base mesh.
 
-The base mesh comes from an image-to-3D model that read the sculpt reference image.
-This script turns it into a printable figure: it removes the bristle spikes, thickens
-thin parts to the print minimum, rebuilds the back from the character sheet, adds the
-base, and meshes it.
+The base mesh comes from an image-to-3D model that read the front and back views of
+the character sheet. This script turns it into a printable figure with a light touch:
+it removes the bristle spikes but keeps the thin wings, grows only parts that are under
+the print minimum, adds the base, and meshes the result.
 
 Run headless, with absolute paths:
   flatpak run org.blender.Blender -b --factory-startup \
-    --python /abs/build_from_mesh.py -- --source /abs/source/hunyuan3d-shape.glb --out /abs/dir --voxel 0.2
+    --python /abs/build_from_mesh.py -- --source /abs/source/hunyuan3d-multiview-shape.glb --out /abs/dir
 
 Units are millimetres. Z is up. The figure faces -Y.
 """
@@ -28,10 +28,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_model as bm  # noqa: E402  (the field library and the mesher)
 
 bm.SCALE_GUESS = 1.0          # this pipeline works in millimetres directly
-FIGURE_MM = 77.6              # figure height above its lowest sole
+FIGURE_MM = 77.6              # print figure height above its lowest sole
 BASE_TOP = 3.0                # nominal top of the base
 SINK = 0.6                    # the soles sink this far into the base
 BAND = 10                     # level set half width, in voxels
+LO = np.array([-48.0, -40.0, -1.6])
+HI = np.array([48.0, 40.0, 84.0])
 
 
 def parse():
@@ -41,12 +43,34 @@ def parse():
     ap.add_argument("--out", required=True)
     ap.add_argument("--voxel", type=float, default=0.2)
     ap.add_argument("--variant", choices=("print", "web"), default="print", help="web: keeps bristles and thin parts, no base")
-    ap.add_argument("--open-radius", type=float, default=0.42, help="parts thinner than twice this are removed (bristles)")
-    ap.add_argument("--min-radius", type=float, default=1.0, help="thin parts grow to this radius")
-    ap.add_argument("--dump-field", action="store_true", help="also write field.npz (the solid as a boolean grid), for measuring joints")
-    ap.add_argument("--dimples", action="store_true", help="add pilot dimples for hand-implanted bristles (off: a pin makes the holes)")
+    ap.add_argument("--open-radius", type=float, default=0.45, help="spikes thinner than twice this are removed")
+    ap.add_argument("--keep-volume", type=float, default=6.0, help="a thin part larger than this many cubic millimetres is kept (wings, mouthparts)")
+    ap.add_argument("--min-radius", type=float, default=0.8, help="thin parts grow to this radius")
+    ap.add_argument("--max-growth", type=float, default=0.5, help="the most a thin part may grow on each side")
+    ap.add_argument("--front-image", help="front view image, projected onto the vertex colours")
+    ap.add_argument("--back-image", help="back view image, projected onto the vertex colours")
+    ap.add_argument("--rebuild-back", action="store_true", help="replace the back with plates drawn from the character sheet")
+    ap.add_argument("--dimples", action="store_true", help="add pilot dimples for hand-implanted bristles")
+    ap.add_argument("--dump-field", action="store_true", help="also write field.npz, for measuring joints")
     args, _ = ap.parse_known_args(argv)
     return args
+
+
+def islands(mesh):
+    seen, out = set(), []
+    for v in mesh.verts:
+        if v.index in seen:
+            continue
+        stack, comp = [v], []
+        while stack:
+            cur = stack.pop()
+            if cur.index in seen:
+                continue
+            seen.add(cur.index)
+            comp.append(cur)
+            stack.extend(e.other_vert(cur) for e in cur.link_edges)
+        out.append(comp)
+    return out
 
 
 def load_largest_shell(path):
@@ -64,20 +88,7 @@ def load_largest_shell(path):
     mesh = bmesh.new()
     mesh.from_mesh(ob.data)
     bmesh.ops.triangulate(mesh, faces=mesh.faces)
-    seen, shells = set(), []
-    for v in mesh.verts:
-        if v.index in seen:
-            continue
-        stack, comp = [v], []
-        while stack:
-            cur = stack.pop()
-            if cur.index in seen:
-                continue
-            seen.add(cur.index)
-            comp.append(cur)
-            stack.extend(e.other_vert(cur) for e in cur.link_edges)
-        shells.append(comp)
-    shells.sort(key=len, reverse=True)
+    shells = sorted(islands(mesh), key=len, reverse=True)
     for comp in shells[1:]:
         bmesh.ops.delete(mesh, geom=comp, context="VERTS")
     mesh.verts.ensure_lookup_table()
@@ -98,12 +109,54 @@ def level_set(points, tris=None, quads=None, band=BAND):
     return vdb.FloatGrid.createLevelSetFromPolygons(np.ascontiguousarray(points, dtype=np.float32), halfWidth=float(band), **kwargs)
 
 
-def opened(points, tris, radius_vox):
-    """Morphological opening: erode, then grow back. Parts thinner than 2 r vanish."""
-    grid = level_set(points, tris=tris)
-    p1, t1, q1 = grid.convertToPolygons(-radius_vox, 0.0)
-    grid = level_set(p1, tris=t1, quads=q1)
-    return grid.convertToPolygons(radius_vox, 0.0)
+def dense(grid, shape):
+    out = np.full(shape, float(BAND), dtype=np.float32)
+    grid.copyToArray(out, ijk=(0, 0, 0))
+    return out
+
+
+def large_shells(points, tris, quads, min_volume):
+    """The shells of a mesh whose volume is at least min_volume, as (points, triangles)."""
+    mesh = bmesh.new()
+    verts = [mesh.verts.new(p) for p in points.tolist()]
+    for face in list(tris.tolist()) + list(quads.tolist()):
+        try:
+            mesh.faces.new([verts[i] for i in face])
+        except ValueError:
+            pass                                      # a duplicate face: skip it
+    mesh.verts.index_update()
+    bmesh.ops.triangulate(mesh, faces=mesh.faces)
+    keep = set()
+    for comp in islands(mesh):
+        faces = {f for v in comp for f in v.link_faces}
+        volume = abs(sum(f.verts[0].co.dot(f.verts[1].co.cross(f.verts[2].co)) for f in faces) / 6.0)
+        if volume >= min_volume:
+            keep.update(v.index for v in comp)
+    out_tris = np.array([[v.index for v in f.verts] for f in mesh.faces if f.verts[0].index in keep], dtype=np.uint32).reshape(-1, 3)
+    mesh.free()
+    return points, out_tris
+
+
+def without_bristles(points_idx, tris, shape, radius_vox, keep_volume_vox):
+    """Remove thin spikes. Thin parts with real volume, such as wings and mouthparts, stay.
+
+    A morphological opening removes everything thinner than twice the radius. The removed
+    material is then split into shells. Small shells are bristles and claw tips. Large
+    shells are wing membranes and mouthparts, and the original surface is restored there.
+    """
+    original = level_set(points_idx, tris=tris)
+    p, t, q = original.convertToPolygons(-radius_vox, 0.0)
+    p, t, q = level_set(p, tris=t, quads=q).convertToPolygons(radius_vox, 0.0)
+    f_open = dense(level_set(p, tris=t, quads=q), shape)
+    f_orig = dense(original, shape)
+    removed = vdb.FloatGrid(float(BAND))
+    removed.copyFromArray(np.maximum(f_orig, -f_open))
+    rp, rt, rq = removed.convertToPolygons(0.0, 0.0)
+    kp, kt = large_shells(rp, rt, rq, keep_volume_vox)
+    if len(kt) == 0:
+        return f_open, 0
+    near_kept = dense(level_set(kp, tris=kt), shape) < 1.5
+    return np.where(near_kept, f_orig, f_open), int(len(kt))
 
 
 def max_filter(a, k):
@@ -136,7 +189,7 @@ def box_blur(a, k, passes=2):
     return a
 
 
-def thicken(f, min_radius, max_growth=0.7):
+def thicken(f, min_radius, max_growth):
     """Grow parts whose inscribed radius is under min_radius. Thick parts do not move."""
     depth = np.maximum(-f.F, 0.0)
     reach = int(math.ceil((min_radius + 0.5) / f.h))
@@ -186,16 +239,12 @@ def back_y(f, x, z):
 
 
 def rebuild_back(f, zmax):
-    """Make the back follow the character sheet's back view.
+    """Replace the back with the plates of the character sheet's back view.
 
-    The generator saw the figure from the front and gave it a human backside.
-    The sheet shows a column of segmented plates down the upper back and a
-    tapering segmented shield over the lower back. This fills the cleft and
-    adds both as raised bands that hug the surface.
+    Use this only for a base mesh that was generated from a front view alone. Such a mesh
+    has an invented back. It fills the cleft and adds raised bands that hug the surface.
     """
     around = float(band_centre(f, zmax, 0.40, 0.80)[0])
-
-    # 1. Fill the cleft between the buttocks.
     fill, radii = [], []
     for frac in np.linspace(0.30, 0.55, 9):
         z = frac * zmax
@@ -214,17 +263,15 @@ def rebuild_back(f, zmax):
             t = i / max(len(heights) - 1, 1)
             half = (w_top + (w_bottom - w_top) * t) / 2
             x0 = fixed_x if fixed_x is not None else torso_centre_x(f, z, around)
-            # Each band is a shallow chevron: the sides sit a little lower than the centre.
             starts = [bm.V(x0 + u * half, 60.0, z - abs(u) * 0.7) for u in (-1.0, -0.5, 0.0, 0.5, 1.0)]
             f.wrap(starts, bm.V(0, -1, 0), [1.0, 1.3, 1.45, 1.3, 1.0], embed=0.4, k=0.25, mat=bm.PLATE, smooth=3)
 
-    bands(0.89, 0.60, 12.0, 7.0)                                   # upper back, between the wings
-    # The lower shield keeps one centre line, so a thigh cannot pull it sideways.
+    bands(0.89, 0.60, 12.0, 7.0)
     bands(0.56, 0.37, 15.0, 4.0, fixed_x=torso_centre_x(f, 0.52 * zmax, around))
 
 
 def add_dimples(f, zmax):
-    """Pilot dimples for hand-implanted fibres, on the head, the back, the shoulders, and the thighs."""
+    """Pilot dimples for hand-implanted fibres, on the head, the back, the shoulders, and the hips."""
     head = band_centre(f, zmax, 0.80, 0.97)
     chest = band_centre(f, zmax, 0.62, 0.78)
     hips = band_centre(f, zmax, 0.36, 0.50)
@@ -244,6 +291,59 @@ def add_dimples(f, zmax):
     return out
 
 
+def load_view(path):
+    """An image as linear RGB rows from bottom to top, with the bounding box of the figure."""
+    img = bpy.data.images.load(path)
+    w, h = img.size
+    px = np.empty(w * h * 4, dtype=np.float32)
+    img.pixels.foreach_get(px)
+    bpy.data.images.remove(img)
+    rgb = px.reshape(h, w, 4)[..., :3]
+    lum = rgb.max(axis=2)
+    ys, xs = np.nonzero(lum > 0.08)
+    linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    # A blurred copy for surfaces that face sideways, where a sharp projection would streak.
+    figure = lum > 0.08
+    filled = np.where(figure[..., None], linear, linear[figure].mean(axis=0))
+    soft = filled.copy()
+    for _ in range(2):
+        for axis in (0, 1):
+            c = np.cumsum(np.pad(soft, [(13, 12) if a == axis else (0, 0) for a in range(3)], mode="edge"), axis=axis)
+            soft = (np.take(c, range(25, c.shape[axis]), axis=axis) - np.take(c, range(0, c.shape[axis] - 25), axis=axis)) / 25.0
+    return linear, soft, lum, (xs.min(), xs.max(), ys.min(), ys.max())
+
+
+def sheet_colour_fn(front_path, back_path, box):
+    """Vertex colours from the sheet's front and back views, projected along Y.
+
+    The base mesh was generated from these two views, so its outline matches them.
+    box is the figure's (xmin, xmax, zmin, zmax) in field coordinates.
+    """
+    front, front_soft, front_lum, fb = load_view(front_path)
+    back, back_soft, back_lum, bb = load_view(back_path)
+    xmin, xmax, zmin, zmax = box
+    flesh = bm.srgb_to_linear(bm.PALETTE[bm.FLESH])
+
+    def sample(image, soft, lum, bounds, u, v, sideways):
+        px = np.clip(np.rint(bounds[0] + u * (bounds[1] - bounds[0])).astype(int), 0, image.shape[1] - 1)
+        py = np.clip(np.rint(bounds[2] + v * (bounds[3] - bounds[2])).astype(int), 0, image.shape[0] - 1)
+        colour = image[py, px] * (1 - sideways) + soft[py, px] * sideways
+        return colour, lum[py, px] > 0.08
+
+    def colour(xyz, normal):
+        u = np.clip((xyz[:, 0] - xmin) / (xmax - xmin), 0, 1)
+        v = np.clip((xyz[:, 2] - zmin) / (zmax - zmin), 0, 1)
+        sideways = np.clip(1.0 - np.abs(normal[:, 1]) / 0.55, 0.0, 1.0)[:, None]
+        cf, okf = sample(front, front_soft, front_lum, fb, u, v, sideways)
+        cb, okb = sample(back, back_soft, back_lum, bb, 1.0 - u, v, sideways)     # the back view is mirrored in X
+        weight = np.clip((normal[:, 1] + 0.25) / 0.5, 0.0, 1.0)[:, None]      # 0 faces the front, 1 faces the back
+        cf = np.where(okf[:, None], cf, np.where(okb[:, None], cb, flesh))
+        cb = np.where(okb[:, None], cb, np.where(okf[:, None], cf, flesh))
+        return cf * (1 - weight) + cb * weight
+
+    return colour
+
+
 def main():
     args = parse()
     os.makedirs(args.out, exist_ok=True)
@@ -252,10 +352,9 @@ def main():
     printing = args.variant == "print"
 
     verts, tris, dropped = load_largest_shell(args.source)
-    size = verts.max(axis=0) - verts.min(axis=0)
-    scale = FIGURE_MM / size[2]
-    lo = np.array([-48.0, -40.0, -1.6])
-    hi = np.array([48.0, 40.0, 84.0])
+    scale = FIGURE_MM / (verts[:, 2].max() - verts[:, 2].min())
+    f = bm.Field(LO, HI, h)
+    shape = tuple(int(n) for n in f.n)
 
     def place(points_mm):
         """Centre in X and Y, and put the lowest sole just inside the base."""
@@ -263,33 +362,37 @@ def main():
         shift = np.array([-(mn[0] + mx[0]) / 2, -(mn[1] + mx[1]) / 2, (BASE_TOP - SINK if printing else 0.0) - mn[2]])
         return points_mm + shift
 
+    kept_faces = 0
     points = place(verts * scale)
-    quads = None
     if printing:
-        # Remove the bristle spikes, then fit the height again: the spikes were the top.
-        p, tris, quads = opened((points - lo) / h, tris, args.open_radius / h)
-        points = p.astype(np.float64) * h + lo
-        height = points[:, 2].max() - points[:, 2].min()
-        points = place((points - points.mean(axis=0)) * (FIGURE_MM / height) + points.mean(axis=0))
-
-    f = bm.Field(lo, hi, h)
-    grid = level_set((points - lo) / h, tris=tris, quads=quads)
-    dense = np.full(f.n, float(BAND), dtype=np.float32)
-    grid.copyToArray(dense, ijk=(0, 0, 0))
-    f.F = dense * h
+        # The bristles are the highest points. Remove them, then fit the height again.
+        for _ in range(2):
+            field, kept_faces = without_bristles((points - LO) / h, tris, shape, args.open_radius / h, args.keep_volume / h ** 3)
+            heights = f.ax[2][np.nonzero((field < 0).any(axis=(0, 1)))[0]]
+            centre = np.array([0.0, 0.0, points[:, 2].min()])
+            points = place((points - centre) * (FIGURE_MM / (heights.max() - heights.min())) + centre)
+        field, kept_faces = without_bristles((points - LO) / h, tris, shape, args.open_radius / h, args.keep_volume / h ** 3)
+    else:
+        field = dense(level_set((points - LO) / h, tris=tris), shape)
+    f.F = field * h
     f.M[f.F < 2.0] = bm.FLESH
 
-    stats = {"source": os.path.basename(args.source), "variant": args.variant, "voxel_mm": h, "source_scale_mm_per_unit": round(float(scale), 3), "small_shells_dropped": dropped}
+    stats = {"source": os.path.basename(args.source), "variant": args.variant, "voxel_mm": h, "source_scale_mm_per_unit": round(float(scale), 3),
+             "small_shells_dropped": dropped, "thin_part_faces_kept": kept_faces}
     f.dimples, f.eyes = [], []
-    zmax = float(points[:, 2].max())
-    anchors = {}
+    solid_z = f.ax[2][np.nonzero((f.F < 0).any(axis=(0, 1)))[0]]
+    zmax = float(solid_z.max())
+    solid_x = f.ax[0][np.nonzero((f.F < 0).any(axis=(1, 2)))[0]]
+    figure_box = (float(solid_x.min()), float(solid_x.max()), float(solid_z.min()), zmax)
     head = band_centre(f, zmax, 0.80, 0.99)
-    rebuild_back(f, zmax)
+    if args.rebuild_back:
+        rebuild_back(f, zmax)
     if printing:
-        stats["max_growth_mm"] = round(thicken(f, args.min_radius), 3)
+        stats["max_growth_mm"] = round(thicken(f, args.min_radius, args.max_growth), 3)
         stats["base"] = add_base(f)
         if args.dimples:
             f.dimples = add_dimples(f, zmax)
+    anchors = {}
     face = f.raycast(head + bm.V(0, -40.0, -2.0), bm.V(0, 1, 0), max_dist=60.0)
     if face is not None:
         anchors["anchor-face"] = face
@@ -297,6 +400,8 @@ def main():
     f.F = np.maximum(f.F, -Z).astype(np.float32)          # flat underside
     if args.dump_field:
         np.savez_compressed(os.path.join(args.out, "field.npz"), solid=np.packbits(f.F < 0), shape=f.n, lo=f.lo, h=f.h)
+    if args.front_image and args.back_image:
+        f.colour_fn = sheet_colour_fn(args.front_image, args.back_image, figure_box)
 
     # field_to_mesh reads these module-level joints for the website data. Replace them with measured values.
     bm.HEAD = head

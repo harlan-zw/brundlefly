@@ -1,19 +1,19 @@
 # Brundlefly figurine: printing instructions
 
-This folder holds a printable 3D model of Brundlefly and the scripts that build it.
-The shape comes from the sculpt reference image, `assets/brand/kit/lair/mascot-sculpt-reference.png`.
+This folder holds a 3D model of Brundlefly for printing and for the website, and the scripts that build it.
+The shape and the colours come from the front and back views of `assets/brand/character-sheet.png`.
 
-![Three-quarter view](previews/three-quarter.png)
+![Front view](previews/front.png)
 
 ## How the model is made
 
-1. An image-to-3D model reads the sculpt reference image and returns a base mesh. That mesh is `source/hunyuan3d-shape.glb`.
-2. `build_from_mesh.py` turns the base mesh into a print model in Blender:
-   - It removes the bristle spikes.
-   - It grows thin parts to a 2.0 mm minimum.
-   - It rebuilds the back from the character sheet: a column of segmented plates on the upper back and a tapering shield on the lower back.
-   - It adds the base.
-3. `export_model.py` writes the print files. `validate.ts` checks them.
+1. `source/views/front.png` and `source/views/back.png` are the front and back views, cut from the character sheet.
+2. An image-to-3D model reads both views and returns a base mesh: `source/hunyuan3d-multiview-shape.glb`.
+3. `build_from_mesh.py` turns the base mesh into the print model and the website model in Blender:
+   - It removes the bristle spikes. It keeps the thin wings and mouthparts.
+   - For printing, it grows parts that are thinner than 1.6 mm, by up to 0.5 mm on each side, and it adds the base.
+   - It projects the two sheet views onto the vertex colours.
+4. `export_model.py` writes the files. `validate.ts` checks the print files.
 
 `assets/prompts/figurine.json` records the generator, the date, and the settings.
 Read the licence note in that file before you sell prints of this mesh.
@@ -25,9 +25,9 @@ Read the licence note in that file before you sell prints of this mesh.
 | `brundlefly-80mm.stl` | Print file, 80 mm tall. Send this file first. |
 | `brundlefly-100mm.stl` | The same model at 100 mm. Every thin part is 25 percent thicker. |
 | `brundlefly.blend` | Editable master. One Blender unit is one millimetre. |
-| `brundlefly-preview.glb` | Preview of the print model, with the base. |
+| `brundlefly-preview.glb` | Coloured preview of the print model, with the base. |
 | `brundlefly-web.glb` | Model for the website: no base, bristles kept, thin parts not thickened. |
-| `source/hunyuan3d-shape.glb` | The generated base mesh, unchanged. |
+| `source/` | The generated base mesh and the two views it came from. |
 | `validation-report.json` | Output of `validate.ts` for the two STL files. |
 | `previews/` | Front, side, back, three-quarter, and top renders of the print model, and one of the website model. |
 
@@ -37,25 +37,24 @@ All values are millimetres. They come from `validation-report.json`.
 
 | File | Width (X) | Depth (Y) | Height (Z) | Volume | Triangles |
 | --- | --- | --- | --- | --- | --- |
-| `brundlefly-80mm.stl` | 74.03 | 50.31 | 80.00 | 31.59 cm³ | 200,000 |
-| `brundlefly-100mm.stl` | 92.53 | 62.89 | 100.00 | 61.70 cm³ | 200,000 |
+| `brundlefly-80mm.stl` | 63.52 | 45.15 | 80.00 | 22.85 cm³ | 200,000 |
+| `brundlefly-100mm.stl` | 79.40 | 56.44 | 100.00 | 44.63 cm³ | 200,000 |
 
-Height runs from the underside of the base to the tip of the upright wing. The top of the head is at 78 mm.
+Height runs from the underside of the base to the tip of the larger wing.
 The base is about 3 mm thick at 80 mm. The underside is flat.
 
 ## Material
 
-- First choice: flexible TPU, Shore 95A, FDM. Thin claws and wing edges bend in TPU. They snap in rigid plastic.
+- First choice: tough resin or MJF nylon, if the supplier offers it. Both hold fine claws and folds far better than FDM.
+- FDM choice: flexible TPU, Shore 95A. Thin claws and wing edges bend in TPU. They snap in rigid FDM plastic.
 - A squeezable feel is not a goal. The model is one solid shell.
-- Alternative: PLA or PETG. The print is easier, but claws and fingers break more easily.
-- Alternative: resin. It gives the best surface detail at this size. Standard resin is brittle, so ask for a tough resin.
 - Colour: one colour. Rust or black fit the palette in `docs/arch/brand.md`.
 
 ## Print orientation and supports
 
 - Print upright, with the flat base on the bed.
-- This pose needs supports. With a 45 degree threshold, the slicer used 20.8 cm³ of support for 17.5 cm³ of model.
-- `validation-report.json` lists the points where material starts in mid-air (`mid_air_islands_mm`): 55 at 80 mm. Many are small ledges under the back plates.
+- This pose needs supports. With a 45 degree threshold, the slicer used 18.6 cm³ of support for 13.0 cm³ of model.
+- `validation-report.json` lists the points where material starts in mid-air (`mid_air_islands_mm`): 37 at 80 mm.
 - The largest groups are the fingers and claws of the two long-arm hands, the two small-arm hands, and the hanging mouthparts.
 - The head, the belly, and the wings overhang by more than 45 degrees. The slicer supports them.
 - Use tree or organic supports. They touch less surface than grid supports.
@@ -70,36 +69,36 @@ Sliced values come from PrusaSlicer 2.9.7 with a generic 0.4 mm FDM profile. The
 | Nozzle | 0.4 mm | Sliced |
 | Walls | 3 | Sliced |
 | Infill | 15 percent gyroid | Sliced |
-| Filament without supports | 17.5 cm³, 2 h 43 min | Sliced |
-| Filament with supports at 45 degrees | 38.3 cm³, 4 h 58 min | Sliced |
-| Support filament | 20.8 cm³ | Sliced, by difference |
+| Filament without supports | 13.0 cm³, 2 h 08 min | Sliced |
+| Filament with supports at 45 degrees | 31.7 cm³, 4 h 12 min | Sliced |
+| Support filament | 18.6 cm³ | Sliced, by difference |
 | Layer height for more detail | 0.12 to 0.16 mm | Estimate |
 | TPU nozzle temperature | 220 to 235 °C | Estimate |
 | TPU print speed | 20 to 30 mm/s | Estimate |
 | Support Z gap for TPU | 0.20 to 0.25 mm | Estimate |
 | Brim | 3 to 5 mm | Estimate |
 
-No TPU printer profile was tested. A real TPU print has not been made.
+No TPU printer profile was tested. A real print has not been made.
 
-## Minimum feature sizes
+## Thin parts
 
-`build_from_mesh.py` grows every part that is thinner than 2.0 mm, by up to 0.7 mm on each side.
+The print model keeps the proportions of the artwork, so some parts are thin.
 
-The voxel thickness check found these thin regions in `brundlefly-80mm.stl`:
-
-- Thinner than 1.5 mm: 12.4 mm³ in total, in spots of 2.4 mm³ or less. They are stubs left by removed bristles and a few claw tips.
-- Thinner than 2.5 mm: the two wings, the small arms, the mouthparts, and the fingers. They are 2.0 mm by design.
+- The two wings are about 1.4 mm thick at 80 mm. The voxel check reports 263 mm³ of wing under 1.5 mm.
+- Fingers, claws, small arms, and mouthparts are 1.6 mm or more.
+- Other spots under 1.5 mm are 2.2 mm³ or smaller. They are claw tips and stubs left by removed bristles.
 - The check uses 0.25 mm voxels. Read each limit with a tolerance of 0.25 mm.
 
-For a stronger print, use `brundlefly-100mm.stl`. Its thin parts are 2.5 mm.
+For a stronger print, use `brundlefly-100mm.stl`: the wings are about 1.75 mm and the fingers 2.0 mm.
+To thicken further, rebuild with `--min-radius 1.0 --max-growth 0.7`. The figure then looks heavier.
 
 ## Likely failure points
 
-- Fingers, claws, and the small arms. They are 2.0 mm thick, and supports attach near them.
+- The wings. They are thin and they overhang.
+- Fingers, claws, and the small arms. Supports attach near them.
 - The hanging mouthparts. They are thin and they start in mid-air.
 - Support scars under the hands, the chin, and the belly. TPU supports are hard to remove cleanly.
 - Stringing between the fingers and between the arms and the body.
-- The wings. They are 2.0 mm thick and they overhang.
 
 ## Checks that ran
 
@@ -109,48 +108,44 @@ For a stronger print, use `brundlefly-100mm.stl`. Its thin parts are 2.5 mm.
 - Shells: one. Volume: positive. Self-intersecting face pairs: zero.
 - Height: 80.00 mm and 100.00 mm.
 - Blender 3D Print Toolbox, check all: zero non-manifold edges, zero intersecting faces, one shell.
-- The toolbox also reports 3,649 thin faces and 24,229 overhang faces at 80 mm. Its thin test fires on every convex edge, so the voxel check is the thickness result. The overhang count agrees with the need for supports.
-- Mid-air start points: 55 at 80 mm.
+- The toolbox also reports 22,812 thin faces and 19,931 overhang faces at 80 mm. Most thin faces are the wings. The overhang count agrees with the need for supports.
+- Mid-air start points: 37 at 80 mm.
 - Voxel thickness check at 0.25 mm pitch.
-- Stability: the centre of mass is 15.1 mm inside the footprint edge. The solid model tips at about 20 degrees.
+- Stability: the centre of mass is 14.1 mm inside the footprint edge. The solid model tips at about 19 degrees.
 - PrusaSlicer slice with supports and without supports.
 
 ## Checks the printer must confirm
 
 These checks did not run:
 
-- A print on a real machine, in TPU or in any other material.
-- The printer's own minimum wall and minimum feature limits.
-- Support removal on TPU without damage to the fingers and mouthparts.
+- A print on a real machine, in any material.
+- The printer's own minimum wall and minimum feature limits, above all for the wings.
+- Support removal without damage to the fingers, wings, and mouthparts.
 - Stability of the printed figure on its base.
-- Shore hardness and colour of the stocked filament.
+- Material, hardness, and colour in stock.
 
 Automated mesh checks are not a print-service approval.
 
 ## Bristles
 
-The generated mesh had bristles as thin spikes. The print model removes them, because they are thinner than a nozzle.
-Small bumps stay where the thicker bristles were. The model has no holes for bristles.
+The generated mesh has bristles as thin spikes. The print model removes them, because they are thinner than a nozzle.
+The website model keeps them. The print model has no holes for bristles.
 
 To add a real fibre after printing:
 
-1. Push a pin or a hot needle 2 to 3 mm into the surface. The bumps are good places.
+1. Push a pin or a hot needle 2 to 3 mm into the surface.
 2. Cut a stiff fibre 6 to 10 mm long. Brush bristle or 0.3 mm nylon line are good choices.
 3. Dip the end in flexible cyanoacrylate glue and push it into the hole.
 4. Let the glue cure before you handle the figure.
 
 These steps are untested on a printed part.
-`build_from_mesh.py --dimples` adds pilot dimples and writes `bristle-map.json`, if you want marked positions.
 
 ## Differences from the brand artwork
 
-- The figure stands on an integrated base. Soft TPU on two thin legs does not stand without one.
+- The figure stands on an integrated base. A printed figure on two thin legs does not stand without one.
 - One material prints no colour. The print shows shape only.
-- The generator made the mesh from one image. The back and the far side are its estimate.
-- The generator gave the figure a human backside. `build_from_mesh.py` replaces it with the plates of the sheet's back view.
-- The wings differ from the character sheet. On the sheet the larger wing is on the figure's right. On this mesh the figure's right wing is upright and narrow, and the left wing is the longer one.
-- The skin is smooth. The fine folds of the artwork are not in the mesh.
-- Fingers, claws, wings, and mouthparts are thicker than in the artwork.
+- The generator saw the front and the back. The sides are its estimate, and the side colours are a blend of both views.
+- The print model has no bristles, and its thin parts are a little thicker than in the artwork.
 
 ## Website model
 
@@ -159,7 +154,7 @@ These steps are untested on a printed part.
 - glTF 2.0 binary, metres, Y up, face toward +Z. The soles are at height zero.
 - One root node, `Brundlefly`, with a scale of 0.001.
 - `Brundlefly-body`: 80,000 triangles, vertex colours in `COLOR_0`, material `Brundlefly-skin`, single sided, roughness 0.42.
-- The vertex colours carry baked shading and mottled tissue. The generated mesh has no texture, so the model has no chitin or eye colours.
+- The vertex colours are the sheet's front and back views, projected onto the mesh, with light baked shading.
 - `anchor-face`: an empty node at the front of the face.
 - No skeleton, no animation, no base, no compression extension. The site build stops if the file is larger than 4 MiB.
 
@@ -171,7 +166,8 @@ The Flatpak apps reach the home folder only. Put `OUT` under your home folder.
 ```bash
 D=/abs/path/to/assets/3d/brundlefly
 OUT=$HOME/scratch/brundlefly-build
-flatpak run org.blender.Blender -b --factory-startup --python $D/build_from_mesh.py -- --source $D/source/hunyuan3d-shape.glb --out $OUT --voxel 0.2
+VIEWS="--front-image $D/source/views/front.png --back-image $D/source/views/back.png"
+flatpak run org.blender.Blender -b --factory-startup --python $D/build_from_mesh.py -- --source $D/source/hunyuan3d-multiview-shape.glb --out $OUT $VIEWS
 flatpak run org.blender.Blender -b --factory-startup --python $D/export_model.py -- --blend $OUT/brundlefly-work.blend --out $D --tris 200000 --glb-tris 120000
 flatpak run org.blender.Blender -b --factory-startup --python $D/render_previews.py -- --blend $D/brundlefly.blend --out $OUT/previews --modes colour --views front,three-quarter,side,back,top
 node $D/validate.ts
@@ -181,29 +177,28 @@ The renders are named `<view>-colour.png`. Copy them to `previews/<view>.png`.
 
 For the website model, add `--variant web` to the build and `--web --glb-tris 80000` to the export.
 
-`build_model.py` is the first, script-built version of the figure. `build_from_mesh.py` uses its field library. Run it alone only as a fallback when no generated mesh exists.
+`build_model.py` holds the field library that `build_from_mesh.py` uses. It also holds a first, script-built figure, which is retired.
 
 The scripts are Python where Blender, trimesh, or scipy make it necessary. The check runner is TypeScript.
 
 ## Quote request
 
-> Subject: Quote request: flexible TPU figurine, 80 mm, delivery to Melbourne by 26 November
+> Subject: Quote request: 80 mm character figurine, delivery to Melbourne by 26 November
 >
 > Hi,
 >
-> I need a flexible figurine printed and delivered to Melbourne by Thursday 26 November 2026.
+> I need a small character figurine printed and delivered to Melbourne by Thursday 26 November 2026.
 >
-> - Part: one-piece character figurine with an integrated base. The STL is attached.
-> - Size: 74 × 50 × 80 mm. Volume 31.6 cm³.
-> - Quantity: 1. Please also price 3 units, and the 100 mm version (93 × 63 × 100 mm, 61.7 cm³).
-> - Material: flexible TPU. Shore 95A is fine.
-> - The thinnest parts are fingers, claws, and wings at 2.0 mm. The hands and the head need supports.
+> - Part: one-piece figurine with an integrated base. The STL is attached.
+> - Size: 64 × 45 × 80 mm. Volume 22.9 cm³.
+> - Quantity: 1. Please also price 3 units, and the 100 mm version (79 × 56 × 100 mm, 44.6 cm³).
+> - The thinnest parts are two wings at about 1.4 mm and fingers and claws at 1.6 mm. The hands and the head need supports.
 >
 > Could you tell me:
 >
-> 1. Which flexible materials and processes you offer, and their Shore hardness.
+> 1. Which process and material you recommend for this level of detail: tough resin, MJF nylon, or flexible TPU.
 > 2. Your minimum wall thickness and minimum feature size for that material.
-> 3. If you recommend a different material for fine claws and wings at this size.
+> 3. If the wings and fingers need to be thicker for your process.
 > 4. Which colours are available.
 > 5. Your lead time, and the order cutoff for delivery by 26 November.
 > 6. Shipping cost to Melbourne, or pickup options.

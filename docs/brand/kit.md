@@ -208,7 +208,7 @@ The generated concept never replaces the supplied wordmark.
 | [Rest model](../../assets/brand/kit/modular/aperture-rest.glb) | GLB 2.0 | Current model |
 | [Modular prompts](../../assets/prompts/modular-kit.json) | JSON | Prompt |
 | [Mascot print model](../../assets/3d/brundlefly/brundlefly-80mm.stl) | STL, 80 mm tall, 200,000 triangles | Standing Brundlefly for 3D printing. See [printing instructions](../../assets/3d/brundlefly/PRINTING.md) |
-| [Mascot web model](../../assets/3d/brundlefly/brundlefly-web.glb) | GLB 2.0, vertex colours, 80,000 triangles | Standing Brundlefly without the base |
+| [Mascot web model](../../assets/3d/brundlefly/brundlefly-web.glb) | GLB 2.0, vertex colours, 80,000 triangles | Standing Brundlefly without the base, coloured from the character sheet |
 | [assets/archive/brand-kit/avatar-master-v2.png](../../assets/archive/brand-kit/avatar-master-v2.png) | 1254 × 1254 | Historical |
 | [assets/archive/brand-kit/avatar-master.png](../../assets/archive/brand-kit/avatar-master.png) | 1254 × 1254 | Historical |
 | [assets/archive/brand-kit/avatar-preview-32.png](../../assets/archive/brand-kit/avatar-preview-32.png) | 32 × 32 | Historical |

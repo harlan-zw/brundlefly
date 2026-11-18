@@ -733,6 +733,7 @@ def shade_colours(f, pts, idx, mats, lut):
     """
     colours = lut[mats].copy()
     hi = np.array(f.n) - 1
+    colour_fn = getattr(f, "colour_fn", None)        # optional: colours projected from artwork
 
     def at(grid, p):
         i = np.clip(np.rint(p).astype(int), 0, hi)
@@ -746,6 +747,8 @@ def shade_colours(f, pts, idx, mats, lut):
     for reach in (1.3, 3.2):
         occlusion += np.clip(at(f.F, pts + normal * (reach / f.h)) / reach, 0.0, 1.0)
     occlusion = 0.42 + 0.58 * (occlusion / 2)
+    if colour_fn is not None:
+        occlusion = 0.72 + 0.28 * (occlusion - 0.42) / 0.58       # the artwork is already shaded
     # Creases: the relief depth is negative in a groove.
     crease = np.clip(1.0 + 0.6 * at(f.shade, pts) / mm(0.3), 0.42, 1.15) if hasattr(f, "shade") else 1.0
 
@@ -754,8 +757,11 @@ def shade_colours(f, pts, idx, mats, lut):
     mottle = 0.5 + 0.5 * (np.sin(x * 0.37 + 1.1) * np.sin(y * 0.41 + 0.3) * np.sin(z * 0.33 + 2.0)
                           + 0.5 * np.sin(x * 0.9 + z * 0.8) * np.sin(y * 0.85 - z * 0.3))
     flesh = mats == FLESH
-    blend = (np.clip(mottle, 0, 1) * 0.45)[:, None]
-    colours[flesh, :3] = (colours[flesh, :3] * (1 - blend[flesh]) + lut[BRUISE, :3] * blend[flesh])
+    if colour_fn is not None:
+        colours[flesh, :3] = colour_fn(xyz[flesh], normal[flesh])
+    else:
+        blend = (np.clip(mottle, 0, 1) * 0.45)[:, None]
+        colours[flesh, :3] = (colours[flesh, :3] * (1 - blend[flesh]) + lut[BRUISE, :3] * blend[flesh])
     wing = mats == WING                                 # thin membrane lighter, veins darker
     colours[wing, :3] *= (0.78 + 0.3 * np.clip(mottle[wing], 0, 1))[:, None]
 
