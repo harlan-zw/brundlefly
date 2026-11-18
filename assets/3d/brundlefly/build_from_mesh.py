@@ -33,6 +33,8 @@ BASE_TOP = 3.0                # nominal top of the base
 SINK = 0.6                    # the soles sink this far into the base
 BAND = 10                     # level set half width, in voxels
 WING_VOLUME_MM3 = 60.0        # a joined thin part of this volume is a wing membrane, at the default --keep-volume
+BRISTLE_MIN_MM = 0.8          # a removed spike shorter than this is not a bristle
+BRISTLE_BODY_MM = 1.3         # a bristle stands on a part of the body that is at least this deep
 LO = np.array([-48.0, -40.0, -1.6])
 HI = np.array([48.0, 40.0, 84.0])
 
@@ -173,6 +175,60 @@ def without_bristles(points_idx, tris, shape, radius_vox, keep_volume_vox):
     if not restore.any():
         return f_open, 0
     return np.where(restore, f_orig, f_open), int(len(kt) + len(wt))
+
+
+def thin_bristles(points_idx, tris, shape, radius_vox, keep_volume_vox, h):
+    """For the website model: remove the bristle spikes only, and report where each one stood.
+
+    The generator draws each bristle as a thick spike, and the sheet draws a hair. The export
+    puts a thin hair where each spike stood. A removed part is a bristle if it is small, long
+    enough, and stands on a broad part of the body. A claw tip or a mouthpart tip stands on
+    a thin part, and it stays.
+    Returns the field and a list of (root, tip) pairs in voxel coordinates.
+    """
+    original = level_set(points_idx, tris=tris)
+    p, t, q = original.convertToPolygons(-radius_vox, 0.0)
+    p, t, q = level_set(p, tris=t, quads=q).convertToPolygons(radius_vox, 0.0)
+    f_open = dense(level_set(p, tris=t, quads=q), shape)
+    f_orig = dense(original, shape)
+    removed = vdb.FloatGrid(float(BAND))
+    removed.copyFromArray(np.maximum(f_orig, -f_open))
+    rp, rt, rq = removed.convertToPolygons(0.0, 0.0)
+    depth = np.maximum(-f_open, 0.0)
+    mesh = bmesh.new()
+    verts = [mesh.verts.new(point) for point in rp.tolist()]
+    for face in list(rt.tolist()) + list(rq.tolist()):
+        try:
+            mesh.faces.new([verts[i] for i in face])
+        except ValueError:
+            pass                                      # a duplicate face: skip it
+    mesh.verts.index_update()
+    bmesh.ops.triangulate(mesh, faces=mesh.faces)
+    limit = np.array(shape) - 1
+    reach = int(math.ceil(1.8 / h))
+    hairs, spike_tris = [], []
+    for comp in islands(mesh):
+        faces = {f for v in comp for f in v.link_faces}
+        volume = abs(sum(f.verts[0].co.dot(f.verts[1].co.cross(f.verts[2].co)) for f in faces) / 6.0)
+        if volume >= keep_volume_vox:
+            continue
+        points = np.array([v.co[:] for v in comp])
+        index = np.clip(np.rint(points).astype(int), 0, limit)
+        out = f_open[index[:, 0], index[:, 1], index[:, 2]]          # voxels past the opened surface
+        if out.max() < BRISTLE_MIN_MM / h:
+            continue
+        root = points[out <= out.min() + 1.0].mean(axis=0)
+        centre = np.clip(np.rint(root).astype(int), 0, limit)
+        around = tuple(slice(max(c - reach, 0), c + reach + 1) for c in centre)
+        if depth[around].max() < BRISTLE_BODY_MM / h:
+            continue                                  # it stands on a finger or a mouthpart
+        hairs.append((root, points[int(np.argmax(out))]))
+        spike_tris.extend([v.index for v in f.verts] for f in faces)
+    mesh.free()
+    if not hairs:
+        return f_orig, []
+    zone = dense(level_set(rp, tris=np.array(spike_tris, dtype=np.uint32)), shape) < 1.5
+    return np.where(zone, f_open, f_orig), hairs
 
 
 def max_filter(a, k):
@@ -693,7 +749,7 @@ def main():
         shift = np.array([-(mn[0] + mx[0]) / 2, -(mn[1] + mx[1]) / 2, (BASE_TOP - SINK if printing else 0.0) - mn[2]])
         return points_mm + shift
 
-    kept_faces = 0
+    kept_faces, hairs = 0, []
     points = place(verts * scale)
     if printing:
         # The bristles are the highest points. Remove them, then fit the height again.
@@ -704,7 +760,8 @@ def main():
             points = place((points - centre) * (FIGURE_MM / (heights.max() - heights.min())) + centre)
         field, kept_faces = without_bristles((points - LO) / h, tris, shape, args.open_radius / h, args.keep_volume / h ** 3)
     else:
-        field = dense(level_set((points - LO) / h, tris=tris), shape)
+        field, hairs = thin_bristles((points - LO) / h, tris, shape, args.open_radius / h, args.keep_volume / h ** 3, h)
+        hairs = [(root * h + LO, tip * h + LO) for root, tip in hairs]
     f.F = field * h
     f.M[f.F < 2.0] = bm.FLESH
 
@@ -790,6 +847,9 @@ def main():
     for centre, radius, yaw in eyes:
         position = [round(float(c) * mesh_scale, 3) for c in (centre - bm.V(0, 0, f.mesh_zmin))]
         site["eyes"].append({"centre_mm": position, "radii_mm": [round(float(r) * mesh_scale, 3) for r in radius], "yaw_deg": round(math.degrees(yaw), 2)})
+    # Where each bristle stood on the website model. The export puts a thin hair there.
+    site["bristles"] = [{"root_mm": [round(float(c) * mesh_scale, 3) for c in (root - bm.V(0, 0, f.mesh_zmin))],
+                         "tip_mm": [round(float(c) * mesh_scale, 3) for c in (tip - bm.V(0, 0, f.mesh_zmin))]} for root, tip in hairs]
     site["anchors"] = {name: [round(float(c) * mesh_scale, 3) for c in (p - bm.V(0, 0, f.mesh_zmin))] for name, p in anchors.items()}
     site["pelvis_xy_mm"] = [0.0, 0.0]
     d = ob.dimensions

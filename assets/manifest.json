@@ -111,8 +111,8 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 13773,
-    "sha256": "a043b732d21cd36126b32415bfce9cfdf5b37f5fccd8642ffd9e8349844b7039"
+    "bytes": 13879,
+    "sha256": "4ddbf03c4deb60aab9738d3506eb662b30d21919f9b4bbca43b79828bd18d797"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
@@ -131,8 +131,8 @@
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
-    "bytes": 3942656,
-    "sha256": "2d517d746e7feda22176353e580241aa32c0b0a6895124668b316de547beecb9"
+    "bytes": 3816004,
+    "sha256": "e73e3902adb87866db546388fdae5dbed556f612ce863120227f7e93b72ef2c7"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
@@ -141,8 +141,8 @@
   },
   {
     "path": "assets/3d/brundlefly/build_from_mesh.py",
-    "bytes": 40463,
-    "sha256": "287883a0c147d66a1706e692b922d7d14ee3292f08bbf8221d2cd7659763e921"
+    "bytes": 43841,
+    "sha256": "237a46458136b0bf06121309fd7c2813f335ee8d7274b696cc20d18c60cdbfee"
   },
   {
     "path": "assets/3d/brundlefly/build_model.py",
@@ -156,8 +156,8 @@
   },
   {
     "path": "assets/3d/brundlefly/export_model.py",
-    "bytes": 23116,
-    "sha256": "d1f88c7db25a3ac7faa67834746ea1abaf0431ff5a336cda89a8c6472b159a13"
+    "bytes": 26358,
+    "sha256": "3556930b6cb4577d80c3efd9f059203016c1090c97f0783e67cd54a0b6ff35e4"
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",
@@ -186,13 +186,13 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/web-pose-test.png",
-    "bytes": 780921,
-    "sha256": "269e1d1ce82eb7909ea54c5a77bae80200caf6e94393cc0ab796e60678396529"
+    "bytes": 772267,
+    "sha256": "9e53cd52ec7b98351c1092d0d79bae9b0083a7cbac1578faf02c44147b8c7fa6"
   },
   {
     "path": "assets/3d/brundlefly/previews/web-three-quarter.png",
-    "bytes": 673281,
-    "sha256": "be0ab1110fba6113d9e7828d3fd6d66e8412a3cf7bb5165ec401f240b4339523"
+    "bytes": 669641,
+    "sha256": "a13065c1e21077635d7f743d51dcc4595b6b935c4e326ce580cc393a4d680a1a"
   },
   {
     "path": "assets/3d/brundlefly/render_previews.py",

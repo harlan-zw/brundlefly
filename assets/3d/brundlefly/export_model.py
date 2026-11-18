@@ -22,6 +22,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_from_mesh as bfm  # noqa: E402  (the sheet projection lives there)
 from mathutils.bvhtree import BVHTree
+from mathutils.kdtree import KDTree
 
 # The eyeball nodes are this much larger than the eyeballs fused into the body,
 # so the decimated body surface never shows through a node.
@@ -29,8 +30,13 @@ EYE_NODE_SCALE = 1.08
 # The texture is dark out to this many eyeball radii. The sheet's eyelids start just past it.
 EYE_DARK_SCALE = 1.15
 # Linear colours of the eyeball node: its rim, and the middle of its iris.
-EYE_RIM = (0.004, 0.007, 0.014)
-EYE_IRIS = (0.028, 0.190, 0.220)
+# Both are measured in the sheet's front view: the dark part of the eye opening, and the mean of the iris.
+EYE_RIM = (0.010, 0.011, 0.014)
+EYE_IRIS = (0.045, 0.115, 0.130)
+# Linear colour, base radius, and longest length of a bristle hair on the website model.
+BRISTLE_COLOUR = (0.115, 0.030, 0.022)
+BRISTLE_RADIUS_MM = 0.17
+BRISTLE_MAX_MM = 2.2
 
 
 def parse():
@@ -331,6 +337,19 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
     dark = bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.EYE])
     for eye in eyes:
         linear[baked & (eye_reach(position, eye) < EYE_DARK_SCALE)] = dark
+    # One block of texels that no surface uses takes the bristle colour. Every hair maps to it.
+    # The block lines up with the 8 pixel grid of the JPEG, so the colour does not bleed.
+    used = baked.reshape(size, size)
+    free = ~used.reshape(size // 8, 8, size // 8, 8).any(axis=(1, 3))
+    free[1:-1, 1:-1] &= free[:-2, 1:-1] & free[2:, 1:-1] & free[1:-1, :-2] & free[1:-1, 2:]     # neighbours are free too
+    free[0], free[-1], free[:, 0], free[:, -1] = False, False, False, False
+    rows, cols = np.nonzero(free)
+    hair_uv = None
+    if len(rows):
+        row, col = int(rows[0]) * 8, int(cols[0]) * 8
+        block = linear.reshape(size, size, 3)
+        block[row - 8:row + 16, col - 8:col + 16] = BRISTLE_COLOUR
+        hair_uv = ((col + 4) / size, (row + 4) / size)
     srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
 
     albedo = bpy.data.images.new("Brundlefly-albedo", size, size, alpha=False)
@@ -343,7 +362,55 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
     material.node_tree.links.new(target.outputs["Color"], bsdf.inputs["Base Color"])
     for attribute in list(body.data.color_attributes):
         body.data.color_attributes.remove(attribute)
-    return int(baked.sum())
+    return int(baked.sum()), hair_uv
+
+
+def add_bristle_hairs(body, bristles, uv):
+    """Put a thin hair where each bristle spike stood. Returns the number of hairs.
+
+    Each hair is a three-sided spike. It takes the skin weights of the nearest body vertex,
+    so it moves with the skin under it, and it maps to the bristle texel block.
+    """
+    mesh = bmesh.new()
+    mesh.from_mesh(body.data)
+    mesh.verts.ensure_lookup_table()
+    deform = mesh.verts.layers.deform.verify()
+    uv_layer = mesh.loops.layers.uv.verify()
+    tree = KDTree(len(mesh.verts))
+    for vertex in mesh.verts:
+        tree.insert(vertex.co, vertex.index)
+    tree.balance()
+    skin = [dict(vertex[deform]) for vertex in mesh.verts]
+    count = 0
+    for bristle in bristles:
+        root, tip = Vector(bristle["root_mm"]), Vector(bristle["tip_mm"])
+        length = min((tip - root).length, BRISTLE_MAX_MM)
+        if length < 0.3:
+            continue
+        along = (tip - root).normalized()
+        side = along.orthogonal().normalized()
+        other = along.cross(side)
+        base = root - along * 0.3                    # the base sits inside the skin
+        weights = skin[tree.find(root)[1]]
+        ring = []
+        for k in range(3):
+            angle = k * 2.0 * math.pi / 3.0
+            ring.append(mesh.verts.new(base + (side * math.cos(angle) + other * math.sin(angle)) * BRISTLE_RADIUS_MM))
+        apex = mesh.verts.new(base + along * (length + 0.3))
+        for vertex in ring + [apex]:
+            for group, weight in weights.items():
+                vertex[deform][group] = weight
+        for k in range(3):
+            face = mesh.faces.new((ring[k], ring[(k + 1) % 3], apex))
+            face.normal_update()
+            if face.normal.dot(face.calc_center_median() - (base + along * (length / 2))) < 0:
+                face.normal_flip()
+            for loop in face.loops:
+                loop[uv_layer].uv = uv
+        count += 1
+    mesh.to_mesh(body.data)
+    mesh.free()
+    return count
 
 
 def export_web(src, args):
@@ -367,7 +434,7 @@ def export_web(src, args):
 
     textured = "sheet_projection" in stats and not args.no_texture
     if textured:
-        texels = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"])
+        texels, hair_uv = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"])
         print(f"TEXTURE {args.texture_size} px, {texels} texels on the surface")
 
     root = bpy.data.objects.new("Brundlefly", None)
@@ -399,7 +466,7 @@ def export_web(src, args):
         front = Vector((-math.sin(yaw) * eye["radii_mm"][0], -math.cos(yaw) * eye["radii_mm"][1], 0.0)).normalized()
         for vertex in mesh.vertices:
             off_axis = (vertex.co - front).length
-            t = min(max((0.72 - off_axis) / 0.55, 0.0), 1.0)
+            t = min(max((0.60 - off_axis) / 0.48, 0.0), 1.0)
             t = t * t * (3.0 - 2.0 * t)
             layer.data[vertex.index].color = tuple(a + (b - a) * t for a, b in zip(EYE_RIM, EYE_IRIS)) + (1.0,)
         mesh.materials.append(eye_mat)
@@ -433,6 +500,9 @@ def export_web(src, args):
                 o.parent, o.parent_type, o.parent_bone = arm, "BONE", "head"
                 bpy.context.view_layer.update()
                 o.matrix_world = world
+
+    if textured and hair_uv is not None and site.get("bristles"):
+        print(f"BRISTLES {add_bristle_hairs(body, site['bristles'], hair_uv)} hairs")
 
     root.scale = (0.001, 0.001, 0.001)               # millimetres to glTF metres
     for o in scene.objects:

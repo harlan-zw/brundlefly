@@ -29,7 +29,7 @@ Read the licence note in that file before you sell prints of this mesh.
 | `brundlefly-100mm.stl` | The same model at 100 mm. Every thin part is 25 percent thicker. |
 | `brundlefly.blend` | Editable master. One Blender unit is one millimetre. |
 | `brundlefly-preview.glb` | Coloured preview of the print model, with the base. |
-| `brundlefly-web.glb` | Model for the website: rigged, no base, bristles kept, thin parts not thickened. |
+| `brundlefly-web.glb` | Model for the website: rigged, no base, thin bristle hairs, thin parts not thickened. |
 | `source/` | The generated base mesh, the four view images, and the joint positions for the skeleton. |
 | `validation-report.json` | Output of `validate.ts` for the two STL files. |
 | `previews/` | Front, side, back, three-quarter, and top renders of the print model, one of the website model, and one pose test of the rig. |
@@ -132,7 +132,7 @@ Automated mesh checks are not a print-service approval.
 ## Bristles
 
 The generated mesh has bristles as thin spikes. The print model removes them, because they are thinner than a nozzle.
-The website model keeps them. The print model has no holes for bristles.
+The website model replaces each spike with a thin hair, as the sheet draws them. The print model has no holes for bristles.
 
 To add a real fibre after printing:
 
@@ -150,7 +150,6 @@ These steps are untested on a printed part.
 - The sheet has no side view. An image model drew the two side views, so the side shape follows that drawing and not canonical artwork.
 - The side views were drawn as mirror images of true side views: in each one the figure faces the wrong way for the side that it shows. The outline is the same either way, and the colours are placed with this in mind.
 - The print model has no bristles, and its thin parts are a little thicker than in the artwork.
-- The website model has thick spikes where the sheet has thin bristles.
 - The generated side views paint an eye socket on each side of the head, behind the eyeball. The sheet has no such socket.
 
 ## Website model
@@ -159,7 +158,7 @@ These steps are untested on a printed part.
 
 - glTF 2.0 binary, metres, Y up, face toward +Z. The soles are at height zero.
 - One root node, `Brundlefly`, with a scale of 0.001.
-- `Brundlefly-body`: about 64,000 triangles, texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
+- `Brundlefly-body`: about 64,000 triangles. That count includes about 80 bristle hairs of three triangles each; a hair takes the skin weights of the vertex under it. Texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
 - The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork.
 - `Brundlefly-eye-0` and `Brundlefly-eye-1`: eyeball nodes, material `Brundlefly-eye`. Eye 0 is on screen left. The body mesh also has dark eyeballs under them.
   - Each node is a unit sphere. Its scale holds the three radii, and its rotation turns it about the vertical axis to lie along the face.
