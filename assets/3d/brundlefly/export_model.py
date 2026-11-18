@@ -11,8 +11,12 @@ import json
 import os
 import sys
 
+import math
+
 import bmesh
 import bpy
+import numpy as np
+from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 
@@ -25,6 +29,7 @@ def parse():
     ap.add_argument("--tris", type=int, default=390000, help="triangle budget for each STL")
     ap.add_argument("--glb-tris", type=int, default=160000)
     ap.add_argument("--web", action="store_true", help="write brundlefly-web.glb only, from a web-variant build")
+    ap.add_argument("--no-rig", action="store_true", help="web model without the skeleton")
     args, _ = ap.parse_known_args(argv)
     return args
 
@@ -84,6 +89,144 @@ def decimated(ob, target, name):
     return copy
 
 
+# The skeleton the site names: bone, parent, joint at the head, joint at the tail.
+def bone_spec():
+    spec = [("pelvis", None, "pelvis", "chest"), ("chest", "pelvis", "chest", "head"), ("head", "chest", "head", "head-end")]
+    for i in range(3):          # the three long face tentacles, two bones each
+        spec += [(f"mouthpart-{i}", "head", f"mouthpart-{i}", f"mouthpart-{i}-tip"), (f"mouthpart-{i}-tip", f"mouthpart-{i}", f"mouthpart-{i}-tip", f"mouthpart-{i}-tip-end")]
+    for i in range(3, 6):       # the three short ones, one bone each
+        spec.append((f"mouthpart-{i}", "head", f"mouthpart-{i}", f"mouthpart-{i}-end"))
+    for s in ("left", "right"):
+        spec += [
+            (f"{s}-shoulder", "chest", f"{s}-shoulder", f"{s}-elbow"), (f"{s}-elbow", f"{s}-shoulder", f"{s}-elbow", f"{s}-hand"),
+            (f"{s}-hand", f"{s}-elbow", f"{s}-hand", f"{s}-hand-end"),
+            (f"{s}-rib", "chest", f"{s}-rib", f"{s}-small-elbow"), (f"{s}-small-elbow", f"{s}-rib", f"{s}-small-elbow", f"{s}-small-hand"),
+            (f"{s}-small-hand", f"{s}-small-elbow", f"{s}-small-hand", f"{s}-small-hand-end"),
+            (f"{s}-wing", "chest", f"{s}-wing", f"{s}-wing-tip"), (f"{s}-wing-tip", f"{s}-wing", f"{s}-wing-tip", f"{s}-wing-tip-end"),
+            (f"{s}-hip", "pelvis", f"{s}-hip", f"{s}-knee"), (f"{s}-knee", f"{s}-hip", f"{s}-knee", f"{s}-foot"),
+            (f"{s}-foot", f"{s}-knee", f"{s}-foot", f"{s}-foot-end"),
+        ]
+    return spec
+
+
+def distance_weights(body, segments):
+    """Fallback skin weights from the distance to each bone. Used only if heat weighting fails."""
+    co = np.empty(len(body.data.vertices) * 3, dtype=np.float64)
+    body.data.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    dist = np.empty((len(co), len(segments)))
+    for j, (_, a, b) in enumerate(segments):
+        a, b = np.array(a), np.array(b)
+        ab = b - a
+        t = np.clip(((co - a) @ ab) / (ab @ ab), 0.0, 1.0)
+        dist[:, j] = np.linalg.norm(co - (a + t[:, None] * ab), axis=1)
+    weight = 1.0 / (dist + 0.3) ** 6
+    for name, _, _ in segments:
+        if name not in body.vertex_groups:
+            body.vertex_groups.new(name=name)
+    top = np.argsort(-weight, axis=1)[:, :4]
+    for j, (name, _, _) in enumerate(segments):
+        group = body.vertex_groups[name]
+        for vi in np.nonzero((top == j).any(axis=1))[0]:
+            total = weight[vi, top[vi]].sum()
+            group.add([int(vi)], float(weight[vi, j] / total), "REPLACE")
+
+
+def add_skeleton(body, joints, shift):
+    """Bind the body to the skeleton (25 body bones and 9 face tentacle bones) and add an idle clip."""
+    scene = bpy.context.scene
+    J = {n: Vector(p) - Vector((shift[0], shift[1], 0.0)) for n, p in joints.items()}
+    data = bpy.data.armatures.new("Brundlefly-skeleton")
+    arm = bpy.data.objects.new("Brundlefly-skeleton", data)
+    scene.collection.objects.link(arm)
+    for o in scene.objects:
+        o.select_set(False)
+    bpy.context.view_layer.objects.active = arm
+    arm.select_set(True)
+    spec = bone_spec()
+
+    # 1. Bones along the limbs, for the weights.
+    bpy.ops.object.mode_set(mode="EDIT")
+    for name, parent, head, tail in spec:
+        bone = data.edit_bones.new(name)
+        bone.head, bone.tail = J[head], J[tail]
+        if parent:
+            bone.parent = data.edit_bones[parent]
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+    body.select_set(True)
+    bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+    used = {g.group for v in body.data.vertices for g in v.groups if g.weight > 0}
+    bound = len(used) >= len(spec) - 2 and all(len(v.groups) > 0 for v in body.data.vertices)
+    method = "heat"
+    if not bound:
+        method = "distance"
+        for group in list(body.vertex_groups):
+            body.vertex_groups.remove(group)
+        distance_weights(body, [(name, J[head], J[tail]) for name, _, head, tail in spec])
+        if not any(m.type == "ARMATURE" for m in body.modifiers):
+            body.modifiers.new("Armature", "ARMATURE").object = arm
+            body.parent = arm
+    for o in scene.objects:
+        o.select_set(False)
+    bpy.context.view_layer.objects.active = body
+    body.select_set(True)
+    bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
+    bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
+
+    # 2. Point every bone straight up. Each joint then has an identity rest rotation:
+    #    +X is screen right, +Y is up, +Z is toward the viewer, for every bone.
+    body.select_set(False)
+    bpy.context.view_layer.objects.active = arm
+    arm.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    for bone in data.edit_bones:
+        bone.use_connect = False
+    for bone in data.edit_bones:
+        bone.tail = bone.head + Vector((0.0, 0.0, 4.0))
+        bone.roll = 0.0
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+    # 3. Idle clip: slow breathing, a small head turn, twitching small arms, fluttering wings.
+    deg = math.radians
+    motion = {   # bone: [(axis, amplitude, cycles, phase)]
+        "chest": [(0, deg(1.6), 1, 0.0), (2, deg(0.8), 1, 1.0)],
+        "head": [(0, deg(2.2), 1, 0.6), (1, deg(3.0), 1, 2.0)],
+    }
+    for s, sign in (("left", -1), ("right", 1)):
+        motion[f"{s}-shoulder"] = [(2, sign * deg(2.5), 1, 0.4), (0, deg(1.5), 1, 1.2)]
+        motion[f"{s}-elbow"] = [(0, deg(3.0), 1, 2.0)]
+        motion[f"{s}-hand"] = [(0, deg(4.0), 2, 0.3)]
+        motion[f"{s}-rib"] = [(0, deg(5.0), 2, 0.5 + sign)]
+        motion[f"{s}-small-elbow"] = [(0, deg(6.0), 2, 1.5 + sign)]
+        motion[f"{s}-wing"] = [(2, sign * deg(6.0), 2, 0.0)]
+        motion[f"{s}-wing-tip"] = [(2, sign * deg(8.0), 2, 0.7)]
+    for i in range(6):          # the face tentacles sway out of step with each other
+        motion[f"mouthpart-{i}"] = [(0, deg(7.0), 2, 0.9 * i), (2, deg(4.0), 1, 1.7 * i)]
+    for i in range(3):
+        motion[f"mouthpart-{i}-tip"] = [(0, deg(9.0), 2, 0.9 * i + 0.8)]
+    action = bpy.data.actions.new("Brundlefly-idle")
+    arm.animation_data_create().action = action
+    frames, fps = 96, 24
+    scene.render.fps = fps
+    scene.frame_start, scene.frame_end = 1, frames + 1
+    for name, terms in motion.items():
+        pose = arm.pose.bones[name]
+        pose.rotation_mode = "XYZ"
+        for frame in range(1, frames + 2, 4):
+            t = (frame - 1) / frames
+            angles = [0.0, 0.0, 0.0]
+            for axis, amplitude, cycles, phase in terms:
+                angles[axis] += amplitude * math.sin(2 * math.pi * cycles * t + phase)
+            pose.rotation_euler = angles
+            pose.keyframe_insert("rotation_euler", frame=frame)
+    scene.frame_set(1)
+    for pose in arm.pose.bones:
+        pose.rotation_euler = (0.0, 0.0, 0.0)
+    print(f"RIG bones {len(data.bones)} weights {method} groups in use {len(used)}")
+    return arm
+
+
 def export_web(src, args):
     """The website model. One root node, Y up after export, face toward +Z, soles at height zero.
 
@@ -137,12 +280,29 @@ def export_web(src, args):
         anchor.parent = root
         parts.append(anchor)
 
+    joints_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "rig-joints.json")
+    rigged = os.path.exists(joints_path) and not args.no_rig
+    if rigged:
+        with open(joints_path) as fh:
+            arm = add_skeleton(body, json.load(fh)["joints_mm"], (px, py))
+        arm.parent = root
+        parts.append(arm)
+        # The eyeballs and the face anchor ride on the head bone, so they follow a head turn.
+        bpy.context.view_layer.update()
+        for o in parts:
+            if o.name.startswith("Brundlefly-eye") or o.name == "anchor-face":
+                world = o.matrix_world.copy()
+                o.parent, o.parent_type, o.parent_bone = arm, "BONE", "head"
+                bpy.context.view_layer.update()
+                o.matrix_world = world
+
     root.scale = (0.001, 0.001, 0.001)               # millimetres to glTF metres
     for o in scene.objects:
         o.select_set(o in parts)
     bpy.context.view_layer.objects.active = root
     path = os.path.join(args.out, "brundlefly-web.glb")
-    kwargs = dict(filepath=path, export_format="GLB", use_selection=True, export_apply=True, export_cameras=False, export_lights=False)
+    kwargs = dict(filepath=path, export_format="GLB", use_selection=True, export_apply=not rigged, export_cameras=False, export_lights=False,
+                  export_animations=rigged, export_skins=rigged)
     try:
         bpy.ops.export_scene.gltf(export_vertex_color="MATERIAL", **kwargs)
     except TypeError:

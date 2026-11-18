@@ -781,6 +781,7 @@ def field_to_mesh(f, name="Brundlefly"):
 
     zmin, zmax = verts[:, 2].min(), verts[:, 2].max()
     scale = HEIGHT_MM / (zmax - zmin)
+    f.mesh_zmin = float(zmin)                         # callers convert their own points with this
     verts[:, 2] -= zmin
     verts *= scale
     to_mm = lambda p: [round(float(c), 3) for c in (np.asarray(p, dtype=np.float64) - V(0, 0, zmin)) * scale]

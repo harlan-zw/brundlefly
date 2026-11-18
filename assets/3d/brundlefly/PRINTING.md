@@ -12,8 +12,10 @@ The shape and the colours come from the front and back views of `assets/brand/ch
 3. `build_from_mesh.py` turns the base mesh into the print model and the website model in Blender:
    - It removes the bristle spikes. It keeps the thin wings and mouthparts.
    - For printing, it grows parts that are thinner than 1.6 mm, by up to 0.5 mm on each side, and it adds the base.
-   - It projects the two sheet views onto the vertex colours.
-4. `export_model.py` writes the files. `validate.ts` checks the print files.
+   - It projects the two sheet views onto the vertex colours. The head gets its own image fit, so the face lines up.
+   - It adds two dark eyeballs where the sheet has its eyes.
+4. `export_model.py` writes the files. For the website model it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip.
+5. `validate.ts` checks the print files.
 
 `assets/prompts/figurine.json` records the generator, the date, and the settings.
 Read the licence note in that file before you sell prints of this mesh.
@@ -26,10 +28,10 @@ Read the licence note in that file before you sell prints of this mesh.
 | `brundlefly-100mm.stl` | The same model at 100 mm. Every thin part is 25 percent thicker. |
 | `brundlefly.blend` | Editable master. One Blender unit is one millimetre. |
 | `brundlefly-preview.glb` | Coloured preview of the print model, with the base. |
-| `brundlefly-web.glb` | Model for the website: no base, bristles kept, thin parts not thickened. |
-| `source/` | The generated base mesh and the two views it came from. |
+| `brundlefly-web.glb` | Model for the website: rigged, no base, bristles kept, thin parts not thickened. |
+| `source/` | The generated base mesh, the two views it came from, and the joint positions for the skeleton. |
 | `validation-report.json` | Output of `validate.ts` for the two STL files. |
-| `previews/` | Front, side, back, three-quarter, and top renders of the print model, and one of the website model. |
+| `previews/` | Front, side, back, three-quarter, and top renders of the print model, one of the website model, and one pose test of the rig. |
 
 ## Dimensions
 
@@ -37,8 +39,8 @@ All values are millimetres. They come from `validation-report.json`.
 
 | File | Width (X) | Depth (Y) | Height (Z) | Volume | Triangles |
 | --- | --- | --- | --- | --- | --- |
-| `brundlefly-80mm.stl` | 63.52 | 45.15 | 80.00 | 22.85 cm³ | 200,000 |
-| `brundlefly-100mm.stl` | 79.40 | 56.44 | 100.00 | 44.63 cm³ | 200,000 |
+| `brundlefly-80mm.stl` | 63.52 | 45.15 | 80.00 | 22.86 cm³ | 200,000 |
+| `brundlefly-100mm.stl` | 79.40 | 56.44 | 100.00 | 44.64 cm³ | 200,000 |
 
 Height runs from the underside of the base to the tip of the larger wing.
 The base is about 3 mm thick at 80 mm. The underside is flat.
@@ -53,7 +55,7 @@ The base is about 3 mm thick at 80 mm. The underside is flat.
 ## Print orientation and supports
 
 - Print upright, with the flat base on the bed.
-- This pose needs supports. With a 45 degree threshold, the slicer used 18.6 cm³ of support for 13.0 cm³ of model.
+- This pose needs supports. With a 45 degree threshold, the slicer used 18.8 cm³ of support for 13.0 cm³ of model.
 - `validation-report.json` lists the points where material starts in mid-air (`mid_air_islands_mm`): 37 at 80 mm.
 - The largest groups are the fingers and claws of the two long-arm hands, the two small-arm hands, and the hanging mouthparts.
 - The head, the belly, and the wings overhang by more than 45 degrees. The slicer supports them.
@@ -70,8 +72,8 @@ Sliced values come from PrusaSlicer 2.9.7 with a generic 0.4 mm FDM profile. The
 | Walls | 3 | Sliced |
 | Infill | 15 percent gyroid | Sliced |
 | Filament without supports | 13.0 cm³, 2 h 08 min | Sliced |
-| Filament with supports at 45 degrees | 31.7 cm³, 4 h 12 min | Sliced |
-| Support filament | 18.6 cm³ | Sliced, by difference |
+| Filament with supports at 45 degrees | 31.8 cm³, 4 h 13 min | Sliced |
+| Support filament | 18.8 cm³ | Sliced, by difference |
 | Layer height for more detail | 0.12 to 0.16 mm | Estimate |
 | TPU nozzle temperature | 220 to 235 °C | Estimate |
 | TPU print speed | 20 to 30 mm/s | Estimate |
@@ -108,7 +110,7 @@ To thicken further, rebuild with `--min-radius 1.0 --max-growth 0.7`. The figure
 - Shells: one. Volume: positive. Self-intersecting face pairs: zero.
 - Height: 80.00 mm and 100.00 mm.
 - Blender 3D Print Toolbox, check all: zero non-manifold edges, zero intersecting faces, one shell.
-- The toolbox also reports 22,812 thin faces and 19,931 overhang faces at 80 mm. Most thin faces are the wings. The overhang count agrees with the need for supports.
+- The toolbox also reports 22,730 thin faces and 19,973 overhang faces at 80 mm. Most thin faces are the wings. The overhang count agrees with the need for supports.
 - Mid-air start points: 37 at 80 mm.
 - Voxel thickness check at 0.25 mm pitch.
 - Stability: the centre of mass is 14.1 mm inside the footprint edge. The solid model tips at about 19 degrees.
@@ -155,8 +157,22 @@ These steps are untested on a printed part.
 - One root node, `Brundlefly`, with a scale of 0.001.
 - `Brundlefly-body`: 80,000 triangles, vertex colours in `COLOR_0`, material `Brundlefly-skin`, single sided, roughness 0.42.
 - The vertex colours are the sheet's front and back views, projected onto the mesh, with light baked shading.
+- `Brundlefly-eye-0` and `Brundlefly-eye-1`: eyeball nodes, material `Brundlefly-eye`. Eye 0 is on screen left and is the larger eye. The body mesh also has dark eyeballs under them.
 - `anchor-face`: an empty node at the front of the face.
-- No skeleton, no animation, no base, no compression extension. The site build stops if the file is larger than 4 MiB.
+- No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 2.8 MB.
+
+Skeleton:
+
+- One skin, 34 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
+- Every joint has an identity rest rotation: +X is screen right, +Y is up, +Z is toward the viewer.
+- Left and right are screen left and screen right. So `left-shoulder` is the figure's right shoulder.
+- Body, 25 joints: `pelvis` > `chest` > `head`. From `chest`: `left-shoulder` > `left-elbow` > `left-hand`, `left-rib` > `left-small-elbow` > `left-small-hand`, `left-wing` > `left-wing-tip`, and the same on the right. From `pelvis`: `left-hip` > `left-knee` > `left-foot`, and the same on the right.
+- Face tentacles, 9 joints under `head`: `mouthpart-0`, `mouthpart-1`, and `mouthpart-2` are the three long ones from screen left to screen right, each with a `-tip` joint. `mouthpart-3`, `mouthpart-4`, and `mouthpart-5` are the short ones.
+- The eyeball nodes and `anchor-face` are children of the `head` joint.
+- One clip, `Brundlefly-idle`, 4 seconds, made to loop: breathing, a small head turn, twitching small arms, swaying tentacles, fluttering wings.
+- The fingers, the toes, and the jaw have no joints.
+
+`previews/web-pose-test.png` shows a strong test pose through this rig.
 
 ## Rebuild
 
@@ -175,7 +191,7 @@ node $D/validate.ts
 
 The renders are named `<view>-colour.png`. Copy them to `previews/<view>.png`.
 
-For the website model, add `--variant web` to the build and `--web --glb-tris 80000` to the export.
+For the website model, add `--variant web` to the build and `--web --glb-tris 80000` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes.
 
 `build_model.py` holds the field library that `build_from_mesh.py` uses. It also holds a first, script-built figure, which is retired.
 

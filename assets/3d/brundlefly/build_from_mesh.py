@@ -292,56 +292,142 @@ def add_dimples(f, zmax):
 
 
 def load_view(path):
-    """An image as linear RGB rows from bottom to top, with the bounding box of the figure."""
+    """An image as linear RGB rows from bottom to top, with its figure mask and bounding box."""
     img = bpy.data.images.load(path)
     w, h = img.size
     px = np.empty(w * h * 4, dtype=np.float32)
     img.pixels.foreach_get(px)
     bpy.data.images.remove(img)
     rgb = px.reshape(h, w, 4)[..., :3]
-    lum = rgb.max(axis=2)
-    ys, xs = np.nonzero(lum > 0.08)
+    figure = rgb.max(axis=2) > 0.08
+    ys, xs = np.nonzero(figure)
     linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
     # A blurred copy for surfaces that face sideways, where a sharp projection would streak.
-    figure = lum > 0.08
-    filled = np.where(figure[..., None], linear, linear[figure].mean(axis=0))
-    soft = filled.copy()
+    soft = np.where(figure[..., None], linear, linear[figure].mean(axis=0))
     for _ in range(2):
         for axis in (0, 1):
             c = np.cumsum(np.pad(soft, [(13, 12) if a == axis else (0, 0) for a in range(3)], mode="edge"), axis=axis)
             soft = (np.take(c, range(25, c.shape[axis]), axis=axis) - np.take(c, range(0, c.shape[axis] - 25), axis=axis)) / 25.0
-    return linear, soft, lum, (xs.min(), xs.max(), ys.min(), ys.max())
+    return {"rgb": rgb, "linear": linear, "soft": soft, "figure": figure, "box": (xs.min(), xs.max(), ys.min(), ys.max())}
 
 
-def sheet_colour_fn(front_path, back_path, box):
-    """Vertex colours from the sheet's front and back views, projected along Y.
+def register(view, f, mirror, window=None, start=None):
+    """Fit a sheet view to the model's outline: one scale, one offset in x, one in z.
 
-    The base mesh was generated from these two views, so its outline matches them.
-    box is the figure's (xmin, xmax, zmin, zmax) in field coordinates.
+    The generator keeps the proportions of its input views, but not their exact frame.
+    window = (x0, x1, z0, z1) limits the fit to one region, such as the head. The scale
+    then stays as in start, and only the offsets are searched.
     """
-    front, front_soft, front_lum, fb = load_view(front_path)
-    back, back_soft, back_lum, bb = load_view(back_path)
-    xmin, xmax, zmin, zmax = box
+    solid = (f.F < 0).any(axis=1)[::2, ::2]                       # outline seen along Y
+    xs, zs = f.ax[0][::2].astype(np.float64), f.ax[2][::2].astype(np.float64)
+    zin, xin = zs[solid.any(axis=0)], xs[solid.any(axis=1)]
+    zmin, xc = zin.min(), (xin.min() + xin.max()) / 2
+    c0, c1, r0, r1 = view["box"]
+    cc = (c0 + c1) / 2
+    sign = -1.0 if mirror else 1.0
+    mask = view["figure"]
+    X, Z = np.meshgrid(xs, zs, indexing="ij")
+    region = np.ones_like(solid) if window is None else (X >= window[0]) & (X <= window[1]) & (Z >= window[2]) & (Z <= window[3])
+    if start is None:
+        best = (-1.0, (zin.max() - zmin) / (r1 - r0), 0.0, 0.0)
+        passes = ((0.05, 4.0, 2.0, 9), (0.012, 1.0, 0.5, 7))
+    else:
+        best = (-1.0, start["s"], start["tx"], start["tz"])
+        passes = ((0.0, 4.0, 2.0, 17), (0.0, 0.5, 0.25, 9))
+    for span_s, span_x, span_z, steps in passes:
+        _, bs, bx, bz = best
+        scales = np.linspace(bs * (1 - span_s), bs * (1 + span_s), steps) if span_s else [bs]
+        for s in scales:
+            for tx in np.linspace(bx - span_x, bx + span_x, steps):
+                for tz in np.linspace(bz - span_z, bz + span_z, steps):
+                    col = np.rint(cc + sign * (X - xc - tx) / s).astype(int)
+                    row = np.rint(r0 + (Z - zmin - tz) / s).astype(int)
+                    ok = (col >= 0) & (col < mask.shape[1]) & (row >= 0) & (row < mask.shape[0])
+                    hit = np.zeros_like(solid)
+                    hit[ok] = mask[row[ok], col[ok]]
+                    iou = (hit & solid & region).sum() / max(((hit | solid) & region).sum(), 1)
+                    if iou > best[0]:
+                        best = (iou, s, tx, tz)
+    iou, s, tx, tz = best
+    return {"iou": float(iou), "s": float(s), "tx": float(tx), "tz": float(tz), "xc": float(xc), "zmin": float(zmin), "cc": float(cc), "r0": float(r0), "sign": sign}
+
+
+def blended_fit(body, head, z_low, z_high):
+    """Image column and row for model points: the body fit below z_low, the head fit above z_high."""
+    def offsets(z):
+        w = np.clip((np.asarray(z, dtype=np.float64) - z_low) / (z_high - z_low), 0.0, 1.0)
+        w = w * w * (3 - 2 * w)
+        return body["tx"] * (1 - w) + head["tx"] * w, body["tz"] * (1 - w) + head["tz"] * w
+
+    def to_image(x, z):
+        tx, tz = offsets(z)
+        return body["cc"] + body["sign"] * (x - body["xc"] - tx) / body["s"], body["r0"] + (z - body["zmin"] - tz) / body["s"]
+
+    return to_image
+
+
+def find_eyes(view, head_fit):
+    """Eye centres in model x and z, from the teal glints in the sheet's front view. Screen left first."""
+    rgb = view["rgb"]
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    c0, c1, r0, r1 = view["box"]
+    teal = (b > 0.3) & (b > r * 1.25) & (g > r * 1.05)
+    teal[: r0 + int((r1 - r0) * 0.62)] = False
+    teal[r0 + int((r1 - r0) * 0.9):] = False
+    rows, cols = np.nonzero(teal)
+    if len(cols) < 20:
+        return []
+    split = (cols.min() + cols.max()) / 2
+    fit = head_fit
+    eyes = []
+    for side in (cols < split, cols >= split):
+        if side.sum() >= 10:
+            x = fit["xc"] + fit["tx"] + fit["sign"] * (cols[side].mean() - fit["cc"]) * fit["s"]
+            z = fit["zmin"] + fit["tz"] + (rows[side].mean() - fit["r0"]) * fit["s"]
+            eyes.append((float(x), float(z)))
+    return sorted(eyes)
+
+
+def sheet_colour_fn(front, back, front_map, back_map):
+    """Vertex colours from the sheet's front and back views, projected along Y."""
     flesh = bm.srgb_to_linear(bm.PALETTE[bm.FLESH])
 
-    def sample(image, soft, lum, bounds, u, v, sideways):
-        px = np.clip(np.rint(bounds[0] + u * (bounds[1] - bounds[0])).astype(int), 0, image.shape[1] - 1)
-        py = np.clip(np.rint(bounds[2] + v * (bounds[3] - bounds[2])).astype(int), 0, image.shape[0] - 1)
-        colour = image[py, px] * (1 - sideways) + soft[py, px] * sideways
-        return colour, lum[py, px] > 0.08
+    def sample(view, to_image, x, z, sideways):
+        col, row = to_image(x, z)
+        col = np.clip(np.rint(col).astype(int), 0, view["figure"].shape[1] - 1)
+        row = np.clip(np.rint(row).astype(int), 0, view["figure"].shape[0] - 1)
+        colour = view["linear"][row, col] * (1 - sideways) + view["soft"][row, col] * sideways
+        return colour, view["figure"][row, col]
 
     def colour(xyz, normal):
-        u = np.clip((xyz[:, 0] - xmin) / (xmax - xmin), 0, 1)
-        v = np.clip((xyz[:, 2] - zmin) / (zmax - zmin), 0, 1)
         sideways = np.clip(1.0 - np.abs(normal[:, 1]) / 0.55, 0.0, 1.0)[:, None]
-        cf, okf = sample(front, front_soft, front_lum, fb, u, v, sideways)
-        cb, okb = sample(back, back_soft, back_lum, bb, 1.0 - u, v, sideways)     # the back view is mirrored in X
+        cf, okf = sample(front, front_map, xyz[:, 0], xyz[:, 2], sideways)
+        cb, okb = sample(back, back_map, xyz[:, 0], xyz[:, 2], sideways)
         weight = np.clip((normal[:, 1] + 0.25) / 0.5, 0.0, 1.0)[:, None]      # 0 faces the front, 1 faces the back
         cf = np.where(okf[:, None], cf, np.where(okb[:, None], cb, flesh))
         cb = np.where(okb[:, None], cb, np.where(okf[:, None], cf, flesh))
         return cf * (1 - weight) + cb * weight
 
     return colour
+
+
+GLINT = bm.BELLY                       # this pipeline has no belly material, so its slot carries the eye glint
+bm.PALETTE[GLINT] = "#418B90"
+
+
+def add_eyes(f, eyes_xz, glints):
+    """Dark eyeballs where the sheet has its eyes. Returns their centres and radii."""
+    out = []
+    for (x, z), radius in zip(eyes_xz, (1.7, 1.5)):          # screen left is the larger eye
+        hit = f.raycast(bm.V(x, -45.0, z), bm.V(0, 1, 0), max_dist=60.0)
+        if hit is None:
+            continue
+        centre = hit + bm.V(0, radius * 0.45, 0)
+        f.blob(centre, bm.V(radius * 1.15, radius, radius * 0.9), k=0, mat=bm.EYE)
+        if glints:
+            f.blob(centre + bm.V(-0.3 * radius, -0.82 * radius, 0.3 * radius), bm.V(0.5, 0.4, 0.5), k=0, mat=GLINT)
+        out.append((centre, radius))
+    return out
 
 
 def main():
@@ -382,9 +468,25 @@ def main():
     f.dimples, f.eyes = [], []
     solid_z = f.ax[2][np.nonzero((f.F < 0).any(axis=(0, 1)))[0]]
     zmax = float(solid_z.max())
-    solid_x = f.ax[0][np.nonzero((f.F < 0).any(axis=(1, 2)))[0]]
-    figure_box = (float(solid_x.min()), float(solid_x.max()), float(solid_z.min()), zmax)
     head = band_centre(f, zmax, 0.80, 0.99)
+    eyes = []
+    if args.front_image and args.back_image:
+        front, back = load_view(args.front_image), load_view(args.back_image)
+        fit_front, fit_back = register(front, f, mirror=False), register(back, f, mirror=True)
+        # The head gets its own offsets: a wing or a hand can pull the whole-body fit off the face.
+        window = (head[0] - 13.0, head[0] + 13.0, 0.62 * zmax, 0.97 * zmax)
+        head_front = register(front, f, mirror=False, window=window, start=fit_front)
+        head_back = register(back, f, mirror=True, window=window, start=fit_back)
+        stats["sheet_fit"] = {"front_overlap": round(fit_front["iou"], 3), "back_overlap": round(fit_back["iou"], 3),
+                              "head_front_overlap": round(head_front["iou"], 3), "head_shift_x_mm": round(head_front["tx"] - fit_front["tx"], 2)}
+        f.colour_fn = sheet_colour_fn(front, back, blended_fit(fit_front, head_front, 0.58 * zmax, 0.66 * zmax),
+                                      blended_fit(fit_back, head_back, 0.58 * zmax, 0.66 * zmax))
+        spots = find_eyes(front, head_front)
+        if len(spots) == 2 and abs((spots[0][0] + spots[1][0]) / 2 - head[0]) > 1.0:
+            half = (spots[1][0] - spots[0][0]) / 2                 # keep the spacing, centre it on the head
+            spots = [(head[0] - half, spots[0][1]), (head[0] + half, spots[1][1])]
+            stats["sheet_fit"]["eyes_recentred"] = True
+        eyes = add_eyes(f, spots, glints=not printing)
     if args.rebuild_back:
         rebuild_back(f, zmax)
     if printing:
@@ -400,8 +502,6 @@ def main():
     f.F = np.maximum(f.F, -Z).astype(np.float32)          # flat underside
     if args.dump_field:
         np.savez_compressed(os.path.join(args.out, "field.npz"), solid=np.packbits(f.F < 0), shape=f.n, lo=f.lo, h=f.h)
-    if args.front_image and args.back_image:
-        f.colour_fn = sheet_colour_fn(args.front_image, args.back_image, figure_box)
 
     # field_to_mesh reads these module-level joints for the website data. Replace them with measured values.
     bm.HEAD = head
@@ -413,7 +513,10 @@ def main():
     ob, mesh_scale, volume, extra = bm.field_to_mesh(f)
     site = f.site_mm
     site["eyes"] = []
-    site["anchors"] = {name: [round(float(c) * mesh_scale, 3) for c in p] for name, p in anchors.items()}
+    for centre, radius in eyes:
+        position = [round(float(c) * mesh_scale, 3) for c in (centre - bm.V(0, 0, f.mesh_zmin))]
+        site["eyes"].append({"centre_mm": position, "radii_mm": [round(radius * 1.15 * mesh_scale, 3), round(radius * mesh_scale, 3), round(radius * 0.9 * mesh_scale, 3)]})
+    site["anchors"] = {name: [round(float(c) * mesh_scale, 3) for c in (p - bm.V(0, 0, f.mesh_zmin))] for name, p in anchors.items()}
     site["pelvis_xy_mm"] = [0.0, 0.0]
     d = ob.dimensions
     stats.update({

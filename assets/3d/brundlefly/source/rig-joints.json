@@ -1,0 +1,250 @@
+{
+ "note": "Joint positions for brundlefly-web.glb, in millimetres of the web model before the root scale. Z is up, the figure faces -Y. Left and right are screen left and screen right, so left is the figure's right side (-X). The positions fit source/hunyuan3d-multiview-shape.glb only. Measure them again if the base mesh changes. Bones mouthpart-0 to mouthpart-2 are the three long face tentacles, from screen left to screen right, each with a -tip bone. Bones mouthpart-3 to mouthpart-5 are the short ones.",
+ "joints_mm": {
+  "pelvis": [
+   0.0,
+   7.24,
+   39.14
+  ],
+  "chest": [
+   0.0,
+   6.2,
+   45.34
+  ],
+  "head": [
+   0.0,
+   -2.07,
+   58.78
+  ],
+  "head-end": [
+   0.0,
+   -12.41,
+   72.22
+  ],
+  "left-shoulder": [
+   -13.31,
+   0.68,
+   61.15
+  ],
+  "left-elbow": [
+   -25.34,
+   7.56,
+   44.59
+  ],
+  "left-hand": [
+   -27.89,
+   3.47,
+   32.14
+  ],
+  "left-hand-end": [
+   -30.72,
+   9.8,
+   24.45
+  ],
+  "right-shoulder": [
+   12.87,
+   1.23,
+   61.29
+  ],
+  "right-elbow": [
+   24.86,
+   7.09,
+   44.96
+  ],
+  "right-hand": [
+   27.8,
+   3.14,
+   32.43
+  ],
+  "right-hand-end": [
+   30.59,
+   4.43,
+   21.99
+  ],
+  "left-rib": [
+   -8.27,
+   2.07,
+   47.93
+  ],
+  "left-small-elbow": [
+   -14.62,
+   -1.12,
+   43.59
+  ],
+  "left-small-hand": [
+   -13.51,
+   -6.02,
+   38.2
+  ],
+  "left-small-hand-end": [
+   -14.11,
+   -6.76,
+   33.75
+  ],
+  "right-rib": [
+   8.27,
+   2.07,
+   47.41
+  ],
+  "right-small-elbow": [
+   13.48,
+   -1.4,
+   43.82
+  ],
+  "right-small-hand": [
+   14.09,
+   -6.13,
+   38.26
+  ],
+  "right-small-hand-end": [
+   14.91,
+   -6.81,
+   34.94
+  ],
+  "left-hip": [
+   -5.17,
+   7.24,
+   35.0
+  ],
+  "left-knee": [
+   -12.34,
+   4.78,
+   23.94
+  ],
+  "left-foot": [
+   -16.21,
+   11.72,
+   11.58
+  ],
+  "left-foot-end": [
+   -16.48,
+   0.41,
+   3.76
+  ],
+  "right-hip": [
+   5.17,
+   7.24,
+   35.0
+  ],
+  "right-knee": [
+   10.14,
+   5.24,
+   23.63
+  ],
+  "right-foot": [
+   11.14,
+   11.61,
+   10.91
+  ],
+  "right-foot-end": [
+   15.23,
+   0.89,
+   3.84
+  ],
+  "left-wing": [
+   -8.79,
+   5.69,
+   63.44
+  ],
+  "left-wing-tip": [
+   -16.39,
+   11.43,
+   73.18
+  ],
+  "left-wing-tip-end": [
+   -21.29,
+   16.13,
+   78.64
+  ],
+  "right-wing": [
+   8.79,
+   5.69,
+   63.44
+  ],
+  "right-wing-tip": [
+   19.56,
+   10.6,
+   67.92
+  ],
+  "right-wing-tip-end": [
+   26.65,
+   20.16,
+   68.59
+  ],
+  "mouthpart-0": [
+   -4.34,
+   -20.06,
+   56.2
+  ],
+  "mouthpart-0-tip": [
+   -4.34,
+   -21.09,
+   52.11
+  ],
+  "mouthpart-0-tip-end": [
+   -4.34,
+   -21.09,
+   48.03
+  ],
+  "mouthpart-1": [
+   -1.24,
+   -21.09,
+   56.2
+  ],
+  "mouthpart-1-tip": [
+   -1.24,
+   -22.13,
+   51.65
+  ],
+  "mouthpart-1-tip-end": [
+   -1.24,
+   -22.13,
+   47.1
+  ],
+  "mouthpart-2": [
+   1.6,
+   -20.47,
+   56.2
+  ],
+  "mouthpart-2-tip": [
+   1.6,
+   -21.51,
+   51.65
+  ],
+  "mouthpart-2-tip-end": [
+   1.6,
+   -21.51,
+   47.1
+  ],
+  "mouthpart-3": [
+   -6.2,
+   -14.89,
+   54.03
+  ],
+  "mouthpart-3-end": [
+   -6.2,
+   -14.89,
+   50.2
+  ],
+  "mouthpart-4": [
+   3.93,
+   -17.58,
+   54.03
+  ],
+  "mouthpart-4-end": [
+   3.93,
+   -17.58,
+   50.2
+  ],
+  "mouthpart-5": [
+   4.45,
+   -14.68,
+   54.03
+  ],
+  "mouthpart-5-end": [
+   4.45,
+   -14.68,
+   50.2
+  ]
+ }
+}
