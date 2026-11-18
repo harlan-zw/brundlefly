@@ -10,10 +10,10 @@ The shape and the colours come from four views: the front and back views of `ass
 1. `source/views/front.png` and `source/views/back.png` are the front and back views, cut from the character sheet. `source/views/side-right.png` and `source/views/side-left.png` are side views that an image model drew from the sheet. The sheet has no side view.
 2. An image-to-3D model reads the four views and returns a base mesh: `source/hunyuan3d-multiview-shape.glb`.
 3. `build_from_mesh.py` turns the base mesh into the print model and the website model in Blender:
-   - It removes the bristle spikes. It keeps the thin wings and mouthparts.
+   - It removes the bristle spikes. It keeps the thin wings and mouthparts. A wing membrane takes its original surface back as a whole.
    - For printing, it grows parts that are thinner than 1.6 mm, by up to 0.5 mm on each side, and it adds the base.
    - It projects the four views onto the vertex colours. Each surface takes its colour from the views that it faces. The head gets its own image fit, so the face lines up. The wings and the shoulders keep the body fit.
-   - For the website model, it cuts the smaller wing back to its outline in the sheet's front view. The generator makes that wing wider than the sheet draws it. The print model keeps the wider wing.
+   - It cuts the smaller wing back to its outline in the sheet's front view. The generator makes that wing wider than the sheet draws it.
    - It adds two dark eyeballs where the sheet has its eyes. Each one is as wide and as tall as the painted eye opening, and it is turned to lie along the face.
 4. `export_model.py` writes the files. For the website model it bakes the four views into a texture, and it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip.
 5. `validate.ts` checks the print files.
@@ -40,8 +40,8 @@ All values are millimetres. They come from `validation-report.json`.
 
 | File | Width (X) | Depth (Y) | Height (Z) | Volume | Triangles |
 | --- | --- | --- | --- | --- | --- |
-| `brundlefly-80mm.stl` | 67.56 | 51.05 | 80.00 | 25.18 cm³ | 200,000 |
-| `brundlefly-100mm.stl` | 84.45 | 63.81 | 100.00 | 49.18 cm³ | 200,000 |
+| `brundlefly-80mm.stl` | 67.40 | 46.40 | 80.00 | 25.07 cm³ | 200,000 |
+| `brundlefly-100mm.stl` | 84.25 | 58.00 | 100.00 | 48.96 cm³ | 200,000 |
 
 Height runs from the underside of the base to the tip of the larger wing.
 The base is about 3 mm thick at 80 mm. The underside is flat.
@@ -56,8 +56,8 @@ The base is about 3 mm thick at 80 mm. The underside is flat.
 ## Print orientation and supports
 
 - Print upright, with the flat base on the bed.
-- This pose needs supports. With a 45 degree threshold, the slicer used 20.0 cm³ of support for 14.0 cm³ of model.
-- `validation-report.json` lists the points where material starts in mid-air (`mid_air_islands_mm`): 38 at 80 mm.
+- This pose needs supports. With a 45 degree threshold, the slicer used 19.9 cm³ of support for 14.0 cm³ of model.
+- `validation-report.json` lists the points where material starts in mid-air (`mid_air_islands_mm`): 36 at 80 mm.
 - The largest groups are the fingers and claws of the two long-arm hands, the two small-arm hands, and the hanging mouthparts.
 - The head, the belly, and the wings overhang by more than 45 degrees. The slicer supports them.
 - Use tree or organic supports. They touch less surface than grid supports.
@@ -72,9 +72,9 @@ Sliced values come from PrusaSlicer 2.9.7 with a generic 0.4 mm FDM profile. The
 | Nozzle | 0.4 mm | Sliced |
 | Walls | 3 | Sliced |
 | Infill | 15 percent gyroid | Sliced |
-| Filament without supports | 14.0 cm³, 2 h 10 min | Sliced |
-| Filament with supports at 45 degrees | 34.1 cm³, 4 h 23 min | Sliced |
-| Support filament | 20.0 cm³ | Sliced, by difference |
+| Filament without supports | 14.0 cm³, 2 h 12 min | Sliced |
+| Filament with supports at 45 degrees | 33.9 cm³, 4 h 22 min | Sliced |
+| Support filament | 19.9 cm³ | Sliced, by difference |
 | Layer height for more detail | 0.12 to 0.16 mm | Estimate |
 | TPU nozzle temperature | 220 to 235 °C | Estimate |
 | TPU print speed | 20 to 30 mm/s | Estimate |
@@ -87,12 +87,12 @@ No TPU printer profile was tested. A real print has not been made.
 
 The print model keeps the proportions of the artwork, so some parts are thin.
 
-- The two wings are about 1.4 mm thick at 80 mm. The voxel check reports 276 mm³ of wing under 1.5 mm.
+- The two wings are about 1.6 mm thick at 80 mm.
 - Fingers, claws, small arms, and mouthparts are 1.6 mm or more.
-- Other spots under 1.5 mm are 2.7 mm³ or smaller. They are claw tips and stubs left by removed bristles.
+- The voxel check reports 25 mm³ under 1.5 mm in the whole model. Each spot is 3.0 mm³ or smaller. They are wing edges, claw tips, and stubs left by removed bristles.
 - The check uses 0.25 mm voxels. Read each limit with a tolerance of 0.25 mm.
 
-For a stronger print, use `brundlefly-100mm.stl`: the wings are about 1.75 mm and the fingers 2.0 mm.
+For a stronger print, use `brundlefly-100mm.stl`: the wings and the fingers are about 2.0 mm.
 To thicken further, rebuild with `--min-radius 1.0 --max-growth 0.7`. The figure then looks heavier.
 
 ## Likely failure points
@@ -111,8 +111,8 @@ To thicken further, rebuild with `--min-radius 1.0 --max-growth 0.7`. The figure
 - Shells: one. Volume: positive. Self-intersecting face pairs: zero.
 - Height: 80.00 mm and 100.00 mm.
 - Blender 3D Print Toolbox, check all: zero non-manifold edges, zero intersecting faces, one shell.
-- The toolbox also reports 18,111 thin faces and 20,458 overhang faces at 80 mm. Most thin faces are the wings. The overhang count agrees with the need for supports.
-- Mid-air start points: 38 at 80 mm.
+- The toolbox also reports 7,784 thin faces and 21,096 overhang faces at 80 mm. The overhang count agrees with the need for supports.
+- Mid-air start points: 36 at 80 mm.
 - Voxel thickness check at 0.25 mm pitch.
 - Stability: the centre of mass is 16.0 mm inside the footprint edge. The solid model tips at about 24 degrees.
 - PrusaSlicer slice with supports and without supports.
@@ -150,7 +150,6 @@ These steps are untested on a printed part.
 - The sheet has no side view. An image model drew the two side views, so the side shape follows that drawing and not canonical artwork.
 - The side views were drawn as mirror images of true side views: in each one the figure faces the wrong way for the side that it shows. The outline is the same either way, and the colours are placed with this in mind.
 - The print model has no bristles, and its thin parts are a little thicker than in the artwork.
-- The print model's smaller wing is wider than the sheet draws it. Its membrane has steps of 0.2 mm, because the build restores it from voxels.
 - The website model has thick spikes where the sheet has thin bristles.
 - The generated side views paint an eye socket on each side of the head, behind the eyeball. The sheet has no such socket.
 
@@ -214,9 +213,9 @@ The scripts are Python where Blender, trimesh, or scipy make it necessary. The c
 > I need a small character figurine printed and delivered to Melbourne by Thursday 26 November 2026.
 >
 > - Part: one-piece figurine with an integrated base. The STL is attached.
-> - Size: 68 × 51 × 80 mm. Volume 25.2 cm³.
-> - Quantity: 1. Please also price 3 units, and the 100 mm version (84 × 64 × 100 mm, 49.2 cm³).
-> - The thinnest parts are two wings at about 1.4 mm and fingers and claws at 1.6 mm. The hands and the head need supports.
+> - Size: 67 × 46 × 80 mm. Volume 25.1 cm³.
+> - Quantity: 1. Please also price 3 units, and the 100 mm version (84 × 58 × 100 mm, 49.0 cm³).
+> - The thinnest parts are the two wings, the fingers, and the claws, at about 1.6 mm. The hands and the head need supports.
 >
 > Could you tell me:
 >

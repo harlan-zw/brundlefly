@@ -111,38 +111,38 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 13837,
-    "sha256": "7e102623e76d731b5f18fcebec7c356ec28f4dcb6a8dbaeb2c8c343dd1f92f65"
+    "bytes": 13660,
+    "sha256": "08d1450f4efe432cb75f5564f6ed3966a5a3e81e06dbd1a2db8e7a90a8203443"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
     "bytes": 10000084,
-    "sha256": "ad4b9b8246fee2fee5b6874e300fd4c6ed4ad622ff813877c20a32a5bcddf771"
+    "sha256": "889a5eba6fe223538d3322311862a73c46d7d654cfc17be351c3abcb7f0c9910"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-80mm.stl",
     "bytes": 10000084,
-    "sha256": "daa454aa4f08717bc426a7320e0cf743a3df4d7eff2613902000684c82268a4b"
+    "sha256": "dc4df184520d8c2b6daa7e6f7299cfc66aee363b599f29926cb5bd7043435b02"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-preview.glb",
-    "bytes": 2881148,
-    "sha256": "0c691d6978846bb0cb8af8dbd6b7e2112a4c7a2d9e3fcf75699d2d39f9f237ba"
+    "bytes": 2881144,
+    "sha256": "2bbcfd0900e3d31bb533a54f412311a674326ef2bb8aadccfe4b5cc74f846ff9"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
-    "bytes": 3963824,
-    "sha256": "a3a17e59c68d6a9df12d5f47e8b0a2821bf1e2db50c62cde948a39b962bd3d66"
+    "bytes": 3942656,
+    "sha256": "2d517d746e7feda22176353e580241aa32c0b0a6895124668b316de547beecb9"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
-    "bytes": 6516847,
-    "sha256": "c9736144664465a2114821b876867b5ab5989be419ed20def170b383f4489755"
+    "bytes": 6529077,
+    "sha256": "225645efde15789bd1c5bb8a78bf80148cd168fc99f142e5baa25ad5b7e69b49"
   },
   {
     "path": "assets/3d/brundlefly/build_from_mesh.py",
-    "bytes": 37829,
-    "sha256": "48dc7986cccf521219e4fe3ff1de0d1cd5938e5f184aeccb552eeb9377d452db"
+    "bytes": 40280,
+    "sha256": "a11addee8219fcb3cae0aef5df0e1a28dbf786636e31d89513aabf8e7d3c66ab"
   },
   {
     "path": "assets/3d/brundlefly/build_model.py",
@@ -161,38 +161,38 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",
-    "bytes": 549546,
-    "sha256": "3869e83291d6ab77fe7c1bafb90a83dddb95473405d5b5b2ab0e2defa1631471"
+    "bytes": 545195,
+    "sha256": "6a1a55fd3f1a6a9d71b92d72b2b4d5c394d6a9bdbe7ad857211c9bebcfe479d9"
   },
   {
     "path": "assets/3d/brundlefly/previews/front.png",
-    "bytes": 555242,
-    "sha256": "d072300c1319b167a605d124afaf34e904777fe0552e574241c626642978668e"
+    "bytes": 550539,
+    "sha256": "94c498c49732f54044e6b1feb28886a005d7f45c161bab12cf7c8caa86c978c9"
   },
   {
     "path": "assets/3d/brundlefly/previews/side.png",
-    "bytes": 518206,
-    "sha256": "60655254f6c7f01e623f943d3f6b04eb1c3025bcaedaa03ef722a270d2a3d283"
+    "bytes": 513406,
+    "sha256": "49bad6bd1faab4505fa02259dc7d12343eaf72f7a5d1f430c222be47db40ac64"
   },
   {
     "path": "assets/3d/brundlefly/previews/three-quarter.png",
-    "bytes": 557176,
-    "sha256": "2a11062da78c060f6f03bb8e8c4d4923c0692afa32b4aedb142cf97b7f715261"
+    "bytes": 552562,
+    "sha256": "da826ae805c6e1ff06ff282177c54dfefc8668558e60bf327e93a9122627b48d"
   },
   {
     "path": "assets/3d/brundlefly/previews/top.png",
-    "bytes": 513439,
-    "sha256": "337b76524b38e0571a694de3147b96a998a4839b7aa39684678be74bb9bdef81"
+    "bytes": 510970,
+    "sha256": "4bfa3491c0a77ca260fdc8723c5004fb512da1ad11dfb6e9025d161397525044"
   },
   {
     "path": "assets/3d/brundlefly/previews/web-pose-test.png",
-    "bytes": 780634,
-    "sha256": "767a539f3d6c56efd64f6d7945dc182a0ebf3d035a4127205b003f4453d14ea7"
+    "bytes": 780921,
+    "sha256": "269e1d1ce82eb7909ea54c5a77bae80200caf6e94393cc0ab796e60678396529"
   },
   {
     "path": "assets/3d/brundlefly/previews/web-three-quarter.png",
-    "bytes": 673585,
-    "sha256": "3fef0611b63c96d0fbf5679a1f6668a943606f2f4a818932de397760cf121c33"
+    "bytes": 673281,
+    "sha256": "be0ab1110fba6113d9e7828d3fd6d66e8412a3cf7bb5165ec401f240b4339523"
   },
   {
     "path": "assets/3d/brundlefly/render_previews.py",
@@ -207,7 +207,7 @@
   {
     "path": "assets/3d/brundlefly/source/rig-joints.json",
     "bytes": 2959,
-    "sha256": "66f1161bab37e8ba60a9980794ee652958628e3d1aa6a785b57f202628d18ac9"
+    "sha256": "06dc3bfc2e0562d8e5663cf4270ef7285cc2c7df845546367471e178ecaff8fd"
   },
   {
     "path": "assets/3d/brundlefly/source/views/back.png",
@@ -230,9 +230,19 @@
     "sha256": "34b01c7334ee5508b649fe1263de8d599770e5feffc01a4dcbf9977e187389db"
   },
   {
+    "path": "assets/3d/brundlefly/test/fixtures/check-tool.ts",
+    "bytes": 1224,
+    "sha256": "2735832d2afeca98b966390d398a39dc0c4256ed5397a0fef5577e434f7d7256"
+  },
+  {
+    "path": "assets/3d/brundlefly/test/validate.test.ts",
+    "bytes": 2390,
+    "sha256": "296fc9ec8387864be297413b93c371900f3197e091a03aebe373f5e97e22168b"
+  },
+  {
     "path": "assets/3d/brundlefly/validate.ts",
-    "bytes": 4100,
-    "sha256": "7ec3c5f8bb351a2928f61973b8d09fc7766ed44012b5486a6616c3de3615cbf4"
+    "bytes": 4357,
+    "sha256": "359a482684e32ce677a9df2515c475e6518b9a9651a9f818daf95548b2ba9445"
   },
   {
     "path": "assets/3d/brundlefly/validate_mesh.py",
@@ -241,12 +251,12 @@
   },
   {
     "path": "assets/3d/brundlefly/validation-report.json",
-    "bytes": 8245,
-    "sha256": "367d6b55277790fa6eb219db9d715e9a59a65dca6f5cf009071248d19b8ca1bb"
+    "bytes": 8064,
+    "sha256": "c19b77eea8b718193a00a85dce8f1feab98a0a5819269c54b93ace589bb22234"
   },
   {
     "path": "assets/prompts/figurine.json",
-    "bytes": 3165,
-    "sha256": "8557b730eab0718405cb33a407e4584a34b804aaf01d75eed8aec291dbc68be6"
+    "bytes": 3149,
+    "sha256": "d0bc1d1cc79bd0ad21464ec5bdd16d99cecf116de4a146be6ca0be70be437c69"
   }
 ]

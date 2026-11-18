@@ -32,6 +32,7 @@ FIGURE_MM = 77.6              # print figure height above its lowest sole
 BASE_TOP = 3.0                # nominal top of the base
 SINK = 0.6                    # the soles sink this far into the base
 BAND = 10                     # level set half width, in voxels
+WING_VOLUME_MM3 = 60.0        # a joined thin part of this volume is a wing membrane, at the default --keep-volume
 LO = np.array([-48.0, -40.0, -1.6])
 HI = np.array([48.0, 40.0, 84.0])
 
@@ -155,10 +156,23 @@ def without_bristles(points_idx, tris, shape, radius_vox, keep_volume_vox):
     removed.copyFromArray(np.maximum(f_orig, -f_open))
     rp, rt, rq = removed.convertToPolygons(0.0, 0.0)
     kp, kt = large_shells(rp, rt, rq, keep_volume_vox)
-    if len(kt) == 0:
+    restore = np.zeros(shape, dtype=bool)
+    if len(kt):
+        restore |= dense(level_set(kp, tris=kt), shape) < 1.5
+    # A membrane as thick as the opening limit survives in some voxel columns and not in others.
+    # The removed material is then a set of narrow stripes, each too small to count as a large
+    # shell, and the membrane comes back as a comb. So the removed material is also grown by two
+    # voxels. The stripes of one membrane join, and a joined part as large as a wing takes its
+    # original surface back as a whole.
+    joined = max_filter((f_orig < 0) & (f_open > 0.5), 2)
+    blocks = vdb.FloatGrid(float(BAND))
+    blocks.copyFromArray(np.where(joined, -0.5, 0.5).astype(np.float32))
+    wp, wt = large_shells(*blocks.convertToPolygons(0.0, 0.0), WING_VOLUME_MM3 * keep_volume_vox / 6.0)
+    if len(wt):
+        restore |= dense(level_set(wp, tris=wt), shape) < 1.0
+    if not restore.any():
         return f_open, 0
-    near_kept = dense(level_set(kp, tris=kt), shape) < 1.5
-    return np.where(near_kept, f_orig, f_open), int(len(kt))
+    return np.where(restore, f_orig, f_open), int(len(kt) + len(wt))
 
 
 def max_filter(a, k):
@@ -543,10 +557,28 @@ def trim_small_wing(f, view, to_image, zmax, tolerance=3.0):
     col = np.clip(np.rint(col).astype(int), 0, view["figure"].shape[1] - 1)
     row = np.clip(np.rint(row).astype(int), 0, view["figure"].shape[0] - 1)
     scale = abs(float(f.ax[0][1] - f.ax[0][0])) / max(abs(float(to_image(f.ax[0][1], 0.0)[0] - to_image(f.ax[0][0], 0.0)[0])), 1e-9)   # mm per pixel
-    outside = ((outline_distance(view["figure"], 12)[row, col] - tolerance) * scale)[:, None, :]     # mm past the outline
+    # A blurred copy of the figure mask falls from 1 to 0 across the outline. Near the outline
+    # that fall is a smooth distance in pixels, without the steps of the pixel art.
+    width = 9
+    soft = view["figure"].astype(np.float64)
+    for _ in range(2):
+        for axis in (0, 1):
+            c = np.cumsum(np.pad(soft, [(width // 2 + 1, width // 2) if a == axis else (0, 0) for a in range(2)], mode="edge"), axis=axis)
+            soft = (np.take(c, range(width, c.shape[axis]), axis=axis) - np.take(c, range(0, c.shape[axis] - width), axis=axis)) / width
+    near = (0.5 - soft) * width - tolerance                    # pixels past the cut line, smooth, true near the line only
+    steps = outline_distance(near < 0, 16)                     # pixels past the cut line, in whole steps, true farther away
+    past = np.where(np.abs(steps) <= 1, near, steps)[row, col]
+    # The values stay true distances for a millimetre past the cut. The thickening step for the
+    # print model reads them, and a jump there would put steps on the cut edge. Farther out
+    # the distance is unknown, and a large value keeps a removed part from growing back.
+    outside = np.where(past >= 16, BAND * h, past * scale)[:, None, :]                                 # mm past the cut line
     cut = np.maximum(block, np.broadcast_to(outside, block.shape))
     removed = thin & (cut >= 0)
-    block[thin] = cut[thin]
+    # The cut also applies to the empty space just around the wing. The space beside a removed
+    # part still holds its small distance to the old surface, and the thickening step for the
+    # print model would read that as a thin part and grow a hollow copy of the removed tip.
+    around = thin | (max_filter(thin, int(math.ceil(1.0 / h))) & ~solid)
+    block[around] = cut[around]
     return float(removed.sum()) * h ** 3
 
 
@@ -722,8 +754,7 @@ def main():
             stats["sheet_fit"]["front"]["face_shift_mm"] = round(float(shift), 3)
         # The print model keeps its wing. Its membrane is rebuilt from the removed thin parts, and
         # the cut only frays the tip there: the thick leading edge is not a thin part.
-        if not printing:
-            stats["wing_trim_mm3"] = round(trim_small_wing(f, front, views["front"][1], zmax), 1)
+        stats["wing_trim_mm3"] = round(trim_small_wing(f, front, views["front"][1], zmax), 1)
         eyes = add_eyes(f, spots, head[0])
         erase_side_eyes(views)
     if args.rebuild_back:
