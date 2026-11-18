@@ -24,7 +24,7 @@ const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform 
 }>()
 const clipTime = defineModel<number>('clipTime', { default: 0 })
 type ShownMascot = 'relief' | 'sprite' | 'mesh'
-const emit = defineEmits<{ clips: [durations: Record<string, number>], shown: [mascot: ShownMascot] }>()
+const emit = defineEmits<{ clips: [durations: Record<string, number>], shown: [mascot: ShownMascot, rigged: boolean] }>()
 // The component reports the mascot it shows. A mesh that cannot load shows the relief rig.
 const shownMascot = ref<ShownMascot>()
 const meshUnavailable = ref(false)
@@ -184,7 +184,7 @@ watch(canvas, async (element) => {
     figure.add(mascotRoot)
     scene.add(figure)
     shownMascot.value = meshMascot ? 'mesh' : textureMode === 'sprite' ? 'sprite' : 'relief'
-    emit('shown', shownMascot.value)
+    emit('shown', shownMascot.value, meshMascot ? meshMascot.skinned : true)
   }
   const orbit = inspector ? new OrbitControls(camera, element) : undefined
   if (orbit) {
@@ -341,7 +341,7 @@ function exportModel() {
       <button v-if="status._tag === 'Ready' && interactive && !inspector" class="brand-organism-control" type="button" aria-label="Press to deform"
         @pointermove="move" @pointerdown="grab" @pointercancel="release" @lostpointercapture="release"
         @keydown.space.prevent="pressed = true" @keyup.space.prevent="release" @keydown.enter.prevent="pressed = true" @keyup.enter.prevent="release" @blur="release" />
-      <span class="brand-organism-status" role="status">{{ status._tag === 'Ready' ? meshUnavailable ? 'Relief rig. The mesh could not load.' : '3D material' : status._tag === 'Loading' ? '3D loading.' : status.reason === 'texture' ? 'Static material. The texture could not load.' : 'Static material. WebGL is unavailable.' }}</span>
+      <span class="brand-organism-status" role="status">{{ status._tag === 'Ready' ? meshUnavailable ? 'Mapped texture. The mesh could not load.' : '3D material' : status._tag === 'Loading' ? '3D loading.' : status.reason === 'texture' ? 'Static material. The texture could not load.' : 'Static material. WebGL is unavailable.' }}</span>
     </div>
     <UButton v-if="exportable && status._tag === 'Ready' && shownMascot !== 'mesh'" variant="outline" @click="exportModel">Download GLB</UButton>
     <p v-if="exportError" role="alert">{{ exportError }}</p>

@@ -65,9 +65,10 @@ test('a file without clips sways about its feet and rests at time zero', () => {
   assert.ok(feet().length() < 1e-9, 'The floor point under his origin must not move.')
   mascot.update(0)
   assert.ok(head().distanceTo(rest) < 1e-9, 'Time zero must restore the authored pose.')
-  // One idle loop returns the slow turn to its start, so a looping inspector does not snap his facing.
+  // One idle loop returns the whole pose to its start, so a looping inspector does not snap.
   mascot.update(mascot.idleDuration)
-  assert.ok(Math.abs(mascot.root.children[0]!.rotation.y) < 1e-9)
+  assert.ok(head().distanceTo(rest) < 1e-9, 'One idle loop must end on the authored pose.')
+  assert.equal(mascot.skinned, false)
 })
 
 test('a file with clips plays its idle clip instead of the sway', () => {

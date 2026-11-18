@@ -4,6 +4,13 @@ import { computed, ref } from 'vue'
 const texture = ref<'mapped' | 'sprite' | 'mesh'>('mapped')
 // The stage reports what it shows. A mesh that cannot load shows the relief rig, which keeps every control.
 const shown = ref<'relief' | 'sprite' | 'mesh'>('relief')
+const rigged = ref(true)
+function loadShown(mascot: 'relief' | 'sprite' | 'mesh', hasSkeleton: boolean) {
+  shown.value = mascot
+  rigged.value = hasSkeleton
+  // A model without a skeleton has no bones to show.
+  if (!hasSkeleton) bones.value = false
+}
 const clip = ref<'Manual' | 'Idle' | 'Walk' | 'Speaking'>('Manual')
 const playing = ref(false)
 const speed = ref(1)
@@ -32,13 +39,13 @@ function loadClips(available: Record<string, number>) {
       <section class="inspector-stage" aria-label="Brundlefly">
         <LazyBrandOrganism :key="texture" v-model:clip-time="time" mascot inspector exportable :interactive="false" motion-off
           :texture-mode="texture" :clip="clip" :playing="playing" :playback-speed="speed" :bones="bones" :wireframe="wireframe"
-          :speaking="speech" :blink="blink" :brow="brow" :squint="squint" @clips="loadClips" @shown="shown = $event" />
+          :speaking="speech" :blink="blink" :brow="brow" :squint="squint" @clips="loadClips" @shown="loadShown" />
         <p>Drag to orbit. Scroll to zoom.</p>
       </section>
       <aside class="inspector-controls">
         <label for="inspector-texture">Texture</label>
         <select id="inspector-texture" v-model="texture" @change="selectClip"><option value="mapped">Mapped</option><option value="sprite">Sprite</option><option value="mesh">Mesh</option></select>
-        <div class="toggles"><label><input v-model="bones" type="checkbox"> Bones</label><label><input v-model="wireframe" type="checkbox"> Wireframe</label></div>
+        <div class="toggles"><label><input v-model="bones" :disabled="!rigged" type="checkbox"> Bones</label><label><input v-model="wireframe" type="checkbox"> Wireframe</label></div>
         <label for="inspector-clip">Clip</label>
         <select id="inspector-clip" v-model="clip" @change="selectClip"><option>Manual</option><option :disabled="!('Idle' in durations)">Idle</option><option :disabled="!('Walk' in durations)">Walk</option><option :disabled="!('Speaking' in durations)">Speaking</option></select>
         <UButton :disabled="clip === 'Manual'" variant="outline" :aria-pressed="playing" @click="playing = !playing">{{ playing ? 'Pause' : 'Play' }}</UButton>

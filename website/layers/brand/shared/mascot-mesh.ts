@@ -7,8 +7,9 @@ export const meshMascotUrl = '/brand/3d/brundlefly-web.glb'
 export const reliefStandingHeight = 2.5
 
 export type MeshMascotSource = { scene: Object3D, animations: readonly AnimationClip[] }
-// One turn of the slowest sway component. The inspector uses it as the length of the sway loop.
-const swayPeriod = Math.PI * 2 / 0.23
+// Every sway component is a whole multiple of one base rate, so the whole pose repeats after one period.
+const swayRate = 0.115
+const swayPeriod = Math.PI * 2 / swayRate
 /** A file with clips plays its idle clip. A file without clips sways as one object. */
 export type MeshMascotMotion = { _tag: 'Clip', name: string } | { _tag: 'Sway' }
 export type MeshMascot = ReturnType<typeof assemble>
@@ -45,6 +46,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   const mixer = idle ? new AnimationMixer(scene) : undefined
   if (mixer && idle) mixer.clipAction(idle).play()
   const motion: MeshMascotMotion = idle ? { _tag: 'Clip', name: idle.name } : { _tag: 'Sway' }
+  let skinned = false
+  scene.traverse((object) => { if (object instanceof SkinnedMesh) skinned = true })
   let face = scene.getObjectByName('anchor-face')
   if (!face) {
     // Without an anchor, the face is high on the front of the body.
@@ -57,6 +60,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     _tag: 'Mesh' as const,
     root,
     motion,
+    /** True when the file has a skeleton to show. */
+    skinned,
     /** Seconds in one loop of the idle motion. */
     idleDuration: idle ? idle.duration : swayPeriod,
     /** Horizontal reach and height in root units. The feet are at zero. */
@@ -66,8 +71,9 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     /** `time` is seconds of visible motion. Zero is the authored rest pose. */
     update(time: number) {
       if (mixer) { mixer.setTime(time); return }
-      pivot.rotation.set(Math.sin(time * 0.37) * 0.01, Math.sin(time * Math.PI * 2 / swayPeriod) * 0.06, Math.sin(time * 0.53) * 0.014)
-      pivot.scale.y = 1 + Math.sin(time * 1.4) * 0.006
+      const phase = time * swayRate
+      pivot.rotation.set(Math.sin(phase * 3) * 0.01, Math.sin(phase * 2) * 0.06, Math.sin(phase * 5) * 0.014)
+      pivot.scale.y = 1 + Math.sin(phase * 12) * 0.006
     },
     dispose() {
       mixer?.stopAllAction()

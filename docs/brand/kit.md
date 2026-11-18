@@ -477,7 +477,8 @@ Choose Idle, Walk, or Speaking for the exported animation clips. Play, pause, ch
 Manual speech, blink, brow, and squint controls stop clip playback and show a fixed pose.
 Mapped and Sprite switch the artwork. Download GLB exports the selected rig.
 Mesh shows the full 3D model. Idle plays its clip or its sway. Walk, Speaking, the expression controls, and Download GLB apply only to the relief rig.
-If the model file is absent, Mesh shows the relief rig and the status line says so.
+Bones applies only to a model with a skeleton.
+If the model file is absent, Mesh shows the mapped relief rig and the status line says so.
 
 The homepage Sound controls sit inside the hidden L panel.
 Master volume, Ambience volume, and Voice volume each accept values from zero to one.
