@@ -13,6 +13,7 @@ import sys
 
 import bmesh
 import bpy
+from mathutils.bvhtree import BVHTree
 
 
 def parse():
@@ -26,6 +27,34 @@ def parse():
     ap.add_argument("--web", action="store_true", help="write brundlefly-web.glb only, from a web-variant build")
     args, _ = ap.parse_known_args(argv)
     return args
+
+
+def self_intersections(mesh):
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    tree = BVHTree.FromBMesh(bm, epsilon=0.0)
+    faces = bm.faces
+    faces.ensure_lookup_table()
+    count = 0
+    for a, b in tree.overlap(tree):
+        if a < b and not ({v.index for v in faces[a].verts} & {v.index for v in faces[b].verts}):
+            count += 1
+    bm.free()
+    return count
+
+
+def clean_decimated(ob, target, name):
+    """Decimate, and lower the budget in small steps until no faces intersect."""
+    for step in range(8):
+        copy = decimated(ob, int(target * (1 - 0.015 * step)), name)
+        hits = self_intersections(copy.data)
+        if hits == 0:
+            return copy
+        print(f"DECIMATE {len(copy.data.polygons)} triangles: {hits} intersecting face pairs, retrying")
+        mesh = copy.data
+        bpy.data.objects.remove(copy)
+        bpy.data.meshes.remove(mesh)
+    raise SystemExit("Decimation left intersecting faces at every budget.")
 
 
 def decimated(ob, target, name):
@@ -81,7 +110,7 @@ def main():
         out["web"] = {"path": path, "bytes": os.path.getsize(path), "triangles": len(web.data.polygons)}
         print("EXPORT " + json.dumps(out))
         return
-    stl_ob = decimated(src, args.tris, "Brundlefly-print")
+    stl_ob = clean_decimated(src, args.tris, "Brundlefly-print")
     only(stl_ob)
     for label, scale in (("80mm", 1.0), ("100mm", 1.25)):
         path = os.path.join(args.out, f"brundlefly-{label}.stl")
@@ -103,6 +132,7 @@ def main():
     # Master file: the print mesh only. The full-resolution field mesh is rebuilt by build_model.py.
     bpy.data.objects.remove(src)
     stl_ob.name = "Brundlefly"
+    bpy.context.scene.render.filepath = "//"        # keep machine paths out of the master file
     for block in (bpy.data.meshes, bpy.data.cameras, bpy.data.images):
         for item in list(block):
             if item.users == 0:

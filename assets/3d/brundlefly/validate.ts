@@ -6,7 +6,7 @@
 // a voxel thickness check, and two PrusaSlicer slices (with and without supports).
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { homedir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 
 interface Args { dir: string, work: string }
@@ -17,7 +17,8 @@ function parseArgs(argv: string[]): Args {
     return i >= 0 && argv[i + 1] ? resolve(argv[i + 1]) : fallback
   }
   const dir = value('--dir', import.meta.dirname)
-  return { dir, work: value('--work', join(tmpdir(), 'brundlefly-validate')) }
+  // The Flatpak apps reach the home folder only, so the work folder is under home.
+  return { dir, work: value('--work', join(homedir(), '.cache', 'brundlefly-validate')) }
 }
 
 function run(cmd: string, args: string[]): string {

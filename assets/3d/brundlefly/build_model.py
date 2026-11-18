@@ -26,7 +26,7 @@ import numpy as np
 import openvdb as vdb
 
 HEIGHT_MM = 80.0
-SCALE_GUESS = 0.72  # design unit to millimetre, used only to clamp minimum sizes
+SCALE_GUESS = 0.706  # design unit to millimetre for the print build; main() fails if the real scale drifts
 BIG = 6.0
 
 # Minimum sizes in millimetres ("Design to" column of the plan).
@@ -558,7 +558,8 @@ def build_wing(f, s):
 
 
 def build_base(f):
-    lobes = [(0, 2, 33, 21), (-22, 2, 14, 17), (21, 2, 13, 16.5), (0, 13, 15, 10), (-7, -12, 13, 8.5), (11, -13, 9, 6.5)]
+    # The front lobes reach forward of the head, so the centre of mass stays well inside the footprint.
+    lobes = [(0, 2, 33, 21), (-22, 2, 14, 17), (21, 2, 13, 16.5), (0, 13, 15, 10), (-8, -15, 15, 11), (11, -16, 11, 9), (2, -13, 17, 10)]
     for x, y, rx, ry in lobes:
         f.blob(V(x, y, 1.0), V(rx, ry, 2.2), k=3.5, mat=SLIME)
 
@@ -835,6 +836,8 @@ def main():
         "seconds_field": round(t1 - t0, 1),
         "seconds_total": round(time.time() - t0, 1),
     }
+    if args.variant == "print" and abs(scale - SCALE_GUESS) / SCALE_GUESS > 0.005:
+        raise SystemExit(f"SCALE_GUESS is {SCALE_GUESS}, but the build scale is {scale:.4f}. Update SCALE_GUESS: the minimum sizes depend on it.")
     stats["bristle_dimples"] = len(f.bristles_mm)
     with open(os.path.join(args.out, "bristle-map.json"), "w") as fh:
         json.dump({"units": "mm", "dimple_diameter_mm": 1.2, "dimple_depth_mm": 2.0, "dimples": f.bristles_mm}, fh, indent=1)

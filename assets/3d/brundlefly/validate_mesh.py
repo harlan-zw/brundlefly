@@ -56,6 +56,24 @@ def self_intersections(bm):
     return count
 
 
+def islands(bm, cluster_mm=2.5):
+    """Places where a print starts in mid-air: local minima in Z whose surface faces down."""
+    found = []
+    for v in bm.verts:
+        if v.co.z < 0.6 or v.normal.z > -0.5:
+            continue
+        if all(e.other_vert(v).co.z > v.co.z for e in v.link_edges):
+            found.append(v.co.copy())
+    clusters = []
+    for p in sorted(found, key=lambda c: c.z):
+        for c in clusters:
+            if (c - p).length < cluster_mm:
+                break
+        else:
+            clusters.append(p)
+    return [[round(c.x, 1), round(c.y, 1), round(c.z, 1)] for c in clusters]
+
+
 def toolbox_report(ob, min_wall):
     """Run the 3D Print Toolbox, if it is installed. Returns its text lines, or None."""
     if "print3d_check_all" not in dir(bpy.ops.mesh):
@@ -100,6 +118,7 @@ def main():
         "loose_vertices": sum(1 for v in bm.verts if not v.link_edges),
         "shells": shells(bm),
         "self_intersecting_face_pairs": self_intersections(bm),
+        "mid_air_islands_mm": islands(bm),
     }
     bm.free()
     result["height_ok"] = abs(result["dimensions_mm"][2] - args.expect_height) < 0.05
