@@ -84,6 +84,72 @@ def decimated(ob, target, name):
     return copy
 
 
+def export_web(src, args):
+    """The website model. One root node, Y up after export, face toward +Z, soles at height zero.
+
+    Children: the body, two eyeball nodes, and three anchor nodes. The contract is in PRINTING.md.
+    """
+    with open(os.path.join(os.path.dirname(args.blend), "build-stats.json")) as fh:
+        site = json.load(fh)["site"]
+    px, py = site["pelvis_xy_mm"]
+    scene = bpy.context.scene
+
+    src.name = "Brundlefly-source"                   # frees the root node name
+    src.data.name = "Brundlefly-source"
+    body = clean_decimated(src, args.glb_tris, "Brundlefly-body")
+    body.data.name = "Brundlefly-body"
+    skin = body.data.materials[0]
+    skin.name = "Brundlefly-skin"
+    skin.use_backface_culling = True                 # exports as doubleSided false
+
+    root = bpy.data.objects.new("Brundlefly", None)
+    scene.collection.objects.link(root)
+    body.location = (-px, -py, 0.0)
+    body.parent = root
+    parts = [root, body]
+
+    eye_mat = bpy.data.materials.new("Brundlefly-eye")
+    eye_mat.use_nodes = True
+    eye_mat.use_backface_culling = True
+    bsdf = next(n for n in eye_mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    bsdf.inputs["Base Color"].default_value = (0.004, 0.007, 0.014, 1.0)
+    bsdf.inputs["Roughness"].default_value = 0.12
+    for index, eye in enumerate(site["eyes"]):        # 0 is screen left and larger
+        mesh = bpy.data.meshes.new(f"Brundlefly-eye-{index}")
+        bm = bmesh.new()
+        bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=16, radius=1.0)
+        for face in bm.faces:
+            face.smooth = True
+        bm.to_mesh(mesh)
+        bm.free()
+        mesh.materials.append(eye_mat)
+        ob = bpy.data.objects.new(f"Brundlefly-eye-{index}", mesh)
+        scene.collection.objects.link(ob)
+        cx, cy, cz = eye["centre_mm"]
+        ob.location = (cx - px, cy - py, cz)
+        ob.scale = [r * 1.03 for r in eye["radii_mm"]]   # just outside the fused eyeball
+        ob.parent = root
+        parts.append(ob)
+    for name, (ax, ay, az) in site["anchors"].items():
+        anchor = bpy.data.objects.new(name, None)
+        scene.collection.objects.link(anchor)
+        anchor.location = (ax - px, ay - py, az)
+        anchor.parent = root
+        parts.append(anchor)
+
+    root.scale = (0.001, 0.001, 0.001)               # millimetres to glTF metres
+    for o in scene.objects:
+        o.select_set(o in parts)
+    bpy.context.view_layer.objects.active = root
+    path = os.path.join(args.out, "brundlefly-web.glb")
+    kwargs = dict(filepath=path, export_format="GLB", use_selection=True, export_apply=True, export_cameras=False, export_lights=False)
+    try:
+        bpy.ops.export_scene.gltf(export_vertex_color="MATERIAL", **kwargs)
+    except TypeError:
+        bpy.ops.export_scene.gltf(**kwargs)
+    return {"path": path, "bytes": os.path.getsize(path), "triangles": len(body.data.polygons)}
+
+
 def only(ob):
     for o in bpy.context.scene.objects:
         o.select_set(False)
@@ -99,15 +165,7 @@ def main():
 
     out = {}
     if args.web:
-        web = decimated(src, args.glb_tris, "Brundlefly")
-        web.scale = (0.001, 0.001, 0.001)          # glTF uses metres
-        only(web)
-        path = os.path.join(args.out, "brundlefly-web.glb")
-        try:
-            bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, export_apply=True, export_vertex_color="MATERIAL")
-        except TypeError:
-            bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, export_apply=True)
-        out["web"] = {"path": path, "bytes": os.path.getsize(path), "triangles": len(web.data.polygons)}
+        out["web"] = export_web(src, args)
         print("EXPORT " + json.dumps(out))
         return
     stl_ob = clean_decimated(src, args.tris, "Brundlefly-print")

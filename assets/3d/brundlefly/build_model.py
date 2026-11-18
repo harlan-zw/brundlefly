@@ -735,6 +735,13 @@ def field_to_mesh(f, name="Brundlefly"):
     scale = HEIGHT_MM / (zmax - zmin)
     verts[:, 2] -= zmin
     verts *= scale
+    to_mm = lambda p: [round(float(c), 3) for c in (np.asarray(p, dtype=np.float64) - V(0, 0, zmin)) * scale]
+    # Positions that the website uses: eyeballs, anchors, and the point under the pelvis.
+    f.site_mm = {
+        "eyes": [{"centre_mm": to_mm(e + V(0, -0.2, 0)), "radii_mm": [round(r * s_eye * scale, 3) for r in (4.0, 3.7, 3.5)]} for e, s_eye in f.eyes],
+        "anchors": {"anchor-face": to_mm(HEAD + V(0, -13.5, -4.0)), "anchor-left-hand": to_mm(KNUCKLE[-1]), "anchor-right-hand": to_mm(KNUCKLE[1])},
+        "pelvis_xy_mm": [round(float(c * scale), 3) for c in (0.0, 6.5)],
+    }
     f.bristles_mm = [{"position_mm": [round(float(c), 2) for c in (p - V(0, 0, zmin)) * scale],
                       "direction": [round(float(c), 3) for c in d]} for p, d in getattr(f, "dimples", [])]
 
@@ -838,6 +845,7 @@ def main():
     }
     if args.variant == "print" and abs(scale - SCALE_GUESS) / SCALE_GUESS > 0.005:
         raise SystemExit(f"SCALE_GUESS is {SCALE_GUESS}, but the build scale is {scale:.4f}. Update SCALE_GUESS: the minimum sizes depend on it.")
+    stats["site"] = f.site_mm
     stats["bristle_dimples"] = len(f.bristles_mm)
     with open(os.path.join(args.out, "bristle-map.json"), "w") as fh:
         json.dump({"units": "mm", "dimple_diameter_mm": 1.2, "dimple_depth_mm": 2.0, "dimples": f.bristles_mm}, fh, indent=1)

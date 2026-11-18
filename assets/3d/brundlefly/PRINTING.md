@@ -13,7 +13,7 @@ The pose is the standing, hunched pose of `assets/brand/character.png`.
 | `brundlefly-100mm.stl` | The same model at 100 mm. Every thin part is 25 percent thicker. |
 | `brundlefly.blend` | Editable master. One Blender unit is one millimetre. |
 | `brundlefly-preview.glb` | Coloured preview of the print model, with the base. |
-| `brundlefly-web.glb` | Coloured model for the website: no base, no bristle dimples, thinner fingers and claws. |
+| `brundlefly-web.glb` | Coloured model for the website: no base, no bristle dimples, thinner fingers and claws, separate eye nodes. |
 | `bristle-map.json`, `previews/bristle-map.png` | Position and direction of each bristle dimple. |
 | `validation-report.json` | Output of `validate.ts` for the two STL files. |
 | `previews/` | Front, side, back, three-quarter, and top renders. |
@@ -149,6 +149,17 @@ These steps are untested on a printed part.
 - Fingers and claws are thicker than in the artwork. `brundlefly-web.glb` keeps the thinner proportions.
 - The model is built by a script. It is a stylised reading of the character sheet, not a hand sculpt.
 
+## Website model
+
+`brundlefly-web.glb` follows the contract that the site loader expects.
+
+- glTF 2.0 binary, metres, Y up, face toward +Z. The soles are at height zero. The origin is on the ground under the pelvis.
+- One root node, `Brundlefly`, with a scale of 0.001.
+- `Brundlefly-body`: 80,000 triangles, vertex colours in `COLOR_0`, material `Brundlefly-skin`, single sided.
+- `Brundlefly-eye-0` and `Brundlefly-eye-1`: eyeball nodes with their origin at the eyeball centre, material `Brundlefly-eye`. Eye 0 is on screen left and is the larger eye.
+- `anchor-face`, `anchor-left-hand`, `anchor-right-hand`: empty nodes. Left and right are screen left and screen right.
+- No skeleton, no animation, no base, no bristles, no compression extension.
+
 ## Rebuild
 
 Blender 5.3 as a Flatpak, PrusaSlicer as a Flatpak, Node 24, and `uv` are necessary. Use absolute paths.
@@ -168,7 +179,7 @@ node $D/validate.ts
 
 The renders are named `<view>-colour.png`. Copy them to `previews/<view>.png`. Copy `bristles/sheet-bristles.png` to `previews/bristle-map.png`.
 
-For the website model, add `--variant web` to the build and `--web --glb-tris 90000` to the export.
+For the website model, add `--variant web` to the build and `--web --glb-tris 80000` to the export. The export reads `build-stats.json` beside the working file.
 
 The scripts are Python where Blender, trimesh, or scipy make it necessary. The check runner is TypeScript.
 
