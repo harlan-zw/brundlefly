@@ -567,8 +567,10 @@ def export_web(src, args):
     stance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "stance.json")
     if rigged and os.path.exists(stance_path) and not args.no_stance:
         with open(stance_path) as fh:
-            height = bake_stance(body, arm, json.load(fh), [o for o in parts if o.parent_type == "BONE"])
-        print(f"STANCE baked, figure height {height:.2f} mm")
+            stance = json.load(fh)
+        height = bake_stance(body, arm, stance, [o for o in parts if o.parent_type == "BONE"])
+        root.rotation_euler = (0.0, 0.0, stance.get("root_yaw_radians", 0.0))   # the body's turn, for the site to change
+        print(f"STANCE baked, figure height {height:.2f} mm, root yaw {stance.get('root_yaw_radians', 0.0)} rad")
 
     root.scale = (0.001, 0.001, 0.001)               # millimetres to glTF metres
     for o in scene.objects:

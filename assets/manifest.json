@@ -111,8 +111,8 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 14718,
-    "sha256": "995e1fea684851f6883b927a4c99d49f3ab2c11efff47b29987ac5d53a29f870"
+    "bytes": 15040,
+    "sha256": "1bd4d4f8a08c04ab825ac40613bec5a63780b837b4b67fb3354474dc7ffa3743"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
@@ -131,8 +131,8 @@
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
-    "bytes": 3816084,
-    "sha256": "cf6d5e005d9ac1013be391ff0d54c67356b0cb73306d761d26ce8ac0b2f32813"
+    "bytes": 3817580,
+    "sha256": "40b3b577404998fa5fbb4528100d3b91eda11c88e5e0323941e44b7b5d26035d"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
@@ -156,8 +156,8 @@
   },
   {
     "path": "assets/3d/brundlefly/export_model.py",
-    "bytes": 29532,
-    "sha256": "fc1c6afd13039dec81aa01e4dfc0d3e3ff0ae3454f769d4c8e1200f1ab1e6d83"
+    "bytes": 29730,
+    "sha256": "dab43bf2f8216f2711bd7d1e39126fb31874a062abd1ae15ae6b4543b9a4cd10"
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",
@@ -186,8 +186,8 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/web-front.png",
-    "bytes": 675121,
-    "sha256": "248391a523f9d07ef0151eac3c1480c25e11183159b0824c38d274c8de8e7cd1"
+    "bytes": 638258,
+    "sha256": "2d927b0b5a7363131d95ae3fb1783850644136d974ac9f2ddd4b91832fdc2c50"
   },
   {
     "path": "assets/3d/brundlefly/previews/web-pose-test.png",
@@ -196,8 +196,8 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/web-three-quarter.png",
-    "bytes": 660753,
-    "sha256": "6701901c7019af0e0295050214165b0db6cd495c19d4258a3415d8e82b8aafbd"
+    "bytes": 627143,
+    "sha256": "5cb4472aa6d207c723e80df4a791309dbb7d359078d890b1d1a30dd6596deb2a"
   },
   {
     "path": "assets/3d/brundlefly/render_previews.py",
@@ -216,8 +216,8 @@
   },
   {
     "path": "assets/3d/brundlefly/source/stance.json",
-    "bytes": 2738,
-    "sha256": "9ca680a07bf85533b4c44480788a8bf0434a9452e61915d1170dc6c64d2b5790"
+    "bytes": 2885,
+    "sha256": "afdace9856fbf2094641365d448ceed7fa1da492bc4d723845609c869352c97d"
   },
   {
     "path": "assets/3d/brundlefly/source/views/back.png",

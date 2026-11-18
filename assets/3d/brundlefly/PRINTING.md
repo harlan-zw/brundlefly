@@ -157,10 +157,11 @@ These steps are untested on a printed part.
 `brundlefly-web.glb` follows the contract that the site loader expects.
 
 - glTF 2.0 binary, metres, Y up. The soles are at height zero.
-- The rest shape is the stance of `assets/brand/character.png`, which is also the stance of the site's relief rig: the body is turned 0.5 radians toward screen right, and the head faces +Z with a roll. `source/stance.json` holds the stance, and `export_model.py` bakes it in. The print model keeps the straight stand.
+- The rest shape is the stance of `assets/brand/character.png`, which is also the stance of the site's relief rig. `source/stance.json` holds the stance, and `export_model.py` bakes it in. The print model keeps the straight stand.
 - In this stance the figure is 77.5 mm tall for the 80 mm build. The body spans -29.9 to 29.9 mm in X and -26.3 to 30.7 mm in Z.
-- Through the relief rig's walk cycle the long hands stay at least 4.5 mm from the legs, and the small hands at least 1.2 mm.
-- One root node, `Brundlefly`, with a scale of 0.001.
+- Through the relief rig's walk cycle the long hands stay at least 2.6 mm from the legs, and the small hands at least 1.1 mm.
+- One root node, `Brundlefly`, with a scale of 0.001 and a turn of 0.5 radians about the vertical, toward screen right. That turn is the three-quarter view of the artwork. The site changes it to turn the figure toward his path.
+- Inside the root, the body faces +Z. The head faces the same way, with a roll. The site turns the head to the viewer.
 - `Brundlefly-body`: about 64,000 triangles. That count includes about 80 bristle hairs of three triangles each; a hair takes the skin weights of the vertex under it. Texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
 - The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork.
 - `Brundlefly-eye-0` and `Brundlefly-eye-1`: eyeball nodes, material `Brundlefly-eye`. Eye 0 is on screen left. The body mesh also has dark eyeballs under them.
@@ -172,7 +173,7 @@ These steps are untested on a printed part.
 Skeleton:
 
 - One skin, 33 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
-- Every joint has an identity rest rotation: +X is screen right, +Y is up, +Z is toward the viewer.
+- Every joint has an identity rest rotation, in the axes of the root: +X is the figure's left side, +Y is up, +Z is the way the body faces.
 - Left and right are screen left and screen right. So `left-shoulder` is the figure's right shoulder.
 - Body, 25 joints: `pelvis` > `chest` > `head`. From `chest`: `left-shoulder` > `left-elbow` > `left-hand`, `left-rib` > `left-small-elbow` > `left-small-hand`, `left-wing` > `left-wing-tip`, and the same on the right. From `pelvis`: `left-hip` > `left-knee` > `left-foot`, and the same on the right.
 - Face tentacles, 8 joints under `head`: `mouthpart-0` to `mouthpart-3`, from screen left to screen right, each with a `-tip` joint.
@@ -180,7 +181,7 @@ Skeleton:
 - One clip, `Brundlefly-idle`, 4 seconds, made to loop: breathing, a small head turn, twitching small arms, swaying tentacles, fluttering wings.
 - The fingers, the toes, and the jaw have no joints.
 
-`previews/web-pose-test.png` shows a strong test pose through this rig, from the straight stand. `previews/web-front.png` and `previews/web-three-quarter.png` show the rest shape.
+`previews/web-pose-test.png` shows a strong test pose through this rig, from the straight stand. `previews/web-front.png` and `previews/web-three-quarter.png` show the rest shape with the root turn, and with the head turned to the viewer as the site does.
 
 ## Rebuild
 
