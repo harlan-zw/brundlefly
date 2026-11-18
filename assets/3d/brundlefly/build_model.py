@@ -660,6 +660,8 @@ def add_detail(f):
         disp[band] += mm(0.14) - mm(0.50) * np.exp(-((phase - 0.5) / 0.09) ** 2)
 
     f.F[near] = (f.F[near] - disp).astype(np.float32)
+    f.shade = np.zeros(f.n, dtype=np.float32)        # relief depth, for crease shading in the vertex colours
+    f.shade[near] = disp.astype(np.float32)
 
 
 def add_bristle_dimples(f):
@@ -723,6 +725,46 @@ def srgb_to_linear(hexcol):
     return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
 
 
+def shade_colours(f, pts, idx, mats, lut):
+    """Vertex colours with baked shading: dark creases, ambient occlusion, and mottled tissue.
+
+    A flat palette colour looks like plastic in a real-time scene. The field already knows
+    where the grooves are and how enclosed each point is, so the shading costs no texture.
+    """
+    colours = lut[mats].copy()
+    hi = np.array(f.n) - 1
+
+    def at(grid, p):
+        i = np.clip(np.rint(p).astype(int), 0, hi)
+        return grid[i[:, 0], i[:, 1], i[:, 2]]
+
+    # Outward normal from the field gradient.
+    grad = np.stack([at(f.F, pts + e) - at(f.F, pts - e) for e in np.eye(3)], axis=1).astype(np.float64)
+    normal = grad / np.maximum(np.linalg.norm(grad, axis=1, keepdims=True), 1e-9)
+    # Ambient occlusion: how much free space lies along the normal at two distances.
+    occlusion = np.zeros(len(pts))
+    for reach in (1.3, 3.2):
+        occlusion += np.clip(at(f.F, pts + normal * (reach / f.h)) / reach, 0.0, 1.0)
+    occlusion = 0.42 + 0.58 * (occlusion / 2)
+    # Creases: the relief depth is negative in a groove.
+    crease = np.clip(1.0 + 0.6 * at(f.shade, pts) / mm(0.3), 0.42, 1.15) if hasattr(f, "shade") else 1.0
+
+    xyz = pts * f.h + f.lo
+    x, y, z = xyz[:, 0], xyz[:, 1], xyz[:, 2]
+    mottle = 0.5 + 0.5 * (np.sin(x * 0.37 + 1.1) * np.sin(y * 0.41 + 0.3) * np.sin(z * 0.33 + 2.0)
+                          + 0.5 * np.sin(x * 0.9 + z * 0.8) * np.sin(y * 0.85 - z * 0.3))
+    flesh = mats == FLESH
+    blend = (np.clip(mottle, 0, 1) * 0.45)[:, None]
+    colours[flesh, :3] = (colours[flesh, :3] * (1 - blend[flesh]) + lut[BRUISE, :3] * blend[flesh])
+    wing = mats == WING                                 # thin membrane lighter, veins darker
+    colours[wing, :3] *= (0.78 + 0.3 * np.clip(mottle[wing], 0, 1))[:, None]
+
+    shade = (occlusion * crease)[:, None]
+    keep = (mats == EYE)[:, None]
+    colours[:, :3] = np.where(keep, colours[:, :3], colours[:, :3] * shade)
+    return colours.astype(np.float32)
+
+
 def field_to_mesh(f, name="Brundlefly"):
     grid = vdb.FloatGrid(BIG)
     grid.copyFromArray(np.ascontiguousarray(f.F))
@@ -762,8 +804,9 @@ def field_to_mesh(f, name="Brundlefly"):
     for mid, hexcol in PALETTE.items():
         lut[mid, :3] = srgb_to_linear(hexcol)
     lut[10:, :3] = lut[FLESH, :3]
+    colours = shade_colours(f, pts, idx, mats, lut)
     col = me.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
-    col.data.foreach_set("color", lut[mats].ravel())
+    col.data.foreach_set("color", colours.ravel())
     me.color_attributes.active_color = col
 
     ob = bpy.data.objects.new(name, me)
@@ -805,7 +848,7 @@ def field_to_mesh(f, name="Brundlefly"):
     attr = nt_.nodes.new("ShaderNodeVertexColor")
     attr.layer_name = "Col"
     nt_.links.new(attr.outputs["Color"], bsdf.inputs["Base Color"])
-    bsdf.inputs["Roughness"].default_value = 0.6
+    bsdf.inputs["Roughness"].default_value = 0.42      # wet tissue, not matte plastic
     me.materials.append(mat)
     return ob, scale, volume, extra
 

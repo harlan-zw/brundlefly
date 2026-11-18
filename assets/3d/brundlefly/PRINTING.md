@@ -16,7 +16,7 @@ The pose is the standing, hunched pose of `assets/brand/character.png`.
 | `brundlefly-web.glb` | Coloured model for the website: no base, no bristle dimples, thinner fingers and claws, separate eye nodes. |
 | `bristle-map.json`, `previews/bristle-map.png` | Position and direction of each bristle dimple. |
 | `validation-report.json` | Output of `validate.ts` for the two STL files. |
-| `previews/` | Front, side, back, three-quarter, and top renders. |
+| `previews/` | Front, side, back, three-quarter, and top renders of the print model, and one of the website model. |
 
 ## Dimensions
 
@@ -155,7 +155,9 @@ These steps are untested on a printed part.
 
 - glTF 2.0 binary, metres, Y up, face toward +Z. The soles are at height zero. The origin is on the ground under the pelvis.
 - One root node, `Brundlefly`, with a scale of 0.001.
-- `Brundlefly-body`: 80,000 triangles, vertex colours in `COLOR_0`, material `Brundlefly-skin`, single sided.
+- `Brundlefly-body`: 80,000 triangles, vertex colours in `COLOR_0`, material `Brundlefly-skin`, single sided, roughness 0.42.
+- The vertex colours carry baked shading: dark creases, ambient occlusion, and mottled tissue. No texture is necessary.
+- The site build stops if the file is larger than 4 MiB.
 - `Brundlefly-eye-0` and `Brundlefly-eye-1`: eyeball nodes with their origin at the eyeball centre, material `Brundlefly-eye`. Eye 0 is on screen left and is the larger eye.
 - `anchor-face`, `anchor-left-hand`, `anchor-right-hand`: empty nodes. Left and right are screen left and screen right.
 - No skeleton, no animation, no base, no bristles, no compression extension.
