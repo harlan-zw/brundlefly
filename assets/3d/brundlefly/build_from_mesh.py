@@ -397,15 +397,37 @@ VIEW_SETUP = {
 }
 
 
-def find_eyes(view, head_fit):
-    """Eye centres in model x and z, from the teal glints in the sheet's front view. Screen left first."""
+def teal_mask(view):
+    """The teal eye glints of a view: in the upper part of the figure, more blue and green than red."""
     rgb = view["rgb"]
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
     c0, c1, r0, r1 = view["box"]
     teal = (b > 0.3) & (b > r * 1.25) & (g > r * 1.05)
     teal[: r0 + int((r1 - r0) * 0.62)] = False
-    teal[r0 + int((r1 - r0) * 0.9):] = False
-    rows, cols = np.nonzero(teal)
+    teal[r0 + int((r1 - r0) * 0.93):] = False
+    return teal
+
+
+def erase_painted_eyes(view, reach=20):
+    """Replace each painted eye with the blurred colour around it.
+
+    The model has its own eyeballs. A painted eye beside an eyeball reads as a stray patch.
+    """
+    mask = teal_mask(view)
+    for _ in range(reach):                       # grow the glint to cover the whole dark eye
+        grown = mask.copy()
+        grown[1:] |= mask[:-1]
+        grown[:-1] |= mask[1:]
+        grown[:, 1:] |= mask[:, :-1]
+        grown[:, :-1] |= mask[:, 1:]
+        mask = grown
+    view["linear"] = np.where(mask[..., None], view["soft"], view["linear"])
+    return int(mask.sum())
+
+
+def find_eyes(view, head_fit):
+    """Eye centres in model x and z, from the teal glints in the sheet's front view. Screen left first."""
+    rows, cols = np.nonzero(teal_mask(view))
     if len(cols) < 20:
         return []
     split = (cols.min() + cols.max()) / 2
@@ -540,11 +562,15 @@ def main():
         stats["sheet_projection"] = {"views": record, "blend_z": [z_low, z_high]}
         front, _, head_front = fits["front"]
         spots = find_eyes(front, head_front)
-        if len(spots) == 2 and abs((spots[0][0] + spots[1][0]) / 2 - head[0]) > 1.0:
-            half = (spots[1][0] - spots[0][0]) / 2                 # keep the spacing, centre it on the head
+        stats["sheet_fit"]["front"]["eyes_from_art_x"] = [round(x, 2) for x, _ in spots]
+        # The sheet's head is turned a little, and the model's head is not. So the eyes keep the
+        # artwork's spacing and height, centred on the model's head.
+        if len(spots) == 2:
+            half = (spots[1][0] - spots[0][0]) / 2
             spots = [(head[0] - half, spots[0][1]), (head[0] + half, spots[1][1])]
-            stats["sheet_fit"]["front"]["eyes_recentred"] = True
         eyes = add_eyes(f, spots, glints=not printing)
+        for name, (view, _) in views.items():      # the eyeballs replace the painted eyes
+            erase_painted_eyes(view)
     if args.rebuild_back:
         rebuild_back(f, zmax)
     if printing:

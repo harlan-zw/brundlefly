@@ -98,10 +98,8 @@ def decimated(ob, target, name):
 # The skeleton the site names: bone, parent, joint at the head, joint at the tail.
 def bone_spec():
     spec = [("pelvis", None, "pelvis", "chest"), ("chest", "pelvis", "chest", "head"), ("head", "chest", "head", "head-end")]
-    for i in range(3):          # the three long face tentacles, two bones each
+    for i in range(4):          # the four face tentacles, two bones each
         spec += [(f"mouthpart-{i}", "head", f"mouthpart-{i}", f"mouthpart-{i}-tip"), (f"mouthpart-{i}-tip", f"mouthpart-{i}", f"mouthpart-{i}-tip", f"mouthpart-{i}-tip-end")]
-    for i in range(3, 6):       # the three short ones, one bone each
-        spec.append((f"mouthpart-{i}", "head", f"mouthpart-{i}", f"mouthpart-{i}-end"))
     for s in ("left", "right"):
         spec += [
             (f"{s}-shoulder", "chest", f"{s}-shoulder", f"{s}-elbow"), (f"{s}-elbow", f"{s}-shoulder", f"{s}-elbow", f"{s}-hand"),
@@ -139,7 +137,7 @@ def distance_weights(body, segments):
 
 
 def add_skeleton(body, joints, shift):
-    """Bind the body to the skeleton (25 body bones and 9 face tentacle bones) and add an idle clip."""
+    """Bind the body to the skeleton (25 body bones and 8 face tentacle bones) and add an idle clip."""
     scene = bpy.context.scene
     J = {n: Vector(p) - Vector((shift[0], shift[1], 0.0)) for n, p in joints.items()}
     data = bpy.data.armatures.new("Brundlefly-skeleton")
@@ -207,9 +205,8 @@ def add_skeleton(body, joints, shift):
         motion[f"{s}-small-elbow"] = [(0, deg(6.0), 2, 1.5 + sign)]
         motion[f"{s}-wing"] = [(2, sign * deg(6.0), 2, 0.0)]
         motion[f"{s}-wing-tip"] = [(2, sign * deg(8.0), 2, 0.7)]
-    for i in range(6):          # the face tentacles sway out of step with each other
+    for i in range(4):          # the face tentacles sway out of step with each other
         motion[f"mouthpart-{i}"] = [(0, deg(7.0), 2, 0.9 * i), (2, deg(4.0), 1, 1.7 * i)]
-    for i in range(3):
         motion[f"mouthpart-{i}-tip"] = [(0, deg(9.0), 2, 0.9 * i + 0.8)]
     action = bpy.data.actions.new("Brundlefly-idle")
     arm.animation_data_create().action = action
@@ -233,7 +230,7 @@ def add_skeleton(body, joints, shift):
     return arm
 
 
-def bake_sheet_texture(body, projection, views_dir, size):
+def bake_sheet_texture(body, projection, views_dir, size, eyes):
     """Replace the vertex colours with a texture that carries the sheet at its own resolution.
 
     Vertex colours can only be as sharp as the mesh is dense. A texture keeps every pixel
@@ -275,11 +272,18 @@ def bake_sheet_texture(body, projection, views_dir, size):
     z_low, z_high = projection["blend_z"]
     views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high))
              for name, fit in projection["views"].items()}
+    for view, _ in views.values():
+        bfm.erase_painted_eyes(view)             # the eyeballs replace the painted eyes
     colour = bfm.sheet_colour_fn(views)
     field = position / projection["mesh_scale"]              # texel positions, back in the build's coordinates
     field[:, 2] += projection["field_zmin"]
     linear = np.tile(bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.FLESH]), (size * size, 1))
     linear[baked] = colour(field[baked], normal[baked])
+    # Under and just around each eyeball the texture is dark, so no painted eye shows beside the sphere.
+    dark = bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.EYE])
+    for eye in eyes:
+        offset = (position - np.array(eye["centre_mm"])) / (np.array(eye["radii_mm"]) * 1.45)
+        linear[baked & ((offset ** 2).sum(axis=1) < 1.0)] = dark
     srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
 
     albedo = bpy.data.images.new("Brundlefly-albedo", size, size, alpha=False)
@@ -316,7 +320,7 @@ def export_web(src, args):
 
     textured = "sheet_projection" in stats and not args.no_texture
     if textured:
-        texels = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size)
+        texels = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"])
         print(f"TEXTURE {args.texture_size} px, {texels} texels on the surface")
 
     root = bpy.data.objects.new("Brundlefly", None)
