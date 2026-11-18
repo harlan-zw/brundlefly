@@ -7,7 +7,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 
 interface Args { dir: string, work: string }
 
@@ -24,14 +24,20 @@ function run(cmd: string, args: string[]): string {
   return execFileSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 })
 }
 
-function blenderChecks(stl: string, out: string, height: number): unknown {
-  run('flatpak', ['run', 'org.blender.Blender', '-b', '--python', join(import.meta.dirname, 'validate_mesh.py'), '--', '--stl', stl, '--out', out, '--expect-height', String(height)])
-  return JSON.parse(readFileSync(out, 'utf8'))
+// The report names each file without its directory, so it carries no machine path.
+function readCheck(out: string): Record<string, unknown> {
+  const result: Record<string, unknown> = JSON.parse(readFileSync(out, 'utf8'))
+  return { ...result, file: basename(String(result.file)) }
 }
 
-function thickness(stl: string, out: string): unknown {
+function blenderChecks(stl: string, out: string, height: number): Record<string, unknown> {
+  run('flatpak', ['run', 'org.blender.Blender', '-b', '--python', join(import.meta.dirname, 'validate_mesh.py'), '--', '--stl', stl, '--out', out, '--expect-height', String(height)])
+  return readCheck(out)
+}
+
+function thickness(stl: string, out: string): Record<string, unknown> {
   run('uv', ['run', '--no-project', '--with', 'trimesh', '--with', 'scipy', '--with', 'networkx', '--with', 'numpy', 'python', join(import.meta.dirname, 'check_thickness.py'), stl, out])
-  return JSON.parse(readFileSync(out, 'utf8'))
+  return readCheck(out)
 }
 
 interface Slice { filament_cm3: number, print_time: string }

@@ -1,7 +1,7 @@
 {
  "note": "Automated checks only. A print service has not approved this model. Slicer values are for a generic 0.4 mm FDM profile, not a tested TPU profile.",
  "mesh_80mm": {
-  "file": "/home/harlan/pkg/brundlefly.feat-figurine-3d-print/assets/3d/brundlefly/brundlefly-80mm.stl",
+  "file": "brundlefly-80mm.stl",
   "dimensions_mm": [
    69.16,
    45.78,
@@ -32,7 +32,7 @@
   "passes_mesh_checks": true
  },
  "mesh_100mm": {
-  "file": "/home/harlan/pkg/brundlefly.feat-figurine-3d-print/assets/3d/brundlefly/brundlefly-100mm.stl",
+  "file": "brundlefly-100mm.stl",
   "dimensions_mm": [
    86.45,
    57.23,
@@ -63,7 +63,7 @@
   "passes_mesh_checks": true
  },
  "thickness_80mm": {
-  "file": "/home/harlan/pkg/brundlefly.feat-figurine-3d-print/assets/3d/brundlefly/brundlefly-80mm.stl",
+  "file": "brundlefly-80mm.stl",
   "pitch_mm": 0.25,
   "solid_volume_cm3": 21.57,
   "checks": {

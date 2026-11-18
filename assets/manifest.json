@@ -196,8 +196,8 @@
   },
   {
     "path": "assets/3d/brundlefly/validate.ts",
-    "bytes": 3722,
-    "sha256": "c1df3aacfef798a620f40cbcaeb3bfe125bd1ee5e9f3cb0c40256ae6ad529cb0"
+    "bytes": 4004,
+    "sha256": "e8295b4dfd788fc3d4885eb4d683c9fccf589802296d6da68d09fd6b370dc9ed"
   },
   {
     "path": "assets/3d/brundlefly/validate_mesh.py",
@@ -206,7 +206,7 @@
   },
   {
     "path": "assets/3d/brundlefly/validation-report.json",
-    "bytes": 3512,
-    "sha256": "837051bb48fe32c452fd3d75b30b2dc4b119c3e6e88db5245c9bd48795d06159"
+    "bytes": 3296,
+    "sha256": "57c45bc7b406616b020410523ae4865be26b9cbbc3e55a722e8fc6fb2f8abcd8"
   }
 ]
