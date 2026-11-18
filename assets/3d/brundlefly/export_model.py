@@ -16,7 +16,7 @@ import math
 import bmesh
 import bpy
 import numpy as np
-from mathutils import Quaternion, Vector
+from mathutils import Matrix, Quaternion, Vector
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -26,13 +26,17 @@ from mathutils.kdtree import KDTree
 
 # The eyeball nodes are this much larger than the eyeballs fused into the body,
 # so the decimated body surface never shows through a node.
-EYE_NODE_SCALE = 1.08
-# The texture is dark out to this many eyeball radii. The sheet's eyelids start just past it.
-EYE_DARK_SCALE = 1.15
-# Linear colours of the eyeball node: its rim, and the middle of its iris.
-# Both are measured in the sheet's front view: the dark part of the eye opening, and the mean of the iris.
+EYE_NODE_SCALE = 1.02
+# The texture is dark inside each socket, out to this many socket radii. The sheet's eyelids start just past it.
+EYE_DARK_SCALE = 1.12
+# Linear colours of an eyeball node. The globe and the iris are measured in the sheet's front view:
+# the dark part of the eye opening, and the mean of the iris. The pupil is darker than the globe.
 EYE_RIM = (0.010, 0.011, 0.014)
 EYE_IRIS = (0.045, 0.115, 0.130)
+EYE_PUPIL = (0.002, 0.002, 0.003)
+# The pupil and the iris ring on the front of the eyeball: their angles from the front, in radians.
+EYE_PUPIL_ANGLE = 0.17
+EYE_IRIS_ANGLE = 0.50
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
 BRISTLE_COLOUR = (0.115, 0.030, 0.022)
 BRISTLE_RADIUS_MM = 0.17
@@ -153,12 +157,12 @@ def distance_weights(body, segments):
 
 
 def eye_reach(points, eye):
-    """Distance of each point from an eyeball centre, in eyeball radii. 1.0 is the eyeball surface."""
+    """Distance of each point from the middle of an eye socket, in socket radii. 1.0 is the edge of the socket."""
     yaw = math.radians(eye.get("yaw_deg", 0.0))
-    offset = points - np.array(eye["centre_mm"])
+    offset = points - np.array(eye["socket_centre_mm"])
     along = offset[:, 0] * math.cos(yaw) + offset[:, 1] * math.sin(yaw)
     across = -offset[:, 0] * math.sin(yaw) + offset[:, 1] * math.cos(yaw)
-    local = np.stack([along, across, offset[:, 2]], axis=1) / np.array(eye["radii_mm"])
+    local = np.stack([along, across, offset[:, 2]], axis=1) / np.array(eye["socket_radii_mm"])
     return np.sqrt((local ** 2).sum(axis=1))
 
 
@@ -337,7 +341,8 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
     # Under each eyeball node the texture is dark, so no lit skin shows at the edge of the node.
     dark = bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.EYE])
     for eye in eyes:
-        linear[baked & (eye_reach(position, eye) < EYE_DARK_SCALE)] = dark
+        on_ball = np.sqrt(((position - np.array(eye["centre_mm"])) ** 2).sum(axis=1)) < eye["radius_mm"] * 1.06
+        linear[baked & ((eye_reach(position, eye) < EYE_DARK_SCALE) | on_ball)] = dark
     # One block of texels that no surface uses takes the bristle colour. Every hair maps to it.
     # The block lines up with the 8 pixel grid of the JPEG, so the colour does not bleed.
     used = baked.reshape(size, size)
@@ -509,34 +514,41 @@ def export_web(src, args):
     eye_mat.use_backface_culling = True
     bsdf = next(n for n in eye_mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
     bsdf.inputs["Roughness"].default_value = 0.12
-    # The colour is in the vertices: a teal iris that fades into a blue-black rim, as in the sheet.
+    # The colour is in the vertices: a dark globe with a teal iris ring and a dark pupil.
     iris = eye_mat.node_tree.nodes.new("ShaderNodeVertexColor")
     iris.layer_name = "Col"
     eye_mat.node_tree.links.new(iris.outputs["Color"], bsdf.inputs["Base Color"])
     for index, eye in enumerate(site["eyes"]):        # 0 is screen left and larger
         mesh = bpy.data.meshes.new(f"Brundlefly-eye-{index}")
         bm = bmesh.new()
-        bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=16, radius=1.0)
+        bmesh.ops.create_uvsphere(bm, u_segments=48, v_segments=32, radius=1.0)
+        # The sphere's poles turn to the front and the back, so the rings of vertices run around the
+        # line of sight and the pupil and the iris come out round.
+        bmesh.ops.rotate(bm, verts=bm.verts, cent=(0.0, 0.0, 0.0), matrix=Matrix.Rotation(math.radians(90), 3, "X"))
         for face in bm.faces:
             face.smooth = True
         bm.to_mesh(mesh)
         bm.free()
         layer = mesh.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
-        # The iris is where the eyeball faces the front of the figure, also when the node is turned.
-        yaw = math.radians(eye.get("yaw_deg", 0.0))
-        front = Vector((-math.sin(yaw) * eye["radii_mm"][0], -math.cos(yaw) * eye["radii_mm"][1], 0.0)).normalized()
+        # The node looks along -Y here, which is +Z in the exported file: the way the head faces.
+        # A dark globe, a teal iris ring, and a dark pupil. The site can turn the node to aim the eye.
+        front = Vector((0.0, -1.0, 0.0))
+
+        def band(value, edge, width=0.05):
+            t = min(max((edge + width - value) / (2 * width), 0.0), 1.0)
+            return t * t * (3.0 - 2.0 * t)
+
         for vertex in mesh.vertices:
-            off_axis = (vertex.co - front).length
-            t = min(max((0.60 - off_axis) / 0.48, 0.0), 1.0)
-            t = t * t * (3.0 - 2.0 * t)
-            layer.data[vertex.index].color = tuple(a + (b - a) * t for a, b in zip(EYE_RIM, EYE_IRIS)) + (1.0,)
+            angle = vertex.co.normalized().angle(front)
+            iris, pupil = band(angle, EYE_IRIS_ANGLE), band(angle, EYE_PUPIL_ANGLE)
+            colour = [rim + (ring - rim) * iris for rim, ring in zip(EYE_RIM, EYE_IRIS)]
+            layer.data[vertex.index].color = tuple(c + (dot - c) * pupil for c, dot in zip(colour, EYE_PUPIL)) + (1.0,)
         mesh.materials.append(eye_mat)
         ob = bpy.data.objects.new(f"Brundlefly-eye-{index}", mesh)
         scene.collection.objects.link(ob)
         cx, cy, cz = eye["centre_mm"]
         ob.location = (cx - px, cy - py, cz)
-        ob.scale = [r * EYE_NODE_SCALE for r in eye["radii_mm"]]
-        ob.rotation_euler = (0.0, 0.0, math.radians(eye.get("yaw_deg", 0.0)))
+        ob.scale = [eye["radius_mm"] * EYE_NODE_SCALE] * 3
         ob.parent = root
         parts.append(ob)
     for name, (ax, ay, az) in site["anchors"].items():

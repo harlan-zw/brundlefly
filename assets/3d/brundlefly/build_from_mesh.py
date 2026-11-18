@@ -678,13 +678,15 @@ def sheet_colour_fn(views):
     return colour
 
 
-# The fused eyeball is this share of the painted eye opening. The website's eyeball node is
-# a little larger than the fused eyeball, so the node matches the opening.
-EYEBALL_SHARE = 0.93
-# How far the eyeball centre sits behind the face surface, as a share of the eyeball's depth radius.
-EYE_INSET = 0.8
-# The print model has one colour, so shape alone must show the eyes. Its eyeballs sit farther out.
-PRINT_EYE_INSET = 0.35
+# The eyeball's radius, as a multiple of the half width of the painted eye opening. The eyeball is
+# nearly as wide as the opening, so the lids cover its top and its bottom, as in the sheet.
+EYEBALL_RADIUS = 0.95
+# How deep the opening is cut, as a multiple of its half height. The cut reaches the eyeball.
+SOCKET_DEPTH = 2.5
+# How far the front of the eyeball stands out of the face, in millimetres. Negative is behind the lids.
+# The print model has one colour, so shape alone must show the eyes: its eyeballs stand a little proud.
+WEB_EYE_PROUD = -0.1
+PRINT_EYE_PROUD = 0.15
 # The sheet draws the smaller wing on the figure's left, which is +X.
 SMALL_WING_SIDE = 1.0
 
@@ -701,12 +703,15 @@ def face_slope(f, eye):
     return float(np.polyfit(xs, ys, 1)[0]) if len(xs) >= 6 else 0.0
 
 
-def add_eyes(f, eyes, middle, inset=EYE_INSET):
-    """Dark eyeballs where the sheet has its eyes, as wide and as tall as the sheet draws them.
+def add_eyes(f, eyes, middle, proud):
+    """A round eyeball behind an almond opening where the sheet has each eye.
 
-    Each eyeball turns about the vertical axis to lie along the face, so its outer end does
-    not stand clear of the head. Both eyes turn by the same angle, away from the middle of
-    the face. Returns the centre, the three radii, and the turn of each one.
+    The opening is as wide and as tall as the painted eye opening, and it lies along the face.
+    It is cut through the skin down to a sphere that sits behind it. The skin above and below
+    the opening covers the sphere, so it reads as the lids, and the corners of the opening
+    stay empty. proud is how far the front of the eyeball stands out of the face, in
+    millimetres. Both openings turn by the same angle, away from the middle.
+    Returns one record for each eye: the eyeball centre and radius, and the opening.
     """
     turn = float(np.mean([abs(math.atan(face_slope(f, eye))) for eye in eyes])) if eyes else 0.0
     turn = min(turn, math.radians(35))
@@ -715,12 +720,14 @@ def add_eyes(f, eyes, middle, inset=EYE_INSET):
         hit = f.raycast(bm.V(eye["x"], -45.0, eye["z"]), bm.V(0, 1, 0), max_dist=60.0)
         if hit is None:
             continue
-        radii = bm.V(eye["half_width"], eye["half_height"], eye["half_height"]) * EYEBALL_SHARE
         yaw = turn if eye["x"] > middle else -turn
         rot = bm.rot_xyz(0.0, 0.0, yaw)
-        centre = hit + rot @ bm.V(0, radii[1] * inset, 0)         # set into the face, as the lids in the sheet suggest
-        f.blob(centre, radii, k=0, mat=bm.EYE, rot=rot)
-        out.append((centre, radii, yaw))
+        socket = bm.V(eye["half_width"], eye["half_height"] * SOCKET_DEPTH, eye["half_height"])
+        radius = eye["half_width"] * EYEBALL_RADIUS
+        f.carve_blob(hit, socket, k=0.3, rot=rot)
+        centre = hit + rot @ bm.V(0, radius - proud, 0)
+        f.blob(centre, bm.V(radius, radius, radius), k=0, mat=bm.EYE)
+        out.append({"centre": centre, "radius": radius, "socket_centre": hit, "socket": socket, "yaw": yaw})
     return out
 
 
@@ -768,6 +775,7 @@ def main():
     stats = {"source": os.path.basename(args.source), "variant": args.variant, "voxel_mm": h, "source_scale_mm_per_unit": round(float(scale), 3),
              "small_shells_dropped": dropped, "thin_part_faces_kept": kept_faces}
     f.dimples, f.eyes = [], []
+    eye_spots = []
     solid_z = f.ax[2][np.nonzero((f.F < 0).any(axis=(0, 1)))[0]]
     zmax = float(solid_z.max())
     head = band_centre(f, zmax, 0.80, 0.99)
@@ -814,7 +822,7 @@ def main():
         # The print model keeps its wing. Its membrane is rebuilt from the removed thin parts, and
         # the cut only frays the tip there: the thick leading edge is not a thin part.
         stats["wing_trim_mm3"] = round(trim_small_wing(f, front, views["front"][1], zmax), 1)
-        eyes = add_eyes(f, spots, head[0], PRINT_EYE_INSET if printing else EYE_INSET)
+        eye_spots = spots
         erase_side_eyes(views)
     if args.rebuild_back:
         rebuild_back(f, zmax)
@@ -823,6 +831,8 @@ def main():
         stats["base"] = add_base(f)
         if args.dimples:
             f.dimples = add_dimples(f, zmax)
+    # The eyes come after the thickening step. That step grows thin edges, and it would close the sockets.
+    eyes = add_eyes(f, eye_spots, head[0], PRINT_EYE_PROUD if printing else WEB_EYE_PROUD)
     anchors = {}
     face = f.raycast(head + bm.V(0, -40.0, -2.0), bm.V(0, 1, 0), max_dist=60.0)
     if face is not None:
@@ -844,9 +854,11 @@ def main():
         stats["sheet_projection"].update({"field_zmin": f.mesh_zmin, "mesh_scale": float(mesh_scale)})
     site = f.site_mm
     site["eyes"] = []
-    for centre, radius, yaw in eyes:
-        position = [round(float(c) * mesh_scale, 3) for c in (centre - bm.V(0, 0, f.mesh_zmin))]
-        site["eyes"].append({"centre_mm": position, "radii_mm": [round(float(r) * mesh_scale, 3) for r in radius], "yaw_deg": round(math.degrees(yaw), 2)})
+    to_mm = lambda point: [round(float(c) * mesh_scale, 3) for c in (point - bm.V(0, 0, f.mesh_zmin))]
+    for eye in eyes:
+        site["eyes"].append({"centre_mm": to_mm(eye["centre"]), "radius_mm": round(float(eye["radius"]) * mesh_scale, 3),
+                             "socket_centre_mm": to_mm(eye["socket_centre"]), "socket_radii_mm": [round(float(r) * mesh_scale, 3) for r in eye["socket"]],
+                             "yaw_deg": round(math.degrees(eye["yaw"]), 2)})
     # Where each bristle stood on the website model. The export puts a thin hair there.
     site["bristles"] = [{"root_mm": [round(float(c) * mesh_scale, 3) for c in (root - bm.V(0, 0, f.mesh_zmin))],
                          "tip_mm": [round(float(c) * mesh_scale, 3) for c in (tip - bm.V(0, 0, f.mesh_zmin))]} for root, tip in hairs]
