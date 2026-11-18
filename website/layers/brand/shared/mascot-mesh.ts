@@ -22,15 +22,17 @@ const maxHeadPitch = 0.35
 const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value))
 const restRotation = new Quaternion()
 const atRest = (joint: Object3D) => joint.quaternion.angleTo(restRotation) < 1e-3
+type BodyJoints = { _tag: 'Ok', joints: Map<BodyJointName, Object3D> } | { _tag: 'Err', reason: string }
 /** The pose code needs every body joint by name, each with an identity rest rotation. A file that lacks one keeps its own clip. */
-function findBodyJoints(scene: Object3D) {
+function findBodyJoints(scene: Object3D): BodyJoints {
   const joints = new Map<BodyJointName, Object3D>()
   for (const name of bodyJointNames) {
     const joint = scene.getObjectByName(name)
-    if (!joint || !atRest(joint)) return undefined
+    if (!joint) return { _tag: 'Err', reason: `The file has no joint named ${name}.` }
+    if (!atRest(joint)) return { _tag: 'Err', reason: `The joint ${name} has a rest rotation. The pose code needs an identity rest rotation.` }
     joints.set(name, joint)
   }
-  return joints
+  return { _tag: 'Ok', joints }
 }
 /** Face tentacles, from screen left to right. The relief rig has none, so they have their own motion. */
 function findMouthparts(scene: Object3D) {
@@ -88,16 +90,19 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     fit.add(face)
   }
   const faceAnchor = face
-  const bodyJoints = findBodyJoints(scene)
+  const found = findBodyJoints(scene)
+  const bodyJoints = found._tag === 'Ok' ? found.joints : undefined
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
   // The rig contract gives every joint an identity rest rotation, so the head looks along +Z of its parent at rest.
   const head = scene.getObjectByName('head')
   const clipPose = new Quaternion()
   const written = new Quaternion(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
   const lookPose = new Quaternion()
+  const habitPose = new Quaternion()
   const toTarget = new Vector3()
   const turn = new Euler()
-  function turnHead(look?: MeshMascotLook) {
+  /** `habit` is the head turn of a running mannerism. It rides on the look, so he can tilt his head while he watches the visitor. */
+  function turnHead(look?: MeshMascotLook, habit?: readonly [number, number, number]) {
     if (!head?.parent) return
     // The mixer writes a joint only when its clip value changes. A pose that differs from the last one written here is a new clip pose.
     if (!head.quaternion.equals(written)) clipPose.copy(head.quaternion)
@@ -108,7 +113,9 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       head.parent.worldToLocal(toTarget.copy(look.target)).sub(head.position)
       const yaw = clamp(Math.atan2(toTarget.x, toTarget.z), maxHeadYaw)
       const pitch = clamp(-Math.atan2(toTarget.y, Math.hypot(toTarget.x, toTarget.z)), maxHeadPitch)
-      head.quaternion.slerp(lookPose.setFromEuler(turn.set(pitch, yaw, look.tilt, 'YXZ')), weight)
+      lookPose.setFromEuler(turn.set(pitch, yaw, look.tilt, 'YXZ'))
+      if (habit) lookPose.multiply(habitPose.setFromEuler(turn.set(habit[0], habit[1], habit[2], 'XYZ')))
+      head.quaternion.slerp(lookPose, weight)
     }
     written.copy(head.quaternion)
   }
@@ -152,8 +159,10 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
           0, Math.sin(phase + index * 1.7) * 0.07 * body.calm)
         tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2, 0, 0)
       })
-      turnHead(look)
+      turnHead(look, input.mannerism?.turns.head)
     } : undefined,
+    /** Why the file cannot take the pose code. Undefined when it can. */
+    poseGap: found._tag === 'Err' ? found.reason : undefined,
     dispose() {
       mixer?.stopAllAction()
       mixer?.uncacheRoot(scene)

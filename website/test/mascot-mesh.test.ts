@@ -219,8 +219,27 @@ test('the head turn layers over the shared pose code and does not accumulate', (
 test('a mesh that lacks a body joint, or has one turned at rest, keeps its own motion', () => {
   const missing = jointedModel()
   missing.joint('left-foot').removeFromParent()
-  assert.equal(ok(createMeshMascot({ scene: missing.scene, animations: [] }, 2.5)).pose, undefined)
+  const footless = ok(createMeshMascot({ scene: missing.scene, animations: [] }, 2.5))
+  assert.equal(footless.pose, undefined)
+  assert.match(footless.poseGap ?? '', /left-foot/)
   const turned = jointedModel()
   turned.joint('chest').rotation.x = 0.3
-  assert.equal(ok(createMeshMascot({ scene: turned.scene, animations: [] }, 2.5)).pose, undefined)
+  const hunched = ok(createMeshMascot({ scene: turned.scene, animations: [] }, 2.5))
+  assert.equal(hunched.pose, undefined)
+  assert.match(hunched.poseGap ?? '', /chest/)
+  assert.equal(ok(createMeshMascot({ scene: jointedModel().scene, animations: [] }, 2.5)).poseGap, undefined)
+})
+
+test('a habit keeps its head motion while the head watches the visitor', () => {
+  const { scene, joint } = jointedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  // The watched point is straight ahead, so every tilt of the head comes from the habit.
+  const look = { target: mascot.facePoint(new Vector3()).add(new Vector3(0, 0, 10)), weight: 1, tilt: 0 }
+  const tilt = poseMannerisms([{ mannerism: { _tag: 'HeadTilt' }, age: 0.9 }])
+  for (let frame = 0; frame < 3; frame++) mascot.pose!({ ...standing, mannerism: tilt }, look)
+  const up = new Vector3(0, 1, 0).applyQuaternion(joint('head').quaternion)
+  assert.ok(Math.abs(Math.atan2(up.x, up.y)) > 0.25, 'The head tilt must show while he watches the visitor.')
+  mascot.pose!(standing, look)
+  const settled = new Vector3(0, 1, 0).applyQuaternion(joint('head').quaternion)
+  assert.ok(Math.abs(Math.atan2(settled.x, settled.y)) < 0.01, 'The tilt must end with the habit.')
 })

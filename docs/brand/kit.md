@@ -334,6 +334,7 @@ If the file has the relief rig's 25 body joints, each with an identity rest rota
 The model then idles, walks the same route, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
 It has no jaw, brow, or eyelid joints, so it does not blink or change expression.
 Any other file loops its Brundlefly-idle clip, or sways about its feet if it has no clip. That model stands at the mascot start point.
+The scene logs the joint that stopped the pose code, and reports the motion in its data-mascot-motion attribute: posed, clip, or sway.
 If the file has a joint named head, the head turns to the camera while a visitor hovers or the dialog is open. A hover also tilts it.
 A click anywhere in its hover area opens the dialog, because the model has gaps between its limbs.
 A node named Brundlefly-base is removed. An empty node named anchor-face sets the conversation close-up.

@@ -30,6 +30,8 @@ const mascotMode: MascotMode = requestedMascot === 'sprite' || requestedMascot =
 const spriteMascot = mascotMode === 'sprite'
 // The scene reports the mascot it shows. A mesh that cannot load shows the relief rig.
 const shownMascot = ref<MascotMode>()
+// How the visible mascot moves: the relief rig's pose code, the file's own clip, or a whole-body sway.
+const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
 const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
@@ -282,6 +284,8 @@ watch(canvas, async (element) => {
   // A mesh with the relief rig's joints takes the relief rig's pose code. Any other mesh plays its own clip or sway.
   const meshPose = mascot._tag === 'Mesh' ? mascot.pose : undefined
   const walks = mascot._tag === 'Relief' || meshPose !== undefined
+  mascotMotion.value = walks ? 'posed' : mascot._tag === 'Mesh' && mascot.motion._tag === 'Clip' ? 'clip' : 'sway'
+  if (mascot._tag === 'Mesh' && mascot.poseGap) console.warn(`The Brundlefly mesh keeps its own motion. ${mascot.poseGap}`)
   let lastReaction = reaction
   let reactionStarted = 0
   // Only the relief rig has hand joints. The mesh performs no habit, so it never needs a hand cue.
@@ -420,7 +424,7 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-vignette" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
