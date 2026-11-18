@@ -627,6 +627,8 @@ def sheet_colour_fn(views):
 EYEBALL_SHARE = 0.93
 # How far the eyeball centre sits behind the face surface, as a share of the eyeball's depth radius.
 EYE_INSET = 0.8
+# The print model has one colour, so shape alone must show the eyes. Its eyeballs sit farther out.
+PRINT_EYE_INSET = 0.35
 # The sheet draws the smaller wing on the figure's left, which is +X.
 SMALL_WING_SIDE = 1.0
 
@@ -643,7 +645,7 @@ def face_slope(f, eye):
     return float(np.polyfit(xs, ys, 1)[0]) if len(xs) >= 6 else 0.0
 
 
-def add_eyes(f, eyes, middle):
+def add_eyes(f, eyes, middle, inset=EYE_INSET):
     """Dark eyeballs where the sheet has its eyes, as wide and as tall as the sheet draws them.
 
     Each eyeball turns about the vertical axis to lie along the face, so its outer end does
@@ -660,7 +662,7 @@ def add_eyes(f, eyes, middle):
         radii = bm.V(eye["half_width"], eye["half_height"], eye["half_height"]) * EYEBALL_SHARE
         yaw = turn if eye["x"] > middle else -turn
         rot = bm.rot_xyz(0.0, 0.0, yaw)
-        centre = hit + rot @ bm.V(0, radii[1] * EYE_INSET, 0)     # set into the face, as the lids in the sheet suggest
+        centre = hit + rot @ bm.V(0, radii[1] * inset, 0)         # set into the face, as the lids in the sheet suggest
         f.blob(centre, radii, k=0, mat=bm.EYE, rot=rot)
         out.append((centre, radii, yaw))
     return out
@@ -755,7 +757,7 @@ def main():
         # The print model keeps its wing. Its membrane is rebuilt from the removed thin parts, and
         # the cut only frays the tip there: the thick leading edge is not a thin part.
         stats["wing_trim_mm3"] = round(trim_small_wing(f, front, views["front"][1], zmax), 1)
-        eyes = add_eyes(f, spots, head[0])
+        eyes = add_eyes(f, spots, head[0], PRINT_EYE_INSET if printing else EYE_INSET)
         erase_side_eyes(views)
     if args.rebuild_back:
         rebuild_back(f, zmax)
