@@ -15,6 +15,6 @@
     "num_chunks": 8000,
     "texture": false
   },
-  "usage": "Base shape for the print model and the website model. assets/3d/brundlefly/build_from_mesh.py removes the bristle spikes, thickens thin parts, and adds the base and the bristle dimples.",
+  "usage": "Base shape for the print model and the website model. assets/3d/brundlefly/build_from_mesh.py removes the bristle spikes, thickens thin parts, and adds the base.",
   "licence_note": "The Space runs Tencent's Hunyuan3D-2.1 model. Its community licence sets terms for the model and for use of its output. Nobody reviewed that licence for this project. Check it before commercial use of this mesh."
 }

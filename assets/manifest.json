@@ -111,28 +111,23 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 11034,
-    "sha256": "f151b56e61c485d4d7087a04e4801a1c8ddb0c66d0a8b85cd4064972527c75f6"
-  },
-  {
-    "path": "assets/3d/brundlefly/bristle-map.json",
-    "bytes": 2491,
-    "sha256": "c23f983323cdf67447b48a0546a907020e8f397ab4755b6d4b855dc9cdac25ba"
+    "bytes": 10295,
+    "sha256": "1ac24c5e0e528992361fff30ebed2eec77b9f215817bbd9187a13d0375277d9f"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
     "bytes": 10000084,
-    "sha256": "2d11fde21d0415cc3a50a273e837642fbfe3bebe19eaf390196dd0c8f5c4a68c"
+    "sha256": "e09b6e0ab19b5e6524255eb252cd6a9a09dcba34ef771e44c6a2f32f7a7254e9"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-80mm.stl",
     "bytes": 10000084,
-    "sha256": "15641a5bd155ba0afb67cc0f5eb4d883a2221c065bbd0e70f0708d320c9ae6cd"
+    "sha256": "dabba3c00518e3a018daab8f4ea88242151a70b31f67c4961e62df62641be2c0"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-preview.glb",
     "bytes": 2880716,
-    "sha256": "2ffa6b1a9f6d523fd8a9a63e71ed5be9171df3a65423d3d74d3abf278b65b215"
+    "sha256": "6f26cb494cdb36c47499cef54c3bed56e05816b506512e83526f94724280667d"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
@@ -141,13 +136,13 @@
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
-    "bytes": 6468691,
-    "sha256": "9c75639ac266aa887403c8dbfc990402a2b9c127e884e3a4d16219428c6178ea"
+    "bytes": 6475624,
+    "sha256": "160b56a065daaa32985b29449ab6e29d8806997948fb94b7815acea7715d9b71"
   },
   {
     "path": "assets/3d/brundlefly/build_from_mesh.py",
-    "bytes": 12125,
-    "sha256": "a163d8894042a1079a2b73e6f1bf8e82edcb25297bbe54d7f44c9e22a07c934c"
+    "bytes": 12220,
+    "sha256": "2b910be927486bfbfe257069b624db199b85ab0a8c828a0d3f7bd566e9d62f02"
   },
   {
     "path": "assets/3d/brundlefly/build_model.py",
@@ -166,33 +161,28 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",
-    "bytes": 516488,
-    "sha256": "2e88e4249e47734f02b954f28d68c941eab2ce9d35162eb95e2abea659d719e5"
-  },
-  {
-    "path": "assets/3d/brundlefly/previews/bristle-map.png",
-    "bytes": 1167469,
-    "sha256": "641996e6ae451774f40e90d99ef389ec05c207f2d0323c8c424ae3a324585ffe"
+    "bytes": 514410,
+    "sha256": "3aba5d430f4b073fa29805a62fb878caf4e52e790b27bf420775b3f0712e5bbf"
   },
   {
     "path": "assets/3d/brundlefly/previews/front.png",
-    "bytes": 517840,
-    "sha256": "c10377289960b85329b72b7bd8bdadc091386f230118d9e6ecfa44f9de917c16"
+    "bytes": 518377,
+    "sha256": "0177f7f1b0a49846177e0a93b7c1000297fc3ccd1f7bab5cb9fedd33430ea9de"
   },
   {
     "path": "assets/3d/brundlefly/previews/side.png",
-    "bytes": 494840,
-    "sha256": "c9655f868f1aa137947cdd4635c77630ccfcc036c34ab45fbc8c5b24aac225a4"
+    "bytes": 493199,
+    "sha256": "d6397f390e3476bd6d3fc877ec058d3c291b2473c365c25b93d8a51af648eac0"
   },
   {
     "path": "assets/3d/brundlefly/previews/three-quarter.png",
-    "bytes": 530308,
-    "sha256": "a7fc07daffa0feb8cff0af9e294c68bc3bb988c19ed86726c4fe93dbd598ff41"
+    "bytes": 529338,
+    "sha256": "b437c36e8dbd8ef8554869b269f9141eff29a94c65191f958f9a1c0a10344332"
   },
   {
     "path": "assets/3d/brundlefly/previews/top.png",
-    "bytes": 474555,
-    "sha256": "a6de1596dd4a6f184e4235287d3428a8ca14a94737b7046c01b38c025f397fd1"
+    "bytes": 471662,
+    "sha256": "f59a770e4265520af35c601301a8bf07442e0a24988c6b7009cb5757c3b14142"
   },
   {
     "path": "assets/3d/brundlefly/previews/web-three-quarter.png",
@@ -221,12 +211,12 @@
   },
   {
     "path": "assets/3d/brundlefly/validation-report.json",
-    "bytes": 8654,
-    "sha256": "e75a96cdc99fb01b69a9d189bc5754b1841fcc626cc66404dde8f6761fdc6271"
+    "bytes": 8696,
+    "sha256": "e012f0f71e25d53e985f0c8ad39afc985308ed8344ec3b98baf3c8a895827810"
   },
   {
     "path": "assets/prompts/figurine.json",
-    "bytes": 953,
-    "sha256": "5962f51763686dbedec5e6201d8e059f62f3d868ebad7670c305e1b23b9bd4da"
+    "bytes": 929,
+    "sha256": "36303ee18191a2c073e8799ccbe8123ed91a6192f775f02593a9b5af77ecd911"
   }
 ]

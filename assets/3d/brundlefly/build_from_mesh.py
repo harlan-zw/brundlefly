@@ -2,7 +2,7 @@
 
 The base mesh comes from an image-to-3D model that read the sculpt reference image.
 This script turns it into a printable figure: it removes the bristle spikes, thickens
-thin parts to the print minimum, adds the base and the bristle dimples, and meshes it.
+thin parts to the print minimum, adds the base, and meshes it.
 
 Run headless, with absolute paths:
   flatpak run org.blender.Blender -b --factory-startup \
@@ -42,6 +42,7 @@ def parse():
     ap.add_argument("--variant", choices=("print", "web"), default="print", help="web: keeps bristles and thin parts, no base")
     ap.add_argument("--open-radius", type=float, default=0.42, help="parts thinner than twice this are removed (bristles)")
     ap.add_argument("--min-radius", type=float, default=1.0, help="thin parts grow to this radius")
+    ap.add_argument("--dimples", action="store_true", help="add pilot dimples for hand-implanted bristles (off: a pin makes the holes)")
     args, _ = ap.parse_known_args(argv)
     return args
 
@@ -162,18 +163,18 @@ def add_base(f):
     return {"footprint_centre_mm": [round(float(cx), 2), round(float(cy), 2)], "centre_of_mass_xy_mm": [round(com_x, 2), round(com_y, 2)]}
 
 
+def band_centre(f, zmax, z0, z1):
+    """Centre of the solid between two heights, given as fractions of the figure height."""
+    k0, k1 = (int(round((z * zmax - f.lo[2]) / f.h)) for z in (z0, z1))
+    idx = np.nonzero((f.F < 0)[:, :, k0:k1])
+    return bm.V(f.ax[0][idx[0]].mean(), f.ax[1][idx[1]].mean(), f.ax[2][k0:k1][idx[2]].mean())
+
+
 def add_dimples(f, zmax):
     """Pilot dimples for hand-implanted fibres, on the head, the back, the shoulders, and the thighs."""
-    solid = f.F < 0
-
-    def centre(z0, z1):
-        k0, k1 = (int(round((z * zmax - f.lo[2]) / f.h)) for z in (z0, z1))
-        idx = np.nonzero(solid[:, :, k0:k1])
-        return bm.V(f.ax[0][idx[0]].mean(), f.ax[1][idx[1]].mean(), f.ax[2][k0:k1][idx[2]].mean())
-
-    head = centre(0.80, 0.97)
-    chest = centre(0.62, 0.78)
-    hips = centre(0.36, 0.50)
+    head = band_centre(f, zmax, 0.80, 0.97)
+    chest = band_centre(f, zmax, 0.62, 0.78)
+    hips = band_centre(f, zmax, 0.36, 0.50)
     spots = [(head, d) for d in ((-0.6, -0.1, 0.8), (-0.2, 0.3, 0.93), (0.3, -0.1, 0.95), (0.65, 0.2, 0.73), (0, 0.75, 0.66),
                                  (-0.8, 0.4, 0.45), (0.85, 0.45, 0.28), (-0.95, 0.1, 0.3), (0.5, 0.8, 0.33), (-0.45, 0.85, 0.28))]
     spots += [(chest, d) for d in ((-0.5, 0.8, 0.35), (0.5, 0.8, 0.35), (-0.2, 0.95, 0.2), (0.25, 0.95, 0.0), (0, 0.9, 0.45),
@@ -187,7 +188,7 @@ def add_dimples(f, zmax):
             continue                                  # under 4 mm of solid behind this point
         f.carve_tube([hit + d * 0.8, hit - d * 2.0], [0.6, 0.6], k=0.0)
         out.append((hit, d))
-    return out, head
+    return out
 
 
 def main():
@@ -229,15 +230,12 @@ def main():
     f.dimples, f.eyes = [], []
     zmax = float(points[:, 2].max())
     anchors = {}
+    head = band_centre(f, zmax, 0.80, 0.99)
     if printing:
         stats["max_growth_mm"] = round(thicken(f, args.min_radius), 3)
         stats["base"] = add_base(f)
-        f.dimples, head = add_dimples(f, zmax)
-    else:
-        solid = f.F < 0
-        k0 = int(round((0.80 * zmax - lo[2]) / h))
-        idx = np.nonzero(solid[:, :, k0:])
-        head = bm.V(f.ax[0][idx[0]].mean(), f.ax[1][idx[1]].mean(), f.ax[2][k0:][idx[2]].mean())
+        if args.dimples:
+            f.dimples = add_dimples(f, zmax)
     face = f.raycast(head + bm.V(0, -40.0, -2.0), bm.V(0, 1, 0), max_dist=60.0)
     if face is not None:
         anchors["anchor-face"] = face
@@ -269,8 +267,9 @@ def main():
         "site": site,
         "seconds_total": round(time.time() - t0, 1),
     })
-    with open(os.path.join(args.out, "bristle-map.json"), "w") as fh:
-        json.dump({"units": "mm", "dimple_diameter_mm": 1.2, "dimple_depth_mm": 2.0, "dimples": f.bristles_mm}, fh, indent=1)
+    if f.bristles_mm:
+        with open(os.path.join(args.out, "bristle-map.json"), "w") as fh:
+            json.dump({"units": "mm", "dimple_diameter_mm": 1.2, "dimple_depth_mm": 2.0, "dimples": f.bristles_mm}, fh, indent=1)
     with open(os.path.join(args.out, "build-stats.json"), "w") as fh:
         json.dump(stats, fh, indent=1)
     print("BUILD " + json.dumps({k: v for k, v in stats.items() if k != "site"}))
