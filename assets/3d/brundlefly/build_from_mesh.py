@@ -22,6 +22,7 @@ import bpy
 import numpy as np
 import openvdb as vdb
 
+sys.dont_write_bytecode = True   # keep __pycache__ out of the asset folder
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_model as bm  # noqa: E402  (the field library and the mesher)
 

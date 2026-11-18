@@ -115,11 +115,6 @@
     "sha256": "f151b56e61c485d4d7087a04e4801a1c8ddb0c66d0a8b85cd4064972527c75f6"
   },
   {
-    "path": "assets/3d/brundlefly/__pycache__/build_model.cpython-313.pyc",
-    "bytes": 82401,
-    "sha256": "bca4b3339294afddc3322dab4d6f61a3bc7f8239e85fa48e5143ad71683d77fc"
-  },
-  {
     "path": "assets/3d/brundlefly/bristle-map.json",
     "bytes": 2491,
     "sha256": "c23f983323cdf67447b48a0546a907020e8f397ab4755b6d4b855dc9cdac25ba"
@@ -151,8 +146,8 @@
   },
   {
     "path": "assets/3d/brundlefly/build_from_mesh.py",
-    "bytes": 12049,
-    "sha256": "6150e5a6f964884e46f37695b098c7c3c980fce05b1312bc175639ab71f30c13"
+    "bytes": 12125,
+    "sha256": "a163d8894042a1079a2b73e6f1bf8e82edcb25297bbe54d7f44c9e22a07c934c"
   },
   {
     "path": "assets/3d/brundlefly/build_model.py",
@@ -228,5 +223,10 @@
     "path": "assets/3d/brundlefly/validation-report.json",
     "bytes": 8654,
     "sha256": "e75a96cdc99fb01b69a9d189bc5754b1841fcc626cc66404dde8f6761fdc6271"
+  },
+  {
+    "path": "assets/prompts/figurine.json",
+    "bytes": 953,
+    "sha256": "5962f51763686dbedec5e6201d8e059f62f3d868ebad7670c305e1b23b9bd4da"
   }
 ]
