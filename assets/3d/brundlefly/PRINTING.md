@@ -158,7 +158,7 @@ These steps are untested on a printed part.
 
 - glTF 2.0 binary, metres, Y up. The soles are at height zero.
 - The rest shape is the stance of `assets/brand/character.png`, which is also the stance of the site's relief rig. `source/stance.json` holds the stance, and `export_model.py` bakes it in. The print model keeps the straight stand.
-- In this stance the figure is 77.5 mm tall for the 80 mm build. The body spans -29.9 to 29.9 mm in X and -26.3 to 30.7 mm in Z.
+- In this stance the figure is 77.5 mm tall for the 80 mm build. With the root turn it spans -29.9 to 29.9 mm across the view and -26.3 to 30.7 mm in depth.
 - Through the relief rig's walk cycle the long hands stay at least 2.6 mm from the legs, and the small hands at least 1.1 mm.
 - One root node, `Brundlefly`, with a scale of 0.001 and a turn of 0.5 radians about the vertical, toward screen right. That turn is the three-quarter view of the artwork. The site changes it to turn the figure toward his path.
 - Inside the root, the body faces +Z. The head faces the same way, with a roll. The site turns the head to the viewer.
