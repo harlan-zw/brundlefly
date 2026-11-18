@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { AnimationClip, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Vector3, VectorKeyframeTrack } from 'three'
-import { createMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
+import { createMeshMascot, loadMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
 
 /** A model in millimetres under a scaled root, like a Blender export. Its feet are off the origin. */
 function millimetreModel() {
@@ -65,6 +65,9 @@ test('a file without clips sways about its feet and rests at time zero', () => {
   assert.ok(feet().length() < 1e-9, 'The floor point under his origin must not move.')
   mascot.update(0)
   assert.ok(head().distanceTo(rest) < 1e-9, 'Time zero must restore the authored pose.')
+  // One idle loop returns the slow turn to its start, so a looping inspector does not snap his facing.
+  mascot.update(mascot.idleDuration)
+  assert.ok(Math.abs(mascot.root.children[0]!.rotation.y) < 1e-9)
 })
 
 test('a file with clips plays its idle clip instead of the sway', () => {
@@ -73,6 +76,7 @@ test('a file with clips plays its idle clip instead of the sway', () => {
   const animations = [new AnimationClip('Brundlefly-walk', 2, [track(90)]), new AnimationClip('Brundlefly-idle', 2, [track(30)])]
   const mascot = ok(createMeshMascot({ scene, animations }, 2.5))
   assert.deepEqual(mascot.motion, { _tag: 'Clip', name: 'Brundlefly-idle' })
+  assert.equal(mascot.idleDuration, 2)
   mascot.update(1)
   close(body.position.z, 15)
   assert.equal(mascot.root.children[0]!.rotation.y, 0, 'An animated model must not also sway.')
@@ -105,4 +109,10 @@ test('a file without geometry is an error value, and disposal releases the model
   ;(body.material as MeshStandardMaterial).addEventListener('dispose', () => released.push('material'))
   ok(createMeshMascot({ scene, animations: [] })).dispose()
   assert.deepEqual(released.sort(), ['geometry', 'material'])
+})
+
+test('a model file that cannot load is an error value with its cause', async () => {
+  const result = await loadMeshMascot('http://127.0.0.1:9/absent.glb')
+  assert.equal(result._tag, 'Err')
+  assert.ok(result._tag === 'Err' && result.reason.length > 0)
 })

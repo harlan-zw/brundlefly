@@ -7,6 +7,8 @@ export const meshMascotUrl = '/brand/3d/brundlefly-web.glb'
 export const reliefStandingHeight = 2.5
 
 export type MeshMascotSource = { scene: Object3D, animations: readonly AnimationClip[] }
+// One turn of the slowest sway component. The inspector uses it as the length of the sway loop.
+const swayPeriod = Math.PI * 2 / 0.23
 /** A file with clips plays its idle clip. A file without clips sways as one object. */
 export type MeshMascotMotion = { _tag: 'Clip', name: string } | { _tag: 'Sway' }
 export type MeshMascot = ReturnType<typeof assemble>
@@ -55,6 +57,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     _tag: 'Mesh' as const,
     root,
     motion,
+    /** Seconds in one loop of the idle motion. */
+    idleDuration: idle ? idle.duration : swayPeriod,
     /** Horizontal reach and height in root units. The feet are at zero. */
     extent: { left: bounds.min.x * scale, right: bounds.max.x * scale, height },
     /** World position of his face, for the conversation close-up. */
@@ -62,7 +66,7 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     /** `time` is seconds of visible motion. Zero is the authored rest pose. */
     update(time: number) {
       if (mixer) { mixer.setTime(time); return }
-      pivot.rotation.set(Math.sin(time * 0.37) * 0.01, Math.sin(time * 0.23) * 0.06, Math.sin(time * 0.53) * 0.014)
+      pivot.rotation.set(Math.sin(time * 0.37) * 0.01, Math.sin(time * Math.PI * 2 / swayPeriod) * 0.06, Math.sin(time * 0.53) * 0.014)
       pivot.scale.y = 1 + Math.sin(time * 1.4) * 0.006
     },
     dispose() {
@@ -89,3 +93,13 @@ export function createMeshMascot({ scene, animations }: MeshMascotSource, height
   }
   return { _tag: 'Ok', mascot: assemble(scene, animations, bounds, height) }
 }
+
+/**
+ * Loads the served model and places it. A missing or unreadable file is an error value, so the caller can show the relief rig.
+ * The GLB reader loads on demand, because only the mesh mode needs it.
+ */
+export const loadMeshMascot = (url = meshMascotUrl, height = reliefStandingHeight): Promise<MeshMascotResult> =>
+  import('three/addons/loaders/GLTFLoader.js')
+    .then(({ GLTFLoader }) => new GLTFLoader().loadAsync(url))
+    .then(file => createMeshMascot(file, height),
+      (cause: unknown): MeshMascotResult => ({ _tag: 'Err', reason: cause instanceof Error ? cause.message : String(cause) }))

@@ -334,13 +334,14 @@ If the file has animation clips, the site loops Brundlefly-idle. If it has none,
 The model stands at the mascot start point. It does not walk, speak, or perform mannerisms.
 A node named Brundlefly-base is removed. An empty node named anchor-face sets the conversation close-up.
 If the file is absent or unreadable, the mesh mode shows the relief rig and logs a warning.
+The rig inspection page has the same model as its Mesh texture option.
 The scene element reports the visible mascot in its data-mascot attribute: relief, sprite, or mesh.
 
 | File | Type | Role |
 | --- | --- | --- |
 | assets/3d/brundlefly/brundlefly-web.glb | GLB 2.0, 4 MiB or less | Web export of the figurine model |
-| website/scripts/sync-brand.ts | TypeScript | Copies the model to /brand/3d/ for the site and enforces the size limit |
-| website/layers/brand/shared/mascot-mesh.ts | TypeScript | Fit, floor contact, idle motion, face point, and disposal |
+| website/scripts/sync-brand.ts | TypeScript | Copies the model to /brand/3d/ for the site and the kit, and enforces the size limit |
+| website/layers/brand/shared/mascot-mesh.ts | TypeScript | Load, fit, floor contact, idle motion, face point, and disposal |
 
 Plain GLTFLoader reads the file. Draco, meshopt, and KTX2 data need decoders that the site does not load.
 
@@ -475,6 +476,8 @@ Drag to orbit and scroll to zoom. Bones and wireframe reveal the weighted model.
 Choose Idle, Walk, or Speaking for the exported animation clips. Play, pause, change speed, or scrub time.
 Manual speech, blink, brow, and squint controls stop clip playback and show a fixed pose.
 Mapped and Sprite switch the artwork. Download GLB exports the selected rig.
+Mesh shows the full 3D model. Idle plays its clip or its sway. Walk, Speaking, the expression controls, and Download GLB apply only to the relief rig.
+If the model file is absent, Mesh shows the relief rig and the status line says so.
 
 The homepage Sound controls sit inside the hidden L panel.
 Master volume, Ambience volume, and Voice volume each accept values from zero to one.

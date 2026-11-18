@@ -10,16 +10,13 @@ await Promise.all(['github-banner-overhang-gross.png', 'github-social-preview.jp
   copyFile(new URL(name, source), new URL(name, target)),
 ))
 await cp(new URL('kit/', source), new URL('kit/', target), { recursive: true })
-// The mesh mascot comes from the figurine model. Only the site serves it, so the portable layer never receives it.
-// Removal first keeps a copy from an earlier run out of the layer and stops it outliving its source.
-const meshSource = new URL('../../assets/3d/brundlefly/brundlefly-web.glb', import.meta.url)
-const meshTarget = new URL('3d/brundlefly-web.glb', target)
-await rm(new URL('3d/', target), { recursive: true, force: true })
 const layer = new URL('../layers/brand/', import.meta.url)
 const layerArt = new URL('public/brand/', layer)
-await mkdir(layerArt, { recursive: true })
-await cp(target, layerArt, { recursive: true })
-
+// The mesh mascot comes from the figurine model. The site and the kit inspector serve it only when the file exists.
+// Removal first stops a copy from an earlier run outliving its source.
+const meshSource = new URL('../../assets/3d/brundlefly/brundlefly-web.glb', import.meta.url)
+const meshTarget = new URL('3d/brundlefly-web.glb', target)
+await Promise.all([target, layerArt].map(directory => rm(new URL('3d/', directory), { recursive: true, force: true })))
 const meshLimit = 4 * 1024 * 1024
 const meshSize = await stat(meshSource).then(file => file.size, (cause: NodeJS.ErrnoException) => {
   if (cause.code !== 'ENOENT') throw cause
@@ -33,6 +30,8 @@ else {
   await mkdir(new URL('3d/', target), { recursive: true })
   await copyFile(meshSource, meshTarget)
 }
+await mkdir(layerArt, { recursive: true })
+await cp(target, layerArt, { recursive: true })
 
 async function collectFiles(directory: URL, prefix: string): Promise<Record<string, Uint8Array>> {
   const files: Record<string, Uint8Array> = {}

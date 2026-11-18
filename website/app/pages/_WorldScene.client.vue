@@ -9,7 +9,7 @@ import {
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
-import { createMeshMascot, meshMascotUrl, releaseMeshSource } from '@brundlefly/brand/shared/mascot-mesh'
+import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
 import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
@@ -155,12 +155,8 @@ watch(canvas, async (element) => {
   if (!element) return
   const context = element.getContext('webgl2', { alpha: false, antialias: true })
   if (!context) { status.value = { _tag: 'Fallback', reason: 'context' }; return }
-  // Only the mesh mode loads the GLB reader. A missing or broken file leaves the relief rig in place.
-  const meshFile = mascotMode === 'mesh'
-    ? import('three/addons/loaders/GLTFLoader.js').then(({ GLTFLoader }) => new GLTFLoader().loadAsync(meshMascotUrl))
-      .catch((cause: unknown) => { console.warn('The Brundlefly mesh could not load. The relief rig takes its place.', cause); return undefined })
-    : undefined
-  const [results, meshSource] = await Promise.all([Promise.allSettled([
+  // A missing or broken model file is an error value. The relief rig then takes its place.
+  const [results, meshResult] = await Promise.all([Promise.allSettled([
     new TextureLoader().loadAsync('/brand/kit/modular/flesh-diffuse.png'),
     new TextureLoader().loadAsync('/brand/character.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/goo-diffuse.png'),
@@ -172,7 +168,7 @@ watch(canvas, async (element) => {
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/room-diffuse.webp'),
     new TextureLoader().loadAsync('/brand/kit/lair/room-height.webp'),
-  ]), meshFile])
+  ]), mascotMode === 'mesh' ? loadMeshMascot() : undefined])
   const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult, roomResult, roomHeightResult] = results
   if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
     || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || roomResult.status === 'rejected' || roomHeightResult.status === 'rejected') {
@@ -180,7 +176,7 @@ watch(canvas, async (element) => {
       if (result.status === 'fulfilled') result.value.dispose()
       else console.error('Brundlefly world artwork failed to load.', result.reason)
     }
-    if (meshSource) releaseMeshSource(meshSource.scene)
+    if (meshResult?._tag === 'Ok') meshResult.mascot.dispose()
     status.value = { _tag: 'Fallback', reason: 'art' }
     return
   }
@@ -188,7 +184,7 @@ watch(canvas, async (element) => {
     surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value, roomResult.value, roomHeightResult.value,
   ]
   const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture, roomHeightTexture]
-  if (!alive) { loadedTextures.forEach(value => value.dispose()); if (meshSource) releaseMeshSource(meshSource.scene); return }
+  if (!alive) { loadedTextures.forEach(value => value.dispose()); if (meshResult?._tag === 'Ok') meshResult.mascot.dispose(); return }
   loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
   roomHeightTexture.colorSpace = NoColorSpace
   for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture]) {
@@ -224,8 +220,7 @@ watch(canvas, async (element) => {
   bodyProjectionRaster.height = Math.round(180 * bodyProjectionImage.height / bodyProjectionImage.width)
   const bodyProjectionPainter = bodyProjectionRaster.getContext('2d')!
   bodyProjectionPainter.drawImage(bodyProjectionImage, 0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height)
-  const meshResult = meshSource ? createMeshMascot(meshSource) : undefined
-  if (meshResult?._tag === 'Err') console.warn(`The Brundlefly mesh is unusable. The relief rig takes its place. ${meshResult.reason}`)
+  if (meshResult?._tag === 'Err') console.warn(`The Brundlefly mesh could not load. The relief rig takes its place. ${meshResult.reason}`)
   const mascot = meshResult?._tag === 'Ok' ? meshResult.mascot : { _tag: 'Relief' as const, ...createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
     spriteMascot ? undefined : { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) },
     spriteMascot ? undefined : { texture: bodyProjectionTexture, raster: bodyProjectionPainter.getImageData(0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height) }) }
