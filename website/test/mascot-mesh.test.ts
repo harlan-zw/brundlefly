@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { AnimationClip, Bone, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, Vector3, VectorKeyframeTrack } from 'three'
+import { AnimationClip, Bone, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, Vector2, Vector3, VectorKeyframeTrack } from 'three'
+import { poseMannerisms } from '../layers/brand/shared/mannerism.ts'
 import { createMeshMascot, loadMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
+import { bodyJointNames } from '../layers/brand/shared/mascot-pose.ts'
 
 /** A model in millimetres under a scaled root, like a Blender export. Its feet are off the origin. */
 function millimetreModel() {
@@ -165,4 +167,60 @@ test('a head turn layers over a clip that holds the head still, and a model with
   assert.ok(head.quaternion.angleTo(nod) < 1e-6, 'Without a look the head must return to the clip pose.')
   const plain = ok(createMeshMascot({ scene: millimetreModel().scene, animations: [] }, 2.5))
   assert.doesNotThrow(() => plain.update(1, { target, weight: 1, tilt: 0.07 }))
+})
+
+/** A model with every body joint of the relief rig, at identity rest rotations, plus two mouthparts. */
+function jointedModel() {
+  const model = millimetreModel()
+  const joints = new Map<string, Bone>()
+  for (const name of [...bodyJointNames, 'mouthpart-0', 'mouthpart-0-tip', 'mouthpart-1', 'mouthpart-1-tip']) {
+    const joint = new Bone()
+    joint.name = name
+    joint.position.set(5, 60, 0)
+    model.node.add(joint)
+    joints.set(name, joint)
+  }
+  return { ...model, joints, joint: (name: string) => joints.get(name)! }
+}
+const standing = { time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze' as const }
+
+test('a mesh with the relief rig joints walks, speaks, and performs a mannerism through the shared pose code', () => {
+  const { scene, joint } = jointedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  assert.ok(mascot.pose, 'A file with every body joint must accept the pose code.')
+  // A full stride at its widest: the hips swing in opposite directions and the figure sits low between steps.
+  mascot.pose({ ...standing, gait: 1, walkPhase: Math.PI / 2 })
+  close(joint('left-hip').rotation.x, 0.22)
+  close(joint('right-hip').rotation.x, -0.22)
+  // Standing again clears the stride. A turn must not carry over from the frame before.
+  mascot.pose(standing)
+  close(joint('left-hip').rotation.x, 0)
+  // His voice opens neighbouring mouthparts in opposite directions.
+  mascot.pose({ ...standing, speaking: 1 })
+  const [first, second] = [joint('mouthpart-0').rotation.x, joint('mouthpart-1').rotation.x]
+  mascot.pose(standing)
+  assert.ok(first - joint('mouthpart-0').rotation.x > 0.25 && second - joint('mouthpart-1').rotation.x < -0.25)
+  // A mannerism adds its turns to the joints it names.
+  mascot.pose({ ...standing, mannerism: poseMannerisms([{ mannerism: { _tag: 'HeadTilt' }, age: 0.9 }]) })
+  assert.ok(joint('head').rotation.z > 0.25, 'The head tilt must reach the head joint.')
+})
+
+test('the head turn layers over the shared pose code and does not accumulate', () => {
+  const { scene, joint } = jointedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const target = mascot.facePoint(new Vector3()).add(new Vector3(40, 0, 10))
+  for (let frame = 0; frame < 4; frame++) mascot.pose!(standing, { target, weight: 1, tilt: 0 })
+  const forward = new Vector3(0, 0, 1).applyQuaternion(joint('head').quaternion)
+  close(Math.atan2(forward.x, forward.z), 0.6)
+  mascot.pose!(standing)
+  assert.ok(joint('head').quaternion.angleTo(new Quaternion()) < 1e-6, 'Without a look the head must return to the posed rotation.')
+})
+
+test('a mesh that lacks a body joint, or has one turned at rest, keeps its own motion', () => {
+  const missing = jointedModel()
+  missing.joint('left-foot').removeFromParent()
+  assert.equal(ok(createMeshMascot({ scene: missing.scene, animations: [] }, 2.5)).pose, undefined)
+  const turned = jointedModel()
+  turned.joint('chest').rotation.x = 0.3
+  assert.equal(ok(createMeshMascot({ scene: turned.scene, animations: [] }, 2.5)).pose, undefined)
 })

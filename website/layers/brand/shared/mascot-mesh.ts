@@ -1,5 +1,7 @@
 import { AnimationMixer, Box3, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, Texture, Vector3 } from 'three'
 import type { AnimationClip } from 'three'
+import { bodyJointNames, poseBody } from './mascot-pose.ts'
+import type { BodyJointName, MascotPoseInput } from './mascot-pose.ts'
 
 /** Served copy of assets/3d/brundlefly/brundlefly-web.glb. The brand sync script owns that copy. */
 export const meshMascotUrl = '/brand/3d/brundlefly-web.glb'
@@ -18,6 +20,30 @@ export type MeshMascotLook = { target: Vector3, weight: number, tilt: number }
 const maxHeadYaw = 0.6
 const maxHeadPitch = 0.35
 const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value))
+const restRotation = new Quaternion()
+const atRest = (joint: Object3D) => joint.quaternion.angleTo(restRotation) < 1e-3
+/** The pose code needs every body joint by name, each with an identity rest rotation. A file that lacks one keeps its own clip. */
+function findBodyJoints(scene: Object3D) {
+  const joints = new Map<BodyJointName, Object3D>()
+  for (const name of bodyJointNames) {
+    const joint = scene.getObjectByName(name)
+    if (!joint || !atRest(joint)) return undefined
+    joints.set(name, joint)
+  }
+  return joints
+}
+/** Face tentacles, from screen left to right. The relief rig has none, so they have their own motion. */
+function findMouthparts(scene: Object3D) {
+  const mouthparts: { base: Object3D, tip: Object3D | undefined }[] = []
+  for (let index = 0; ; index++) {
+    const base = scene.getObjectByName(`mouthpart-${index}`)
+    if (!base || !atRest(base)) return mouthparts
+    const tip = scene.getObjectByName(`mouthpart-${index}-tip`)
+    mouthparts.push({ base, tip: tip && atRest(tip) ? tip : undefined })
+  }
+}
+// One slow cycle of the mouthparts, in radians for each second.
+const mouthpartRate = Math.PI * 2 / 4
 export type MeshMascot = ReturnType<typeof assemble>
 export type MeshMascotResult = { _tag: 'Ok', mascot: MeshMascot } | { _tag: 'Err', reason: string }
 
@@ -62,6 +88,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     fit.add(face)
   }
   const faceAnchor = face
+  const bodyJoints = findBodyJoints(scene)
+  const mouthparts = bodyJoints ? findMouthparts(scene) : []
   // The rig contract gives every joint an identity rest rotation, so the head looks along +Z of its parent at rest.
   const head = scene.getObjectByName('head')
   const clipPose = new Quaternion()
@@ -106,6 +134,26 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       }
       turnHead(look)
     },
+    /**
+     * Poses the skeleton with the relief rig's code: idle, walk, speech, and mannerisms. The file's own clip does not run.
+     * It exists only for a file with every body joint at an identity rest rotation.
+     */
+    pose: bodyJoints ? (input: MascotPoseInput, look?: MeshMascotLook) => {
+      // Some joints only move during a habit. Clearing every joint stops a habit's turn from accumulating across frames.
+      for (const joint of bodyJoints.values()) joint.rotation.set(0, 0, 0)
+      const body = poseBody(name => bodyJoints.get(name)!, input)
+      pivot.rotation.y = body.root.rotationY
+      pivot.position.y = body.root.positionY
+      pivot.scale.y = body.root.scaleY
+      // The mouthparts drift on their own and open with his voice. Neighbours open in opposite directions.
+      const phase = input.time * mouthpartRate
+      mouthparts.forEach(({ base, tip }, index) => {
+        base.rotation.set(Math.sin(phase * 2 + index * 0.9) * 0.12 * body.calm + body.speaking * 0.3 * (index % 2 === 0 ? 1 : -1),
+          0, Math.sin(phase + index * 1.7) * 0.07 * body.calm)
+        tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2, 0, 0)
+      })
+      turnHead(look)
+    } : undefined,
     dispose() {
       mixer?.stopAllAction()
       mixer?.uncacheRoot(scene)

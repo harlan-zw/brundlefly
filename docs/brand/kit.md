@@ -330,8 +330,10 @@ Use ?mascot=mesh on the homepage to show the full 3D model in place of the relie
 The model is the web export of the figurine. The relief rig stays the default mascot.
 The site fits the model to the height of the relief rig and puts its lowest point on the chamber floor.
 The model keeps its own origin, facing, and materials: +Y is up and the face points to +Z.
-If the file has animation clips, the site loops Brundlefly-idle. If it has none, the whole model sways about its feet.
-The model stands at the mascot start point. It does not walk, speak, or perform mannerisms.
+If the file has the relief rig's 25 body joints, each with an identity rest rotation, the site poses it with the relief rig's code.
+The model then idles, walks the same route, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
+It has no jaw, brow, or eyelid joints, so it does not blink or change expression.
+Any other file loops its Brundlefly-idle clip, or sways about its feet if it has no clip. That model stands at the mascot start point.
 If the file has a joint named head, the head turns to the camera while a visitor hovers or the dialog is open. A hover also tilts it.
 A click anywhere in its hover area opens the dialog, because the model has gaps between its limbs.
 A node named Brundlefly-base is removed. An empty node named anchor-face sets the conversation close-up.
@@ -344,6 +346,7 @@ The scene element reports the visible mascot in its data-mascot attribute: relie
 | assets/3d/brundlefly/brundlefly-web.glb | GLB 2.0, 4 MiB or less | Web export of the figurine model |
 | website/scripts/sync-brand.ts | TypeScript | Copies the model to /brand/3d/ for the site and the kit, and enforces the size limit |
 | website/layers/brand/shared/mascot-mesh.ts | TypeScript | Load, fit, floor contact, idle motion, face point, and disposal |
+| website/layers/brand/shared/mascot-pose.ts | TypeScript | Joint turns for idle, walk, speech, and mannerisms, shared by the relief rig and the mesh |
 
 Plain GLTFLoader reads the file. Draco, meshopt, and KTX2 data need decoders that the site does not load.
 

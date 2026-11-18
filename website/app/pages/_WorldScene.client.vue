@@ -279,6 +279,9 @@ watch(canvas, async (element) => {
   let faceElapsed = 0
   // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
   const attention = { weight: 0, tilt: 0 }
+  // A mesh with the relief rig's joints takes the relief rig's pose code. Any other mesh plays its own clip or sway.
+  const meshPose = mascot._tag === 'Mesh' ? mascot.pose : undefined
+  const walks = mascot._tag === 'Relief' || meshPose !== undefined
   let lastReaction = reaction
   let reactionStarted = 0
   // Only the relief rig has hand joints. The mesh performs no habit, so it never needs a hand cue.
@@ -337,8 +340,8 @@ watch(canvas, async (element) => {
     camera.updateMatrixWorld()
     const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
-    // A mesh without a walk cycle stands where the relief rig starts.
-    if (mascot._tag === 'Relief' && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route: sceneLayout.walk,
+    // A mesh without the relief rig's joints stands where the relief rig starts.
+    if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route: sceneLayout.walk,
       pauses: sceneLayout.walkPauses, walkSpeed: settings.value.walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free' })
     const pose = faceMotion ? strollPose(stroll, settings.value.walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
@@ -347,14 +350,13 @@ watch(canvas, async (element) => {
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
-    if (mascot._tag === 'Mesh') {
-      // A hovering visitor or the dialog draws his head to the camera. A hover alone adds a curious tilt, as on the relief rig.
-      // Reduced motion and Motion off keep the clip pose.
-      const ease = Math.min(1, delta * 4)
-      attention.weight = faceMotion ? attention.weight + (Number(paused || hovered.value) - attention.weight) * ease : 0
-      attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused ? 0.07 : 0) - attention.tilt) * ease : 0
-      mascot.update(faceElapsed, { target: camera.position, weight: attention.weight, tilt: attention.tilt })
-    }
+    // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.
+    // Reduced motion and Motion off keep the pose.
+    const ease = Math.min(1, delta * 4)
+    attention.weight = faceMotion ? attention.weight + (Number(paused || hovered.value) - attention.weight) * ease : 0
+    attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused ? 0.07 : 0) - attention.tilt) * ease : 0
+    const look = { target: camera.position, weight: attention.weight, tilt: attention.tilt }
+    if (mascot._tag === 'Mesh' && !meshPose) mascot.update(faceElapsed, look)
     else {
       // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
       const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
@@ -367,11 +369,13 @@ watch(canvas, async (element) => {
       const eyes = !faceMotion ? { _tag: 'Ahead' } as const
         : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
           : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
-      mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose, eyes, mannerism,
+      const input = { time: faceElapsed, pressure: 0, pointer, transform: 'squeeze' as const, ...pose, eyes, mannerism,
         speaking: faceMotion ? speaking : 0,
         brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
           : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
-        squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 })
+        squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 }
+      if (meshPose) meshPose(input, look)
+      else if (mascot._tag === 'Relief') mascot.update(input)
     }
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
