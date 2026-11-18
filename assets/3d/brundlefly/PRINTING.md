@@ -39,7 +39,7 @@ All values are millimetres. They come from `validation-report.json`.
 | `brundlefly-80mm.stl` | 74.03 | 50.31 | 80.00 | 30.27 cm³ | 200,000 |
 | `brundlefly-100mm.stl` | 92.53 | 62.89 | 100.00 | 59.12 cm³ | 200,000 |
 
-Height runs from the underside of the base to the highest point of the head.
+Height runs from the underside of the base to the tip of the upright wing. The top of the head is at 78 mm.
 The base is about 3 mm thick at 80 mm. The underside is flat.
 
 ## Material
@@ -146,6 +146,8 @@ These steps are untested on a printed part.
 - The figure stands on an integrated base. Soft TPU on two thin legs does not stand without one.
 - One material prints no colour. The print shows shape only.
 - The generator made the mesh from one image. The back and the far side are its estimate.
+- The wings differ from the character sheet. On the sheet the larger wing is on the figure's right. On this mesh the figure's right wing is upright and narrow, and the left wing is the longer one.
+- The skin is smooth. The fine folds of the artwork are not in the mesh.
 - Fingers, claws, wings, and mouthparts are thicker than in the artwork.
 
 ## Website model
