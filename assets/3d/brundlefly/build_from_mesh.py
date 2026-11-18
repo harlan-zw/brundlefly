@@ -329,7 +329,17 @@ def load_view(path):
         for axis in (0, 1):
             c = np.cumsum(np.pad(soft, [(13, 12) if a == axis else (0, 0) for a in range(3)], mode="edge"), axis=axis)
             soft = (np.take(c, range(25, c.shape[axis]), axis=axis) - np.take(c, range(0, c.shape[axis] - 25), axis=axis)) / 25.0
-    return {"rgb": rgb, "linear": linear, "soft": soft, "figure": figure, "box": (xs.min(), xs.max(), ys.min(), ys.max())}
+    # The figure's colours, grown outward. A part of the model that reaches past the drawing,
+    # such as a wing tip, takes the colour of the nearest drawn pixel.
+    spread, known = linear.copy(), figure.copy()
+    for _ in range(60):
+        for axis, shift in ((0, 1), (0, -1), (1, 1), (1, -1)):
+            near_known = np.roll(known, shift, axis=axis)
+            take = near_known & ~known
+            spread[take] = np.roll(spread, shift, axis=axis)[take]
+            known |= take
+    return {"rgb": rgb, "linear": linear, "soft": soft, "spread": spread, "spread_known": known, "figure": figure,
+            "box": (xs.min(), xs.max(), ys.min(), ys.max())}
 
 
 def register(view, f, mirror, window=None, start=None, axis=0):
@@ -471,8 +481,9 @@ def sheet_colour_fn(views):
             weight = (facing ** 2 * inside)[:, None]
             mixed += sample * weight
             total += weight
-            loose = ((facing + 0.05) * inside)[:, None]     # a second choice for points that no view faces well
-            fallback += sample * loose
+            # A second choice, for points that no view both faces and covers: the nearest drawn colour.
+            loose = ((facing + 0.05) ** 2 * view["spread_known"][row, col])[:, None]
+            fallback += view["spread"][row, col] * loose
             fallback_weight += loose
         second = np.where(fallback_weight > 1e-6, fallback / np.maximum(fallback_weight, 1e-6), flesh)
         return np.where(total > 1e-4, mixed / np.maximum(total, 1e-4), second)
@@ -568,7 +579,7 @@ def main():
         if len(spots) == 2:
             half = (spots[1][0] - spots[0][0]) / 2
             spots = [(head[0] - half, spots[0][1]), (head[0] + half, spots[1][1])]
-        eyes = add_eyes(f, spots, glints=not printing)
+        eyes = add_eyes(f, spots, glints=False)      # the website model has eyeball nodes with their own highlight
         for name, (view, _) in views.items():      # the eyeballs replace the painted eyes
             erase_painted_eyes(view)
     if args.rebuild_back:
