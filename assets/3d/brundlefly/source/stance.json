@@ -1,0 +1,161 @@
+{
+ "note": "Default stance of the website model: the pose of assets/brand/character.png, which is also the stance of the site's relief rig. Each rotation is a joint's local quaternion [x, y, z, w] in the site's axes (+X screen right, +Y up, +Z toward the viewer), from the straight stand of rig-joints.json. export_model.py applies the stance and then gives every joint an identity rest rotation again. How the values were made: each bone takes its direction in the picture from the relief rig's joint table (bodyJoints in website/layers/brand/shared/mascot.ts). The picture gives no depth, so the depth of each bone is a choice. The legs reach floor targets with both soles flat. The head faces the viewer with a roll, because the site's head turn expects that. yaw_radians is the body's turn about the vertical and is already inside the pelvis rotation.",
+ "yaw_radians": 0.5,
+ "pelvis_offset_mm": [
+  0,
+  -3,
+  0
+ ],
+ "rotations": {
+  "pelvis": [
+   -0.04541,
+   0.25035,
+   0.00193,
+   0.96709
+  ],
+  "chest": [
+   0.01719,
+   -0.05377,
+   0.05913,
+   0.99665
+  ],
+  "head": [
+   0.03365,
+   -0.19786,
+   -0.1546,
+   0.96738
+  ],
+  "left-shoulder": [
+   -0.1424,
+   0.16162,
+   -0.08349,
+   0.97295
+  ],
+  "left-elbow": [
+   0.21233,
+   -0.08891,
+   -0.10901,
+   0.96702
+  ],
+  "left-hand": [
+   0.04794,
+   0.03101,
+   0.16239,
+   0.98507
+  ],
+  "left-rib": [
+   0.03717,
+   0.01017,
+   0.08899,
+   0.99529
+  ],
+  "left-small-elbow": [
+   -0.02937,
+   -0.1299,
+   -0.08818,
+   0.98716
+  ],
+  "left-small-hand": [
+   -0.0953,
+   0.12421,
+   0.25651,
+   0.95378
+  ],
+  "left-wing": [
+   -0.17401,
+   -0.18768,
+   -0.08209,
+   0.9632
+  ],
+  "left-wing-tip": [
+   0.112,
+   0.09754,
+   -0.00229,
+   0.98891
+  ],
+  "left-hip": [
+   -0.08897,
+   0.00584,
+   -0.08257,
+   0.99259
+  ],
+  "left-knee": [
+   0.11778,
+   -0.05442,
+   0.03318,
+   0.99099
+  ],
+  "left-foot": [
+   0.02929,
+   -0.12053,
+   0.04728,
+   0.99115
+  ],
+  "right-shoulder": [
+   -0.1552,
+   -0.07433,
+   -0.13862,
+   0.97528
+  ],
+  "right-elbow": [
+   0.1387,
+   0.05943,
+   0.0446,
+   0.98754
+  ],
+  "right-hand": [
+   0.00367,
+   -0.01081,
+   -0.07205,
+   0.99734
+  ],
+  "right-rib": [
+   0.01696,
+   -0.1081,
+   -0.11812,
+   0.98695
+  ],
+  "right-small-elbow": [
+   -0.06175,
+   0.13886,
+   0.15084,
+   0.97681
+  ],
+  "right-small-hand": [
+   0.12831,
+   -0.14243,
+   -0.34889,
+   0.91735
+  ],
+  "right-wing": [
+   -0.09904,
+   -0.07914,
+   -0.18562,
+   0.97441
+  ],
+  "right-wing-tip": [
+   0.00021,
+   -0.18898,
+   -0.0487,
+   0.98077
+  ],
+  "right-hip": [
+   -0.15098,
+   -0.08611,
+   -0.02944,
+   0.98434
+  ],
+  "right-knee": [
+   0.24561,
+   0.01461,
+   0.00782,
+   0.96923
+  ],
+  "right-foot": [
+   -0.05085,
+   0.19636,
+   0.00182,
+   0.97921
+  ]
+ }
+}

@@ -15,7 +15,7 @@ The shape and the colours come from four views: the front and back views of `ass
    - It projects the four views onto the vertex colours. Each surface takes its colour from the views that it faces. The head gets its own image fit, so the face lines up. The wings and the shoulders keep the body fit.
    - It cuts the smaller wing back to its outline in the sheet's front view. The generator makes that wing wider than the sheet draws it.
    - It adds two dark eyeballs where the sheet has its eyes. Each one is as wide and as tall as the painted eye opening, and it is turned to lie along the face. On the print model the eyeballs stand about 1 mm proud of the face, because one colour shows them by shape only.
-4. `export_model.py` writes the files. For the website model it bakes the four views into a texture, and it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip.
+4. `export_model.py` writes the files. For the website model it bakes the four views into a texture, and it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip. It then poses the figure into the stance of `source/stance.json` and makes that pose the rest shape.
 5. `validate.ts` checks the print files.
 
 `assets/prompts/figurine.json` records the generator, the date, and the settings.
@@ -29,10 +29,10 @@ Read the licence note in that file before you sell prints of this mesh.
 | `brundlefly-100mm.stl` | The same model at 100 mm. Every thin part is 25 percent thicker. |
 | `brundlefly.blend` | Editable master. One Blender unit is one millimetre. |
 | `brundlefly-preview.glb` | Coloured preview of the print model, with the base. |
-| `brundlefly-web.glb` | Model for the website: rigged, no base, thin bristle hairs, thin parts not thickened. |
-| `source/` | The generated base mesh, the four view images, and the joint positions for the skeleton. |
+| `brundlefly-web.glb` | Model for the website: rigged, in the stance of the character artwork, no base, thin bristle hairs, thin parts not thickened. |
+| `source/` | The generated base mesh, the four view images, the joint positions for the skeleton, and the stance of the website model. |
 | `validation-report.json` | Output of `validate.ts` for the two STL files. |
-| `previews/` | Front, side, back, three-quarter, and top renders of the print model, one of the website model, and one pose test of the rig. |
+| `previews/` | Front, side, back, three-quarter, and top renders of the print model, two of the website model, and one pose test of the rig. |
 
 ## Dimensions
 
@@ -156,7 +156,9 @@ These steps are untested on a printed part.
 
 `brundlefly-web.glb` follows the contract that the site loader expects.
 
-- glTF 2.0 binary, metres, Y up, face toward +Z. The soles are at height zero.
+- glTF 2.0 binary, metres, Y up. The soles are at height zero.
+- The rest shape is the stance of `assets/brand/character.png`, which is also the stance of the site's relief rig: the body is turned 0.5 radians toward screen right, and the head faces +Z with a roll. `source/stance.json` holds the stance, and `export_model.py` bakes it in. The print model keeps the straight stand.
+- In this stance the figure is 72.2 mm tall for the 80 mm build. The body spans -31.4 to 30.5 mm in X and -26.3 to 24.8 mm in Z.
 - One root node, `Brundlefly`, with a scale of 0.001.
 - `Brundlefly-body`: about 64,000 triangles. That count includes about 80 bristle hairs of three triangles each; a hair takes the skin weights of the vertex under it. Texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
 - The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork.
@@ -164,7 +166,7 @@ These steps are untested on a printed part.
   - Each node is a unit sphere. Its scale holds the three radii, and its rotation turns it about the vertical axis to lie along the face.
   - The colour is in `COLOR_0`: a teal iris that fades into a blue-black rim. The material's base colour factor is white, so a replacement material must supply its own colour.
 - `anchor-face`: an empty node at the front of the face.
-- No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 3.9 MB.
+- No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 3.8 MB.
 
 Skeleton:
 
@@ -177,7 +179,7 @@ Skeleton:
 - One clip, `Brundlefly-idle`, 4 seconds, made to loop: breathing, a small head turn, twitching small arms, swaying tentacles, fluttering wings.
 - The fingers, the toes, and the jaw have no joints.
 
-`previews/web-pose-test.png` shows a strong test pose through this rig.
+`previews/web-pose-test.png` shows a strong test pose through this rig, from the straight stand. `previews/web-front.png` and `previews/web-three-quarter.png` show the rest shape.
 
 ## Rebuild
 

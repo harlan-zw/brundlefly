@@ -16,7 +16,7 @@ import math
 import bmesh
 import bpy
 import numpy as np
-from mathutils import Vector
+from mathutils import Quaternion, Vector
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -49,6 +49,7 @@ def parse():
     ap.add_argument("--glb-tris", type=int, default=160000)
     ap.add_argument("--web", action="store_true", help="write brundlefly-web.glb only, from a web-variant build")
     ap.add_argument("--no-rig", action="store_true", help="web model without the skeleton")
+    ap.add_argument("--no-stance", action="store_true", help="web model in the straight stand, without source/stance.json")
     ap.add_argument("--no-texture", action="store_true", help="web model with vertex colours and no texture")
     ap.add_argument("--texture-size", type=int, default=2048)
     args, _ = ap.parse_known_args(argv)
@@ -413,6 +414,66 @@ def add_bristle_hairs(body, bristles, uv):
     return count
 
 
+def bake_stance(body, arm, stance, followers):
+    """Make the stance the rest shape of the website model. Returns the height of the figure.
+
+    The skeleton is posed into the stance. The posed skin becomes the mesh, and the posed
+    joints become the rest pose. Every bone then points straight up again, so every joint
+    keeps an identity rest rotation and the site's pose code works as on its own rig.
+    followers are the objects that ride on a bone: they keep their place on the posed figure.
+    """
+    scene = bpy.context.scene
+    action = arm.animation_data.action if arm.animation_data else None
+    if action:
+        arm.animation_data.action = None
+    modes = {}
+    for name, (x, y, z, w) in stance["rotations"].items():
+        bone = arm.pose.bones[name]
+        modes[name] = bone.rotation_mode
+        bone.rotation_mode = "QUATERNION"
+        bone.rotation_quaternion = Quaternion((w, x, y, z))       # bone axes are the site's axes: X right, Y up, Z to the viewer
+    arm.pose.bones["pelvis"].location = Vector(stance["pelvis_offset_mm"])
+    bpy.context.view_layer.update()
+    placed = {o: o.matrix_world.copy() for o in followers}
+
+    for o in scene.objects:
+        o.select_set(False)
+    bpy.context.view_layer.objects.active = body
+    body.select_set(True)
+    for modifier in [m for m in body.modifiers if m.type == "ARMATURE"]:
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+    body.select_set(False)
+    bpy.context.view_layer.objects.active = arm
+    arm.select_set(True)
+    bpy.ops.object.mode_set(mode="POSE")
+    bpy.ops.pose.armature_apply(selected=False)
+    bpy.ops.object.mode_set(mode="EDIT")
+    for bone in arm.data.edit_bones:
+        bone.use_connect = False
+    for bone in arm.data.edit_bones:
+        bone.tail = bone.head + Vector((0.0, 0.0, 4.0))
+        bone.roll = 0.0
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for name, mode in modes.items():
+        bone = arm.pose.bones[name]
+        bone.rotation_mode = mode
+        bone.rotation_euler = (0.0, 0.0, 0.0)
+        bone.rotation_quaternion = Quaternion()
+        bone.location = (0.0, 0.0, 0.0)
+    body.modifiers.new("Armature", "ARMATURE").object = arm
+    bpy.context.view_layer.update()
+    for o, world in placed.items():
+        o.matrix_world = world
+    if action:
+        arm.animation_data.action = action
+    bpy.context.view_layer.update()
+    heights = [(body.matrix_world @ v.co).z for v in body.data.vertices]
+    floor = min(heights)
+    if abs(floor) > 0.05:
+        raise SystemExit(f"The stance lifts or sinks the soles by {floor:.2f} mm. Both soles must stay on the floor.")
+    return max(heights) - floor
+
+
 def export_web(src, args):
     """The website model. One root node, Y up after export, face toward +Z, soles at height zero.
 
@@ -503,6 +564,11 @@ def export_web(src, args):
 
     if textured and hair_uv is not None and site.get("bristles"):
         print(f"BRISTLES {add_bristle_hairs(body, site['bristles'], hair_uv)} hairs")
+    stance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "stance.json")
+    if rigged and os.path.exists(stance_path) and not args.no_stance:
+        with open(stance_path) as fh:
+            height = bake_stance(body, arm, json.load(fh), [o for o in parts if o.parent_type == "BONE"])
+        print(f"STANCE baked, figure height {height:.2f} mm")
 
     root.scale = (0.001, 0.001, 0.001)               # millimetres to glTF metres
     for o in scene.objects:
