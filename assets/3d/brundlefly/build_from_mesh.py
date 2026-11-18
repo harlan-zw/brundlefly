@@ -2,7 +2,8 @@
 
 The base mesh comes from an image-to-3D model that read the sculpt reference image.
 This script turns it into a printable figure: it removes the bristle spikes, thickens
-thin parts to the print minimum, adds the base, and meshes it.
+thin parts to the print minimum, rebuilds the back from the character sheet, adds the
+base, and meshes it.
 
 Run headless, with absolute paths:
   flatpak run org.blender.Blender -b --factory-startup \
@@ -42,6 +43,7 @@ def parse():
     ap.add_argument("--variant", choices=("print", "web"), default="print", help="web: keeps bristles and thin parts, no base")
     ap.add_argument("--open-radius", type=float, default=0.42, help="parts thinner than twice this are removed (bristles)")
     ap.add_argument("--min-radius", type=float, default=1.0, help="thin parts grow to this radius")
+    ap.add_argument("--dump-field", action="store_true", help="also write field.npz (the solid as a boolean grid), for measuring joints")
     ap.add_argument("--dimples", action="store_true", help="add pilot dimples for hand-implanted bristles (off: a pin makes the holes)")
     args, _ = ap.parse_known_args(argv)
     return args
@@ -170,6 +172,57 @@ def band_centre(f, zmax, z0, z1):
     return bm.V(f.ax[0][idx[0]].mean(), f.ax[1][idx[1]].mean(), f.ax[2][k0:k1][idx[2]].mean())
 
 
+def torso_centre_x(f, z, around, half=9.0):
+    """X of the torso centre at height z. Arms and wings are outside the window."""
+    k = int(round((z - f.lo[2]) / f.h))
+    counts = (f.F[:, :, k] < 0).sum(axis=1).astype(np.float64)
+    counts[np.abs(f.ax[0] - around) > half] = 0.0
+    return float((counts * f.ax[0]).sum() / max(counts.sum(), 1.0))
+
+
+def back_y(f, x, z):
+    hit = f.raycast(bm.V(x, 60.0, z), bm.V(0, -1, 0), max_dist=90.0)
+    return None if hit is None else float(hit[1])
+
+
+def rebuild_back(f, zmax):
+    """Make the back follow the character sheet's back view.
+
+    The generator saw the figure from the front and gave it a human backside.
+    The sheet shows a column of segmented plates down the upper back and a
+    tapering segmented shield over the lower back. This fills the cleft and
+    adds both as raised bands that hug the surface.
+    """
+    around = float(band_centre(f, zmax, 0.40, 0.80)[0])
+
+    # 1. Fill the cleft between the buttocks.
+    fill, radii = [], []
+    for frac in np.linspace(0.30, 0.55, 9):
+        z = frac * zmax
+        x0 = torso_centre_x(f, z, around)
+        peaks = [y for y in (back_y(f, x0 + dx, z) for dx in (-6.0, -4.0, -2.5, 2.5, 4.0, 6.0)) if y is not None]
+        if not peaks:
+            continue
+        fill.append(bm.V(x0, max(peaks) - 3.3, z))
+        radii.append(3.5)
+    if len(fill) >= 2:
+        f.tube(fill, radii, k=1.6, mat=bm.FLESH, smooth=2)
+
+    def bands(z_top, z_bottom, w_top, w_bottom, step=2.3, fixed_x=None):
+        heights = np.arange(z_top * zmax, z_bottom * zmax, -step)
+        for i, z in enumerate(heights):
+            t = i / max(len(heights) - 1, 1)
+            half = (w_top + (w_bottom - w_top) * t) / 2
+            x0 = fixed_x if fixed_x is not None else torso_centre_x(f, z, around)
+            # Each band is a shallow chevron: the sides sit a little lower than the centre.
+            starts = [bm.V(x0 + u * half, 60.0, z - abs(u) * 0.7) for u in (-1.0, -0.5, 0.0, 0.5, 1.0)]
+            f.wrap(starts, bm.V(0, -1, 0), [1.0, 1.3, 1.45, 1.3, 1.0], embed=0.4, k=0.25, mat=bm.PLATE, smooth=3)
+
+    bands(0.89, 0.60, 12.0, 7.0)                                   # upper back, between the wings
+    # The lower shield keeps one centre line, so a thigh cannot pull it sideways.
+    bands(0.56, 0.37, 15.0, 4.0, fixed_x=torso_centre_x(f, 0.52 * zmax, around))
+
+
 def add_dimples(f, zmax):
     """Pilot dimples for hand-implanted fibres, on the head, the back, the shoulders, and the thighs."""
     head = band_centre(f, zmax, 0.80, 0.97)
@@ -231,6 +284,7 @@ def main():
     zmax = float(points[:, 2].max())
     anchors = {}
     head = band_centre(f, zmax, 0.80, 0.99)
+    rebuild_back(f, zmax)
     if printing:
         stats["max_growth_mm"] = round(thicken(f, args.min_radius), 3)
         stats["base"] = add_base(f)
@@ -241,6 +295,8 @@ def main():
         anchors["anchor-face"] = face
     Z = f.ax[2][None, None, :]
     f.F = np.maximum(f.F, -Z).astype(np.float32)          # flat underside
+    if args.dump_field:
+        np.savez_compressed(os.path.join(args.out, "field.npz"), solid=np.packbits(f.F < 0), shape=f.n, lo=f.lo, h=f.h)
 
     # field_to_mesh reads these module-level joints for the website data. Replace them with measured values.
     bm.HEAD = head
