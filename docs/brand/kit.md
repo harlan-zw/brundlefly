@@ -333,6 +333,8 @@ The model keeps its own origin, facing, and materials: +Y is up and the face poi
 If the file has the relief rig's 25 body joints, each with an identity rest rotation, the site poses it with the relief rig's code.
 The model then idles, walks the same route, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
 It has no jaw, brow, or eyelid joints, so it does not blink or change expression.
+If the file turns its top node about the vertical, the site mirrors that turn when he walks to the other side, so he faces his path.
+He turns a little before each walk and holds his side while he stands. His head stays toward the viewer at rest.
 Any other file loops its Brundlefly-idle clip, or sways about its feet if it has no clip. That model stands at the mascot start point.
 The scene logs the joint that stopped the pose code, and reports the motion in its data-mascot-motion attribute: posed, clip, or sway.
 If the file has a joint named head, the head turns to the camera while a visitor hovers or the dialog is open. A hover also tilts it.

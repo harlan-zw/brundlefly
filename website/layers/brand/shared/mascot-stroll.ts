@@ -69,3 +69,15 @@ export const strollPose = (state: Stroll, walkSpeed: number) => ({
   walkPhase: state.phase,
   gaze: state.gaze,
 })
+
+/**
+ * The side he faces: 1 is screen right, as in the artwork, and -1 is screen left. Values between are a turn in progress.
+ * He turns toward the next waypoint as a walk starts, and a little before it. He holds his side while he stands.
+ */
+export function advanceFacing(facing: number, state: Stroll, route: readonly Point[], delta: number) {
+  const dx = route[state.destination]![0] - state.position[0]
+  const leaving = state.activity._tag === 'Walking' || state.activity.remaining < 0.8
+  // A waypoint almost straight ahead or behind gives no side, so he keeps the one he has.
+  const target = leaving && Math.abs(dx) > 0.05 ? Math.sign(dx) : facing < 0 ? -1 : 1
+  return approach(facing, target, 3.5, delta)
+}

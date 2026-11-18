@@ -243,3 +243,29 @@ test('a habit keeps its head motion while the head watches the visitor', () => {
   const settled = new Vector3(0, 1, 0).applyQuaternion(joint('head').quaternion)
   assert.ok(Math.abs(Math.atan2(settled.x, settled.y)) < 0.01, 'The tilt must end with the habit.')
 })
+
+test('a model with a turned root mirrors that turn by side, and its head stays toward the viewer at rest', () => {
+  const { scene, node, joint } = jointedModel()
+  // The file turns its root to the three-quarter stance of the artwork.
+  node.rotation.y = 0.5
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const yaw = (object: Object3D) => { mascot.root.updateMatrixWorld(true); const forward = new Vector3(0, 0, 1).transformDirection(object.matrixWorld); return Math.atan2(forward.x, forward.z) }
+  mascot.pose!(standing)
+  close(yaw(joint('pelvis')), 0.5)
+  close(yaw(joint('head')), 0)
+  mascot.pose!(standing, undefined, -1)
+  close(yaw(joint('pelvis')), -0.5)
+  close(yaw(joint('head')), 0)
+  // Mid-turn he faces the viewer squarely.
+  mascot.pose!(standing, undefined, 0)
+  close(yaw(joint('pelvis')), 0)
+  // At a full stride the head keeps half of the body's turn, so he looks along his path.
+  mascot.pose!({ ...standing, gait: 1, walkPhase: 0 }, undefined, -1)
+  assert.ok(Math.abs(yaw(joint('head')) + 0.25) < 0.05, 'The head must keep part of the turn while he walks.')
+  // A file with no root turn does not turn.
+  const plain = jointedModel()
+  const unturned = ok(createMeshMascot({ scene: plain.scene, animations: [] }, 2.5))
+  unturned.pose!(standing, undefined, -1)
+  unturned.root.updateMatrixWorld(true)
+  assert.ok(plain.node.quaternion.angleTo(new Quaternion()) < 1e-9)
+})

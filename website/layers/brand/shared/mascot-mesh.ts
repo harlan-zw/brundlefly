@@ -92,6 +92,15 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   const faceAnchor = face
   const found = findBodyJoints(scene)
   const bodyJoints = found._tag === 'Ok' ? found.joints : undefined
+  // A file can turn its top node about the vertical: the three-quarter stance of the artwork.
+  // The site mirrors that turn when he faces the other side. Joint axes are in the body's frame, below that node.
+  let stanceNode = bodyJoints?.get('pelvis')
+  while (stanceNode?.parent && stanceNode.parent !== scene) stanceNode = stanceNode.parent
+  const stanceYaw = stanceNode ? new Euler().setFromQuaternion(stanceNode.quaternion, 'YXZ').y : 0
+  const vertical = new Vector3(0, 1, 0)
+  const sideTurn = new Quaternion()
+  // Any rest rotation that is not the vertical turn stays as the file has it.
+  const stanceRest = stanceNode ? sideTurn.setFromAxisAngle(vertical, stanceYaw).invert().multiply(stanceNode.quaternion).clone() : undefined
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
   // The rig contract gives every joint an identity rest rotation, so the head looks along +Z of its parent at rest.
   const head = scene.getObjectByName('head')
@@ -145,13 +154,18 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
      * Poses the skeleton with the relief rig's code: idle, walk, speech, and mannerisms. The file's own clip does not run.
      * It exists only for a file with every body joint at an identity rest rotation.
      */
-    pose: bodyJoints ? (input: MascotPoseInput, look?: MeshMascotLook) => {
+    pose: bodyJoints ? (input: MascotPoseInput, look?: MeshMascotLook, facing = 1) => {
       // Some joints only move during a habit. Clearing every joint stops a habit's turn from accumulating across frames.
       for (const joint of bodyJoints.values()) joint.rotation.set(0, 0, 0)
       const body = poseBody(name => bodyJoints.get(name)!, input)
       pivot.rotation.y = body.root.rotationY
       pivot.position.y = body.root.positionY
       pivot.scale.y = body.root.scaleY
+      // `facing` is 1 for the side the file faces and -1 for the other side. The body turns and the head stays toward the viewer.
+      // While he walks, the head keeps half of the turn, so he looks along his path.
+      const yaw = stanceYaw * Math.max(-1, Math.min(1, facing))
+      if (stanceNode && stanceRest) stanceNode.quaternion.setFromAxisAngle(vertical, yaw).multiply(stanceRest)
+      bodyJoints.get('head')!.rotation.y -= yaw * (1 - Math.min(1, Math.max(0, input.gait ?? 0)) * 0.5)
       // The mouthparts drift on their own and open with his voice. Neighbours open in opposite directions.
       const phase = input.time * mouthpartRate
       mouthparts.forEach(({ base, tip }, index) => {

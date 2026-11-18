@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { advanceStroll, startStroll, strollPose } from '../layers/brand/shared/mascot-stroll.ts'
+import { advanceFacing, advanceStroll, startStroll, strollPose } from '../layers/brand/shared/mascot-stroll.ts'
 import type { Stroll, StrollAttention } from '../layers/brand/shared/mascot-stroll.ts'
 
 const route = [[2, 0], [0, 0]] as const
@@ -58,4 +58,23 @@ test('before leaving a pause he looks toward the next waypoint', () => {
   })
   assert.ok(ending, 'The walk must reach the end of a pause.')
   assert.ok(strollPose(ending, 0.5).gaze.yaw < -0.05, 'The next waypoint lies toward negative x, so his head must turn that way first.')
+})
+
+test('he turns to the side he walks toward, starts the turn before he leaves, and holds it while he stands', () => {
+  let facing = 1
+  let turnedWhilePaused = false
+  let heldWhilePaused = true
+  // The first waypoint is to screen right, so he keeps the artwork's side. The second is to screen left.
+  const state = run(startStroll([0, 0], 0), 9, 'free', (value) => {
+    facing = advanceFacing(facing, value, route, frame)
+    if (value.activity._tag === 'Pausing' && value.activity.waypoint === 0) {
+      if (value.activity.remaining > 1) heldWhilePaused &&= facing > 0.99
+      else if (value.activity.remaining < 0.1) turnedWhilePaused ||= facing < 0
+    }
+  })
+  assert.ok(heldWhilePaused, 'He must keep his side while he stands.')
+  assert.ok(turnedWhilePaused, 'The turn must begin before the walk to screen left.')
+  assert.equal(state.activity._tag, 'Walking')
+  assert.ok(state.position[0] < 1.9 && facing < -0.99, 'He must face screen left while he walks there.')
+  assert.equal(advanceFacing(-1, { ...state, activity: { _tag: 'Pausing', remaining: 2, duration: 2.5, waypoint: 1, age: 0.5 } }, route, frame), -1)
 })

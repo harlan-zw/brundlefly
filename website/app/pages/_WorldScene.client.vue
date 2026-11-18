@@ -10,7 +10,7 @@ import {
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
-import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
+import { advanceFacing, advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
@@ -277,6 +277,8 @@ watch(canvas, async (element) => {
     ? position => overMascot((position.x + 1) * renderWidth / 2, (1 - position.y) * renderHeight / 2)
     : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
   let stroll = startStroll(sceneLayout.mascot, 0)
+  // The side the mesh faces. The relief rig is flat artwork and always faces screen right.
+  let facing = 1
   let elapsed = 0
   let faceElapsed = 0
   // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
@@ -347,6 +349,7 @@ watch(canvas, async (element) => {
     // A mesh without the relief rig's joints stands where the relief rig starts.
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route: sceneLayout.walk,
       pauses: sceneLayout.walkPauses, walkSpeed: settings.value.walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free' })
+    if (meshPose && faceMotion && visibility.value === 'visible') facing = advanceFacing(facing, stroll, sceneLayout.walk, delta)
     const pose = faceMotion ? strollPose(stroll, settings.value.walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
     figure.rotation.y = stroll.heading
@@ -378,7 +381,7 @@ watch(canvas, async (element) => {
         brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
           : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
         squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 }
-      if (meshPose) meshPose(input, look)
+      if (meshPose) meshPose(input, look, facing)
       else if (mascot._tag === 'Relief') mascot.update(input)
     }
     shadow.position.x = figure.position.x
