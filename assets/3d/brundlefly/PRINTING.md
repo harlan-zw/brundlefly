@@ -166,7 +166,7 @@ These steps are untested on a printed part.
 - The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork.
 - `Brundlefly-eye-0` and `Brundlefly-eye-1`: eyeball nodes, material `Brundlefly-eye`. Eye 0 is on screen left. Each sits behind an almond opening in the body mesh, on a dark eyeball that is part of that mesh.
   - Each node is a unit sphere with a uniform scale: the eyeball radius, about 3.0 mm and 2.6 mm. The iris and the pupil face +Z of the node, which is the way the head faces. To aim an eye, turn its node.
-  - The colour is in `COLOR_0`: a dark globe, a teal iris ring, and a dark pupil. The material's base colour factor is white, so a replacement material must supply its own colour.
+  - The colour is in `COLOR_0`: a dark globe, a dark teal iris that grows lighter toward its edge, and a dark pupil. The iris is dark so that the highlight shows, as on the relief rig. The material's base colour factor is white, so a replacement material must supply its own colour.
 - `anchor-face`: an empty node at the front of the face.
 - No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 3.8 MB.
 

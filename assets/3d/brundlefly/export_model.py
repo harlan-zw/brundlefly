@@ -29,10 +29,12 @@ from mathutils.kdtree import KDTree
 EYE_NODE_SCALE = 1.02
 # The texture is dark inside each socket, out to this many socket radii. The sheet's eyelids start just past it.
 EYE_DARK_SCALE = 1.12
-# Linear colours of an eyeball node. The globe and the iris are measured in the sheet's front view:
-# the dark part of the eye opening, and the mean of the iris. The pupil is darker than the globe.
-EYE_RIM = (0.010, 0.011, 0.014)
-EYE_IRIS = (0.045, 0.115, 0.130)
+# Linear colours of an eyeball node. The eye is a dark, wet globe, as on the site's relief rig: the
+# iris is a dark teal that grows lighter toward its edge, and the highlight does most of the work.
+# A pale iris hides the highlight and reads as a doll's eye.
+EYE_RIM = (0.005, 0.006, 0.008)
+EYE_IRIS_INNER = (0.012, 0.035, 0.038)
+EYE_IRIS_OUTER = (0.050, 0.125, 0.132)
 EYE_PUPIL = (0.002, 0.002, 0.003)
 # The pupil and the iris ring on the front of the eyeball: their angles from the front, in radians.
 EYE_PUPIL_ANGLE = 0.17
@@ -541,7 +543,9 @@ def export_web(src, args):
         for vertex in mesh.vertices:
             angle = vertex.co.normalized().angle(front)
             iris, pupil = band(angle, EYE_IRIS_ANGLE), band(angle, EYE_PUPIL_ANGLE)
-            colour = [rim + (ring - rim) * iris for rim, ring in zip(EYE_RIM, EYE_IRIS)]
+            across = min(max((angle - EYE_PUPIL_ANGLE) / (EYE_IRIS_ANGLE - EYE_PUPIL_ANGLE), 0.0), 1.0)
+            ring = [a + (b - a) * across ** 1.5 for a, b in zip(EYE_IRIS_INNER, EYE_IRIS_OUTER)]
+            colour = [rim + (c - rim) * iris for rim, c in zip(EYE_RIM, ring)]
             layer.data[vertex.index].color = tuple(c + (dot - c) * pupil for c, dot in zip(colour, EYE_PUPIL)) + (1.0,)
         mesh.materials.append(eye_mat)
         ob = bpy.data.objects.new(f"Brundlefly-eye-{index}", mesh)
