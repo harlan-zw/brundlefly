@@ -312,6 +312,35 @@ def outer_background(dark):
     return bg
 
 
+def erode(mask, steps):
+    """Shrink a pixel mask by this many pixels, with a diamond-shaped reach."""
+    for _ in range(steps):
+        out = mask.copy()
+        out[1:] &= mask[:-1]
+        out[:-1] &= mask[1:]
+        out[:, 1:] &= mask[:, :-1]
+        out[:, :-1] &= mask[:, 1:]
+        mask = out
+    return mask
+
+
+def dilate(mask, steps):
+    """Grow a pixel mask by this many pixels, with a diamond-shaped reach."""
+    return ~erode(~mask, steps)
+
+
+def outline_distance(mask, reach):
+    """Distance in pixels to the edge of a mask, negative inside, limited to +-reach."""
+    out = np.zeros(mask.shape, dtype=np.float32)
+    grown, shrunk = mask, mask
+    for _ in range(reach):
+        out += ~grown
+        grown = dilate(grown, 1)
+        shrunk = erode(shrunk, 1)
+        out -= shrunk
+    return out
+
+
 def load_view(path):
     """An image as linear RGB rows from bottom to top, with its figure mask and bounding box."""
     img = bpy.data.images.load(path)
@@ -330,9 +359,19 @@ def load_view(path):
             c = np.cumsum(np.pad(soft, [(13, 12) if a == axis else (0, 0) for a in range(3)], mode="edge"), axis=axis)
             soft = (np.take(c, range(25, c.shape[axis]), axis=axis) - np.take(c, range(0, c.shape[axis] - 25), axis=axis)) / 25.0
     # The figure's colours, grown outward. A part of the model that reaches past the drawing,
-    # such as a wing tip, takes the colour of the nearest drawn pixel.
-    spread, known = linear.copy(), figure.copy()
-    for _ in range(60):
+    # such as a wing tip, takes the colour of the nearest drawn pixel. The growth starts a few
+    # pixels inside the outline and from locally averaged colours, so the dark outline pixels
+    # of the drawing do not streak outward.
+    weight = figure.astype(np.float64)[..., None]
+    local, cover = linear * weight, weight.copy()
+    for axis in (0, 1):
+        pad = [(4, 4) if a == axis else (0, 0) for a in range(3)]
+        local = sum(np.roll(np.pad(local, pad, mode="edge"), k, axis=axis) for k in range(-4, 5))[tuple(slice(4, -4) if a == axis else slice(None) for a in range(3))]
+        cover = sum(np.roll(np.pad(cover, pad, mode="edge"), k, axis=axis) for k in range(-4, 5))[tuple(slice(4, -4) if a == axis else slice(None) for a in range(3))]
+    local = local / np.maximum(cover, 1e-6)
+    known = erode(figure, 4)
+    spread = np.where(known[..., None], local, 0.0)
+    for _ in range(90):
         for axis, shift in ((0, 1), (0, -1), (1, 1), (1, -1)):
             near_known = np.roll(known, shift, axis=axis)
             take = near_known & ~known
@@ -384,19 +423,28 @@ def register(view, f, mirror, window=None, start=None, axis=0):
     return {"iou": float(iou), "s": float(s), "tx": float(tu), "tz": float(tz), "xc": float(uc), "zmin": float(zmin), "cc": float(cc), "r0": float(r0), "sign": sign}
 
 
-def blended_fit(body, head, z_low, z_high):
-    """Image column and row for model points: the body fit below z_low, the head fit above z_high."""
-    def offsets(z):
+def blended_fit(body, head, z_low, z_high, head_u=None):
+    """Image column and row for model points: the head fit on the head, the body fit elsewhere.
+
+    The head fit applies above z_high and, when head_u = (centre, half width) is given, only
+    that close to the head across the view. The wings and the shoulders are as high as the
+    head, but they belong to the body, so they keep the body fit.
+    """
+    def offsets(u, z):
         w = np.clip((np.asarray(z, dtype=np.float64) - z_low) / (z_high - z_low), 0.0, 1.0)
+        if head_u is not None:
+            w = w * np.clip((head_u[1] + HEAD_FADE - np.abs(np.asarray(u, dtype=np.float64) - head_u[0])) / HEAD_FADE, 0.0, 1.0)
         w = w * w * (3 - 2 * w)
         return body["tx"] * (1 - w) + head["tx"] * w, body["tz"] * (1 - w) + head["tz"] * w
 
     def to_image(u, z):
-        tu, tz = offsets(z)
+        tu, tz = offsets(u, z)
         return body["cc"] + body["sign"] * (u - body["xc"] - tu) / body["s"], body["r0"] + (z - body["zmin"] - tz) / body["s"]
 
     return to_image
 
+
+HEAD_FADE = 2.5   # millimetres over which the head fit gives way to the body fit, across a view
 
 # Each view: the model axis it lies across, the normal component that faces it, and if the image is mirrored.
 VIEW_SETUP = {
@@ -435,20 +483,71 @@ def erase_painted_eyes(view, reach=20):
     return int(mask.sum())
 
 
-def find_eyes(view, head_fit):
-    """Eye centres in model x and z, from the teal glints in the sheet's front view. Screen left first."""
-    rows, cols = np.nonzero(teal_mask(view))
+def eye_openings(view):
+    """The painted eye openings of a view: the teal iris and the dark rim around it.
+
+    Returns one (rows, cols) pair of pixel index arrays for each eye, screen left first.
+    """
+    teal = teal_mask(view)
+    rows, cols = np.nonzero(teal)
     if len(cols) < 20:
         return []
+    rgb = view["rgb"]
+    r, b, value = rgb[..., 0], rgb[..., 2], rgb.max(axis=2)
+    eye = teal | ((b >= r * 0.98) & (value < 0.75)) | (value < 0.22)
+    window = np.zeros_like(eye)
+    window[max(rows.min() - 60, 0):rows.max() + 60, max(cols.min() - 60, 0):cols.max() + 60] = True
+    eye = dilate(erode(eye & window, 3), 3)         # cuts the dark skin creases that touch the rim
+    reached = teal & eye
+    for _ in range(120):                            # the part of the mask that connects to the iris
+        grown = dilate(reached, 1) & eye
+        if int(grown.sum()) == int(reached.sum()):
+            break
+        reached = grown
+    rows, cols = np.nonzero(reached)
     split = (cols.min() + cols.max()) / 2
+    return [(rows[side], cols[side]) for side in (cols < split, cols >= split) if side.sum() >= 10]
+
+
+def find_eyes(view, head_fit):
+    """Eye centres and half sizes in model x and z, from the sheet's front view. Screen left first."""
     fit = head_fit
     eyes = []
-    for side in (cols < split, cols >= split):
-        if side.sum() >= 10:
-            x = fit["xc"] + fit["tx"] + fit["sign"] * (cols[side].mean() - fit["cc"]) * fit["s"]
-            z = fit["zmin"] + fit["tz"] + (rows[side].mean() - fit["r0"]) * fit["s"]
-            eyes.append((float(x), float(z)))
-    return sorted(eyes)
+    for rows, cols in eye_openings(view):
+        x = fit["xc"] + fit["tx"] + fit["sign"] * ((cols.min() + cols.max()) / 2 - fit["cc"]) * fit["s"]
+        z = fit["zmin"] + fit["tz"] + ((rows.min() + rows.max()) / 2 - fit["r0"]) * fit["s"]
+        eyes.append({"x": float(x), "z": float(z), "half_width": float((cols.max() - cols.min() + 1) * fit["s"] / 2),
+                     "half_height": float((rows.max() - rows.min() + 1) * fit["s"] / 2)})
+    return sorted(eyes, key=lambda e: e["x"])
+
+
+def trim_small_wing(f, view, to_image, zmax, tolerance=3.0):
+    """Cut the smaller wing back to its outline in the sheet's front view. Returns the volume removed.
+
+    The generator makes the smaller wing far wider than the sheet draws it. A wing is a thin
+    sheet behind the shoulders, so the cut applies to thin parts there and to nothing else.
+    The larger wing stays as it is: it matches the sheet, and its tip sets the figure height.
+    tolerance is in image pixels.
+    """
+    h = f.h
+    y0, z0 = int(np.searchsorted(f.ax[1], 0.0)), int(np.searchsorted(f.ax[2], 0.70 * zmax))
+    block = f.F[:, y0:, z0:]
+    solid = block < 0
+    k = max(int(round(1.0 / h)), 1)
+    core = ~max_filter(~solid, k)                   # what a cube of about 2 mm fits inside
+    thin = solid & ~max_filter(core, k + 1)
+    centre = (f.ax[0][solid.any(axis=(1, 2))].min() + f.ax[0][solid.any(axis=(1, 2))].max()) / 2
+    thin &= ((f.ax[0] - centre) * SMALL_WING_SIDE > 7.0)[:, None, None]
+    X, Z = np.meshgrid(f.ax[0].astype(np.float64), f.ax[2][z0:].astype(np.float64), indexing="ij")
+    col, row = to_image(X, Z)
+    col = np.clip(np.rint(col).astype(int), 0, view["figure"].shape[1] - 1)
+    row = np.clip(np.rint(row).astype(int), 0, view["figure"].shape[0] - 1)
+    scale = abs(float(f.ax[0][1] - f.ax[0][0])) / max(abs(float(to_image(f.ax[0][1], 0.0)[0] - to_image(f.ax[0][0], 0.0)[0])), 1e-9)   # mm per pixel
+    outside = ((outline_distance(view["figure"], 12)[row, col] - tolerance) * scale)[:, None, :]     # mm past the outline
+    cut = np.maximum(block, np.broadcast_to(outside, block.shape))
+    removed = thin & (cut >= 0)
+    block[thin] = cut[thin]
+    return float(removed.sum()) * h ** 3
 
 
 def sheet_colour_fn(views):
@@ -491,23 +590,55 @@ def sheet_colour_fn(views):
     return colour
 
 
-GLINT = bm.BELLY                       # this pipeline has no belly material, so its slot carries the eye glint
-bm.PALETTE[GLINT] = "#418B90"
+# The fused eyeball is this share of the painted eye opening. The website's eyeball node is
+# a little larger than the fused eyeball, so the node matches the opening.
+EYEBALL_SHARE = 0.93
+# How far the eyeball centre sits behind the face surface, as a share of the eyeball's depth radius.
+EYE_INSET = 0.8
+# The sheet draws the smaller wing on the figure's left, which is +X.
+SMALL_WING_SIDE = 1.0
 
 
-def add_eyes(f, eyes_xz, glints):
-    """Dark eyeballs where the sheet has its eyes. Returns their centres and radii."""
+def face_slope(f, eye):
+    """How fast the face surface falls away across an eye: depth change per millimetre of x."""
+    xs, ys = [], []
+    for dz in (-0.5, 0.0, 0.5):
+        for dx in (-0.8, -0.4, 0.0, 0.4, 0.8):
+            hit = f.raycast(bm.V(eye["x"] + dx * eye["half_width"], -45.0, eye["z"] + dz * eye["half_height"]), bm.V(0, 1, 0), max_dist=60.0)
+            if hit is not None:
+                xs.append(hit[0])
+                ys.append(hit[1])
+    return float(np.polyfit(xs, ys, 1)[0]) if len(xs) >= 6 else 0.0
+
+
+def add_eyes(f, eyes, middle):
+    """Dark eyeballs where the sheet has its eyes, as wide and as tall as the sheet draws them.
+
+    Each eyeball turns about the vertical axis to lie along the face, so its outer end does
+    not stand clear of the head. Both eyes turn by the same angle, away from the middle of
+    the face. Returns the centre, the three radii, and the turn of each one.
+    """
+    turn = float(np.mean([abs(math.atan(face_slope(f, eye))) for eye in eyes])) if eyes else 0.0
+    turn = min(turn, math.radians(35))
     out = []
-    for (x, z), radius in zip(eyes_xz, (1.7, 1.5)):          # screen left is the larger eye
-        hit = f.raycast(bm.V(x, -45.0, z), bm.V(0, 1, 0), max_dist=60.0)
+    for eye in eyes:
+        hit = f.raycast(bm.V(eye["x"], -45.0, eye["z"]), bm.V(0, 1, 0), max_dist=60.0)
         if hit is None:
             continue
-        centre = hit + bm.V(0, radius * 0.45, 0)
-        f.blob(centre, bm.V(radius * 1.15, radius, radius * 0.9), k=0, mat=bm.EYE)
-        if glints:
-            f.blob(centre + bm.V(-0.3 * radius, -0.82 * radius, 0.3 * radius), bm.V(0.5, 0.4, 0.5), k=0, mat=GLINT)
-        out.append((centre, radius))
+        radii = bm.V(eye["half_width"], eye["half_height"], eye["half_height"]) * EYEBALL_SHARE
+        yaw = turn if eye["x"] > middle else -turn
+        rot = bm.rot_xyz(0.0, 0.0, yaw)
+        centre = hit + rot @ bm.V(0, radii[1] * EYE_INSET, 0)     # set into the face, as the lids in the sheet suggest
+        f.blob(centre, radii, k=0, mat=bm.EYE, rot=rot)
+        out.append((centre, radii, yaw))
     return out
+
+
+def erase_side_eyes(views):
+    """The side views lose their painted eyes. The front view keeps its eyes: the eyeballs sit on them."""
+    for name, (view, _) in views.items():
+        if name != "front":
+            erase_painted_eyes(view)
 
 
 def main():
@@ -561,11 +692,17 @@ def main():
             view = load_view(path)
             body = register(view, f, mirror=setup["mirror"], axis=setup["axis"])
             # The head gets its own offsets: a wing or a hand can pull the whole-body fit off the face.
+            # Seen from the front or the back, the window is only as wide as the head. A wider one
+            # takes in the shoulders and the wing roots, and they pull the face about 2 mm sideways.
             centre = head[setup["axis"]]
-            window = (centre - 14.0, centre + 14.0, 0.62 * zmax, 0.97 * zmax)
+            if setup["axis"] == 0:
+                window = (centre - 8.5, centre + 8.5, 0.70 * zmax, 0.995 * zmax)
+            else:
+                window = (centre - 14.0, centre + 14.0, 0.62 * zmax, 0.97 * zmax)
             head_fit = register(view, f, mirror=setup["mirror"], window=window, start=body, axis=setup["axis"])
-            views[name] = (view, blended_fit(body, head_fit, z_low, z_high))
-            record[name] = {"image": os.path.basename(path), "body": body, "head": head_fit}
+            head_u = [float(centre), float(window[1] - window[0]) / 2]
+            views[name] = (view, blended_fit(body, head_fit, z_low, z_high, head_u))
+            record[name] = {"image": os.path.basename(path), "body": body, "head": head_fit, "head_u": head_u}
             fits[name] = (view, body, head_fit)
         stats["sheet_fit"] = {name: {"overlap": round(r["body"]["iou"], 3), "head_overlap": round(r["head"]["iou"], 3)} for name, r in record.items()}
         f.colour_fn = sheet_colour_fn(views)
@@ -573,15 +710,19 @@ def main():
         stats["sheet_projection"] = {"views": record, "blend_z": [z_low, z_high]}
         front, _, head_front = fits["front"]
         spots = find_eyes(front, head_front)
-        stats["sheet_fit"]["front"]["eyes_from_art_x"] = [round(x, 2) for x, _ in spots]
+        stats["sheet_fit"]["front"]["eyes_from_art_x"] = [round(e["x"], 2) for e in spots]
         # The sheet's head is turned a little, and the model's head is not. So the eyes keep the
-        # artwork's spacing and height, centred on the model's head.
+        # artwork's spacing, height, and size, centred on the model's head. The front view moves
+        # across the head by the same amount, so the painted lids stay around the eyeballs.
         if len(spots) == 2:
-            half = (spots[1][0] - spots[0][0]) / 2
-            spots = [(head[0] - half, spots[0][1]), (head[0] + half, spots[1][1])]
-        eyes = add_eyes(f, spots, glints=False)      # the website model has eyeball nodes with their own highlight
-        for name, (view, _) in views.items():      # the eyeballs replace the painted eyes
-            erase_painted_eyes(view)
+            shift = head[0] - (spots[0]["x"] + spots[1]["x"]) / 2
+            for eye in spots:
+                eye["x"] += shift
+            head_front["tx"] += shift
+            stats["sheet_fit"]["front"]["face_shift_mm"] = round(float(shift), 3)
+        stats["wing_trim_mm3"] = round(trim_small_wing(f, front, views["front"][1], zmax), 1)
+        eyes = add_eyes(f, spots, head[0])
+        erase_side_eyes(views)
     if args.rebuild_back:
         rebuild_back(f, zmax)
     if printing:
@@ -610,9 +751,9 @@ def main():
         stats["sheet_projection"].update({"field_zmin": f.mesh_zmin, "mesh_scale": float(mesh_scale)})
     site = f.site_mm
     site["eyes"] = []
-    for centre, radius in eyes:
+    for centre, radius, yaw in eyes:
         position = [round(float(c) * mesh_scale, 3) for c in (centre - bm.V(0, 0, f.mesh_zmin))]
-        site["eyes"].append({"centre_mm": position, "radii_mm": [round(radius * 1.15 * mesh_scale, 3), round(radius * mesh_scale, 3), round(radius * 0.9 * mesh_scale, 3)]})
+        site["eyes"].append({"centre_mm": position, "radii_mm": [round(float(r) * mesh_scale, 3) for r in radius], "yaw_deg": round(math.degrees(yaw), 2)})
     site["anchors"] = {name: [round(float(c) * mesh_scale, 3) for c in (p - bm.V(0, 0, f.mesh_zmin))] for name, p in anchors.items()}
     site["pelvis_xy_mm"] = [0.0, 0.0]
     d = ob.dimensions

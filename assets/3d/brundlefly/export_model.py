@@ -28,6 +28,9 @@ from mathutils.bvhtree import BVHTree
 EYE_NODE_SCALE = 1.08
 # The texture is dark out to this many eyeball radii. The sheet's eyelids start just past it.
 EYE_DARK_SCALE = 1.15
+# Linear colours of the eyeball node: its rim, and the middle of its iris.
+EYE_RIM = (0.004, 0.007, 0.014)
+EYE_IRIS = (0.028, 0.190, 0.220)
 
 
 def parse():
@@ -142,6 +145,16 @@ def distance_weights(body, segments):
             group.add([int(vi)], float(weight[vi, j] / total), "REPLACE")
 
 
+def eye_reach(points, eye):
+    """Distance of each point from an eyeball centre, in eyeball radii. 1.0 is the eyeball surface."""
+    yaw = math.radians(eye.get("yaw_deg", 0.0))
+    offset = points - np.array(eye["centre_mm"])
+    along = offset[:, 0] * math.cos(yaw) + offset[:, 1] * math.sin(yaw)
+    across = -offset[:, 0] * math.sin(yaw) + offset[:, 1] * math.cos(yaw)
+    local = np.stack([along, across, offset[:, 2]], axis=1) / np.array(eye["radii_mm"])
+    return np.sqrt((local ** 2).sum(axis=1))
+
+
 def rigid_eye_sockets(body, eyes, inner=1.8, outer=3.2):
     """Weight the skin around each eyeball to the head bone only.
 
@@ -154,8 +167,7 @@ def rigid_eye_sockets(body, eyes, inner=1.8, outer=3.2):
     co = co.reshape(-1, 3)
     reach = np.full(len(co), np.inf)
     for eye in eyes:
-        offset = (co - np.array(eye["centre_mm"])) / np.array(eye["radii_mm"])
-        reach = np.minimum(reach, np.sqrt((offset ** 2).sum(axis=1)))
+        reach = np.minimum(reach, eye_reach(co, eye))
     t = np.clip((outer - reach) / (outer - inner), 0.0, 1.0)
     rigid = t * t * (3.0 - 2.0 * t)
     head = body.vertex_groups["head"]
@@ -307,10 +319,9 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
     baked = np.abs(position).sum(axis=1) > 1e-6
 
     z_low, z_high = projection["blend_z"]
-    views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high))
+    views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high, fit.get("head_u")))
              for name, fit in projection["views"].items()}
-    for view, _ in views.values():
-        bfm.erase_painted_eyes(view)             # the eyeballs replace the painted eyes
+    bfm.erase_side_eyes(views)
     colour = bfm.sheet_colour_fn(views)
     field = position / projection["mesh_scale"]              # texel positions, back in the build's coordinates
     field[:, 2] += projection["field_zmin"]
@@ -319,8 +330,7 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
     # Under each eyeball node the texture is dark, so no lit skin shows at the edge of the node.
     dark = bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.EYE])
     for eye in eyes:
-        offset = (position - np.array(eye["centre_mm"])) / (np.array(eye["radii_mm"]) * EYE_DARK_SCALE)
-        linear[baked & ((offset ** 2).sum(axis=1) < 1.0)] = dark
+        linear[baked & (eye_reach(position, eye) < EYE_DARK_SCALE)] = dark
     srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
 
     albedo = bpy.data.images.new("Brundlefly-albedo", size, size, alpha=False)
@@ -370,8 +380,11 @@ def export_web(src, args):
     eye_mat.use_nodes = True
     eye_mat.use_backface_culling = True
     bsdf = next(n for n in eye_mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
-    bsdf.inputs["Base Color"].default_value = (0.004, 0.007, 0.014, 1.0)
     bsdf.inputs["Roughness"].default_value = 0.12
+    # The colour is in the vertices: a teal iris that fades into a blue-black rim, as in the sheet.
+    iris = eye_mat.node_tree.nodes.new("ShaderNodeVertexColor")
+    iris.layer_name = "Col"
+    eye_mat.node_tree.links.new(iris.outputs["Color"], bsdf.inputs["Base Color"])
     for index, eye in enumerate(site["eyes"]):        # 0 is screen left and larger
         mesh = bpy.data.meshes.new(f"Brundlefly-eye-{index}")
         bm = bmesh.new()
@@ -380,12 +393,22 @@ def export_web(src, args):
             face.smooth = True
         bm.to_mesh(mesh)
         bm.free()
+        layer = mesh.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
+        # The iris is where the eyeball faces the front of the figure, also when the node is turned.
+        yaw = math.radians(eye.get("yaw_deg", 0.0))
+        front = Vector((-math.sin(yaw) * eye["radii_mm"][0], -math.cos(yaw) * eye["radii_mm"][1], 0.0)).normalized()
+        for vertex in mesh.vertices:
+            off_axis = (vertex.co - front).length
+            t = min(max((0.72 - off_axis) / 0.55, 0.0), 1.0)
+            t = t * t * (3.0 - 2.0 * t)
+            layer.data[vertex.index].color = tuple(a + (b - a) * t for a, b in zip(EYE_RIM, EYE_IRIS)) + (1.0,)
         mesh.materials.append(eye_mat)
         ob = bpy.data.objects.new(f"Brundlefly-eye-{index}", mesh)
         scene.collection.objects.link(ob)
         cx, cy, cz = eye["centre_mm"]
         ob.location = (cx - px, cy - py, cz)
         ob.scale = [r * EYE_NODE_SCALE for r in eye["radii_mm"]]
+        ob.rotation_euler = (0.0, 0.0, math.radians(eye.get("yaw_deg", 0.0)))
         ob.parent = root
         parts.append(ob)
     for name, (ax, ay, az) in site["anchors"].items():
