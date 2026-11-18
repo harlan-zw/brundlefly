@@ -1,4 +1,4 @@
-import { AnimationMixer, Box3, Group, Mesh, Object3D, SkinnedMesh, Texture, Vector3 } from 'three'
+import { AnimationMixer, Box3, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, Texture, Vector3 } from 'three'
 import type { AnimationClip } from 'three'
 
 /** Served copy of assets/3d/brundlefly/brundlefly-web.glb. The brand sync script owns that copy. */
@@ -12,6 +12,12 @@ const swayRate = 0.115
 const swayPeriod = Math.PI * 2 / swayRate
 /** A file with clips plays its idle clip. A file without clips sways as one object. */
 export type MeshMascotMotion = { _tag: 'Clip', name: string } | { _tag: 'Sway' }
+/** Turns a `head` joint toward a world point. `weight` blends from the clip pose (0) to the full turn (1). `tilt` is a roll in radians. */
+export type MeshMascotLook = { target: Vector3, weight: number, tilt: number }
+// The head turns less far than the eyes of the relief rig, so the neck never folds.
+const maxHeadYaw = 0.6
+const maxHeadPitch = 0.35
+const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value))
 export type MeshMascot = ReturnType<typeof assemble>
 export type MeshMascotResult = { _tag: 'Ok', mascot: MeshMascot } | { _tag: 'Err', reason: string }
 
@@ -56,6 +62,28 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     fit.add(face)
   }
   const faceAnchor = face
+  // The rig contract gives every joint an identity rest rotation, so the head looks along +Z of its parent at rest.
+  const head = scene.getObjectByName('head')
+  const clipPose = new Quaternion()
+  const written = new Quaternion(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
+  const lookPose = new Quaternion()
+  const toTarget = new Vector3()
+  const turn = new Euler()
+  function turnHead(look?: MeshMascotLook) {
+    if (!head?.parent) return
+    // The mixer writes a joint only when its clip value changes. A pose that differs from the last one written here is a new clip pose.
+    if (!head.quaternion.equals(written)) clipPose.copy(head.quaternion)
+    const weight = Math.min(1, Math.max(0, look?.weight ?? 0))
+    head.quaternion.copy(clipPose)
+    if (look && weight > 0) {
+      head.parent.updateWorldMatrix(true, false)
+      head.parent.worldToLocal(toTarget.copy(look.target)).sub(head.position)
+      const yaw = clamp(Math.atan2(toTarget.x, toTarget.z), maxHeadYaw)
+      const pitch = clamp(-Math.atan2(toTarget.y, Math.hypot(toTarget.x, toTarget.z)), maxHeadPitch)
+      head.quaternion.slerp(lookPose.setFromEuler(turn.set(pitch, yaw, look.tilt, 'YXZ')), weight)
+    }
+    written.copy(head.quaternion)
+  }
   return {
     _tag: 'Mesh' as const,
     root,
@@ -68,12 +96,15 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     extent: { left: bounds.min.x * scale, right: bounds.max.x * scale, height },
     /** World position of his face, for the conversation close-up. */
     facePoint: (target: Vector3) => faceAnchor.getWorldPosition(target),
-    /** `time` is seconds of visible motion. Zero is the authored rest pose. */
-    update(time: number) {
-      if (mixer) { mixer.setTime(time); return }
-      const phase = time * swayRate
-      pivot.rotation.set(Math.sin(phase * 3) * 0.01, Math.sin(phase * 2) * 0.06, Math.sin(phase * 5) * 0.014)
-      pivot.scale.y = 1 + Math.sin(phase * 12) * 0.006
+    /** `time` is seconds of visible motion. Zero is the authored rest pose. `look` applies only to a file with a `head` joint. */
+    update(time: number, look?: MeshMascotLook) {
+      if (mixer) mixer.setTime(time)
+      else {
+        const phase = time * swayRate
+        pivot.rotation.set(Math.sin(phase * 3) * 0.01, Math.sin(phase * 2) * 0.06, Math.sin(phase * 5) * 0.014)
+        pivot.scale.y = 1 + Math.sin(phase * 12) * 0.006
+      }
+      turnHead(look)
     },
     dispose() {
       mixer?.stopAllAction()

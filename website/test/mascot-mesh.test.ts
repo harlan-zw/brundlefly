@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { AnimationClip, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Vector3, VectorKeyframeTrack } from 'three'
+import { AnimationClip, Bone, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, Vector3, VectorKeyframeTrack } from 'three'
 import { createMeshMascot, loadMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
 
 /** A model in millimetres under a scaled root, like a Blender export. Its feet are off the origin. */
@@ -116,4 +116,53 @@ test('a model file that cannot load is an error value with its cause', async () 
   const result = await loadMeshMascot('http://127.0.0.1:9/absent.glb')
   assert.equal(result._tag, 'Err')
   assert.ok(result._tag === 'Err' && result.reason.length > 0)
+})
+
+/** A model with a `head` joint that looks along +Z at rest, as the rig contract requires. */
+function headedModel() {
+  const model = millimetreModel()
+  const head = new Bone()
+  head.name = 'head'
+  head.position.set(5, 80, 0)
+  model.node.add(head)
+  const facing = () => { model.scene.parent?.parent?.parent?.updateMatrixWorld(true); return new Vector3(0, 0, 1).transformDirection(head.matrixWorld) }
+  return { ...model, head, facing }
+}
+
+test('the head joint turns toward a watched point within its limits and returns to the clip pose', () => {
+  const { scene, head, facing } = headedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  mascot.update(0)
+  close(facing().z, 1)
+  // The watched point is up and far to screen right, beyond both limits.
+  const target = mascot.facePoint(new Vector3()).add(new Vector3(40, 40, 10))
+  mascot.update(0, { target, weight: 1, tilt: 0 })
+  const turned = facing()
+  assert.ok(turned.x > 0.4 && turned.y > 0.2, 'The head must turn toward screen right and up.')
+  close(Math.atan2(turned.x, turned.z), 0.6)
+  close(Math.asin(turned.y), 0.35)
+  // The same look on later frames holds the pose. It must not add to itself.
+  for (let frame = 0; frame < 5; frame++) mascot.update(0, { target, weight: 1, tilt: 0 })
+  assert.ok(facing().distanceTo(turned) < 1e-9, 'A held look must not accumulate.')
+  mascot.update(0, { target, weight: 0.5, tilt: 0 })
+  const half = facing()
+  assert.ok(half.x > 0.05 && half.x < turned.x, 'Half weight must turn the head part of the way.')
+  mascot.update(0)
+  close(facing().z, 1)
+  assert.ok(head.quaternion.angleTo(new Quaternion()) < 1e-9)
+})
+
+test('a head turn layers over a clip that holds the head still, and a model without a head ignores the look', () => {
+  const { scene, head, facing } = headedModel()
+  const nod = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.2)
+  const clip = new AnimationClip('Brundlefly-idle', 2, [new QuaternionKeyframeTrack('head.quaternion', [0, 2], [...nod.toArray(), ...nod.toArray()])])
+  const mascot = ok(createMeshMascot({ scene, animations: [clip] }, 2.5))
+  const target = mascot.facePoint(new Vector3()).add(new Vector3(0, 0, 10))
+  // The clip value never changes, so the mixer writes it once. Every later frame must still start from that clip pose.
+  for (const time of [0.5, 0.6, 0.7]) mascot.update(time, { target, weight: 1, tilt: 0 })
+  assert.ok(Math.abs(facing().y) < 0.05, 'The head must face the point ahead, not keep the nod.')
+  for (const time of [0.8, 0.9]) mascot.update(time)
+  assert.ok(head.quaternion.angleTo(nod) < 1e-6, 'Without a look the head must return to the clip pose.')
+  const plain = ok(createMeshMascot({ scene: millimetreModel().scene, animations: [] }, 2.5))
+  assert.doesNotThrow(() => plain.update(1, { target, weight: 1, tilt: 0.07 }))
 })

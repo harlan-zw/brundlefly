@@ -277,6 +277,8 @@ watch(canvas, async (element) => {
   let stroll = startStroll(sceneLayout.mascot, 0)
   let elapsed = 0
   let faceElapsed = 0
+  // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
+  const attention = { weight: 0, tilt: 0 }
   let lastReaction = reaction
   let reactionStarted = 0
   // Only the relief rig has hand joints. The mesh performs no habit, so it never needs a hand cue.
@@ -345,7 +347,14 @@ watch(canvas, async (element) => {
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
-    if (mascot._tag === 'Mesh') mascot.update(faceElapsed)
+    if (mascot._tag === 'Mesh') {
+      // A hovering visitor or the dialog draws his head to the camera. A hover alone adds a curious tilt, as on the relief rig.
+      // Reduced motion and Motion off keep the clip pose.
+      const ease = Math.min(1, delta * 4)
+      attention.weight = faceMotion ? attention.weight + (Number(paused || hovered.value) - attention.weight) * ease : 0
+      attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused ? 0.07 : 0) - attention.tilt) * ease : 0
+      mascot.update(faceElapsed, { target: camera.position, weight: attention.weight, tilt: attention.tilt })
+    }
     else {
       // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
       const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
