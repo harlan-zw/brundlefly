@@ -324,6 +324,26 @@ The generated sculpt reference supplies that direction. Canonical anatomy remain
 The kit Motion section has a Brundlefly toggle. Download GLB exports the mascot when that toggle is active.
 The portable ZIP supplies runtime art and source. GLB interchange artifacts have separate download URLs.
 
+## Mascot mesh
+
+Use ?mascot=mesh on the homepage to show the full 3D model in place of the relief rig.
+The model is the web export of the figurine. The relief rig stays the default mascot.
+The site fits the model to the height of the relief rig and puts its lowest point on the chamber floor.
+The model keeps its own origin, facing, and materials: +Y is up and the face points to +Z.
+If the file has animation clips, the site loops Brundlefly-idle. If it has none, the whole model sways about its feet.
+The model stands at the mascot start point. It does not walk, speak, or perform mannerisms.
+A node named Brundlefly-base is removed. An empty node named anchor-face sets the conversation close-up.
+If the file is absent or unreadable, the mesh mode shows the relief rig and logs a warning.
+The scene element reports the visible mascot in its data-mascot attribute: relief, sprite, or mesh.
+
+| File | Type | Role |
+| --- | --- | --- |
+| assets/3d/brundlefly/brundlefly-web.glb | GLB 2.0, 4 MiB or less | Web export of the figurine model |
+| website/scripts/sync-brand.ts | TypeScript | Copies the model to /brand/3d/ for the site and enforces the size limit |
+| website/layers/brand/shared/mascot-mesh.ts | TypeScript | Fit, floor contact, idle motion, face point, and disposal |
+
+Plain GLTFLoader reads the file. Draco, meshopt, and KTX2 data need decoders that the site does not load.
+
 ## Living mucus and egg sacs
 
 [Goo diffuse](../../assets/brand/kit/lair/goo-diffuse.png) supplies olive mucus, veins, trapped bubbles, and membrane detail.
@@ -445,6 +465,7 @@ The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 | assets/prompts/body-projection.json | Exact prompt and canonical references |
 
 Use ?mascot=sprite on the homepage to compare the canonical sprite relief.
+Use ?mascot=mesh to compare the full 3D model.
 The normal homepage uses the detailed body and articulated head.
 
 ## Rig inspection

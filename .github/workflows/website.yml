@@ -5,6 +5,7 @@ on:
     paths:
       - 'website/**'
       - 'assets/brand/**'
+      - 'assets/3d/brundlefly/brundlefly-web.glb'
       - 'skills/**'
       - 'docs/brand/mascot-dialogue.md'
       - '.github/workflows/website.yml'
@@ -13,6 +14,7 @@ on:
     paths:
       - 'website/**'
       - 'assets/brand/**'
+      - 'assets/3d/brundlefly/brundlefly-web.glb'
       - 'skills/**'
       - 'docs/brand/mascot-dialogue.md'
       - '.github/workflows/website.yml'
