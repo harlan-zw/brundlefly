@@ -71,6 +71,8 @@ let cleanup: (() => void) | undefined
 let refresh: (() => void) | undefined
 let hit: ((pointer: Vector2) => boolean) | undefined
 let bounds = { left: 0, right: 0, top: 0, bottom: 0 }
+/** The hover area in host pixels. The pointer cursor shows over it. */
+const overMascot = (x: number, y: number) => x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
 let cameraView = { ...defaultCameraView }
 const cameraKeys = new Set<CameraKey>()
 type Gesture = { _tag: 'Idle' } | { _tag: 'Armed' | 'Dragging'; id: number; startX: number; startY: number; x: number; y: number }
@@ -110,7 +112,7 @@ function move(event: PointerEvent) {
   }
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
-  hovered.value = x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
+  hovered.value = overMascot(x, y)
 }
 function select(event: MouseEvent) {
   askForTilt()
@@ -268,7 +270,10 @@ watch(canvas, async (element) => {
   scene.add(shadow)
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
   const raycaster = new Raycaster()
-  hit = position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
+  // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.
+  hit = mascot._tag === 'Mesh'
+    ? position => overMascot((position.x + 1) * renderWidth / 2, (1 - position.y) * renderHeight / 2)
+    : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
   let stroll = startStroll(sceneLayout.mascot, 0)
   let elapsed = 0
   let faceElapsed = 0

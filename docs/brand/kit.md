@@ -332,6 +332,7 @@ The site fits the model to the height of the relief rig and puts its lowest poin
 The model keeps its own origin, facing, and materials: +Y is up and the face points to +Z.
 If the file has animation clips, the site loops Brundlefly-idle. If it has none, the whole model sways about its feet.
 The model stands at the mascot start point. It does not walk, speak, or perform mannerisms.
+A click anywhere in its hover area opens the dialog, because the model has gaps between its limbs.
 A node named Brundlefly-base is removed. An empty node named anchor-face sets the conversation close-up.
 If the file is absent or unreadable, the mesh mode shows the relief rig and logs a warning.
 The rig inspection page has the same model as its Mesh texture option.
