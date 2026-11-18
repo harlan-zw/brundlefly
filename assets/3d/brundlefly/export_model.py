@@ -23,6 +23,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_from_mesh as bfm  # noqa: E402  (the sheet projection lives there)
 from mathutils.bvhtree import BVHTree
 
+# The eyeball nodes are this much larger than the eyeballs fused into the body,
+# so the decimated body surface never shows through a node.
+EYE_NODE_SCALE = 1.08
+# The texture is dark out to this many eyeball radii. The sheet's eyelids start just past it.
+EYE_DARK_SCALE = 1.15
+
 
 def parse():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
@@ -136,7 +142,36 @@ def distance_weights(body, segments):
             group.add([int(vi)], float(weight[vi, j] / total), "REPLACE")
 
 
-def add_skeleton(body, joints, shift):
+def rigid_eye_sockets(body, eyes, inner=1.8, outer=3.2):
+    """Weight the skin around each eyeball to the head bone only.
+
+    The eyeball nodes follow the head bone rigidly. Heat weights give the skin beside them a
+    share of other bones, so the skin slides past the eyeball in a pose and shows as a rim.
+    Inside `inner` eye radii the skin is rigid on the head. The change fades out by `outer`.
+    """
+    co = np.empty(len(body.data.vertices) * 3)
+    body.data.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    reach = np.full(len(co), np.inf)
+    for eye in eyes:
+        offset = (co - np.array(eye["centre_mm"])) / np.array(eye["radii_mm"])
+        reach = np.minimum(reach, np.sqrt((offset ** 2).sum(axis=1)))
+    t = np.clip((outer - reach) / (outer - inner), 0.0, 1.0)
+    rigid = t * t * (3.0 - 2.0 * t)
+    head = body.vertex_groups["head"]
+    changed = 0
+    for index in np.nonzero(rigid > 0.0)[0]:
+        vertex, share = body.data.vertices[int(index)], float(rigid[index])
+        for g in vertex.groups:
+            if g.group != head.index:
+                g.weight *= 1.0 - share
+        others = sum(g.weight for g in vertex.groups if g.group != head.index)
+        head.add([int(index)], 1.0 - others, "REPLACE")
+        changed += 1
+    return changed
+
+
+def add_skeleton(body, joints, shift, eyes=()):
     """Bind the body to the skeleton (25 body bones and 8 face tentacle bones) and add an idle clip."""
     scene = bpy.context.scene
     J = {n: Vector(p) - Vector((shift[0], shift[1], 0.0)) for n, p in joints.items()}
@@ -177,6 +212,8 @@ def add_skeleton(body, joints, shift):
     body.select_set(True)
     bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
     bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
+    if eyes:
+        print(f"RIG eye sockets rigid on the head: {rigid_eye_sockets(body, eyes)} vertices")
 
     # 2. Point every bone straight up. Each joint then has an identity rest rotation:
     #    +X is screen right, +Y is up, +Z is toward the viewer, for every bone.
@@ -279,10 +316,10 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
     field[:, 2] += projection["field_zmin"]
     linear = np.tile(bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.FLESH]), (size * size, 1))
     linear[baked] = colour(field[baked], normal[baked])
-    # Under and just around each eyeball the texture is dark, so no painted eye shows beside the sphere.
+    # Under each eyeball node the texture is dark, so no lit skin shows at the edge of the node.
     dark = bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.EYE])
     for eye in eyes:
-        offset = (position - np.array(eye["centre_mm"])) / (np.array(eye["radii_mm"]) * 1.45)
+        offset = (position - np.array(eye["centre_mm"])) / (np.array(eye["radii_mm"]) * EYE_DARK_SCALE)
         linear[baked & ((offset ** 2).sum(axis=1) < 1.0)] = dark
     srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
 
@@ -348,7 +385,7 @@ def export_web(src, args):
         scene.collection.objects.link(ob)
         cx, cy, cz = eye["centre_mm"]
         ob.location = (cx - px, cy - py, cz)
-        ob.scale = [r * 1.03 for r in eye["radii_mm"]]   # just outside the fused eyeball
+        ob.scale = [r * EYE_NODE_SCALE for r in eye["radii_mm"]]
         ob.parent = root
         parts.append(ob)
     for name, (ax, ay, az) in site["anchors"].items():
@@ -362,7 +399,7 @@ def export_web(src, args):
     rigged = os.path.exists(joints_path) and not args.no_rig
     if rigged:
         with open(joints_path) as fh:
-            arm = add_skeleton(body, json.load(fh)["joints_mm"], (px, py))
+            arm = add_skeleton(body, json.load(fh)["joints_mm"], (px, py), site["eyes"])
         arm.parent = root
         parts.append(arm)
         # The eyeballs and the face anchor ride on the head bone, so they follow a head turn.

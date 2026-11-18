@@ -169,7 +169,7 @@ Skeleton:
 - Left and right are screen left and screen right. So `left-shoulder` is the figure's right shoulder.
 - Body, 25 joints: `pelvis` > `chest` > `head`. From `chest`: `left-shoulder` > `left-elbow` > `left-hand`, `left-rib` > `left-small-elbow` > `left-small-hand`, `left-wing` > `left-wing-tip`, and the same on the right. From `pelvis`: `left-hip` > `left-knee` > `left-foot`, and the same on the right.
 - Face tentacles, 8 joints under `head`: `mouthpart-0` to `mouthpart-3`, from screen left to screen right, each with a `-tip` joint.
-- The eyeball nodes and `anchor-face` are children of the `head` joint.
+- The eyeball nodes and `anchor-face` are children of the `head` joint. The skin around each eyeball has `head` as its only joint, so the skin does not slide past the eyeball in a pose.
 - One clip, `Brundlefly-idle`, 4 seconds, made to loop: breathing, a small head turn, twitching small arms, swaying tentacles, fluttering wings.
 - The fingers, the toes, and the jaw have no joints.
 
