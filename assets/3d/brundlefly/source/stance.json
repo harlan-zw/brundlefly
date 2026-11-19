@@ -1,10 +1,6 @@
 {
- "note": "Default stance of the website model: the pose of assets/brand/character.png, which is also the stance of the site's relief rig. root_yaw_radians is the body's turn about the vertical, toward screen right. The export puts it on the root node, so the site can turn the figure to face his path. Each rotation is a joint's local quaternion [x, y, z, w], from the straight stand of rig-joints.json, in the body's axes: +X to the figure's left side (screen right when he faces the viewer), +Y up, +Z the way the body faces. export_model.py applies the rotations and then gives every joint an identity rest rotation again. How the values were made: each bone takes its direction in the picture from the relief rig's joint table (bodyJoints in website/layers/brand/shared/mascot.ts). The picture gives no depth, so the depth of each bone is a choice. The legs reach floor targets with both soles flat. The head faces the way the body faces, with a roll. The site turns the head to the viewer. finger_curl_radians curls the fingers of the two long hands: at the knuckles, and at the middle of the fingers.",
+ "note": "Default stance of the website model: the pose of assets/brand/character.png, which is also the stance of the site's relief rig. root_yaw_radians is the body's turn about the vertical, toward screen right. The export puts it on the root node, so the site can turn the figure to face his path. Each rotation is a joint's local quaternion [x, y, z, w], from the straight stand of rig-joints.json, in the body's axes: +X to the figure's left side (screen right when he faces the viewer), +Y up, +Z the way the body faces. export_model.py applies the rotations and then gives every joint an identity rest rotation again. How the values were made: each bone takes its direction in the picture from the relief rig's joint table (bodyJoints in website/layers/brand/shared/mascot.ts). The picture gives no depth, so the depth of each bone is a choice. The legs reach floor targets with both soles flat. The head faces the way the body faces, with a roll. The site turns the head to the viewer.",
  "root_yaw_radians": 0.5,
- "finger_curl_radians": [
-  0.38,
-  0.5
- ],
  "pelvis_offset_mm": [
   0,
   -3,

@@ -27,22 +27,8 @@ from mathutils.kdtree import KDTree
 # The texture is dark inside each eye socket: out to this many eyeball radii from the eyeball centre.
 # The socket is 1.16 to 1.24 eyeball radii, so this covers its wall and its rim.
 EYE_DARK_SCALE = 1.3
-# Linear colours of an eyeball node. The eye is a dark, wet globe, as on the site's relief rig: the
-# iris is a dark teal that grows lighter toward its edge, and the highlight does most of the work.
-# A pale iris hides the highlight and reads as a doll's eye.
-EYE_RIM = (0.005, 0.006, 0.008)
-EYE_IRIS_INNER = (0.008, 0.022, 0.024)
-EYE_IRIS_OUTER = (0.030, 0.078, 0.082)
-EYE_PUPIL = (0.002, 0.002, 0.003)
-# The pupil and the iris ring on the front of the eyeball: their angles from the front, in radians.
-EYE_PUPIL_ANGLE = 0.15
-EYE_IRIS_ANGLE = 0.40
 # The face patches of the jaw, the cheeks, and the brows reach this far behind the eyeball centres, in millimetres.
 FACE_DEPTH_MM = 6.0
-# Where the two finger joints lie along a hand, from the wrist (0) to the fingertips (1).
-FINGER_JOINTS = (0.40, 0.70)
-# The hinge axis of each finger joint, in model axes. add_skeleton fills it for bake_stance.
-FINGER_HINGES = {}
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
 BRISTLE_COLOUR = (0.115, 0.030, 0.022)
 BRISTLE_RADIUS_MM = 0.17
@@ -314,55 +300,6 @@ def rig_face(body, J, eyes):
     return {name: Vector(place) for name, place in places.items()}, changed
 
 
-def rig_fingers(body, J):
-    """Give each long hand two joints across its fingers, so the fingers can curl. Returns the joints.
-
-    The generated hands have stiff, spread fingers. One joint lies across the knuckles and one
-    across the middle of the fingers, and all fingers of a hand follow them together. The
-    stance curls them, so the hands hang as loose claws. Each entry of the result is
-    name -> (position, parent, hinge axis). A turn about the hinge axis curls toward the palm.
-    """
-    co = np.empty(len(body.data.vertices) * 3)
-    body.data.vertices.foreach_get("co", co)
-    co = co.reshape(-1, 3)
-    out = {}
-    for side in ("left", "right"):
-        hand = body.vertex_groups[f"{side}-hand"]
-        wrist, end = np.array(J[f"{side}-hand"]), np.array(J[f"{side}-hand-end"])
-        length = float(np.linalg.norm(end - wrist))
-        unit = (end - wrist) / length
-        held = np.zeros(len(co))
-        for vertex in body.data.vertices:
-            for g in vertex.groups:
-                if g.group == hand.index:
-                    held[vertex.index] = g.weight
-        t = (co - wrist) @ unit / length
-        fingers = held > 0.3
-        # The palm is the flat direction of the hand: the axis of least spread.
-        spread = co[fingers & (t > 0.2)] - co[fingers & (t > 0.2)].mean(axis=0)
-        palm = np.linalg.eigh(spread.T @ spread)[1][:, 0]
-        hinge = np.cross(unit, palm)
-        hinge /= np.linalg.norm(hinge)
-        # A positive turn about the hinge moves the fingertips along cross(hinge, unit). The claws
-        # hook toward the body and toward the back.
-        inward = np.array([-np.sign(wrist[0]), 0.6, 0.0])
-        if np.cross(hinge, unit) @ inward < 0:
-            hinge = -hinge
-        tips = smooth_step((t - FINGER_JOINTS[1] + 0.09) / 0.18)
-        knuckles = smooth_step((t - FINGER_JOINTS[0] + 0.09) / 0.18) * (1.0 - tips)
-        names = (f"{side}-fingers", f"{side}-finger-tips")
-        groups = [body.vertex_groups.get(name) or body.vertex_groups.new(name=name) for name in names]
-        for index in np.nonzero((held > 0.0) & (knuckles + tips > 0.001))[0]:
-            i, weight = int(index), float(held[index])
-            hand.add([i], weight * (1.0 - knuckles[index] - tips[index]), "REPLACE")
-            for group, share in zip(groups, (knuckles[index], tips[index])):
-                if share > 0.001:
-                    group.add([i], weight * float(share), "REPLACE")
-        out[names[0]] = (Vector(wrist + unit * length * FINGER_JOINTS[0]), f"{side}-hand", Vector(hinge))
-        out[names[1]] = (Vector(wrist + unit * length * FINGER_JOINTS[1]), names[0], Vector(hinge))
-    return out
-
-
 def add_skeleton(body, joints, shift, eyes=()):
     """Bind the body to the skeleton (25 body bones and 8 face tentacle bones) and add an idle clip."""
     scene = bpy.context.scene
@@ -405,9 +342,6 @@ def add_skeleton(body, joints, shift, eyes=()):
     bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
     bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
     face_joints = {}
-    finger_joints = rig_fingers(body, J)
-    FINGER_HINGES.clear()
-    FINGER_HINGES.update({name: hinge for name, (_, _, hinge) in finger_joints.items()})
     if eyes:
         print(f"RIG eye sockets rigid on the head: {rigid_eye_sockets(body, eyes)} vertices")
     if len(eyes) == 2:
@@ -430,11 +364,6 @@ def add_skeleton(body, joints, shift, eyes=()):
         joint.head = place
         joint.tail = place + Vector((0.0, 0.0, 4.0))
         joint.parent = data.edit_bones["head"]
-    for name, (place, parent, _) in finger_joints.items():
-        joint = data.edit_bones.new(name)
-        joint.head = place
-        joint.tail = place + Vector((0.0, 0.0, 4.0))
-        joint.parent = data.edit_bones[parent]
     if "face-jaw" in face_joints:
         for i in range(4):
             data.edit_bones[f"mouthpart-{i}"].parent = data.edit_bones["face-jaw"]
@@ -710,13 +639,6 @@ def bake_stance(body, arm, stance, followers):
         bone.rotation_mode = "QUATERNION"
         bone.rotation_quaternion = Quaternion((w, x, y, z))       # bone axes are the site's axes: X right, Y up, Z to the viewer
     arm.pose.bones["pelvis"].location = Vector(stance["pelvis_offset_mm"])
-    # The fingers curl about their hinge. A bone points up at rest, so its axes are X = model X, Y = model Z, Z = -model Y.
-    for name, hinge in FINGER_HINGES.items():
-        angle = stance.get("finger_curl_radians", [0.0, 0.0])[1 if name.endswith("-tips") else 0]
-        bone = arm.pose.bones[name]
-        modes[name] = bone.rotation_mode
-        bone.rotation_mode = "QUATERNION"
-        bone.rotation_quaternion = Quaternion((hinge.x, hinge.z, -hinge.y), angle)
     bpy.context.view_layer.update()
     placed = {o: o.matrix_world.copy() for o in followers}
 
@@ -758,6 +680,32 @@ def bake_stance(body, arm, stance, followers):
     return max(heights) - floor
 
 
+def lid_skin_image(projection, views_dir, eye, mesh_scale, size=128):
+    """A square patch of the head skin for the eyelids that the site builds. Returns a packed image.
+
+    The site's lids show the middle 44 percent of the patch. So the patch is as wide as a lid
+    divided by 0.44, and its middle lies on real skin: the brow just above the painted eye of
+    the sheet's front view. The painted eye itself is filled with the skin around it first.
+    """
+    fit = projection["views"]["front"]
+    view = bfm.load_view(os.path.join(views_dir, fit["image"]))
+    rows, cols = bfm.eye_openings(view)[0]                   # screen left, the larger eye
+    bfm.erase_painted_eyes(view)
+    side = 2.0 * eye["radii_mm"][0] / mesh_scale * 1.055 / 0.44 / fit["body"]["s"]      # pixels of the art
+    centre_col = (cols.min() + cols.max()) / 2.0
+    centre_row = rows.max() + 3.0 + 0.22 * side              # rows run upward: this is above the eye
+    grid = (np.arange(size) + 0.5) / size - 0.5
+    col = np.clip(np.rint(centre_col + grid * side).astype(int), 0, view["linear"].shape[1] - 1)
+    row = np.clip(np.rint(centre_row + grid * side).astype(int), 0, view["linear"].shape[0] - 1)
+    # Outside the figure the patch takes the nearest drawn colour.
+    linear = np.where(view["figure"][row][:, col][..., None], view["linear"][row][:, col], view["spread"][row][:, col])
+    srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
+    image = bpy.data.images.new("Brundlefly-lid-skin", size, size, alpha=False)
+    image.pixels.foreach_set(np.concatenate([srgb, np.ones((size, size, 1))], axis=2).astype(np.float32).ravel())
+    image.pack()
+    return image
+
+
 def export_web(src, args):
     """The website model. One root node, Y up after export, face toward +Z, soles at height zero.
 
@@ -796,15 +744,16 @@ def export_web(src, args):
     body.parent = root
     parts = [root, body]
 
-    eye_mat = bpy.data.materials.new("Brundlefly-eye")
+    # The eye markers carry the skin for the lids that the site builds on them. The site hides the markers.
+    eye_mat = bpy.data.materials.new("Brundlefly-lid")
     eye_mat.use_nodes = True
     eye_mat.use_backface_culling = True
     bsdf = next(n for n in eye_mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
-    bsdf.inputs["Roughness"].default_value = 0.12
-    # The colour is in the vertices: a dark globe with a teal iris ring and a dark pupil.
-    iris = eye_mat.node_tree.nodes.new("ShaderNodeVertexColor")
-    iris.layer_name = "Col"
-    eye_mat.node_tree.links.new(iris.outputs["Color"], bsdf.inputs["Base Color"])
+    bsdf.inputs["Roughness"].default_value = 0.42
+    if textured and site["eyes"]:
+        skin_patch = eye_mat.node_tree.nodes.new("ShaderNodeTexImage")
+        skin_patch.image = lid_skin_image(stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), site["eyes"][0], stats["sheet_projection"]["mesh_scale"])
+        eye_mat.node_tree.links.new(skin_patch.outputs["Color"], bsdf.inputs["Base Color"])
     for index, eye in enumerate(site["eyes"]):        # 0 is screen left and larger
         mesh = bpy.data.meshes.new(f"Brundlefly-eye-{index}")
         bm = bmesh.new()
@@ -816,22 +765,6 @@ def export_web(src, args):
             face.smooth = True
         bm.to_mesh(mesh)
         bm.free()
-        layer = mesh.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
-        # The node looks along -Y here, which is +Z in the exported file: the way the head faces.
-        # A dark globe, a teal iris ring, and a dark pupil. The site can turn the node to aim the eye.
-        front = Vector((0.0, -1.0, 0.0))
-
-        def band(value, edge, width=0.05):
-            t = min(max((edge + width - value) / (2 * width), 0.0), 1.0)
-            return t * t * (3.0 - 2.0 * t)
-
-        for vertex in mesh.vertices:
-            angle = vertex.co.normalized().angle(front)
-            iris, pupil = band(angle, EYE_IRIS_ANGLE), band(angle, EYE_PUPIL_ANGLE)
-            across = min(max((angle - EYE_PUPIL_ANGLE) / (EYE_IRIS_ANGLE - EYE_PUPIL_ANGLE), 0.0), 1.0)
-            ring = [a + (b - a) * across ** 1.5 for a, b in zip(EYE_IRIS_INNER, EYE_IRIS_OUTER)]
-            colour = [rim + (c - rim) * iris for rim, c in zip(EYE_RIM, ring)]
-            layer.data[vertex.index].color = tuple(c + (dot - c) * pupil for c, dot in zip(colour, EYE_PUPIL)) + (1.0,)
         mesh.materials.append(eye_mat)
         ob = bpy.data.objects.new(f"Brundlefly-eye-{index}", mesh)
         scene.collection.objects.link(ob)
