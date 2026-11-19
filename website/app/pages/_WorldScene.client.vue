@@ -13,6 +13,7 @@ import { loadMeshMascot, meshShading } from '@brundlefly/brand/shared/mascot-mes
 import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
+import { resolveSceneQuality } from '@brundlefly/brand/shared/scene-quality'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
@@ -28,6 +29,9 @@ type MascotMode = 'relief' | 'sprite' | 'mesh'
 const requestedMascot = useRoute().query.mascot
 const mascotMode: MascotMode = requestedMascot === 'sprite' || requestedMascot === 'mesh' ? requestedMascot : 'relief'
 const spriteMascot = mascotMode === 'sprite'
+// `?quality=low`, `medium`, or `high` overrides the tier that the device would get.
+const requestedQuality = useRoute().query.quality
+const shownQuality = ref<string>()
 // The scene reports the mascot it shows. A mesh that cannot load shows the relief rig.
 const shownMascot = ref<MascotMode>()
 // How the visible mascot moves: the relief rig's pose code, the file's own clip, or a whole-body sway.
@@ -243,7 +247,13 @@ watch(canvas, async (element) => {
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+  const quality = resolveSceneQuality({ requested: requestedQuality, coarsePointer: touchScreen.value, cores: navigator.hardwareConcurrency,
+    memory: (navigator as Navigator & { deviceMemory?: number }).deviceMemory, shortSide: Math.min(window.innerWidth, window.innerHeight) })
+  shownQuality.value = quality.tier
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio))
+  // The floor and the walls run away from the camera at shallow angles. Without this they blur there.
+  const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
+  for (const surface of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, roomTexture, roomHeightTexture]) surface.anisotropy = anisotropy
   const scene = new Scene()
   scene.background = new Color('#080B08')
   const environment = createWetEnvironment(renderer)
@@ -502,7 +512,7 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && shownMascot === 'mesh' }" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
