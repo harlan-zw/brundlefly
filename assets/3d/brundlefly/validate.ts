@@ -81,6 +81,29 @@ function main(args: Args): void {
     const reportName = args.name === 'brundlefly' ? 'validation-report.json' : `${args.name}-validation-report.json`
     writeFileSync(join(args.dir, reportName), `${JSON.stringify(report, null, 1)}\n`)
     console.log(JSON.stringify(report, null, 1))
+    // Blender can finish normally while reporting a rejected mesh.
+    // Keep the complete report for inspection, then fail the command.
+    const failures = [report.mesh_80mm, report.mesh_100mm]
+      .filter(mesh => mesh.passes_mesh_checks !== true)
+      .map((mesh) => {
+        const expected: Record<string, unknown> = {
+          height_ok: true,
+          non_manifold_edges: 0,
+          boundary_edges: 0,
+          degenerate_faces: 0,
+          loose_vertices: 0,
+          shells: 1,
+          self_intersecting_face_pairs: 0,
+        }
+        const checks = Object.entries(expected)
+          .filter(([name, value]) => mesh[name] !== value)
+          .map(([name]) => name)
+        if (typeof mesh.volume_cm3 !== 'number' || mesh.volume_cm3 <= 0)
+          checks.push('volume_cm3')
+        return `${mesh.file}: ${checks.length ? checks.join(', ') : 'passes_mesh_checks'}`
+      })
+    if (failures.length)
+      throw new Error(`Mesh checks failed. ${failures.join('; ')}`)
   }
   finally {
     rmSync(work, { recursive: true, force: true })

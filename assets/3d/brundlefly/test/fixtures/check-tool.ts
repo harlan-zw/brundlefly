@@ -21,7 +21,23 @@ if (args.includes('org.blender.Blender')) {
   // Exercise fresh-output handling independently of Blender's exit status.
   if (process.env.FIXTURE_SKIP_MESH === '1')
     process.exit(0)
-  writeFileSync(value('--out'), JSON.stringify({ file: stl, passes_mesh_checks: true }))
+  const failed = stl.endsWith(process.env.FIXTURE_FAILED_FILE || '\0')
+  const check = process.env.FIXTURE_FAILED_CHECK || 'height_ok'
+  const report = {
+    file: stl,
+    height_ok: true,
+    non_manifold_edges: 0,
+    boundary_edges: 0,
+    degenerate_faces: 0,
+    loose_vertices: 0,
+    shells: 1,
+    volume_cm3: 2,
+    self_intersecting_face_pairs: 0,
+    passes_mesh_checks: !failed,
+  }
+  if (failed)
+    Object.assign(report, { [check]: check === 'height_ok' ? false : check === 'volume_cm3' ? 0 : 2 })
+  writeFileSync(value('--out'), JSON.stringify(report))
 }
 else if (args.includes('com.prusa3d.PrusaSlicer')) {
   writeFileSync(value('--output'), '; filament used [cm3] = 2\n; estimated printing time (normal mode) = 1h\n')

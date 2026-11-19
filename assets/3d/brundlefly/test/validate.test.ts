@@ -8,6 +8,39 @@ import { test } from 'node:test'
 const scratch = join(homedir(), 'scratch')
 mkdirSync(scratch, { recursive: true })
 
+for (const size of [80, 100]) {
+  for (const check of ['height_ok', 'non_manifold_edges', 'boundary_edges', 'degenerate_faces', 'loose_vertices', 'shells', 'volume_cm3', 'self_intersecting_face_pairs']) {
+    test(`rejects ${size} mm STL when ${check} fails despite Blender exiting zero`, (t) => {
+      const root = mkdtempSync(join(scratch, 'brundlefly-validate-test-'))
+      t.after(() => rmSync(root, { recursive: true, force: true }))
+      const dir = join(root, 'models')
+      const bin = join(root, 'bin')
+      mkdirSync(dir)
+      mkdirSync(bin)
+      const tool = join(bin, 'check-tool.ts')
+      copyFileSync(resolve(import.meta.dirname, 'fixtures/check-tool.ts'), tool)
+      chmodSync(tool, 0o755)
+      for (const command of ['flatpak', 'uv'])
+        symlinkSync(tool, join(bin, command))
+      for (const height of [80, 100])
+        writeFileSync(join(dir, `brundlefly-${height}mm.stl`), 'solid fixture\nendsolid fixture\n')
+      const file = `brundlefly-${size}mm.stl`
+      const run = spawnSync(process.execPath, [resolve(import.meta.dirname, '../validate.ts'), '--dir', dir, '--work', join(root, 'work')], {
+        encoding: 'utf8',
+        timeout: 10000,
+        env: { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}`, FIXTURE_SKIP_MESH: '0', FIXTURE_FAILED_FILE: file, FIXTURE_FAILED_CHECK: check },
+      })
+
+      assert.equal(run.error, undefined)
+      assert.notEqual(run.status, 0, 'accepted a failed mesh verdict')
+      assert.ok(run.stderr.includes(file), run.stderr)
+      assert.ok(run.stderr.includes(check), run.stderr)
+      const report = JSON.parse(readFileSync(join(dir, 'validation-report.json'), 'utf8'))
+      assert.equal(report[`mesh_${size}mm`].passes_mesh_checks, false)
+    })
+  }
+}
+
 for (const failure of ['missing', 'unreadable', 'no-output'] as const) {
   test(`rejects ${failure} mesh output after a successful run with the same --work`, (t) => {
     const root = mkdtempSync(join(scratch, 'brundlefly-validate-test-'))
