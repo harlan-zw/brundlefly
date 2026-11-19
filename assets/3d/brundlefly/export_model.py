@@ -41,6 +41,12 @@ FOLD_SHADOW_MM = 2.0
 FOLD_SHADOW_IN_COLOUR = 0.25
 # The share of solid above one half at which a fold is fully in shadow.
 FOLD_SHADOW_SPAN = 0.22
+# The broad shadow: under the chin, in the armpits, behind the mouthparts. Its reach in millimetres, how far
+# above the skin it is measured, the shares of solid there at which it starts and is full, and its strength.
+BROAD_SHADOW_MM = 6.4
+BROAD_SHADOW_LIFT_MM = 4.0
+BROAD_SHADOW_SHARE = (0.05, 0.32)
+BROAD_SHADOW_STRENGTH = 0.7
 # How strongly the fine detail of the texture turns the surface normal, for the relief map.
 RELIEF_STRENGTH = 4.0
 # How far the mouthparts take the flesh colour of the face, from 0 (their painted colour) to 1.
@@ -712,33 +718,48 @@ def skin_detail(view, side=192):
     return np.concatenate([top, top[::-1]], axis=0)
 
 
-def fold_shadow(field_path, points, known, size, small):
-    """Soft shadow in the folds of the model, as an image of side `small`: 1 is open skin, lower is a fold.
+def fold_shadow(field_path, points, normals, known, size, small):
+    """Soft shadow on the model, as two images of side `small`: 1 is open skin, lower is shadow.
 
-    The value comes from the solid shape, not from rays. Around a point on flat skin, half of a
-    small ball is solid. In a crease more than half is solid, and on a ridge less. So the share
-    of solid near each texel says how deep in a fold it lies. A ray bake on the decimated mesh
-    gave noise from triangle to triangle.
+    The first image is the shadow in the folds. The second is the broad shadow where another part
+    of the body stands close over the skin: under the chin, in the armpits, behind the mouthparts.
+    Both come from the solid shape, not from rays. Around a point on flat skin, half of a small
+    ball is solid. In a crease more than half is solid, and on a ridge less. So the share of solid
+    near each texel says how deep in a fold it lies. For the broad shadow the ball is larger and
+    sits above the skin, along the normal: over open skin it is almost empty, and the solid it
+    holds is what stands in the way of the light. A ray bake on the decimated mesh gave noise
+    from triangle to triangle.
     points are texel positions in the build's coordinates. known marks the texels that exist.
     """
     if not os.path.exists(field_path):
-        return None
+        return None, None
     data = np.load(field_path)
     shape = tuple(int(n) for n in data["shape"])
     solid = np.unpackbits(data["solid"])[: shape[0] * shape[1] * shape[2]].reshape(shape).astype(np.float32)
     lo, h = data["lo"].astype(np.float64), float(data["h"])
     solid = solid[: shape[0] // 2 * 2, : shape[1] // 2 * 2, : shape[2] // 2 * 2]
     coarse = solid.reshape(shape[0] // 2, 2, shape[1] // 2, 2, shape[2] // 2, 2).mean(axis=(1, 3, 5))
-    reach = max(int(round(FOLD_SHADOW_MM / (2 * h))), 1)
-    for _ in range(2):                                       # two box blurs: a soft ball
-        for axis in range(3):
-            total = np.cumsum(np.pad(coarse, [(reach + 1, reach) if a == axis else (0, 0) for a in range(3)], mode="edge"), axis=axis)
-            coarse = (np.take(total, range(2 * reach + 1, total.shape[axis]), axis=axis) - np.take(total, range(0, total.shape[axis] - 2 * reach - 1), axis=axis)) / (2 * reach + 1)
-    index = np.clip(np.rint((points - lo) / (2 * h) - 0.5).astype(int), 0, np.array(coarse.shape) - 1)
-    share = coarse[index[:, 0], index[:, 1], index[:, 2]]
-    fold = np.where(known, 1.0 - smooth_step((share - 0.52) / FOLD_SHADOW_SPAN), 1.0).reshape(size, size)
     step = size // small
-    return fold.reshape(small, step, small, step).mean(axis=(1, 3))
+
+    def share_of_solid(reach_mm, at):
+        """The share of solid in a soft ball around each point. Two box blurs make the ball."""
+        reach = max(int(round(reach_mm / (2 * h))), 1)
+        blurred = coarse
+        for _ in range(2):
+            for axis in range(3):
+                total = np.cumsum(np.pad(blurred, [(reach + 1, reach) if a == axis else (0, 0) for a in range(3)], mode="edge"), axis=axis)
+                blurred = (np.take(total, range(2 * reach + 1, total.shape[axis]), axis=axis) - np.take(total, range(0, total.shape[axis] - 2 * reach - 1), axis=axis)) / (2 * reach + 1)
+        index = np.clip(np.rint((at - lo) / (2 * h) - 0.5).astype(int), 0, np.array(blurred.shape) - 1)
+        return blurred[index[:, 0], index[:, 1], index[:, 2]]
+
+    def image(value):
+        return np.where(known, value, 1.0).reshape(small, step, small, step).mean(axis=(1, 3))
+
+    fold = image(1.0 - smooth_step((share_of_solid(FOLD_SHADOW_MM, points) - 0.52) / FOLD_SHADOW_SPAN))
+    above = share_of_solid(BROAD_SHADOW_MM / 2.0, points + normals * BROAD_SHADOW_LIFT_MM)
+    start, full = BROAD_SHADOW_SHARE
+    broad = image(1.0 - BROAD_SHADOW_STRENGTH * smooth_step((above - start) / (full - start)))
+    return fold, broad
 
 
 def enlarge_close_shot_islands(mesh, scale):
@@ -1087,7 +1108,7 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
         relief.pack()
 
     surface_map = None
-    fold = fold_shadow(field_path, field, baked, size, relief_size) if relief is not None and field_path else None
+    fold, broad = fold_shadow(field_path, field, normal, baked, size, relief_size) if relief is not None and field_path else (None, None)
     if relief is not None and fold is not None:
         step = size // relief_size
         small = linear.reshape(relief_size, step, relief_size, step, 3).mean(axis=(1, 3))
@@ -1101,12 +1122,13 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
         rough = skin * (1 - chitin) * (1 - wing) + 0.26 * chitin + 0.62 * wing * (1 - chitin)
         for axis in (0, 1):                                     # material edges are soft
             rough = (np.roll(rough, 1, axis) + rough * 2.0 + np.roll(rough, -1, axis)) / 4.0
-        fold = 1.0 - (1.0 - fold) * (1.0 - wing)                 # a wing is a thin sheet: it has no folds to shade
+        # A wing is a thin sheet: it has no folds to shade. The broad shadow of the body still falls on it.
+        shade = (1.0 - (1.0 - fold) * (1.0 - wing)) * broad
         surface_map = bpy.data.images.new("Brundlefly-surface", relief_size, relief_size, alpha=False, is_data=True)
-        surface_map.pixels.foreach_set(np.stack([fold, rough, np.zeros_like(fold), np.ones_like(fold)], axis=2).astype(np.float32).ravel())
+        surface_map.pixels.foreach_set(np.stack([shade, rough, np.zeros_like(shade), np.ones_like(shade)], axis=2).astype(np.float32).ravel())
         surface_map.pack()
         # A share of the fold shadow also goes into the base colour, so it shows under any light.
-        deep = np.repeat(np.repeat(fold, step, axis=0), step, axis=1).reshape(-1)
+        deep = np.repeat(np.repeat(shade, step, axis=0), step, axis=1).reshape(-1)
         srgb = srgb * (1.0 - FOLD_SHADOW_IN_COLOUR * (1.0 - deep))[:, None]
 
     albedo = bpy.data.images.new("Brundlefly-albedo", size, size, alpha=False)
