@@ -29,6 +29,10 @@ from mathutils.kdtree import KDTree
 EYE_DARK_SCALE = 1.3
 # How dark the deepest part of a socket is, as a share of the skin's own colour.
 SOCKET_SHADE = 0.22
+# A painted eye socket is looked for within this many radii of the larger eye, around each eye.
+PAINTED_SOCKET_RADII = 1.9
+# The filled paint of a socket is darkened by this factor, to the tone of the skin around the rim.
+PAINTED_SOCKET_TONE = 0.72
 # The face patches of the jaw, the cheeks, and the brows reach this far behind the eyeball centres, in millimetres.
 FACE_DEPTH_MM = 6.0
 # How strongly the fine detail of the texture turns the surface normal, for the relief map.
@@ -573,6 +577,25 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
         views_dir = os.path.join(views_dir, paint["folder"])
         views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high))
                  for name, fit in paint["views"].items()}
+        # The painted front view has a dark socket at each eye, and it paints both as large as the
+        # larger one. The model shades its own sockets, at their true sizes. So the dark paint
+        # near each eye is filled with the skin around it. The disc is small, so the wrinkles
+        # around the eyes stay.
+        if "front" in views and eyes:
+            view, to_image = views["front"]
+            scale = projection["mesh_scale"]
+            reach = PAINTED_SOCKET_RADII * max(eye["radii_mm"][0] for eye in eyes) / scale / paint["views"]["front"]["body"]["s"]
+            dark = np.zeros(view["figure"].shape, dtype=bool)
+            rows, cols = np.mgrid[0:dark.shape[0], 0:dark.shape[1]]
+            for eye in eyes:
+                centre = np.array(eye["centre_mm"]) / scale
+                col, row = to_image(np.array([centre[0]]), np.array([centre[2] + projection["field_zmin"]]))
+                dark |= ((cols - col[0]) ** 2 + (rows - row[0]) ** 2 < reach ** 2) & view["figure"] & (view["rgb"].max(axis=2) < 0.30)
+            if dark.any():
+                filled = bfm.dilate(dark, 2)
+                bfm.fill_from_edges(view, filled)
+                # The fill grows from the pale rim of the painted socket, so it comes out too light.
+                view["linear"][filled] *= PAINTED_SOCKET_TONE
     else:
         views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high, fit.get("head_u")))
                  for name, fit in projection["views"].items()}

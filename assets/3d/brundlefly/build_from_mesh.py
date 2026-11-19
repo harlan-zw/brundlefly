@@ -573,6 +573,12 @@ def erase_painted_eyes(view, reach=20):
         mask = dilate(mask, 4)
     else:
         mask = dilate(teal_mask(view), reach)
+    fill_from_edges(view, mask)
+    return int(mask.sum())
+
+
+def fill_from_edges(view, mask):
+    """Replace the masked pixels of a view with the colours around them, grown inward from the edge of the mask."""
     colour, known = view["linear"].copy(), ~mask
     for _ in range(200):
         if known.all():
@@ -587,7 +593,6 @@ def erase_painted_eyes(view, reach=20):
         colour[take] = total[take] / count[take][:, None]
         known |= take
     view["linear"] = colour
-    return int(mask.sum())
 
 
 def eye_openings(view):
@@ -751,9 +756,9 @@ PRINT_LID_RADIUS = 1.22
 SOCKET_ROOM = 1.10
 # The website model's socket is tighter: the site's lids fill it, and a wide socket shows as a dark crescent under an open eye.
 WEB_SOCKET_ROOM = 1.03
-# The fold of skin under each eye of the website model, in globe radii: how far forward of the globe centre
-# and how far below it the fold sits, and its half depth and half height.
-LID_BAG = (0.55, 1.0, 0.55, 0.38)
+# The website model's eyes, screen left first: how far each moves toward the nose, in its across radius, and how
+# much deeper it sits, in its depth radius. With the site's lids the larger eye stood out past the head's outline.
+WEB_EYE_NUDGE = ((0.3, 0.2), (0.0, 0.0))
 # The sheet draws the smaller wing on the figure's left, which is +X.
 SMALL_WING_SIDE = 1.0
 
@@ -767,11 +772,14 @@ def add_eyes(f, eyes, solid):
     Returns the centre and the three radii of each globe.
     """
     out = []
-    for eye, (across, depth, height) in zip(eyes, EYE_RADII):
-        hit = f.raycast(bm.V(eye["x"], -45.0, eye["z"]), bm.V(0, 1, 0), max_dist=60.0)
+    middle = sum(eye["x"] for eye in eyes) / max(len(eyes), 1)
+    for index, (eye, (across, depth, height)) in enumerate(zip(eyes, EYE_RADII)):
+        toward_nose, deeper = (0.0, 0.0) if solid else WEB_EYE_NUDGE[index]
+        x = eye["x"] + toward_nose * across * (1.0 if eye["x"] < middle else -1.0)
+        hit = f.raycast(bm.V(x, -45.0, eye["z"]), bm.V(0, 1, 0), max_dist=60.0)
         if hit is None:
             continue
-        centre = hit + bm.V(0, depth * EYE_SET_BACK, 0)
+        centre = hit + bm.V(0, depth * (EYE_SET_BACK + deeper), 0)
         radii = bm.V(across, depth, height)
         # The socket holds the globe and the lid shell, with a narrow groove around them. It also
         # removes the generator's own eye bump, which is larger than the smaller globe.
@@ -779,11 +787,6 @@ def add_eyes(f, eyes, solid):
         if solid:
             round_shell = max(depth, height) * PRINT_LID_RADIUS
             shell = bm.V(across * LID_SHELL[0], round_shell, round_shell)
-        if not solid:
-            # A low fold of skin under the eye, as a lower lid bag. The face falls away below the eye,
-            # so without it the socket gapes there and the edge of the site's open lower lid shows
-            # as a dark band under the globe. The socket is cut after it, so its inside stays clear.
-            f.blob(centre + bm.V(0.0, -depth * LID_BAG[0], -height * LID_BAG[1]), bm.V(across * 0.95, depth * LID_BAG[2], height * LID_BAG[3]), k=0.5, mat=bm.FLESH)
         f.carve_blob(centre, shell * (SOCKET_ROOM if solid else WEB_SOCKET_ROOM), k=0.2)
         if solid:
             sl, X, Y, Z = f.box(centre - shell, centre + shell, 3 * f.h)

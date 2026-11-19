@@ -111,8 +111,8 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 18536,
-    "sha256": "e94ee844edc0eb7ea1694918019e1cd95f1915008c3c4ea72c1a913ba8d5a8c5"
+    "bytes": 18757,
+    "sha256": "f79f29fb80a61345e83139369ffcc4224d36635811580431e3fc3aa77f7aa115"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
@@ -131,8 +131,8 @@
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
-    "bytes": 3975620,
-    "sha256": "a0ca87310b3cb6d1e5baed05dba460a92dd7d5288afd26f36498de21c9655ef3"
+    "bytes": 3988072,
+    "sha256": "73c7fa93c946d734183df5b9769124978cb7face95f87e8612c4fd1269c5d5d4"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
@@ -141,8 +141,8 @@
   },
   {
     "path": "assets/3d/brundlefly/build_from_mesh.py",
-    "bytes": 50011,
-    "sha256": "1ad0bea79aa5b4d7270b548bcc2dce1c0c5071e3859afdb328dcfe9a3218a475"
+    "bytes": 50003,
+    "sha256": "6e5036af41af73e2b73ad11f55037cc6c3c258ad294bbd0ae6599df108582fbb"
   },
   {
     "path": "assets/3d/brundlefly/build_model.py",
@@ -156,8 +156,8 @@
   },
   {
     "path": "assets/3d/brundlefly/export_model.py",
-    "bytes": 52190,
-    "sha256": "3058b1cfa1abdbd5431b8604bdd7cbe78f01d84526366762d615f622335b8a36"
+    "bytes": 53764,
+    "sha256": "b446b30cc98997fb97a7a7666253c0a0d478a7bf5ef9d997af798ff5f82b02cf"
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",
@@ -186,8 +186,8 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/web-front.png",
-    "bytes": 673510,
-    "sha256": "2658c03576662dcc453bc117d9e5183f6d425eca2413c769306e819de1362a01"
+    "bytes": 673806,
+    "sha256": "2132108a5cfb9e3282214d30a9c432846a336008536850cce21db31abcffb065"
   },
   {
     "path": "assets/3d/brundlefly/previews/web-pose-test.png",
@@ -196,8 +196,8 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/web-three-quarter.png",
-    "bytes": 664104,
-    "sha256": "10801afda9f89352ea7cd562ec89960b799b7b4149c342a95be7a52d0dbdb2dc"
+    "bytes": 664142,
+    "sha256": "08dadb885027a22d25ac908bd00c40ed69ea13c9b3f42e8b95ee44351ea48118"
   },
   {
     "path": "assets/3d/brundlefly/render_previews.py",
