@@ -35,6 +35,13 @@ PAINTED_SOCKET_RADII = 1.9
 PAINTED_SOCKET_TONE = 0.72
 # The face patches of the jaw, the cheeks, and the brows reach this far behind the eyeball centres, in millimetres.
 FACE_DEPTH_MM = 6.0
+# The reach of the fold shadow, in millimetres, and the share of it that also darkens the base colour.
+FOLD_SHADOW_MM = 2.0
+FOLD_SHADOW_IN_COLOUR = 0.25
+# The share of solid above one half at which a fold is fully in shadow.
+FOLD_SHADOW_SPAN = 0.22
+# How much light the wings let through.
+WING_TRANSMISSION = 0.12
 # How strongly the fine detail of the texture turns the surface normal, for the relief map.
 RELIEF_STRENGTH = 4.0
 # How far the mouthparts take the flesh colour of the face, from 0 (their painted colour) to 1.
@@ -531,7 +538,36 @@ def skin_detail(view, side=192):
     return np.concatenate([top, top[::-1]], axis=0)
 
 
-def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface, relief_size=0):
+def fold_shadow(field_path, points, known, size, small):
+    """Soft shadow in the folds of the model, as an image of side `small`: 1 is open skin, lower is a fold.
+
+    The value comes from the solid shape, not from rays. Around a point on flat skin, half of a
+    small ball is solid. In a crease more than half is solid, and on a ridge less. So the share
+    of solid near each texel says how deep in a fold it lies. A ray bake on the decimated mesh
+    gave noise from triangle to triangle.
+    points are texel positions in the build's coordinates. known marks the texels that exist.
+    """
+    if not os.path.exists(field_path):
+        return None
+    data = np.load(field_path)
+    shape = tuple(int(n) for n in data["shape"])
+    solid = np.unpackbits(data["solid"])[: shape[0] * shape[1] * shape[2]].reshape(shape).astype(np.float32)
+    lo, h = data["lo"].astype(np.float64), float(data["h"])
+    solid = solid[: shape[0] // 2 * 2, : shape[1] // 2 * 2, : shape[2] // 2 * 2]
+    coarse = solid.reshape(shape[0] // 2, 2, shape[1] // 2, 2, shape[2] // 2, 2).mean(axis=(1, 3, 5))
+    reach = max(int(round(FOLD_SHADOW_MM / (2 * h))), 1)
+    for _ in range(2):                                       # two box blurs: a soft ball
+        for axis in range(3):
+            total = np.cumsum(np.pad(coarse, [(reach + 1, reach) if a == axis else (0, 0) for a in range(3)], mode="edge"), axis=axis)
+            coarse = (np.take(total, range(2 * reach + 1, total.shape[axis]), axis=axis) - np.take(total, range(0, total.shape[axis] - 2 * reach - 1), axis=axis)) / (2 * reach + 1)
+    index = np.clip(np.rint((points - lo) / (2 * h) - 0.5).astype(int), 0, np.array(coarse.shape) - 1)
+    share = coarse[index[:, 0], index[:, 1], index[:, 2]]
+    fold = np.where(known, 1.0 - smooth_step((share - 0.52) / FOLD_SHADOW_SPAN), 1.0).reshape(size, size)
+    step = size // small
+    return fold.reshape(small, step, small, step).mean(axis=(1, 3))
+
+
+def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface, relief_size=0, field_path=None):
     """Replace the vertex colours with a texture that carries the sheet at its own resolution.
 
     Vertex colours can only be as sharp as the mesh is dense. A texture keeps every pixel
@@ -695,6 +731,29 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
         relief.pixels.foreach_set(np.concatenate([normals * 0.5 + 0.5, np.ones((relief_size, relief_size, 1))], axis=2).astype(np.float32).ravel())
         relief.pack()
 
+    surface_map = None
+    fold = fold_shadow(field_path, field, baked, size, relief_size) if relief is not None and field_path else None
+    if relief is not None and fold is not None:
+        step = size // relief_size
+        small = linear.reshape(relief_size, step, relief_size, step, 3).mean(axis=(1, 3))
+        red, green, blue = small[..., 0], small[..., 1], small[..., 2]
+        light = small @ np.array([0.30, 0.59, 0.11])
+        # Roughness by material, read from the colour: chitin and claws are dark and not red, and
+        # they shine. Wings are pale and green-grey, and they are dull. Skin is damp, and wetter in its creases.
+        chitin = smooth_step((0.075 - light) / 0.05)
+        wing = smooth_step((green - red * 0.85) / 0.10) * smooth_step((light - 0.12) / 0.08)
+        skin = np.clip(0.52 - (1.0 - fold) * 0.16, 0.34, 0.6)    # damp skin, wetter where it folds
+        rough = skin * (1 - chitin) * (1 - wing) + 0.26 * chitin + 0.62 * wing * (1 - chitin)
+        for axis in (0, 1):                                     # material edges are soft
+            rough = (np.roll(rough, 1, axis) + rough * 2.0 + np.roll(rough, -1, axis)) / 4.0
+        fold = 1.0 - (1.0 - fold) * (1.0 - wing)                 # a wing is a thin sheet: it has no folds to shade
+        surface_map = bpy.data.images.new("Brundlefly-surface", relief_size, relief_size, alpha=False, is_data=True)
+        surface_map.pixels.foreach_set(np.stack([fold, rough, np.zeros_like(fold), np.ones_like(fold)], axis=2).astype(np.float32).ravel())
+        surface_map.pack()
+        # A share of the fold shadow also goes into the base colour, so it shows under any light.
+        deep = np.repeat(np.repeat(fold, step, axis=0), step, axis=1).reshape(-1)
+        srgb = srgb * (1.0 - FOLD_SHADOW_IN_COLOUR * (1.0 - deep))[:, None]
+
     albedo = bpy.data.images.new("Brundlefly-albedo", size, size, alpha=False)
     albedo.pixels.foreach_set(np.concatenate([srgb, np.ones((size * size, 1))], axis=1).astype(np.float32).ravel())
     albedo.pack()
@@ -710,6 +769,21 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
         bump = nodes.new("ShaderNodeNormalMap")
         material.node_tree.links.new(bump_image.outputs["Color"], bump.inputs["Color"])
         material.node_tree.links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
+    if surface_map is not None:
+        # glTF packs occlusion in red, roughness in green, and metal in blue, in one image.
+        packed = nodes.new("ShaderNodeTexImage")
+        packed.image = surface_map
+        packed.image.colorspace_settings.name = "Non-Color"
+        split = nodes.new("ShaderNodeSeparateColor")
+        material.node_tree.links.new(packed.outputs["Color"], split.inputs["Color"])
+        material.node_tree.links.new(split.outputs["Green"], bsdf.inputs["Roughness"])
+        material.node_tree.links.new(split.outputs["Blue"], bsdf.inputs["Metallic"])
+        group = bpy.data.node_groups.get("glTF Material Output") or bpy.data.node_groups.new("glTF Material Output", "ShaderNodeTree")
+        if "Occlusion" not in [item.name for item in group.interface.items_tree]:
+            group.interface.new_socket("Occlusion", in_out="INPUT", socket_type="NodeSocketFloat")
+        output = nodes.new("ShaderNodeGroup")
+        output.node_tree = group
+        material.node_tree.links.new(split.outputs["Red"], output.inputs["Occlusion"])
     for attribute in list(body.data.color_attributes):
         body.data.color_attributes.remove(attribute)
     return int(baked.sum()), hair_uv, views
@@ -852,6 +926,28 @@ def lid_skin_image(view, to_image, eye, mesh_scale, field_zmin, size=256):
     return image
 
 
+def split_wing_material(body):
+    """Give the wing membranes their own material, which lets a little light through. Returns the face count.
+
+    A face is wing when every one of its vertices follows a wing joint more than any other joint.
+    The material is a copy of the skin material, so it uses the same textures.
+    """
+    wing_groups = {g.index for g in body.vertex_groups if "wing" in g.name}
+    on_wing = [bool(v.groups) and max(v.groups, key=lambda g: g.weight).group in wing_groups for v in body.data.vertices]
+    wing = body.data.materials[0].copy()
+    wing.name = "Brundlefly-wing"
+    bsdf = next(n for n in wing.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    bsdf.inputs["Transmission Weight"].default_value = WING_TRANSMISSION
+    body.data.materials.append(wing)
+    slot = len(body.data.materials) - 1
+    count = 0
+    for polygon in body.data.polygons:
+        if all(on_wing[i] for i in polygon.vertices):
+            polygon.material_index = slot
+            count += 1
+    return count
+
+
 def export_web(src, args):
     """The website model. One root node, Y up after export, face toward +Z, soles at height zero.
 
@@ -881,7 +977,7 @@ def export_web(src, args):
             rig_joints = json.load(fh)["joints_mm"]
     textured = "sheet_projection" in stats and not args.no_texture
     if textured:
-        texels, hair_uv, colour_views = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"], rig_joints, surface, args.relief_size)
+        texels, hair_uv, colour_views = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"], rig_joints, surface, args.relief_size, os.path.join(os.path.dirname(args.blend), "field.npz"))
         print(f"TEXTURE {args.texture_size} px, {texels} texels on the surface")
 
     root = bpy.data.objects.new("Brundlefly", None)
@@ -906,7 +1002,7 @@ def export_web(src, args):
         bm = bmesh.new()
         # The lid material is textured, so glTF requires UVs even on hidden markers.
         bm.loops.layers.uv.verify()
-        bmesh.ops.create_uvsphere(bm, u_segments=48, v_segments=32, radius=1.0, calc_uvs=True)
+        bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=10, radius=1.0, calc_uvs=True)
         # The sphere's poles turn to the front and the back, so the rings of vertices run around the
         # line of sight and the pupil and the iris come out round.
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0.0, 0.0, 0.0), matrix=Matrix.Rotation(math.radians(90), 3, "X"))
@@ -947,6 +1043,8 @@ def export_web(src, args):
 
     if textured and hair_uv is not None and site.get("bristles"):
         print(f"BRISTLES {add_bristle_hairs(body, site['bristles'], hair_uv)} hairs")
+    if rigged and textured:
+        print(f"WINGS {split_wing_material(body)} faces take the wing material")
     stance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "stance.json")
     if rigged and os.path.exists(stance_path) and not args.no_stance:
         with open(stance_path) as fh:

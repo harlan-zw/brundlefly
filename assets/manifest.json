@@ -111,8 +111,8 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 18757,
-    "sha256": "f79f29fb80a61345e83139369ffcc4224d36635811580431e3fc3aa77f7aa115"
+    "bytes": 19918,
+    "sha256": "fa3f3e4e61441f3b463879921a499a4c42fbc3e5b5485b5e6540e9ad77a21eb3"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
@@ -131,8 +131,8 @@
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
-    "bytes": 3988072,
-    "sha256": "73c7fa93c946d734183df5b9769124978cb7face95f87e8612c4fd1269c5d5d4"
+    "bytes": 3058800,
+    "sha256": "af2c7fc6631c5a51f965fff8b7f6fd0362ad596ad5add6a28489328c09027d59"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
@@ -155,9 +155,14 @@
     "sha256": "8729e53d9c03de37d586688aac3cb588303bbaae6b375575bcb93568141074bf"
   },
   {
+    "path": "assets/3d/brundlefly/compact_glb.ts",
+    "bytes": 7026,
+    "sha256": "c884ff0d512d4f153f211be822e7572b6d5aff9fd59b43847895516cb43dfb00"
+  },
+  {
     "path": "assets/3d/brundlefly/export_model.py",
-    "bytes": 53764,
-    "sha256": "b446b30cc98997fb97a7a7666253c0a0d478a7bf5ef9d997af798ff5f82b02cf"
+    "bytes": 60110,
+    "sha256": "6caf426437c6eed722be45c1f57b6b2822359956964cd7e19cc48ea2da3047fb"
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",
@@ -186,8 +191,8 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/web-front.png",
-    "bytes": 673806,
-    "sha256": "2132108a5cfb9e3282214d30a9c432846a336008536850cce21db31abcffb065"
+    "bytes": 673867,
+    "sha256": "86942afab22ef15fbb6c9273a0a6d0ea9906403ed3a22a818801bc2263bc9772"
   },
   {
     "path": "assets/3d/brundlefly/previews/web-pose-test.png",
@@ -196,8 +201,8 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/web-three-quarter.png",
-    "bytes": 664142,
-    "sha256": "08dadb885027a22d25ac908bd00c40ed69ea13c9b3f42e8b95ee44351ea48118"
+    "bytes": 664316,
+    "sha256": "ebca1e19e8307c6c8771147e886d2392c17d57feabfefbe21d17b9eeebabbc11"
   },
   {
     "path": "assets/3d/brundlefly/render_previews.py",
