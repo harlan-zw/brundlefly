@@ -14,6 +14,7 @@ import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollP
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { resolveSceneQuality } from '@brundlefly/brand/shared/scene-quality'
+import { createSceneFinish } from '@brundlefly/brand/shared/scene-finish'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
@@ -296,6 +297,8 @@ watch(canvas, async (element) => {
     return patch
   }) : []
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
+  // The finishing pass draws the scene through its own target. A tier without it draws straight to the canvas.
+  const finish = createSceneFinish(renderer, scene, camera, quality)
   const raycaster = new Raycaster()
   // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.
   hit = mascot._tag === 'Mesh'
@@ -474,7 +477,8 @@ watch(canvas, async (element) => {
     const corners = reach.map(value => figure.localToWorld(value).project(camera))
     bounds = { left: (corners[0]!.x + 1) * renderWidth / 2, right: (corners[1]!.x + 1) * renderWidth / 2,
       top: (1 - corners[1]!.y) * renderHeight / 2, bottom: (1 - corners[0]!.y) * renderHeight / 2 }
-    renderer.render(scene, camera)
+    if (finish) finish.render({ time: elapsed, focus: blend, focusDistance: camera.position.distanceTo(staging ? staging.face : face) })
+    else renderer.render(scene, camera)
   }
   refresh = () => {
     const w = Math.max(1, width.value)
@@ -482,6 +486,7 @@ watch(canvas, async (element) => {
     if (w !== renderWidth || h !== renderHeight) {
       renderWidth = w; renderHeight = h
       renderer.setSize(w, h, false)
+      finish?.setSize(w, h)
       camera.aspect = w / h
       camera.updateProjectionMatrix()
     }
@@ -502,7 +507,7 @@ watch(canvas, async (element) => {
     endView()
     renderer.setAnimationLoop(null)
     world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
-    staging?.key.dispose(); staging?.rim.dispose()
+    staging?.key.dispose(); staging?.rim.dispose(); finish?.dispose()
     shadowGeometry.dispose(); shadowMaterial.dispose(); environment.dispose(); renderer.dispose()
     footShadowGeometry.dispose(); footShadows.forEach(patch => patch.material.dispose())
   }
