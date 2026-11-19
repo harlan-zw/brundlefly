@@ -620,3 +620,19 @@ test('a pose without steps in place is the pose it was', () => {
   ok(createMeshMascot({ scene: stepping.scene, animations: [] }, 2.5)).pose!({ ...standing, time: 1.3, stepInPlace: 0, stepPhase: 2 })
   for (const name of bodyJointNames) assert.deepEqual(stepping.joint(name).quaternion.toArray(), plain.joint(name).quaternion.toArray(), name)
 })
+
+test('through a long stand he stays where he is, though the foot that carries him changes', () => {
+  const { scene, joint } = leggedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const pelvis = () => mascot.root.worldToLocal(joint('pelvis').getWorldPosition(new Vector3()))
+  mascot.pose!(standing, undefined, 0.5)
+  const start = pelvis()
+  let furthest = 0
+  // Two minutes of standing, as in a long talk. His weight shifts from leg to leg the whole time.
+  for (let frame = 1; frame <= 7200; frame++) {
+    mascot.pose!({ ...standing, time: frame / 60 }, undefined, 0.5)
+    const now = pelvis()
+    furthest = Math.max(furthest, Math.hypot(now.x - start.x, now.z - start.z))
+  }
+  assert.ok(furthest < 0.08, `He wandered ${furthest.toFixed(3)} units while he stood.`)
+})
