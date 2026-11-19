@@ -245,14 +245,14 @@ watch(canvas, async (element) => {
   roomHeightRaster.height = roomHeightImage.height
   const roomHeightPainter = roomHeightRaster.getContext('2d')!
   roomHeightPainter.drawImage(roomHeightImage, 0, 0)
-  const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture, room: roomTexture,
-    roomHeight: { texture: roomHeightTexture, raster: roomHeightPainter.getImageData(0, 0, roomHeightRaster.width, roomHeightRaster.height) } })
-  const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
-  renderer.toneMapping = ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.05
   const quality = resolveSceneQuality({ requested: requestedQuality, coarsePointer: touchScreen.value, cores: navigator.hardwareConcurrency,
     memory: (navigator as Navigator & { deviceMemory?: number }).deviceMemory, shortSide: Math.min(window.innerWidth, window.innerHeight) })
   shownQuality.value = quality.tier
+  const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture, room: roomTexture,
+    roomHeight: { texture: roomHeightTexture, raster: roomHeightPainter.getImageData(0, 0, roomHeightRaster.width, roomHeightRaster.height) } }, quality)
+  const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
+  renderer.toneMapping = ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.05
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio))
   // The floor and the walls run away from the camera at shallow angles. Without this they blur there.
   const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
