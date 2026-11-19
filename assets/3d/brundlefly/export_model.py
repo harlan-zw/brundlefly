@@ -24,13 +24,20 @@ import build_from_mesh as bfm  # noqa: E402  (the sheet projection lives there)
 from mathutils.bvhtree import BVHTree
 from mathutils.kdtree import KDTree
 
-# The texture is dark inside each eye socket: out to this many eyeball radii from the eyeball centre.
-# The socket is 1.16 to 1.24 eyeball radii, so this covers its wall and its rim.
+# The texture grows dark inside each eye socket: from this many eyeball radii inward. The socket is
+# 1.09 to 1.16 eyeball radii on the website model, so this covers its wall and its rim.
 EYE_DARK_SCALE = 1.3
+# How dark the deepest part of a socket is, as a share of the skin's own colour.
+SOCKET_SHADE = 0.22
 # The face patches of the jaw, the cheeks, and the brows reach this far behind the eyeball centres, in millimetres.
 FACE_DEPTH_MM = 6.0
 # How strongly the fine detail of the texture turns the surface normal, for the relief map.
-RELIEF_STRENGTH = 5.0
+RELIEF_STRENGTH = 4.0
+# How far the mouthparts take the flesh colour of the face, from 0 (their painted colour) to 1.
+MOUTHPART_FLESH = 0.7
+# The skin patch for surfaces that no view sees: its scale on the model, in build millimetres for each pixel, and its strength.
+DETAIL_MM_PER_PIXEL = 0.07
+DETAIL_AMOUNT = 1.0
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
 BRISTLE_COLOUR = (0.115, 0.030, 0.022)
 BRISTLE_RADIUS_MM = 0.17
@@ -50,6 +57,7 @@ def parse():
     ap.add_argument("--no-stance", action="store_true", help="web model in the straight stand, without source/stance.json")
     ap.add_argument("--no-texture", action="store_true", help="web model with vertex colours and no texture")
     ap.add_argument("--texture-size", type=int, default=2048)
+    ap.add_argument("--image-quality", type=int, default=88, help="JPEG quality of the website model's textures")
     ap.add_argument("--relief-size", type=int, default=0, help="side of the normal map made from the texture's fine detail. It must divide the texture size. 0 writes none.")
     args, _ = ap.parse_known_args(argv)
     return args
@@ -484,7 +492,39 @@ def hidden_from_views(points, known, joints, surface):
         below = np.where(known, below, 0.0)
         out["front"] = np.maximum(out["front"], below)
         under["front"] = below
-    return out, under
+        ring = from_rods(mouth, False)[0]
+        return out, under, np.where(known, own, 0.0), known & (ring > 2.6) & (ring < 5.5)
+    return out, under, np.zeros(len(points)), np.zeros(len(points), dtype=bool)
+
+
+def skin_detail(view, side=192):
+    """A square of fine skin detail from a painted view, as a factor around 1, that repeats without a seam.
+
+    The square is the window of the view that is most evenly flesh: all inside the figure, with
+    the least change in colour. Its broad tone is divided out, so only pores and wrinkles stay.
+    It is mirrored into a square of twice the size, so its edges meet themselves.
+    """
+    figure, linear = view["figure"], view["linear"]
+    best, place = None, None
+    for row in range(0, figure.shape[0] - side, 24):
+        for col in range(0, figure.shape[1] - side, 24):
+            if not figure[row:row + side, col:col + side].all():
+                continue
+            window = linear[row:row + side:4, col:col + side:4]
+            red = window[..., 0] / np.maximum(window.sum(axis=2), 1e-6)
+            score = float(window.reshape(-1, 3).std(axis=0).sum()) - float(red.mean())      # even, and red
+            if best is None or score < best:
+                best, place = score, (row, col)
+    if place is None:
+        return None
+    tone = linear[place[0]:place[0] + side, place[1]:place[1] + side] @ np.array([0.30, 0.59, 0.11])
+    broad = tone.copy()
+    for _ in range(3):
+        for axis in (0, 1):
+            broad = sum(np.roll(broad, k, axis) for k in range(-6, 7)) / 13.0
+    fine = np.clip(tone / np.maximum(broad, 1e-6), 0.6, 1.5)
+    top = np.concatenate([fine, fine[:, ::-1]], axis=1)
+    return np.concatenate([top, top[::-1]], axis=0)
 
 
 def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface, relief_size=0):
@@ -541,19 +581,58 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
     field = position / projection["mesh_scale"]              # texel positions, back in the build's coordinates
     field[:, 2] += projection["field_zmin"]
     linear = np.tile(bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.FLESH]), (size * size, 1))
-    hidden, under = hidden_from_views(position, baked, joints, surface)
+    hidden, under, on_mouthpart, near_mouthpart = hidden_from_views(position, baked, joints, surface)
     under_path = os.path.join(views_dir, "front-under.png")
     if "front" in views and os.path.exists(under_path):
         print(f"TEXTURE under image shares {bfm.attach_under(views['front'][0], under_path):.3f} of its figure with the front view")
     linear[baked] = colour(field[baked], normal[baked], {name: value[baked] for name, value in hidden.items()}, {name: value[baked] for name, value in under.items()})
+    # How much of each texel's colour is the blurred fallback: no view both faces it and sees it.
+    seen = np.zeros(len(position))
+    weight = np.zeros(len(position))
     for name, value in hidden.items():
         component, direction = bfm.VIEW_SETUP[name]["facing"]
-        facing = baked & (normal[:, component] * direction > 0.7)
-        print(f"TEXTURE {name}: {float(value[facing].mean()):.3f} of the surface that faces it is hidden behind another part")
+        facing = np.clip(normal[:, component] * direction, 0.0, 1.0) ** 2
+        below = under.get(name, 0.0) if "under" in views.get(name, ({},))[0] else 0.0
+        seen += facing * (1.0 - value * (1.0 - below))
+        weight += facing
+        front_on = baked & (normal[:, component] * direction > 0.7)
+        print(f"TEXTURE {name}: {float(value[front_on].mean()):.3f} of the surface that faces it is hidden behind another part")
+    plain = np.where(baked, 1.0 - seen / np.maximum(weight, 1e-6), 0.0)
+    plain[weight < 1e-6] = 1.0
+
+    # The mouthparts take the flesh colour of the face around their roots and keep their own light and dark.
+    # The painted ones are a pale yellow, which reads as tusks. A share of their own colour stays, toward the tips.
+    if near_mouthpart.any():
+        tone = np.array([0.30, 0.59, 0.11])
+        flesh = linear[near_mouthpart & (plain < 0.3)].mean(axis=0) if (near_mouthpart & (plain < 0.3)).any() else linear[near_mouthpart].mean(axis=0)
+        own = linear[baked & (on_mouthpart > 0.9)]
+        level = float((own @ tone).mean()) if len(own) else 1.0
+        share = (on_mouthpart * MOUTHPART_FLESH)[:, None]
+        tinted = flesh * ((linear @ tone) / max(level, 1e-6))[:, None]
+        linear[baked] = (linear * (1.0 - share) + tinted * share)[baked]
+
+    # Skin that no view sees is a plain blur. It takes the fine detail of the painted skin: one patch
+    # of it, laid on from three sides, so the belly, the inner thighs, and the skin under the chin
+    # have pores and wrinkles too.
+    detail = skin_detail(views["front"][0]) if "front" in views else None
+    if detail is not None:
+        pixel = DETAIL_MM_PER_PIXEL
+        span = detail.shape[0]
+        def sample(a, b):
+            return detail[np.rint(a / pixel).astype(int) % span, np.rint(b / pixel).astype(int) % span]
+        lean = np.abs(normal) ** 4
+        lean /= np.maximum(lean.sum(axis=1, keepdims=True), 1e-6)
+        grain = (sample(field[:, 1], field[:, 2]) * lean[:, 0] + sample(field[:, 0], field[:, 2]) * lean[:, 1] + sample(field[:, 0], field[:, 1]) * lean[:, 2])
+        linear[baked] = (linear * (1.0 + (grain - 1.0) * plain * DETAIL_AMOUNT)[:, None])[baked]
+        print(f"TEXTURE {float((plain[baked] > 0.5).mean()):.3f} of the surface takes its detail from the skin patch")
     # Inside each eye socket the texture is dark, so the gap around the eye reads as shadow.
-    dark = bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.EYE])
+    # Inside a socket the skin keeps its own colour and grows dark toward the eyeball: a shadowed
+    # fold of flesh, not a black hole. A black socket showed as a crescent under an open eye.
     for eye in eyes:
-        linear[baked & (eye_reach(position, eye) < EYE_DARK_SCALE)] = dark
+        reach = eye_reach(position, eye)
+        shade = SOCKET_SHADE + (1.0 - SOCKET_SHADE) * smooth_step((reach - 0.9) / (EYE_DARK_SCALE - 0.9))
+        inside = baked & (reach < EYE_DARK_SCALE)
+        linear[inside] *= shade[inside][:, None]
     # One block of texels that no surface uses takes the bristle colour. Every hair maps to it.
     # The block lines up with the 8 pixel grid of the JPEG, so the colour does not bleed.
     used = baked.reshape(size, size)
@@ -857,7 +936,7 @@ def export_web(src, args):
     kwargs = dict(filepath=path, export_format="GLB", use_selection=True, export_apply=not rigged, export_cameras=False, export_lights=False,
                   export_animations=rigged, export_skins=rigged)
     if textured:
-        kwargs.update(export_image_format="JPEG", export_image_quality=88)
+        kwargs.update(export_image_format="JPEG", export_image_quality=args.image_quality)
     try:
         bpy.ops.export_scene.gltf(export_vertex_color="MATERIAL", **kwargs)
     except TypeError:

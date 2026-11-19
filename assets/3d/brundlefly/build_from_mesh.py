@@ -749,6 +749,8 @@ LID_SHELL = (1.055, 1.13)
 PRINT_LID_RADIUS = 1.22
 # The socket is this much larger than the lid shell.
 SOCKET_ROOM = 1.10
+# The website model's socket is tighter: the site's lids fill it, and a wide socket shows as a dark crescent under an open eye.
+WEB_SOCKET_ROOM = 1.03
 # The sheet draws the smaller wing on the figure's left, which is +X.
 SMALL_WING_SIDE = 1.0
 
@@ -774,7 +776,7 @@ def add_eyes(f, eyes, solid):
         if solid:
             round_shell = max(depth, height) * PRINT_LID_RADIUS
             shell = bm.V(across * LID_SHELL[0], round_shell, round_shell)
-        f.carve_blob(centre, shell * SOCKET_ROOM, k=0.2)
+        f.carve_blob(centre, shell * (SOCKET_ROOM if solid else WEB_SOCKET_ROOM), k=0.2)
         if solid:
             sl, X, Y, Z = f.box(centre - shell, centre + shell, 3 * f.h)
             lids = bm.sd_ellipsoid(X, Y, Z, centre, shell)
@@ -924,7 +926,8 @@ def main():
     to_mm = lambda point: [round(float(c) * mesh_scale, 3) for c in (point - bm.V(0, 0, f.mesh_zmin))]
     for eye in eyes:
         site["eyes"].append({"centre_mm": to_mm(eye["centre"]), "radii_mm": [round(float(r) * mesh_scale, 3) for r in eye["radii"]]})
-    site["socket_scale"] = [LID_SHELL[0] * SOCKET_ROOM, LID_SHELL[1] * SOCKET_ROOM, LID_SHELL[0] * SOCKET_ROOM]
+    room = SOCKET_ROOM if printing else WEB_SOCKET_ROOM
+    site["socket_scale"] = [LID_SHELL[0] * room, LID_SHELL[1] * room, LID_SHELL[0] * room]
     # Where each bristle stood on the website model. The export puts a thin hair there.
     site["bristles"] = [{"root_mm": [round(float(c) * mesh_scale, 3) for c in (root - bm.V(0, 0, f.mesh_zmin))],
                          "tip_mm": [round(float(c) * mesh_scale, 3) for c in (tip - bm.V(0, 0, f.mesh_zmin))]} for root, tip in hairs]

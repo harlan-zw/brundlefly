@@ -164,12 +164,13 @@ These steps are untested on a printed part.
 - Inside the root, the body faces +Z. The head faces the same way, with a roll. The site turns the head to the viewer.
 - `Brundlefly-body`: about 52,000 triangles. That count includes about 80 bristle hairs of three triangles each; a hair takes the skin weights of the vertex under it. Texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
 - The base colour is one embedded JPEG texture, 2048 pixels square, painted from the views in `source/views/premium/`. A surface that a view cannot see, because another part is in front of it, takes the blurred colour of that view, or the colour of `front-under.png` where a mouthpart or a small arm is the part in front. So the body carries no painted copy of a mouthpart or an arm, and a moving part does not leave its picture behind.
+- Three corrections go into the base colour at the bake. The mouthparts take the flesh colour of the face around their roots and keep their own light and dark: the painted ones were a pale yellow. Skin that no view sees takes fine detail from one patch of the painted skin, laid on from three sides, so the belly, the inner thighs, and the skin under the chin are not plain. Inside each eye socket the skin grows dark toward the eye, as a shadowed fold and not a black hole.
 - A second embedded JPEG, 1024 pixels square, is the normal map of `Brundlefly-skin`. It holds the fine detail of the painting as relief: dark creases lie deep and pale ridges stand up. It has no tangents; a viewer derives them from the texture coordinates.
 - `Brundlefly-eye-0` and `Brundlefly-eye-1`: eye markers, material `Brundlefly-lid`. Eye 0 is on screen left and is the larger eye. The site hides each marker and builds the relief rig's own eye and lids at it. The body mesh has an empty, dark socket behind each marker, and no eyeball or lid of its own.
-  - Each marker is a unit sphere centred on its origin. The site reads its translation as the eye centre, its rest rotation, and its X scale as the half width of the globe: 1.49 mm and 1.04 mm. That is 0.116 and 0.081 of the head width, as on the relief rig. The centre sits 0.65 of the depth radius behind the skin, so the rims of the open lids meet the skin.
+  - Each marker is a unit sphere centred on its origin. The site reads its translation as the eye centre, its rest rotation, and its X scale as the half width of the globe: 1.49 mm and 1.04 mm. That is 0.116 and 0.081 of the head width, as on the relief rig. The centre sits 0.65 of the depth radius behind the skin, so the rims of the open lids meet the skin. The socket is 1.09 times the globe across and in height and 1.16 times in depth.
   - `Brundlefly-lid` carries the skin for the lids that the site builds: a white base colour factor and a 128 pixel texture of the head skin just above the painted eye of the sheet. The site's lids show the middle 44 percent of it. With the relief rig's own darker lid skin, a shut eye stood out from this head. Each marker supplies `TEXCOORD_0` for this texture and has no `COLOR_0`.
 - `anchor-face`: an empty node at the front of the face.
-- No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 4.03 MB, which leaves about 160 KB.
+- No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 3.98 MB, which leaves about 220 KB.
 
 Skeleton:
 
@@ -203,7 +204,7 @@ node $D/validate.ts
 
 The renders are named `<view>-colour.png`. Copy them to `previews/<view>.png`.
 
-For the website model, add `--variant web --paint-dir $V/premium` to the build and `--web --glb-tris 52000 --texture-size 2048 --relief-size 1024` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes.
+For the website model, add `--variant web --paint-dir $V/premium` to the build and `--web --glb-tris 52000 --texture-size 2048 --relief-size 1024 --image-quality 80` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes.
 
 `build_model.py` holds the field library that `build_from_mesh.py` uses. It also holds a first, script-built figure, which is retired.
 
