@@ -172,11 +172,12 @@ These steps are untested on a printed part.
 
 Skeleton:
 
-- One skin, 33 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
+- One skin, 38 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
 - Every joint has an identity rest rotation, in the axes of the root: +X is the figure's left side, +Y is up, +Z is the way the body faces.
 - Left and right are screen left and screen right. So `left-shoulder` is the figure's right shoulder.
 - Body, 25 joints: `pelvis` > `chest` > `head`. From `chest`: `left-shoulder` > `left-elbow` > `left-hand`, `left-rib` > `left-small-elbow` > `left-small-hand`, `left-wing` > `left-wing-tip`, and the same on the right. From `pelvis`: `left-hip` > `left-knee` > `left-foot`, and the same on the right.
-- Face tentacles, 8 joints under `head`: `mouthpart-0` to `mouthpart-3`, from screen left to screen right, each with a `-tip` joint.
+- Face, 5 joints under `head`, with the names of the relief rig: `face-jaw`, `face-cheek-left`, `face-cheek-right`, `face-brow-0`, `face-brow-1`. Their weights are smooth patches on the front of the face: the jaw below the eyes, a cheek beside each eye, and a brow above each eye. The eye sockets stay rigid on `head`.
+- Face tentacles, 8 joints under `face-jaw`: `mouthpart-0` to `mouthpart-3`, from screen left to screen right, each with a `-tip` joint. Each one is a firm, jointed rod: its skin follows its own two joints only, with a short blend at the root and at the middle joint. So a swing moves the tentacle and does not stretch the skin of the face.
 - The eye markers and `anchor-face` are children of the `head` joint. The skin around each eye socket has `head` as its only joint, so the socket does not slide past the eye in a pose.
 - One clip, `Brundlefly-idle`, 4 seconds, made to loop: breathing, a small head turn, twitching small arms, swaying tentacles, fluttering wings.
 - The fingers, the toes, and the jaw have no joints.

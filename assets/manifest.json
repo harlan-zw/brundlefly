@@ -111,8 +111,8 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 15528,
-    "sha256": "61772905a64d4b6959ba58ac6fc70a3d1c7bd0dcbbd1378a5410cca538321173"
+    "bytes": 16055,
+    "sha256": "26325f9b96e42ef4df5657452921f8ca9d4f548bff680134e1993ac84ab88c32"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
@@ -131,8 +131,8 @@
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
-    "bytes": 3935520,
-    "sha256": "2dcb2802661f3b737ae7253b81845f2f7df1bad82c1a015398c626500e83d2d5"
+    "bytes": 3938944,
+    "sha256": "a6bdc95f1793e0b3321eaf3c62574b6af81ebf678078f9e594956afec711507c"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
@@ -156,8 +156,8 @@
   },
   {
     "path": "assets/3d/brundlefly/export_model.py",
-    "bytes": 30307,
-    "sha256": "fe2b14f18d14fb8b882d45a5fd8a775141ddff9f421098a27ef1e9b28cad6ca8"
+    "bytes": 37691,
+    "sha256": "98efbb396b6411a2815dcaf1a72edc8b962f77ddf7d1472c0723e5d43f2c5ce2"
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",

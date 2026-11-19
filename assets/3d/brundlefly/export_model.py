@@ -37,6 +37,8 @@ EYE_PUPIL = (0.002, 0.002, 0.003)
 # The pupil and the iris ring on the front of the eyeball: their angles from the front, in radians.
 EYE_PUPIL_ANGLE = 0.15
 EYE_IRIS_ANGLE = 0.40
+# The face patches of the jaw, the cheeks, and the brows reach this far behind the eyeball centres, in millimetres.
+FACE_DEPTH_MM = 6.0
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
 BRISTLE_COLOUR = (0.115, 0.030, 0.022)
 BRISTLE_RADIUS_MM = 0.17
@@ -190,6 +192,124 @@ def rigid_eye_sockets(body, eyes, inner=2.4, outer=4.0):
     return changed
 
 
+FACE_JOINTS = ("face-jaw", "face-cheek-left", "face-cheek-right", "face-brow-0", "face-brow-1")
+
+
+def smooth_step(value):
+    t = np.clip(value, 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def rig_face(body, J, eyes):
+    """Rig the face with firm mouthparts and with a jaw, two cheeks, and two brows. Returns the new joint positions.
+
+    Automatic weights smear each mouthpart along its length and into the skin of the face,
+    so a swing of one mouthpart stretches the texture around it. Here each mouthpart is a
+    jointed rod. The automatic weights still say which skin belongs to which mouthpart, because
+    they follow the shape. Along the mouthpart the weights are firm: a short blend at the root
+    and at the middle joint, and nothing else. Skin with only a trace of a mouthpart loses it.
+    The jaw, the cheeks, and the brows have the names of the site's relief rig, so the site can
+    drive them with that rig's face code. Their weights are smooth patches on the face, and
+    the eye sockets stay rigid on the head. The mouthparts hang from the jaw.
+    """
+    co = np.empty(len(body.data.vertices) * 3)
+    body.data.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    index_of = {g.name: g.index for g in body.vertex_groups}
+    for name in FACE_JOINTS:
+        if name not in index_of:
+            index_of[name] = body.vertex_groups.new(name=name).index
+    mouth = {index_of[f"mouthpart-{i}"] for i in range(4)} | {index_of[f"mouthpart-{i}-tip"] for i in range(4)}
+
+    # 1. Each mouthpart: which skin it owns, from the automatic weights, and the position of each
+    #    vertex along its line, in millimetres from the root joint.
+    part_of = {index_of[f"mouthpart-{i}"]: i for i in range(4)} | {index_of[f"mouthpart-{i}-tip"]: i for i in range(4)}
+    held = np.zeros((len(co), 4))
+    for vertex in body.data.vertices:
+        for g in vertex.groups:
+            if g.group in part_of:
+                held[vertex.index, part_of[g.group]] += g.weight
+    owner = held.argmax(axis=1)
+    share = smooth_step((held.sum(axis=1) - 0.2) / 0.5)              # 0 for a trace of a mouthpart, 1 for its own skin
+    along = np.zeros(len(co))
+    lengths = []
+    for i in range(4):
+        root, middle, end = (np.array(J[n]) for n in (f"mouthpart-{i}", f"mouthpart-{i}-tip", f"mouthpart-{i}-tip-end"))
+        first, second = middle - root, end - middle
+        lengths.append(float(np.linalg.norm(first)))
+        on_first = (co - root) @ (first / lengths[i])
+        on_second = (co - middle) @ (second / np.linalg.norm(second))
+        mine = owner == i
+        along[mine] = np.where(on_second[mine] > 0.0, lengths[i] + on_second[mine], np.minimum(on_first[mine], lengths[i]))
+    member = share > 0.0
+    on_part = smooth_step((along + 1.5) / 2.0)                        # 0 above the root, 1 just below it
+    on_tip = smooth_step((along - (np.array(lengths)[owner] - 0.8)) / 1.6)
+
+    # 2. Where the face joints sit.
+    eye_centres = [np.array(eye["centre_mm"]) for eye in eyes]
+    eye_radii = [np.array(eye["radii_mm"]) for eye in eyes]
+    roots = np.array([J[f"mouthpart-{i}"] for i in range(4)])
+    jaw_centre = roots.mean(axis=0)
+    places = {
+        "face-jaw": jaw_centre + np.array([0.0, 2.5, 1.5]),
+        "face-cheek-left": eye_centres[0] + np.array([-eye_radii[0][0], 0.5, -2.6]),
+        "face-cheek-right": eye_centres[1] + np.array([eye_radii[1][0] * 1.2, 0.5, -2.4]),
+        "face-brow-0": eye_centres[0] + np.array([0.0, -0.3, eye_radii[0][2] * 1.6 + 0.4]),
+        "face-brow-1": eye_centres[1] + np.array([0.0, -0.3, eye_radii[1][2] * 1.6 + 0.4]),
+    }
+
+    # 3. Smooth patches on the front of the face. A point takes its two largest patches.
+    def patch(centre, across, height, power, peak):
+        return np.clip(1.0 - ((co[:, 0] - centre[0]) / across) ** 2 - ((co[:, 2] - centre[2]) / height) ** 2, 0.0, 1.0) ** power * peak
+    front = smooth_step((min(c[1] for c in eye_centres) + FACE_DEPTH_MM - co[:, 1]) / 2.0)
+    clear = np.ones(len(co))
+    for eye in eyes:
+        clear *= smooth_step((eye_reach(co, eye) - 1.3) / 0.5)        # the sockets stay rigid on the head
+    patches = np.stack([
+        patch(jaw_centre + np.array([0.0, 0.0, -1.0]), 6.0, 4.5, 1.3, 0.93),
+        patch(places["face-cheek-left"], 1.9, 3.2, 2.0, 0.5),
+        patch(places["face-cheek-right"], 1.9, 3.2, 2.0, 0.5),
+        patch(eye_centres[0] + np.array([0.0, 0.0, eye_radii[0][2] * 1.16]), eye_radii[0][0] * 1.6, 1.5, 2.0, 0.78),
+        patch(eye_centres[1] + np.array([0.0, 0.0, eye_radii[1][2] * 1.16]), eye_radii[1][0] * 1.6, 1.5, 2.0, 0.78),
+    ], axis=1) * (front * clear)[:, None]
+    order = np.argsort(-patches, axis=1)[:, :2]
+    kept = np.take_along_axis(patches, order, axis=1)
+    kept *= np.minimum(1.0, 0.96 / np.maximum(kept.sum(axis=1), 1e-9))[:, None]
+
+    jaw, head, changed = index_of["face-jaw"], index_of["head"], 0
+    for vertex in body.data.vertices:
+        i = vertex.index
+        part, face = float(share[i]), float(kept[i].sum())
+        had_trace = any(g.group in mouth for g in vertex.groups)
+        if part <= 0.0 and face < 0.002 and not had_trace:
+            continue
+        for g in list(vertex.groups):
+            if g.group in mouth:
+                body.vertex_groups[g.group].remove([i])
+        rest = sum(g.weight for g in vertex.groups)
+        if rest < 1e-6:
+            body.vertex_groups[head].add([i], 1.0, "REPLACE")
+            rest = 1.0
+        # The skin that is not a mouthpart: its old joints, and the face patches.
+        for g in vertex.groups:
+            g.weight *= (1.0 - part) * (1.0 - face) / rest
+        wanted = {}
+        for column in range(2):
+            if kept[i, column] > 0.001:
+                wanted[index_of[FACE_JOINTS[order[i, column]]]] = (1.0 - part) * float(kept[i, column])
+        # The mouthpart: the jaw above its root, then its two joints.
+        if part > 0.0:
+            down, tip = float(on_part[i]), float(on_tip[i])
+            wanted[jaw] = wanted.get(jaw, 0.0) + part * (1.0 - down)
+            wanted[index_of[f"mouthpart-{owner[i]}"]] = part * down * (1.0 - tip)
+            wanted[index_of[f"mouthpart-{owner[i]}-tip"]] = part * down * tip
+        for group, weight in wanted.items():
+            if weight > 0.001:
+                body.vertex_groups[group].add([i], weight, "REPLACE")
+        changed += 1
+    return {name: Vector(place) for name, place in places.items()}, changed
+
+
 def add_skeleton(body, joints, shift, eyes=()):
     """Bind the body to the skeleton (25 body bones and 8 face tentacle bones) and add an idle clip."""
     scene = bpy.context.scene
@@ -231,8 +351,14 @@ def add_skeleton(body, joints, shift, eyes=()):
     body.select_set(True)
     bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
     bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
+    face_joints = {}
     if eyes:
         print(f"RIG eye sockets rigid on the head: {rigid_eye_sockets(body, eyes)} vertices")
+    if len(eyes) == 2:
+        face_joints, changed = rig_face(body, J, eyes)
+        bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
+        bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
+        print(f"RIG face: {len(face_joints)} joints, {changed} vertices")
 
     # 2. Point every bone straight up. Each joint then has an identity rest rotation:
     #    +X is screen right, +Y is up, +Z is toward the viewer, for every bone.
@@ -242,6 +368,15 @@ def add_skeleton(body, joints, shift, eyes=()):
     bpy.ops.object.mode_set(mode="EDIT")
     for bone in data.edit_bones:
         bone.use_connect = False
+    # The face joints come after the automatic weights: their weights are set by rig_face.
+    for name, place in face_joints.items():
+        joint = data.edit_bones.new(name)
+        joint.head = place
+        joint.tail = place + Vector((0.0, 0.0, 4.0))
+        joint.parent = data.edit_bones["head"]
+    if "face-jaw" in face_joints:
+        for i in range(4):
+            data.edit_bones[f"mouthpart-{i}"].parent = data.edit_bones["face-jaw"]
     for bone in data.edit_bones:
         bone.tail = bone.head + Vector((0.0, 0.0, 4.0))
         bone.roll = 0.0
