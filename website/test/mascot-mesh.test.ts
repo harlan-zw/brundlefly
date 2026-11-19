@@ -388,6 +388,10 @@ test('dressed eyes take the relief rig\'s proportions, artwork shader, and shell
   const size = globeGeometry.boundingBox!.getSize(new Vector3())
   close(size.x / 2, 3)
   assert.ok(Math.abs(size.y / size.x - 0.074 / 0.078) < 0.02, 'The larger eye must keep the reference height.')
+  // A model's socket is up to 1.09 times its globe across. Each lid shell is wider than that, so no hollow shows past its rim.
+  const lidGeometry = (head.getObjectByName('reference-lower-lid-0')!.children[0] as Mesh).geometry
+  lidGeometry.computeBoundingBox()
+  assert.ok(lidGeometry.boundingBox!.getSize(new Vector3()).x / size.x > 1.1, 'The lid must reach past the socket.')
   // Open lids stand 0.96 rad back from shut, and a blink brings both shells together, as on the relief rig.
   const hinge = (name: string) => head.getObjectByName(name)!
   mascot.pose!({ ...standing, blink: 0 })

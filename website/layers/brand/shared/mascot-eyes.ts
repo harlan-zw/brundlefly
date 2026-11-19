@@ -13,6 +13,10 @@ export type LidSkin = { colour: Color, map: Texture | undefined }
 /** Where an eye is built. `lid` is the model's skin beside that eye, when the model names one. */
 export type EyeAnchor = { node: Object3D, lid: LidSkin | undefined }
 
+// A model's socket is a little larger than its globe: up to 1.09 times across and 1.16 in depth.
+// Each lid shell is this much larger than the relief rig's, so its rim meets the socket's skin and no hollow shows past it.
+const socketCover = 1.07
+
 /** The radius of an anchor in its parent's units. An anchor is an eyeball mesh, or an empty node whose scale is the radius. */
 function anchorRadius(anchor: Object3D) {
   if (!(anchor instanceof Mesh)) return anchor.scale.x
@@ -76,7 +80,7 @@ export function createReferenceEyes(anchors: readonly EyeAnchor[], { projection,
     root.add(new Mesh(sphere, eye.material))
     const lids = [true, false].map((upper) => {
       const cap = new SphereGeometry(1, 40, 24, 0, Math.PI * 2, upper ? 0 : Math.PI * 0.5, Math.PI * 0.5)
-      cap.scale(lid.radius, lid.radius, lid.depth)
+      cap.scale(lid.radius * socketCover, lid.radius * socketCover, lid.depth * socketCover)
       const shell = cap.getAttribute('position')
       const lidUv: number[] = []
       for (let i = 0; i < shell.count; i++) {
