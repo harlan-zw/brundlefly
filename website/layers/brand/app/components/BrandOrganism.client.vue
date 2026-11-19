@@ -24,7 +24,7 @@ const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform 
 }>()
 const clipTime = defineModel<number>('clipTime', { default: 0 })
 type ShownMascot = 'relief' | 'sprite' | 'mesh'
-const emit = defineEmits<{ clips: [durations: Record<string, number>], shown: [mascot: ShownMascot, rigged: boolean] }>()
+const emit = defineEmits<{ clips: [durations: Record<string, number>], shown: [mascot: ShownMascot, rigged: boolean, posable: boolean] }>()
 // The component reports the mascot it shows. A mesh that cannot load shows the relief rig.
 const shownMascot = ref<ShownMascot>()
 const meshUnavailable = ref(false)
@@ -184,7 +184,7 @@ watch(canvas, async (element) => {
     figure.add(mascotRoot)
     scene.add(figure)
     shownMascot.value = meshMascot ? 'mesh' : textureMode === 'sprite' ? 'sprite' : 'relief'
-    emit('shown', shownMascot.value, meshMascot ? meshMascot.skinned : true)
+    emit('shown', shownMascot.value, meshMascot ? meshMascot.skinned : true, meshMascot ? meshMascot.pose !== undefined : true)
   }
   const orbit = inspector ? new OrbitControls(camera, element) : undefined
   if (orbit) {
@@ -233,6 +233,8 @@ watch(canvas, async (element) => {
       const idle = !inspector || clip === 'Idle'
       if (inspector && idle && delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % meshMascot.idleDuration
       meshMascot.update(!idle ? 0 : inspector ? clipTime.value : elapsed)
+      // Manual shows the pose the controls set, when the file can take the relief rig's pose code.
+      if (!idle) meshMascot.pose?.({ time: 0, pressure: currentPressure, pointer, transform, speaking, blink: blink ?? 0, squint })
     }
     else if (mixer && clips && clip !== 'Manual') {
       if (activeClip !== clip) {

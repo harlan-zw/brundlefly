@@ -341,10 +341,11 @@ test('a blink closes the upper lid down and the lower lid up, and an open eye le
   const { scene, lids } = eyedModel()
   const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
   mascot.pose!({ ...standing, blink: 1 })
-  for (const lid of lids.upper) close(lid.rotation.x, 0.96)
-  for (const lid of lids.lower) close(lid.rotation.x, -0.96)
+  // The upper lid does most of the travel, because the skin under the opening has little lid to move.
+  for (const lid of lids.upper) close(lid.rotation.x, 1.05)
+  for (const lid of lids.lower) close(lid.rotation.x, -0.33)
   mascot.pose!({ ...standing, blink: 0.5 })
-  close(lids.upper[0]!.rotation.x, 0.48)
+  close(lids.upper[0]!.rotation.x, 0.525)
   mascot.pose!({ ...standing, blink: 0 })
   for (const lid of [...lids.upper, ...lids.lower]) close(lid.rotation.x, 0)
   // A squint narrows the smaller, screen-right eye more than the larger one, as on the relief rig.

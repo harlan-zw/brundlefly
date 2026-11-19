@@ -64,8 +64,10 @@ function findEyes(scene: Object3D) {
 // The iris stays inside the lid opening at these turns, in radians.
 const maxEyeYaw = 0.35
 const maxEyePitch = 0.22
-// A shut eye: the upper lid turns down this far and the lower lid turns up as far, in radians. The relief rig's lids travel the same.
-const lidClose = 0.96
+// A shut eye, in radians: the upper lid turns down this far and the lower lid turns up this far.
+// The figurine model's opening sets both. Past about 1.1 rad the eyeball shows through the upper lid's skin.
+const upperLidClose = 1.05
+const lowerLidClose = 0.33
 /** The relief rig's wet-eye shader draws each eyeball, so both mascots have the same eyes. The file's own eye material is released. */
 function dressEyes(nodes: readonly Object3D[]) {
   const globes: Mesh[] = []
@@ -266,8 +268,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       // A squint narrows the smaller, screen-right eye more than the larger one, as on the relief rig.
       eyes.forEach(({ upperLid, lowerLid }, index) => {
         const closure = Math.min(1, body.blink + (input.squint ?? 0) * (index === 0 ? 0.18 : 0.63))
-        upperLid?.rotation.set(closure * lidClose, 0, 0)
-        lowerLid?.rotation.set(-closure * lidClose, 0, 0)
+        upperLid?.rotation.set(closure * upperLidClose, 0, 0)
+        lowerLid?.rotation.set(-closure * lowerLidClose, 0, 0)
       })
     } : undefined,
     /** Why the file cannot take the pose code. Undefined when it can. */

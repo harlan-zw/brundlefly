@@ -336,7 +336,7 @@ Nodes named Brundlefly-eye-0 and Brundlefly-eye-1 are his eyeballs. The site dra
 The gaze wanders, watches a visitor, and follows a habit's cue. The iris slides under the cornea; the eyeball does not turn.
 The gaze turns at most 0.35 rad to a side and 0.22 rad up or down, so the iris stays inside the lid opening.
 Joints named face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 are his eyelids. The site turns them to blink and to squint.
-A shut eye turns the upper lid 0.96 rad down and the lower lid 0.96 rad up, as on the relief rig. A file without lid joints does not blink.
+A shut eye turns the upper lid 1.05 rad down and the lower lid 0.33 rad up. A file without lid joints does not blink.
 It has no jaw or brow joints, so its expression does not change.
 If the file turns its top node about the vertical, the site mirrors that turn when he walks to the other side, so he faces his path.
 He turns a little before each walk and holds his side while he stands. His head stays toward the viewer at rest.
@@ -489,7 +489,8 @@ Drag to orbit and scroll to zoom. Bones and wireframe reveal the weighted model.
 Choose Idle, Walk, or Speaking for the exported animation clips. Play, pause, change speed, or scrub time.
 Manual speech, blink, brow, and squint controls stop clip playback and show a fixed pose.
 Mapped and Sprite switch the artwork. Download GLB exports the selected rig.
-Mesh shows the full 3D model. Idle plays its clip or its sway. Walk, Speaking, the expression controls, and Download GLB apply only to the relief rig.
+Mesh shows the full 3D model. Idle plays its clip or its sway. Walk, Speaking, Brow, and Download GLB apply only to the relief rig.
+If the model can take the relief rig's pose code, Manual poses it from the Speech, Blink, and Squint controls.
 Bones applies only to a model with a skeleton.
 If the model file is absent, Mesh shows the mapped relief rig and the status line says so.
 
