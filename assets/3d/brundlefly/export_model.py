@@ -7,6 +7,7 @@ Run headless, with absolute paths:
 Writes brundlefly.blend, brundlefly-80mm.stl, brundlefly-100mm.stl, and brundlefly-preview.glb.
 """
 import argparse
+import heapq
 import json
 import os
 import sys
@@ -322,6 +323,123 @@ def rig_face(body, J, eyes):
     return {name: Vector(place) for name, place in places.items()}, changed
 
 
+def rig_fingers(body, J):
+    """Give each finger of the two long hands two joints of its own. Returns the joints.
+
+    The fingers are found in the mesh: past the knuckles, the skin of a hand falls apart into one
+    piece for each finger. Each piece gets a joint at its base and one at its middle, along its
+    own line. Its skin follows them, with a short blend at the base, so the palm does not move.
+    The rest shape does not change: the generated fingers already curve as claws.
+    Each entry of the result is name -> (position, parent, hinge). A turn about the hinge curls
+    the finger toward the palm. The hinge is in model axes, for the straight stand.
+    """
+    mesh = body.data
+    co = np.empty(len(mesh.vertices) * 3)
+    mesh.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    neighbours = [[] for _ in mesh.vertices]
+    for edge in mesh.edges:
+        a, b = edge.vertices
+        neighbours[a].append(b)
+        neighbours[b].append(a)
+    out = {}
+    for side in ("left", "right"):
+        hand = body.vertex_groups[f"{side}-hand"]
+        wrist, end = np.array(J[f"{side}-hand"]), np.array(J[f"{side}-hand-end"])
+        length = float(np.linalg.norm(end - wrist))
+        unit = (end - wrist) / length
+        held = np.zeros(len(co))
+        for vertex in mesh.vertices:
+            for g in vertex.groups:
+                if g.group == hand.index:
+                    held[vertex.index] = g.weight
+        along_hand = (co - wrist) @ unit / length
+        # Distance over the skin from the wrist. A straight cut across the hand does not part the
+        # fingers, because they spread and curl. A cut at one distance over the skin does.
+        in_hand = held > 0.3
+        far = np.full(len(co), np.inf)
+        queue = [(0.0, int(i)) for i in np.nonzero(in_hand & (along_hand < 0.12))[0]]
+        for _, i in queue:
+            far[i] = 0.0
+        heapq.heapify(queue)
+        while queue:
+            d, cur = heapq.heappop(queue)
+            if d > far[cur]:
+                continue
+            for other in neighbours[cur]:
+                if in_hand[other]:
+                    step = d + float(np.linalg.norm(co[other] - co[cur]))
+                    if step < far[other]:
+                        far[other] = step
+                        heapq.heappush(queue, (step, other))
+        reached = np.isfinite(far)
+        if not reached.any():
+            continue
+        longest = float(far[reached].max())
+
+        def pieces_past(cut):
+            pool = set(np.nonzero(reached & (far > cut * longest))[0].tolist())
+            found, seen = [], set()
+            for start in pool:
+                if start in seen:
+                    continue
+                stack, piece = [start], []
+                seen.add(start)
+                while stack:
+                    cur = stack.pop()
+                    piece.append(cur)
+                    for other in neighbours[cur]:
+                        if other in pool and other not in seen:
+                            seen.add(other)
+                            stack.append(other)
+                if len(piece) >= 12:
+                    found.append(np.array(piece))
+            return found
+        # The knuckle line: the first cut that parts the most fingers.
+        fingers = []
+        for cut in np.arange(0.20, 0.80, 0.03):
+            found = pieces_past(float(cut))
+            if len(found) > len(fingers) and len(found) <= 6:
+                fingers = found
+        if len(fingers) < 4:
+            fingers = []
+        if not fingers:
+            continue
+        spread = co[held > 0.5] - co[held > 0.5].mean(axis=0)
+        palm = np.linalg.eigh(spread.T @ spread)[1][:, 0]             # the flat direction of the hand
+        across = np.cross(unit, palm)
+        inward = np.array([-np.sign(wrist[0]), 0.6, 0.0])            # the claws hook toward the body and the back
+        order = sorted(range(len(fingers)), key=lambda k: float((co[fingers[k]].mean(axis=0) - wrist) @ across))
+        for number, k in enumerate(order):
+            piece = fingers[k]
+            points = co[piece]
+            centred = points - points.mean(axis=0)
+            line = np.linalg.eigh(centred.T @ centred)[1][:, 2]       # the long direction of the finger
+            if line @ unit < 0:
+                line = -line
+            reach = centred @ line
+            base = points.mean(axis=0) + line * reach.min()
+            span = float(reach.max() - reach.min())
+            hinge = np.cross(line, palm)
+            hinge /= np.linalg.norm(hinge)
+            if np.cross(hinge, line) @ inward < 0:
+                hinge = -hinge
+            names = (f"{side}-finger-{number}", f"{side}-finger-{number}-tip")
+            groups = [body.vertex_groups.get(name) or body.vertex_groups.new(name=name) for name in names]
+            t = (points - base) @ line / span
+            on_finger = smooth_step(t / 0.22)
+            on_tip = smooth_step((t - 0.40) / 0.22)
+            for index, a, b in zip(piece.tolist(), on_finger.tolist(), on_tip.tolist()):
+                weight = float(held[index])
+                hand.add([index], weight * (1.0 - a), "REPLACE")
+                for group, share in zip(groups, (a * (1.0 - b), a * b)):
+                    if share > 0.001:
+                        group.add([index], weight * share, "REPLACE")
+            out[names[0]] = (Vector(base), f"{side}-hand", Vector(hinge))
+            out[names[1]] = (Vector(base + line * span * 0.5), names[0], Vector(hinge))
+    return out
+
+
 def add_skeleton(body, joints, shift, eyes=()):
     """Bind the body to the skeleton (25 body bones and 8 face tentacle bones) and add an idle clip."""
     scene = bpy.context.scene
@@ -364,6 +482,8 @@ def add_skeleton(body, joints, shift, eyes=()):
     bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
     bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
     face_joints = {}
+    finger_joints = rig_fingers(body, J)
+    print(f"RIG fingers: {len(finger_joints) // 2} fingers with joints")
     if eyes:
         print(f"RIG eye sockets rigid on the head: {rigid_eye_sockets(body, eyes)} vertices")
     if len(eyes) == 2:
@@ -386,6 +506,11 @@ def add_skeleton(body, joints, shift, eyes=()):
         joint.head = place
         joint.tail = place + Vector((0.0, 0.0, 4.0))
         joint.parent = data.edit_bones["head"]
+    for name, (place, parent, _) in finger_joints.items():
+        joint = data.edit_bones.new(name)
+        joint.head = place
+        joint.tail = place + Vector((0.0, 0.0, 4.0))
+        joint.parent = data.edit_bones[parent]
     if "face-jaw" in face_joints:
         for i in range(4):
             data.edit_bones[f"mouthpart-{i}"].parent = data.edit_bones["face-jaw"]
@@ -393,6 +518,8 @@ def add_skeleton(body, joints, shift, eyes=()):
         bone.tail = bone.head + Vector((0.0, 0.0, 4.0))
         bone.roll = 0.0
     bpy.ops.object.mode_set(mode="OBJECT")
+    for name, (_, _, hinge) in finger_joints.items():
+        data.bones[name]["hinge_model"] = [float(c) for c in hinge]
 
     # 3. Idle clip: slow breathing, a small head turn, twitching small arms, fluttering wings.
     deg = math.radians
@@ -857,6 +984,11 @@ def bake_stance(body, arm, stance, followers):
         bone.rotation_quaternion = Quaternion((w, x, y, z))       # bone axes are the site's axes: X right, Y up, Z to the viewer
     arm.pose.bones["pelvis"].location = Vector(stance["pelvis_offset_mm"])
     bpy.context.view_layer.update()
+    # A finger's hinge turns with its hand. The site reads it in the joint's own axes: X right, Y up, Z forward.
+    for bone in arm.pose.bones:
+        if "hinge_model" in bone.bone:
+            turned = (bone.matrix @ bone.bone.matrix_local.inverted()).to_3x3() @ Vector(bone.bone["hinge_model"])
+            bone.bone["hinge"] = [round(turned.x, 4), round(turned.z, 4), round(-turned.y, 4)]
     placed = {o: o.matrix_world.copy() for o in followers}
 
     for o in scene.objects:
@@ -1058,7 +1190,17 @@ def export_web(src, args):
         o.select_set(o in parts)
     bpy.context.view_layer.objects.active = root
     path = os.path.join(args.out, "brundlefly-web.glb")
-    kwargs = dict(filepath=path, export_format="GLB", use_selection=True, export_apply=not rigged, export_cameras=False, export_lights=False,
+    # The exporter gives joints no extras, so the finger hinges go on the root node, by joint name.
+    hinges = {}
+    for bone in (arm.data.bones if rigged else ()):
+        if "hinge_model" in bone:
+            if "hinge" not in bone:                       # no stance: the hinge is as measured
+                x, y, z = bone["hinge_model"]
+                bone["hinge"] = [round(x, 4), round(z, 4), round(-y, 4)]
+            hinges[bone.name] = [float(c) for c in bone["hinge"]]
+    if hinges:
+        root["finger_hinges"] = hinges
+    kwargs = dict(filepath=path, export_extras=True, export_format="GLB", use_selection=True, export_apply=not rigged, export_cameras=False, export_lights=False,
                   export_animations=rigged, export_skins=rigged)
     if textured:
         kwargs.update(export_image_format="JPEG", export_image_quality=args.image_quality)

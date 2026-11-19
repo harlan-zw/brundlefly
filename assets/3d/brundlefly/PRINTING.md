@@ -177,7 +177,7 @@ These steps are untested on a printed part.
 
 Skeleton:
 
-- One skin, 38 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
+- One skin, 58 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
 - Every joint has an identity rest rotation, in the axes of the root: +X is the figure's left side, +Y is up, +Z is the way the body faces.
 - Left and right are screen left and screen right. So `left-shoulder` is the figure's right shoulder.
 - Body, 25 joints: `pelvis` > `chest` > `head`. From `chest`: `left-shoulder` > `left-elbow` > `left-hand`, `left-rib` > `left-small-elbow` > `left-small-hand`, `left-wing` > `left-wing-tip`, and the same on the right. From `pelvis`: `left-hip` > `left-knee` > `left-foot`, and the same on the right.
@@ -185,7 +185,8 @@ Skeleton:
 - Face tentacles, 8 joints under `face-jaw`: `mouthpart-0` to `mouthpart-3`, from screen left to screen right, each with a `-tip` joint. Each one is a firm, jointed rod: its skin follows its own two joints only, with a short blend at the root and at the middle joint. So a swing moves the tentacle and does not stretch the skin of the face.
 - The eye markers and `anchor-face` are children of the `head` joint. The skin around each eye socket has `head` as its only joint, so the socket does not slide past the eye in a pose.
 - One clip, `Brundlefly-idle`, 4 seconds, made to loop: breathing, a small head turn, twitching small arms, swaying tentacles, fluttering wings.
-- The fingers and the toes have no joints. The generated hands already hold their fingers as curved claws. A joint across all fingers of a hand folded them and creased the knuckles, so it was removed.
+- Fingers, 20 joints: `left-finger-0` to `left-finger-4` under `left-hand`, each with a `-tip` joint, and the same on the right. The number runs across the hand. The export finds each finger in the mesh, as a piece of skin past the knuckle line, and gives it a joint at its base and one at its middle. The rest shape does not change. The root node `Brundlefly` has `extras.finger_hinges`: for each finger joint, the unit axis to turn it about, in the joint's own axes. A positive turn curls the finger toward the palm, and a negative turn opens it. I rendered a curl of 0.5 and 0.6 radians and an opening of -0.35 and -0.3 radians.
+- The toes and the fingers of the small hands have no joints.
 
 `previews/web-pose-test.png` shows a strong test pose through this rig, from the straight stand. `previews/web-front.png` and `previews/web-three-quarter.png` show the rest shape with the root turn, and with the head turned to the viewer as the site does.
 
