@@ -259,7 +259,7 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
       <div ref="noticeAnchor" class="speech-name">
         <h2 id="speech-title">Brundlefly</h2>
         <button class="speech-notice" type="button" aria-label="About AI replies" :aria-expanded="notice" aria-controls="speech-scope" @click="notice = !notice"><span aria-hidden="true">!</span></button>
-        <p id="speech-scope" class="speech-scope" :class="{ 'speech-scope-open': notice }">{{ dialogueCopy.privacy }}</p>
+        <p id="speech-scope" class="speech-scope" :class="{ 'speech-scope-open': notice }">{{ dialogueCopy.privacy }} {{ dialogueCopy.visit }}</p>
       </div>
       <div class="speech-tools">
         <button v-if="soundAvailable" class="speech-sound" type="button" :aria-pressed="muted" @click="emit('sound')">{{ muted ? 'Sound on' : 'Sound off' }}</button>

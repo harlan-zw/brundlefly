@@ -9,6 +9,8 @@ export type Result<T> = { _tag: 'Ok'; value: T } | { _tag: 'Err'; message: strin
 export type DialogueInput = { text: string; history: ConversationHistoryMessage[] }
 export const dialogueCopy = {
   privacy: 'AI replies use Cloudflare and OpenAI. Avoid sharing private details.',
+  // The first sentence of the approved visit note in COPY.md. The rest joins it when the site first sends a browser fact.
+  visit: 'The site can tell that this browser was here on an earlier day.',
   loading: 'He listens…', failure: 'No reply came back. Your text is still here.',
   // A failed greeting has no visitor text to keep.
   failedGreeting: 'No reply came back.',
