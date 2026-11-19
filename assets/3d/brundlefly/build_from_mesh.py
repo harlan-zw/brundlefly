@@ -661,7 +661,10 @@ def sheet_colour_fn(views):
     flesh = bm.srgb_to_linear(bm.PALETTE[bm.FLESH])
     has_sides = "right" in views or "left" in views
 
-    def colour(xyz, normal):
+    def colour(xyz, normal, hidden=None):
+        """hidden maps a view name to a value from 0 to 1 for each point: how far that view cannot
+        see the point, because another part is in front of it. A hidden point takes the blurred
+        colour of the view. A sharp sample there would paint the part in front onto the part behind."""
         total = np.zeros((len(xyz), 1))
         mixed = np.zeros((len(xyz), 3))
         fallback = np.zeros((len(xyz), 3))
@@ -679,12 +682,18 @@ def sheet_colour_fn(views):
             else:                                   # with two views only, soften what faces sideways
                 sideways = np.clip(1.0 - np.abs(normal[:, 1]) / 0.55, 0.0, 1.0)[:, None]
                 sample = view["linear"][row, col] * (1 - sideways) + view["soft"][row, col] * sideways
+            if hidden is not None and name in hidden:
+                behind = hidden[name][:, None]
+                sample = sample * (1 - behind) + view["soft"][row, col] * behind
             weight = (facing ** 2 * inside)[:, None]
             mixed += sample * weight
             total += weight
             # A second choice, for points that no view both faces and covers: the nearest drawn colour.
             loose = ((facing + 0.05) ** 2 * view["spread_known"][row, col])[:, None]
-            fallback += view["spread"][row, col] * loose
+            spread = view["spread"][row, col]
+            if hidden is not None and name in hidden:
+                spread = spread * (1 - hidden[name][:, None]) + view["soft"][row, col] * hidden[name][:, None]
+            fallback += spread * loose
             fallback_weight += loose
         second = np.where(fallback_weight > 1e-6, fallback / np.maximum(fallback_weight, 1e-6), flesh)
         return np.where(total > 1e-4, mixed / np.maximum(total, 1e-4), second)

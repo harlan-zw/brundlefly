@@ -158,12 +158,12 @@ These steps are untested on a printed part.
 
 - glTF 2.0 binary, metres, Y up. The soles are at height zero.
 - The rest shape is the stance of `assets/brand/character.png`, which is also the stance of the site's relief rig. `source/stance.json` holds the stance, and `export_model.py` bakes it in. The print model keeps the straight stand.
-- In this stance the figure is 77.5 mm tall for the 80 mm build. With the root turn it spans -29.9 to 29.9 mm across the view and -26.3 to 30.7 mm in depth.
-- Through the relief rig's walk cycle the long hands stay at least 2.6 mm from the legs, and the small hands at least 1.1 mm.
+- In this stance the figure is 77.5 mm tall for the 80 mm build. With the root turn it spans -34.6 to 26.9 mm across the view and -25.5 to 26.0 mm in depth.
+- Through the relief rig's walk cycle the long hands stay at least 2.4 mm from the legs, and the small hands at least 1.1 mm.
 - One root node, `Brundlefly`, with a scale of 0.001 and a turn of 0.5 radians about the vertical, toward screen right. That turn is the three-quarter view of the artwork. The site changes it to turn the figure toward his path.
 - Inside the root, the body faces +Z. The head faces the same way, with a roll. The site turns the head to the viewer.
 - `Brundlefly-body`: about 64,000 triangles. That count includes about 80 bristle hairs of three triangles each; a hair takes the skin weights of the vertex under it. Texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
-- The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork.
+- The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork. A surface that a view cannot see, because another part is in front of it, takes the blurred colour of that view. So the body carries no painted copy of a mouthpart or an arm, and a moving part does not leave its picture behind.
 - `Brundlefly-eye-0` and `Brundlefly-eye-1`: eye markers, material `Brundlefly-eye`. Eye 0 is on screen left and is the larger eye. The site hides each marker and builds the relief rig's own eye and lids at it. The body mesh has an empty, dark socket behind each marker, and no eyeball or lid of its own.
   - Each marker is a unit sphere centred on its origin. The site reads its translation as the eye centre, its rest rotation, and its X scale as the half width of the globe: 1.49 mm and 1.04 mm. That is 0.116 and 0.081 of the head width, as on the relief rig. The centre sits 0.65 of the depth radius behind the skin, so the rims of the open lids meet the skin.
   - Without the site's eyes the marker shows as a small dark globe: `COLOR_0` holds a dark teal iris and a dark pupil, and the material's base colour factor is white.
@@ -172,15 +172,16 @@ These steps are untested on a printed part.
 
 Skeleton:
 
-- One skin, 38 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
+- One skin, 42 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
 - Every joint has an identity rest rotation, in the axes of the root: +X is the figure's left side, +Y is up, +Z is the way the body faces.
 - Left and right are screen left and screen right. So `left-shoulder` is the figure's right shoulder.
 - Body, 25 joints: `pelvis` > `chest` > `head`. From `chest`: `left-shoulder` > `left-elbow` > `left-hand`, `left-rib` > `left-small-elbow` > `left-small-hand`, `left-wing` > `left-wing-tip`, and the same on the right. From `pelvis`: `left-hip` > `left-knee` > `left-foot`, and the same on the right.
+- Fingers, 4 joints: `left-fingers` > `left-finger-tips` under `left-hand`, and the same on the right. One joint lies across the knuckles and one across the middle of the fingers, and all fingers of a hand follow them together. The stance curls them by 0.38 and 0.5 radians, so the hands hang as loose claws. The small hands have no finger joints.
 - Face, 5 joints under `head`, with the names of the relief rig: `face-jaw`, `face-cheek-left`, `face-cheek-right`, `face-brow-0`, `face-brow-1`. Their weights are smooth patches on the front of the face: the jaw below the eyes, a cheek beside each eye, and a brow above each eye. The eye sockets stay rigid on `head`.
 - Face tentacles, 8 joints under `face-jaw`: `mouthpart-0` to `mouthpart-3`, from screen left to screen right, each with a `-tip` joint. Each one is a firm, jointed rod: its skin follows its own two joints only, with a short blend at the root and at the middle joint. So a swing moves the tentacle and does not stretch the skin of the face.
 - The eye markers and `anchor-face` are children of the `head` joint. The skin around each eye socket has `head` as its only joint, so the socket does not slide past the eye in a pose.
 - One clip, `Brundlefly-idle`, 4 seconds, made to loop: breathing, a small head turn, twitching small arms, swaying tentacles, fluttering wings.
-- The fingers, the toes, and the jaw have no joints.
+- The toes and the fingers of the small hands have no joints.
 
 `previews/web-pose-test.png` shows a strong test pose through this rig, from the straight stand. `previews/web-front.png` and `previews/web-three-quarter.png` show the rest shape with the root turn, and with the head turned to the viewer as the site does.
 

@@ -39,6 +39,10 @@ EYE_PUPIL_ANGLE = 0.15
 EYE_IRIS_ANGLE = 0.40
 # The face patches of the jaw, the cheeks, and the brows reach this far behind the eyeball centres, in millimetres.
 FACE_DEPTH_MM = 6.0
+# Where the two finger joints lie along a hand, from the wrist (0) to the fingertips (1).
+FINGER_JOINTS = (0.40, 0.70)
+# The hinge axis of each finger joint, in model axes. add_skeleton fills it for bake_stance.
+FINGER_HINGES = {}
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
 BRISTLE_COLOUR = (0.115, 0.030, 0.022)
 BRISTLE_RADIUS_MM = 0.17
@@ -310,6 +314,55 @@ def rig_face(body, J, eyes):
     return {name: Vector(place) for name, place in places.items()}, changed
 
 
+def rig_fingers(body, J):
+    """Give each long hand two joints across its fingers, so the fingers can curl. Returns the joints.
+
+    The generated hands have stiff, spread fingers. One joint lies across the knuckles and one
+    across the middle of the fingers, and all fingers of a hand follow them together. The
+    stance curls them, so the hands hang as loose claws. Each entry of the result is
+    name -> (position, parent, hinge axis). A turn about the hinge axis curls toward the palm.
+    """
+    co = np.empty(len(body.data.vertices) * 3)
+    body.data.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    out = {}
+    for side in ("left", "right"):
+        hand = body.vertex_groups[f"{side}-hand"]
+        wrist, end = np.array(J[f"{side}-hand"]), np.array(J[f"{side}-hand-end"])
+        length = float(np.linalg.norm(end - wrist))
+        unit = (end - wrist) / length
+        held = np.zeros(len(co))
+        for vertex in body.data.vertices:
+            for g in vertex.groups:
+                if g.group == hand.index:
+                    held[vertex.index] = g.weight
+        t = (co - wrist) @ unit / length
+        fingers = held > 0.3
+        # The palm is the flat direction of the hand: the axis of least spread.
+        spread = co[fingers & (t > 0.2)] - co[fingers & (t > 0.2)].mean(axis=0)
+        palm = np.linalg.eigh(spread.T @ spread)[1][:, 0]
+        hinge = np.cross(unit, palm)
+        hinge /= np.linalg.norm(hinge)
+        # A positive turn about the hinge moves the fingertips along cross(hinge, unit). The claws
+        # hook toward the body and toward the back.
+        inward = np.array([-np.sign(wrist[0]), 0.6, 0.0])
+        if np.cross(hinge, unit) @ inward < 0:
+            hinge = -hinge
+        tips = smooth_step((t - FINGER_JOINTS[1] + 0.09) / 0.18)
+        knuckles = smooth_step((t - FINGER_JOINTS[0] + 0.09) / 0.18) * (1.0 - tips)
+        names = (f"{side}-fingers", f"{side}-finger-tips")
+        groups = [body.vertex_groups.get(name) or body.vertex_groups.new(name=name) for name in names]
+        for index in np.nonzero((held > 0.0) & (knuckles + tips > 0.001))[0]:
+            i, weight = int(index), float(held[index])
+            hand.add([i], weight * (1.0 - knuckles[index] - tips[index]), "REPLACE")
+            for group, share in zip(groups, (knuckles[index], tips[index])):
+                if share > 0.001:
+                    group.add([i], weight * float(share), "REPLACE")
+        out[names[0]] = (Vector(wrist + unit * length * FINGER_JOINTS[0]), f"{side}-hand", Vector(hinge))
+        out[names[1]] = (Vector(wrist + unit * length * FINGER_JOINTS[1]), names[0], Vector(hinge))
+    return out
+
+
 def add_skeleton(body, joints, shift, eyes=()):
     """Bind the body to the skeleton (25 body bones and 8 face tentacle bones) and add an idle clip."""
     scene = bpy.context.scene
@@ -352,6 +405,9 @@ def add_skeleton(body, joints, shift, eyes=()):
     bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
     bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
     face_joints = {}
+    finger_joints = rig_fingers(body, J)
+    FINGER_HINGES.clear()
+    FINGER_HINGES.update({name: hinge for name, (_, _, hinge) in finger_joints.items()})
     if eyes:
         print(f"RIG eye sockets rigid on the head: {rigid_eye_sockets(body, eyes)} vertices")
     if len(eyes) == 2:
@@ -374,6 +430,11 @@ def add_skeleton(body, joints, shift, eyes=()):
         joint.head = place
         joint.tail = place + Vector((0.0, 0.0, 4.0))
         joint.parent = data.edit_bones["head"]
+    for name, (place, parent, _) in finger_joints.items():
+        joint = data.edit_bones.new(name)
+        joint.head = place
+        joint.tail = place + Vector((0.0, 0.0, 4.0))
+        joint.parent = data.edit_bones[parent]
     if "face-jaw" in face_joints:
         for i in range(4):
             data.edit_bones[f"mouthpart-{i}"].parent = data.edit_bones["face-jaw"]
@@ -421,7 +482,64 @@ def add_skeleton(body, joints, shift, eyes=()):
     return arm
 
 
-def bake_sheet_texture(body, projection, views_dir, size, eyes):
+def hidden_from_views(points, known, joints, surface):
+    """For each sheet view, how far it cannot see each surface point: 0 is in plain view, 1 is hidden.
+
+    The sheet views are flat pictures. A projection paints every surface along a line of sight,
+    so a mouthpart or an arm in front of the body is also painted on the body behind it. When
+    the part moves, its painted copy stays, and the texture seems to slide. Two tests find the
+    surfaces that must not take the sharp picture:
+    1. Depth. A point that lies more than a millimetre behind the nearest surface on its line
+       of sight is hidden in that view.
+    2. The mouth. The sheet draws the mouthparts longer than the model has them, so their
+       ends are painted on the chest with nothing in front. The skin under and behind the
+       mouthparts is hidden from the front view, except the mouthparts themselves.
+    points are in millimetres of the straight stand. known marks the points that exist.
+    surface is a dense set of points on the model, also in millimetres: the vertices of the
+    full mesh. The depth comes from it and not from the texels, because the texels in the
+    margin around each texture island hold blended positions that lie in mid-air.
+    """
+    cell, slack = 0.4, 1.0
+    out = {}
+    for name, setup in bfm.VIEW_SETUP.items():
+        across = setup["axis"]                       # the axis that runs across the picture
+        depth_axis, toward = setup["facing"]         # the surface normal that faces the view
+        depth = points[:, depth_axis] * -toward      # larger is farther from the viewer
+        low_u, low_v = surface[:, across].min(), surface[:, 2].min()
+        su = np.floor((surface[:, across] - low_u) / cell).astype(int)
+        sv = np.floor((surface[:, 2] - low_v) / cell).astype(int)
+        shape = (int(su.max()) + 1, int(sv.max()) + 1)
+        nearest = np.full(shape[0] * shape[1], np.inf)
+        np.minimum.at(nearest, su * shape[1] + sv, surface[:, depth_axis] * -toward)
+        u = np.clip(np.floor((points[:, across] - low_u) / cell).astype(int), 0, shape[0] - 1)
+        v = np.clip(np.floor((points[:, 2] - low_v) / cell).astype(int), 0, shape[1] - 1)
+        flat = u * shape[1] + v
+        # A neighbour cell can hold the true nearest surface at the edge of a part.
+        grid = nearest.reshape(shape)
+        spread = grid.copy()
+        spread[1:] = np.minimum(spread[1:], grid[:-1]); spread[:-1] = np.minimum(spread[:-1], grid[1:])
+        spread[:, 1:] = np.minimum(spread[:, 1:], grid[:, :-1]); spread[:, :-1] = np.minimum(spread[:, :-1], grid[:, 1:])
+        behind = depth - spread.reshape(-1)[flat]
+        out[name] = np.where(known & np.isfinite(behind), smooth_step((behind - slack) / 0.6), 0.0)
+    if joints and "front" in out:
+        rods = []
+        for i in range(4):
+            rods += [(np.array(joints[f"mouthpart-{i}"]), np.array(joints[f"mouthpart-{i}-tip"])), (np.array(joints[f"mouthpart-{i}-tip"]), np.array(joints[f"mouthpart-{i}-tip-end"]))]
+        ends = np.array([p for rod in rods for p in rod])
+        from_rod = np.full(len(points), np.inf)
+        for a, b in rods:
+            step = b - a
+            t = np.clip((points - a) @ step / (step @ step), 0.0, 1.0)
+            from_rod = np.minimum(from_rod, np.linalg.norm(points - (a + t[:, None] * step), axis=1))
+        zone = (smooth_step((points[:, 0] - (ends[:, 0].min() - 3.5)) / 1.5) * smooth_step(((ends[:, 0].max() + 3.5) - points[:, 0]) / 1.5)
+                * smooth_step((points[:, 2] - (ends[:, 2].min() - 10.0)) / 2.0) * smooth_step(((ends[:, 2].max() - 0.5) - points[:, 2]) / 1.5)
+                * (points[:, 1] < ends[:, 1].max() + 14.0))
+        own = 1.0 - smooth_step((from_rod - 1.3) / 0.8)           # 1 on a mouthpart, 0 away from it
+        out["front"] = np.maximum(out["front"], np.where(known, zone * (1.0 - own), 0.0))
+    return out
+
+
+def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface):
     """Replace the vertex colours with a texture that carries the sheet at its own resolution.
 
     Vertex colours can only be as sharp as the mesh is dense. A texture keeps every pixel
@@ -468,7 +586,12 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
     field = position / projection["mesh_scale"]              # texel positions, back in the build's coordinates
     field[:, 2] += projection["field_zmin"]
     linear = np.tile(bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.FLESH]), (size * size, 1))
-    linear[baked] = colour(field[baked], normal[baked])
+    hidden = hidden_from_views(position, baked, joints, surface)
+    linear[baked] = colour(field[baked], normal[baked], {name: value[baked] for name, value in hidden.items()})
+    for name, value in hidden.items():
+        component, direction = bfm.VIEW_SETUP[name]["facing"]
+        facing = baked & (normal[:, component] * direction > 0.7)
+        print(f"TEXTURE {name}: {float(value[facing].mean()):.3f} of the surface that faces it is hidden behind another part")
     # Inside each eye socket the texture is dark, so the gap around the eye reads as shadow.
     dark = bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.EYE])
     for eye in eyes:
@@ -568,6 +691,13 @@ def bake_stance(body, arm, stance, followers):
         bone.rotation_mode = "QUATERNION"
         bone.rotation_quaternion = Quaternion((w, x, y, z))       # bone axes are the site's axes: X right, Y up, Z to the viewer
     arm.pose.bones["pelvis"].location = Vector(stance["pelvis_offset_mm"])
+    # The fingers curl about their hinge. A bone points up at rest, so its axes are X = model X, Y = model Z, Z = -model Y.
+    for name, hinge in FINGER_HINGES.items():
+        angle = stance.get("finger_curl_radians", [0.0, 0.0])[1 if name.endswith("-tips") else 0]
+        bone = arm.pose.bones[name]
+        modes[name] = bone.rotation_mode
+        bone.rotation_mode = "QUATERNION"
+        bone.rotation_quaternion = Quaternion((hinge.x, hinge.z, -hinge.y), angle)
     bpy.context.view_layer.update()
     placed = {o: o.matrix_world.copy() for o in followers}
 
@@ -622,15 +752,23 @@ def export_web(src, args):
 
     src.name = "Brundlefly-source"                   # frees the root node name
     src.data.name = "Brundlefly-source"
+    surface = np.empty(len(src.data.vertices) * 3)
+    src.data.vertices.foreach_get("co", surface)
+    surface = surface.reshape(-1, 3)
     body = clean_decimated(src, args.glb_tris, "Brundlefly-body")
     body.data.name = "Brundlefly-body"
     skin = body.data.materials[0]
     skin.name = "Brundlefly-skin"
     skin.use_backface_culling = True                 # exports as doubleSided false
 
+    joints_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "rig-joints.json")
+    rig_joints = None
+    if os.path.exists(joints_path):
+        with open(joints_path) as fh:
+            rig_joints = json.load(fh)["joints_mm"]
     textured = "sheet_projection" in stats and not args.no_texture
     if textured:
-        texels, hair_uv = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"])
+        texels, hair_uv = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"], rig_joints, surface)
         print(f"TEXTURE {args.texture_size} px, {texels} texels on the surface")
 
     root = bpy.data.objects.new("Brundlefly", None)
