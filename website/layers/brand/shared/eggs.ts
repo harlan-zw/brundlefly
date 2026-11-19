@@ -1,8 +1,9 @@
 import {
-  CatmullRomCurve3, Color, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, SphereGeometry,
-  TubeGeometry, Vector3,
+  CatmullRomCurve3, Color, Group, InstancedBufferAttribute, InstancedMesh, Matrix4, Mesh, MeshPhysicalMaterial, MeshStandardMaterial,
+  SphereGeometry, TubeGeometry, Vector3,
 } from 'three'
 import type { BufferGeometry, Material, Texture } from 'three'
+import { addMembraneRim, createInnerGlowMaterial } from './egg-membrane'
 import { eggGlow, eggPulse } from './egg-pulse'
 import { createFloorDecalGeometry } from './floor-surface'
 import type { FloorSpot } from './floor-surface'
@@ -31,6 +32,34 @@ function shellGeometry() {
 }
 
 /**
+ * The growth inside a sac: one thick fold that winds in on itself and thins to a tip.
+ * It is a bud, not a creature. It has no head, eyes, limbs, or segments.
+ */
+function budGeometry() {
+  const curve = new CatmullRomCurve3(Array.from({ length: 9 }, (_, index) => {
+    const turn = index / 8
+    const angle = 0.9 + turn * 3.9
+    const reach = 0.3 + turn * 0.42
+    return new Vector3(Math.cos(angle) * reach, Math.sin(angle) * reach, Math.sin(turn * 3.4) * 0.16)
+  }))
+  const rings = 36, sides = 8
+  const geometry = new TubeGeometry(curve, rings, 1, sides, false)
+  const positions = geometry.getAttribute('position')
+  const centre = new Vector3(), vertex = new Vector3()
+  for (let index = 0; index < positions.count; index++) {
+    const along = Math.floor(index / (sides + 1)) / rings
+    curve.getPointAt(along, centre)
+    // The inner end swells round and closed. The fold thins along its length and closes at its tip.
+    const girth = 0.44 * Math.sqrt(Math.min(1, along / 0.1)) * (1 - 0.74 * Math.max(0, (along - 0.1) / 0.9) ** 0.8)
+      * Math.sqrt(Math.min(1, (1 - along) / 0.06))
+    vertex.fromBufferAttribute(positions, index).sub(centre).multiplyScalar(girth).add(centre)
+    positions.setXYZ(index, vertex.x, vertex.y, vertex.z)
+  }
+  geometry.computeVertexNormals()
+  return geometry
+}
+
+/**
  * Floor-edge sacs preserve the central walking corridor and contain no additional characters.
  * `floorTexture` is the floor's colour map. The glow that the sacs cast on the floor reads it.
  */
@@ -40,9 +69,9 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture, floor
   const geometries = new Set<BufferGeometry>()
   const materials = new Set<Material>()
   const geometry = shellGeometry()
-  const sphere = new SphereGeometry(1, 14, 10)
+  const bud = budGeometry()
   geometries.add(geometry)
-  geometries.add(sphere)
+  geometries.add(bud)
   // The first membrane glows olive, like slime. The other two glow rust, like the flesh.
   const glowColors = ['#777648', '#AA604B', '#AA604B']
   const shells = ['#989273', '#896361', '#A27560'].map((color, index) => {
@@ -54,8 +83,10 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture, floor
     materials.add(material)
     return material
   })
+  // Each membrane's edge takes its own glow colour, lifted toward cream.
+  const rims = shells.map((material, index) => addMembraneRim(material, new Color(glowColors[index]!).lerp(new Color('#E8D4A6'), 0.4)))
   const innerMaterial = new MeshStandardMaterial({ color: '#343C3B', map: chitinTexture, bumpMap: chitinTexture, bumpScale: 0.02,
-    roughness: 0.58, metalness: 0.02 })
+    roughness: 0.58, metalness: 0.02, emissive: '#69404B', emissiveIntensity: 0.14 })
   const attachmentMaterial = new MeshPhysicalMaterial({ color: '#777648', map: eggTexture,
     transparent: true, opacity: 0.67, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.1 })
   const tendonMaterial = new MeshPhysicalMaterial({ color: '#69404B', map: eggTexture,
@@ -64,11 +95,28 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture, floor
   materials.add(attachmentMaterial)
   materials.add(tendonMaterial)
 
-  const animated: { body: Group, core: Group, phase: number, height: number, base: Vector3 }[] = []
+  const animated: { body: Group, core: Group, phase: number, height: number, base: Vector3, turn: number }[] = []
   const shadows: FloorSpot[] = []
   const glows: FloorSpot[] = []
   const clusters = sceneLayout.eggs.map(([x, z], index) => ({ x, z, side: index === 0 ? -1 : 1 }))
   const heights = [1.29, 0.79, 1.06, 0.59]
+  const sacCount = clusters.length * heights.length
+  // How bright each sac's light is now. The light inside the sac and its spill on the floor both read this.
+  const glowLevels = new Float32Array(sacCount).fill(1)
+  // One light inside each sac, behind its bud. All of them draw as one mesh, on a membrane copy of their own.
+  const innerGeometry = geometry.clone()
+  const innerColors = new Float32Array(sacCount * 3)
+  innerGeometry.setAttribute('sac', new InstancedBufferAttribute(Float32Array.from({ length: sacCount }, (_, index) => index), 1))
+  innerGeometry.setAttribute('sacColor', new InstancedBufferAttribute(innerColors, 3))
+  const innerGlowMaterial = createInnerGlowMaterial(glowLevels, eggTexture)
+  geometries.add(innerGeometry)
+  materials.add(innerGlowMaterial)
+  const innerGlow = new InstancedMesh(innerGeometry, innerGlowMaterial, sacCount)
+  // The light draws after the buds and before the membranes.
+  innerGlow.renderOrder = 3
+  root.add(innerGlow)
+  const inset = new Matrix4().makeScale(0.88, 0.88, 0.88)
+  const placed = new Matrix4()
   for (const [clusterIndex, cluster] of clusters.entries()) {
     for (const [index, height] of heights.entries()) {
       const phase = index * 1.73 + clusterIndex * 2.2
@@ -90,18 +138,19 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture, floor
       shell.scale.set(radius, height / 2, radius * (0.88 + index % 2 * 0.13))
       shell.rotation.z = cluster.side * (0.07 + index % 2 * 0.09)
       body.add(shell)
+      // The light sits a little inside the membrane, at the sac's rest size.
+      body.updateMatrixWorld(true)
+      innerGlow.setMatrixAt(animated.length, placed.copy(shell.matrixWorld).multiply(inset))
+      new Color(glowColors[membrane]!).multiplyScalar(0.6).toArray(innerColors, animated.length * 3)
 
-      // A folded shadow moves behind the translucent membrane. It has no creature anatomy.
+      // A dark curled bud grows behind the translucent membrane. It has no creature anatomy.
       const core = new Group()
-      core.position.set(0, height * 0.39, 0)
-      core.rotation.z = cluster.side * 0.25
-      const lowerFold = new Mesh(sphere, innerMaterial)
-      lowerFold.scale.set(radius * 0.5, height * 0.18, radius * 0.38)
-      const upperFold = new Mesh(sphere, innerMaterial)
-      upperFold.position.set(radius * 0.23, height * 0.19, -radius * 0.08)
-      upperFold.scale.set(radius * 0.31, height * 0.12, radius * 0.26)
-      upperFold.rotation.z = -0.38
-      core.add(lowerFold, upperFold)
+      core.position.set(0, height * 0.37, 0)
+      // The sac's turn is undone, so the curl faces the clearing. Each bud then leans its own way.
+      core.rotation.set(0, -phase + Math.sin(phase * 2.3) * 0.5, cluster.side * 0.25 + phase)
+      const growth = new Mesh(bud, innerMaterial)
+      growth.scale.set(radius * 0.5, radius * 0.6, radius * 0.42)
+      core.add(growth)
       body.add(core)
 
       for (let strand = 0; strand < 3; strand++) {
@@ -115,12 +164,11 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture, floor
         geometries.add(strandGeometry)
         body.add(new Mesh(strandGeometry, strand === 1 ? tendonMaterial : attachmentMaterial))
       }
-      animated.push({ body, core, phase, height, base: core.position.clone() })
+      animated.push({ body, core, phase, height, base: core.position.clone(), turn: core.rotation.y })
     }
   }
 
   // Each sac's glow reaches the floor as a painted mark, not a lamp. A lamp would cost every material in the room.
-  const glowLevels = new Float32Array(animated.length).fill(1)
   const glowGeometry = createFloorDecalGeometry(glows)
   const glowMaterial = createFloorGlowMaterial(glowLevels, floorTexture)
   geometries.add(glowGeometry)
@@ -144,25 +192,28 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture, floor
       const response = Math.min(1, Math.max(0, breath))
       const wet = Math.min(1, Math.max(0, wetness))
       for (let index = 0; index < animated.length; index++) {
-        const { body, core, phase, height, base } = animated[index]!
+        const { body, core, phase, height, base, turn } = animated[index]!
         const pulse = eggPulse(time, phase)
         // The floor light swells and wavers with the sac that casts it.
         glowLevels[index] = eggGlow(time, phase, breath)
         body.scale.set(2 * (1 + pulse * 0.018 * response), 2 * (1 + pulse * 0.032 * response), 2 * (1 + pulse * 0.014 * response))
         core.position.set(base.x + Math.sin(time * 0.31 + phase) * 0.008 * response,
           base.y + Math.sin(time * 0.4 + phase) * height * 0.008 * response, base.z)
-        core.rotation.y = Math.sin(time * 0.24 + phase) * 0.035 * response
+        core.rotation.y = turn + Math.sin(time * 0.24 + phase) * 0.06 * response
       }
       shells.forEach((material, index) => {
         material.roughness = 0.42 - wet * 0.23
         // A low tissue glow reveals the membrane in floor shadow without making it a lamp.
         material.emissiveIntensity = 0.32 + Math.sin(time * 0.55 + index * 1.73) * 0.025 * response
+        // The bright edge breathes with the same swell.
+        rims[index]!.value = 0.2 + Math.sin(time * 0.55 + index * 1.73) * 0.04 * response
       })
       attachmentMaterial.roughness = 0.34 - wet * 0.23
     },
     dispose() {
       geometries.forEach(value => value.dispose())
       materials.forEach(value => value.dispose())
+      innerGlow.dispose()
       // Texture lifetime belongs to the renderer, because the world shares this texture.
       root.clear()
     },
