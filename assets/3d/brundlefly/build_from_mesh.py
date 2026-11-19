@@ -46,6 +46,15 @@ SLOT_MIN_MM3 = 0.1            # a narrower slot smaller than this is a skin fold
 SLOT_NARROWED_MM = 0.3        # the pose made a slot if its walls came this much closer
 WING_ROOT_MM = 3.0            # the posed print model braces this much of each wing, from the body outward
 WING_ROOT_GROWTH_MM = 0.35    # the brace, on each side of the membrane
+SOLE_CUT_MM = 0.6             # with no base, the bed plane lies this far above the lowest point of the feet
+SOLE_PRINT_MM = 1.6           # the thickness of the sole that each foot gets on that plane, at the 80 mm scale: the print minimum
+SOLE_SHADOW_MM = 2.4          # the outline of a sole is the foot as seen from above, up to this height over the bed
+SOLE_CLOSE_MM = 2.5           # gaps in that outline narrower than twice this are closed: the gaps between the toes
+SOLE_CONTACT_MM2 = 150.0      # each sole meets the bed over this area at least, at the 80 mm scale, as each foot met the base
+SOLE_RIM_MM = 1.2             # each sole reaches this far past the outline of its foot, so the figure stands more firmly
+SOLE_MARGIN_MAX_MM = 2.4      # the rim may grow to this much to reach that area
+SOLE_LEAN = 0.6               # the side of a sole moves inward by this share of its height
+SOLE_STRAY_MM = 2.5           # solid this far from the skin of a foot is not a foot
 
 
 def parse():
@@ -68,9 +77,12 @@ def parse():
     ap.add_argument("--dimples", action="store_true", help="add pilot dimples for hand-implanted bristles")
     ap.add_argument("--dump-field", action="store_true", help="also write field.npz, for measuring joints, and with --stance pose.npz, for measuring the pose")
     ap.add_argument("--stance", help="print model only: pose the solid into this stance of the website model, such as source/stance.json")
+    ap.add_argument("--no-base", action="store_true", help="print model with --stance only: no base. The figure stands on its own flat soles.")
     args, _ = ap.parse_known_args(argv)
     if args.stance and args.variant != "print":
         ap.error("--stance poses the print model only. The website model takes its stance in export_model.py.")
+    if args.no_base and not args.stance:
+        ap.error("--no-base needs --stance. The build finds the two feet through the skeleton of the stance.")
     return args
 
 
@@ -1083,9 +1095,21 @@ def pose_solid(f, stance, joints, eyes, heights):
     # point follows most, the same points in the straight stand with their normals, and each joint
     # before and after the pose.
     spots = [name for name in joints if name in arm.pose.bones]
+    # Also the small copy with its skin weights, in the millimetres of the joints. A pose can be tried on it in seconds.
+    groups = [g.name for g in proxy.vertex_groups]
+    weights = np.zeros((len(proxy.data.vertices), len(groups)), dtype=np.float32)
+    for vertex in proxy.data.vertices:
+        for g in vertex.groups:
+            weights[vertex.index, g.group] = g.weight
+    proxy_faces = np.empty(len(proxy.data.polygons) * 3, dtype=np.int32)
+    proxy.data.polygons.foreach_get("vertices", proxy_faces)
+    parents = {bone.name: bone.parent.name if bone.parent else "" for bone in arm.data.bones}
     record["posed"] = {"points": surface, "owner": owner, "rest": rest / to_rig + lift, "normals": normals, "joints": np.array(spots),
                        "joints_rest": np.array([joints[name] for name in spots]) / to_rig + lift,
-                       "joints_posed": back(np.array([arm.pose.bones[name].head for name in spots]))}
+                       "joints_posed": back(np.array([arm.pose.bones[name].head for name in spots])),
+                       "proxy_points": vertex_array(proxy.data), "proxy_faces": proxy_faces.reshape(-1, 3), "proxy_weights": weights,
+                       "proxy_groups": np.array(groups), "proxy_parents": np.array([parents[name] for name in groups]),
+                       "joint_mm_per_field_mm": to_rig, "joint_floor_mm": floor}
 
     for ob in (dense_ob, proxy):
         mesh = ob.data
@@ -1191,6 +1215,80 @@ def brace_wing_roots(f, skin, owner):
     before = int((f.F[box] < 0).sum())
     f.F[box] = (f.F[box] - growth).astype(np.float32)
     return float(int((f.F[box] < 0).sum()) - before) * f.h ** 3
+
+
+def nearest_distance(cells, targets, chunk=2000):
+    """For each cell of a 2D grid, the distance in cells to the nearest target cell."""
+    out = np.empty(len(cells))
+    for start in range(0, len(cells), chunk):
+        part = cells[start:start + chunk, None, :] - targets[None, :, :]
+        out[start:start + chunk] = np.sqrt((part ** 2).sum(axis=2).min(axis=1))
+    return out
+
+
+def stand_on_soles(f, skin, owner):
+    """Give a figure with no base two flat soles to print from and to stand on. Returns the bed height and a record.
+
+    The bed is a level plane SOLE_CUT_MM above the lowest point of the feet: the print starts there.
+    A bare foot meets that plane on a few toes only. So each foot gets a thin sole: its own outline,
+    seen from above, with the gaps between the toes closed and a rim of SOLE_RIM_MM around it. The sole
+    is SOLE_PRINT_MM thick on the print. The rim is for balance: the figure tips over the edge of its soles, and its mass is high.
+    If a sole is still smaller than SOLE_CONTACT_MM2 at the 80 mm scale, the rim grows.
+    Only the feet may reach the bed. A hand or a wing that hangs that low would be cut flat.
+    skin is the posed surface. owner names the joint that each of its points follows most.
+    """
+    foot = np.char.endswith(owner, "-foot")
+    lowest = float(skin[foot, 2].min())
+    bed = lowest + SOLE_CUT_MM
+    k0, k1 = int(round((bed - f.lo[2]) / f.h)), int(round((bed + SOLE_SHADOW_MM - f.lo[2]) / f.h))
+    top = float(f.ax[2][np.nonzero((f.F < 0).any(axis=(0, 1)))[0].max()])
+    to_print = bm.HEIGHT_MM / (top - bed)                     # the export scales the figure to this height
+    tree, sides = skin_tree(skin[foot]), np.char.partition(owner[foot], "-")[:, 0]
+    slab = np.argwhere(f.F[:, :, :k1 + 1] < 0)
+    shadow = {"left": set(), "right": set()}
+    for x, y, k in slab.tolist():
+        _, index, distance = tree.find((f.lo[0] + x * f.h, f.lo[1] + y * f.h, f.lo[2] + k * f.h))
+        if distance > SOLE_STRAY_MM:
+            if k <= k0:
+                raise SystemExit(f"A part that is not a foot reaches the bed at {[round(float(f.lo[i] + c * f.h), 1) for i, c in enumerate((x, y, k))]}. Lift it in the stance.")
+        elif k >= k0:
+            shadow[sides[index]].add((x, y))
+    thick = SOLE_PRINT_MM / to_print
+    record = {"bed_mm": round(bed, 3), "sole_cut_mm": SOLE_CUT_MM, "soles": {}}
+    reach = int(math.ceil((SOLE_CLOSE_MM + SOLE_MARGIN_MAX_MM) / f.h)) + 3
+    plates = []
+    for side, cells in shadow.items():
+        cells = np.array(sorted(cells))
+        lo = cells.min(axis=0) - reach
+        size = cells.max(axis=0) + reach + 1 - lo
+        inside = np.zeros(tuple(size), dtype=bool)
+        inside[tuple((cells - lo).T)] = True
+        grid = np.argwhere(np.ones_like(inside))
+        # The outline with the gaps between the toes closed: grown by SOLE_CLOSE_MM, then shrunk by as much.
+        out = nearest_distance(grid, cells - lo).reshape(inside.shape) * f.h
+        grown = out <= SOLE_CLOSE_MM
+        back = nearest_distance(grid, np.argwhere(~grown)).reshape(inside.shape) * f.h
+        past = np.where(grown, SOLE_CLOSE_MM - back, out)        # distance past the closed outline, negative inside it
+        plates.append((side, lo, past, len(cells) * f.h ** 2))
+    # One margin for both feet: the rim, or more if a sole would be smaller than the wanted area.
+    margin = SOLE_RIM_MM
+    while margin < SOLE_MARGIN_MAX_MM and min(float((past < margin).sum()) * f.h ** 2 for _, _, past, _ in plates) * to_print ** 2 < SOLE_CONTACT_MM2:
+        margin += f.h / 2
+    Z = f.ax[2][None, None, k0 - 1:k0 + int(math.ceil(thick / f.h)) + 4]
+    for side, lo, past, bare in plates:
+        box = (slice(int(lo[0]), int(lo[0] + past.shape[0])), slice(int(lo[1]), int(lo[1] + past.shape[1])), slice(k0 - 1, k0 - 1 + Z.shape[2]))
+        # The side of a sole leans inward as it rises, so it reads as skin and not as a plate.
+        plate = np.maximum(past[:, :, None] - margin + (Z - bed) * SOLE_LEAN, Z - (bed + thick))
+        f.add(plate, box, 0.3, bm.FLESH)
+        record["soles"][side] = {"bare_outline_mm2": round(bare * to_print ** 2, 1)}
+    middle = (skin[foot & np.char.startswith(owner, "left"), 0].mean() + skin[foot & np.char.startswith(owner, "right"), 0].mean()) / 2
+    on_bed = f.F[:, :, k0] < 0
+    left = f.ax[0] < middle if skin[foot & np.char.startswith(owner, "left"), 0].mean() < middle else f.ax[0] >= middle
+    record["sole_margin_mm"] = round(margin, 2)
+    record["soles"]["left"]["contact_mm2"] = round(float(on_bed[left].sum()) * f.h ** 2 * to_print ** 2, 1)
+    record["soles"]["right"]["contact_mm2"] = round(float(on_bed[~left].sum()) * f.h ** 2 * to_print ** 2, 1)
+    record["scale_to_print"] = round(float(to_print), 4)
+    return bed, record
 
 
 def carried_colours(colour_fn, skin, straight, normals):
@@ -1343,7 +1441,11 @@ def main():
             if getattr(f, "colour_fn", None) is not None:
                 f.colour_fn = carried_colours(f.colour_fn, dump["points"], dump["rest"], dump["normals"])
             stats["stance"] = {"file": os.path.basename(args.stance), **pose}
-        stats["base"] = add_base(f)
+        bed = 0.0
+        if args.no_base:
+            bed, stats["soles"] = stand_on_soles(f, dump["points"], dump["owner"])
+        else:
+            stats["base"] = add_base(f)
         if args.dimples:
             f.dimples = add_dimples(f, zmax)
     # The eyes come after the thickening step. That step grows thin edges, and it would close the sockets.
@@ -1353,7 +1455,7 @@ def main():
     if face is not None:
         anchors["anchor-face"] = face
     Z = f.ax[2][None, None, :]
-    f.F = np.maximum(f.F, -Z).astype(np.float32)          # flat underside
+    f.F = np.maximum(f.F, (bed if printing else 0.0) - Z).astype(np.float32)          # flat underside
     if args.dump_field:
         np.savez_compressed(os.path.join(args.out, "field.npz"), solid=np.packbits(f.F < 0), shape=f.n, lo=f.lo, h=f.h)
 

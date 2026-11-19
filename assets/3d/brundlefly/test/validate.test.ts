@@ -48,3 +48,32 @@ for (const failure of ['missing', 'unreadable', 'no-output'] as const) {
     assert.match(second.stderr, failure === 'no-output' ? /ENOENT/ : /STL import failed/)
   })
 }
+
+test('--name reads the named STL files and writes a report of its own', (t) => {
+  const root = mkdtempSync(join(scratch, 'brundlefly-validate-test-'))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const dir = join(root, 'models')
+  const bin = join(root, 'bin')
+  mkdirSync(dir)
+  mkdirSync(bin)
+  const tool = join(bin, 'check-tool.ts')
+  copyFileSync(resolve(import.meta.dirname, 'fixtures/check-tool.ts'), tool)
+  chmodSync(tool, 0o755)
+  for (const command of ['flatpak', 'uv'])
+    symlinkSync(tool, join(bin, command))
+  for (const name of ['brundlefly-jar-80mm.stl', 'brundlefly-jar-100mm.stl'])
+    writeFileSync(join(dir, name), 'solid fixture\nendsolid fixture\n')
+  const main = join(dir, 'validation-report.json')
+  writeFileSync(main, 'the report of the main files\n')
+
+  const run = spawnSync(process.execPath, [resolve(import.meta.dirname, '../validate.ts'), '--dir', dir, '--work', join(root, 'work'), '--name', 'brundlefly-jar'], {
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}`, FIXTURE_SKIP_MESH: '0' },
+  })
+
+  assert.equal(run.status, 0, run.stderr)
+  const report = JSON.parse(readFileSync(join(dir, 'brundlefly-jar-validation-report.json'), 'utf8'))
+  assert.equal(report.mesh_80mm.file, 'brundlefly-jar-80mm.stl')
+  assert.equal(report.mesh_100mm.file, 'brundlefly-jar-100mm.stl')
+  assert.equal(readFileSync(main, 'utf8'), 'the report of the main files\n')
+})

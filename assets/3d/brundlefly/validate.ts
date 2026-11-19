@@ -1,7 +1,9 @@
 // Run every print check on the delivered STL files and write validation-report.json.
 //
-//   node validate.ts [--dir /abs/dir/with/stl] [--work /abs/scratch/dir]
+//   node validate.ts [--dir /abs/dir/with/stl] [--work /abs/scratch/dir] [--name brundlefly-jar]
 //
+// --name is the first part of the two STL file names. With a name other than brundlefly,
+// the report is <name>-validation-report.json, so it does not replace the report of the main files.
 // Checks: Blender mesh checks and 3D Print Toolbox on the reimported STL,
 // a voxel thickness check, and two PrusaSlicer slices (with and without supports).
 import { execFileSync } from 'node:child_process'
@@ -9,7 +11,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { homedir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 
-interface Args { dir: string, work: string }
+interface Args { dir: string, work: string, name: string }
 
 function parseArgs(argv: string[]): Args {
   const value = (flag: string, fallback: string) => {
@@ -18,7 +20,8 @@ function parseArgs(argv: string[]): Args {
   }
   const dir = value('--dir', import.meta.dirname)
   // The Flatpak apps reach the home folder only, so the work folder is under home.
-  return { dir, work: value('--work', join(homedir(), '.cache', 'brundlefly-validate')) }
+  const named = argv.indexOf('--name')
+  return { dir, work: value('--work', join(homedir(), '.cache', 'brundlefly-validate')), name: named >= 0 && argv[named + 1] ? argv[named + 1] : 'brundlefly' }
 }
 
 function run(cmd: string, args: string[]): string {
@@ -59,8 +62,8 @@ function main(args: Args): void {
   mkdirSync(args.work, { recursive: true })
   const work = mkdtempSync(join(args.work, 'run-'))
   try {
-    const stl80 = join(args.dir, 'brundlefly-80mm.stl')
-    const stl100 = join(args.dir, 'brundlefly-100mm.stl')
+    const stl80 = join(args.dir, `${args.name}-80mm.stl`)
+    const stl100 = join(args.dir, `${args.name}-100mm.stl`)
     const plain = slice(stl80, join(work, 'plain.gcode'), false)
     const supported = slice(stl80, join(work, 'supported.gcode'), true)
     const report = {
@@ -75,7 +78,8 @@ function main(args: Args): void {
         support_filament_cm3: Number((supported.filament_cm3 - plain.filament_cm3).toFixed(2)),
       },
     }
-    writeFileSync(join(args.dir, 'validation-report.json'), `${JSON.stringify(report, null, 1)}\n`)
+    const reportName = args.name === 'brundlefly' ? 'validation-report.json' : `${args.name}-validation-report.json`
+    writeFileSync(join(args.dir, reportName), `${JSON.stringify(report, null, 1)}\n`)
     console.log(JSON.stringify(report, null, 1))
   }
   finally {

@@ -5,6 +5,7 @@ Run headless, with absolute paths:
     --python /abs/export_model.py -- --blend /abs/brundlefly-work.blend --out /abs/dir
 
 Writes brundlefly.blend, brundlefly-80mm.stl, brundlefly-100mm.stl, and brundlefly-preview.glb.
+--name gives the four files another first part, such as brundlefly-jar.
 """
 import argparse
 import heapq
@@ -85,6 +86,7 @@ def parse():
     ap.add_argument("--blend", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--object", default="Brundlefly")
+    ap.add_argument("--name", default="brundlefly", help="first part of each print file name. brundlefly-jar names the jar variant.")
     ap.add_argument("--tris", type=int, default=390000, help="triangle budget for each STL")
     ap.add_argument("--glb-tris", type=int, default=160000)
     ap.add_argument("--web", action="store_true", help="write brundlefly-web.glb only, from a web-variant build")
@@ -1492,14 +1494,14 @@ def main():
     stl_ob = clean_decimated(src, args.tris, "Brundlefly-print")
     only(stl_ob)
     for label, scale in (("80mm", 1.0), ("100mm", 1.25)):
-        path = os.path.join(args.out, f"brundlefly-{label}.stl")
+        path = os.path.join(args.out, f"{args.name}-{label}.stl")
         bpy.ops.wm.stl_export(filepath=path, export_selected_objects=True, global_scale=scale)
         out[label] = {"path": path, "bytes": os.path.getsize(path), "triangles": len(stl_ob.data.polygons)}
 
     glb_ob = decimated(src, args.glb_tris, "Brundlefly-preview")
     glb_ob.scale = (0.001, 0.001, 0.001)          # glTF uses metres
     only(glb_ob)
-    glb = os.path.join(args.out, "brundlefly-preview.glb")
+    glb = os.path.join(args.out, f"{args.name}-preview.glb")
     kwargs = dict(filepath=glb, export_format="GLB", use_selection=True, export_apply=True)
     try:
         bpy.ops.export_scene.gltf(export_vertex_color="MATERIAL", **kwargs)
@@ -1516,7 +1518,7 @@ def main():
         for item in list(block):
             if item.users == 0:
                 block.remove(item)
-    master = os.path.join(args.out, "brundlefly.blend")
+    master = os.path.join(args.out, f"{args.name}.blend")
     bpy.ops.wm.save_as_mainfile(filepath=master, compress=True)
     out["blend"] = {"path": master, "bytes": os.path.getsize(master)}
     print("EXPORT " + json.dumps(out))
