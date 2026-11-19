@@ -451,14 +451,16 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   }
 }
 
+/** How a host shades a full-bodied model: a tint on its skin, the strength of its own occlusion map, and the materials that keep their colour. */
+export type MeshShading = { tint: readonly [number, number, number], occlusion: number, untinted: readonly string[] }
 /**
- * How the site lights a full-bodied model. Its skin is painted flat, with no shadow in it, so light must give him his shape.
- * The relief rig's artwork has its shadows painted in, and reads darker and redder under the same lights.
- * `tint` brings the skin to that level and hue. He takes less of the room's even light, and his own occlusion map counts for more.
+ * The lair's shading. The model's skin is painted flat, with no shadow in it, so light must give him his shape.
+ * The relief rig's artwork has its shadows painted in, and reads darker and redder under the lair's lights.
+ * `tint` brings the skin to that level and hue, and his own occlusion map counts for more. His wings keep their pale green, as on the relief rig.
  */
-export const meshShading = { tint: [0.62, 0.54, 0.52], environment: 0.7, occlusion: 1.5 } as const
-function shadeBody(scene: Object3D) {
-  const tint = new Color(...meshShading.tint)
+export const meshShading: MeshShading = { tint: [0.62, 0.54, 0.52], occlusion: 1.5, untinted: ['Brundlefly-wing'] }
+function shadeBody(scene: Object3D, shading: MeshShading) {
+  const tint = new Color(...shading.tint)
   const shaded = new Set<Material>()
   scene.traverse((object) => {
     if (!(object instanceof Mesh)) return
@@ -466,18 +468,17 @@ function shadeBody(scene: Object3D) {
       // The skin beside each eye is one of these materials, so the lids the site builds take the same tint.
       if (!(material instanceof MeshStandardMaterial) || shaded.has(material)) continue
       shaded.add(material)
-      material.color.multiply(tint)
-      material.envMapIntensity *= meshShading.environment
-      if (material.aoMap) material.aoMapIntensity = meshShading.occlusion
+      if (!shading.untinted.includes(material.name)) material.color.multiply(tint)
+      if (material.aoMap) material.aoMapIntensity = shading.occlusion
     }
   })
 }
 
 /**
- * Places a loaded model where the relief rig stands. The model keeps its own materials, with the site's shading.
+ * Places a loaded model where the relief rig stands. The model keeps its own materials. A host can shade them for its own lights.
  * The function owns the source: it releases the model when the file is unusable.
  */
-export function createMeshMascot({ scene, animations }: MeshMascotSource, height = reliefStandingHeight): MeshMascotResult {
+export function createMeshMascot({ scene, animations }: MeshMascotSource, height = reliefStandingHeight, shading?: MeshShading): MeshMascotResult {
   // A figurine base changes the measured height and the floor contact. The site shows him without it.
   const base = scene.getObjectByName('Brundlefly-base')
   if (base) { releaseMeshSource(base); base.removeFromParent() }
@@ -487,7 +488,7 @@ export function createMeshMascot({ scene, animations }: MeshMascotSource, height
     releaseMeshSource(scene)
     return { _tag: 'Err', reason: 'The file contains no geometry with height.' }
   }
-  shadeBody(scene)
+  if (shading) shadeBody(scene, shading)
   return { _tag: 'Ok', mascot: assemble(scene, animations, bounds, height) }
 }
 
@@ -495,8 +496,8 @@ export function createMeshMascot({ scene, animations }: MeshMascotSource, height
  * Loads the served model and places it. A missing or unreadable file is an error value, so the caller can show the relief rig.
  * The GLB reader loads on demand, because only the mesh mode needs it.
  */
-export const loadMeshMascot = (url = meshMascotUrl, height = reliefStandingHeight): Promise<MeshMascotResult> =>
+export const loadMeshMascot = (url = meshMascotUrl, height = reliefStandingHeight, shading?: MeshShading): Promise<MeshMascotResult> =>
   import('three/addons/loaders/GLTFLoader.js')
     .then(({ GLTFLoader }) => new GLTFLoader().loadAsync(url))
-    .then(file => createMeshMascot(file, height),
+    .then(file => createMeshMascot(file, height, shading),
       (cause: unknown): MeshMascotResult => ({ _tag: 'Err', reason: cause instanceof Error ? cause.message : String(cause) }))

@@ -9,7 +9,7 @@ import {
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
-import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
+import { loadMeshMascot, meshShading } from '@brundlefly/brand/shared/mascot-mesh'
 import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
@@ -172,7 +172,7 @@ watch(canvas, async (element) => {
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/room-diffuse.webp'),
     new TextureLoader().loadAsync('/brand/kit/lair/room-height.webp'),
-  ]), mascotMode === 'mesh' ? loadMeshMascot() : undefined])
+  ]), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, meshShading) : undefined])
   const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult, roomResult, roomHeightResult] = results
   if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
     || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || roomResult.status === 'rejected' || roomHeightResult.status === 'rejected') {
@@ -332,7 +332,7 @@ watch(canvas, async (element) => {
   let focusProgress = paused ? 1 : 0
   // The mesh is a full body, so its conversation is staged: a head-and-shoulders shot, and two lights for his face that rise with the shot.
   // Both lights stay in the scene at zero, so opening the dialog compiles no new shader. The relief rig keeps its full-body shot and the lair's light.
-  const staging = mascot._tag === 'Mesh' ? { eyeLine: mascot.eyeLine, face: new Vector3(), placed: false, side: 1 as 1 | -1, drift: 0,
+  const staging = mascot._tag === 'Mesh' ? { eyeLine: mascot.eyeLine, rest: Math.abs(mascot.restHeading) || 0.5, face: new Vector3(), placed: false, side: 1 as 1 | -1, drift: 0,
     key: new SpotLight('#F2DEB8', 0, 7, 0.34, 0.9, 2), rim: new PointLight('#6FB7C0', 0, 3.5, 2) } : undefined
   if (staging) scene.add(staging.key, staging.key.target, staging.rim)
   const basePosition = new Vector3()
@@ -383,7 +383,9 @@ watch(canvas, async (element) => {
       // At rest the key holds a low level above his head. It falls off toward his feet, which gives his body its shape.
       staging.key.intensity = 6 + blend * 18
       staging.rim.intensity = blend * 4
-      staging.key.position.set(staging.face.x + staging.side * 1.5, staging.face.y + 1.3, staging.face.z + 2.4)
+      // The key stands on the side his body faces. That follows his turn smoothly, so the light never jumps across him.
+      const keySide = Math.max(-1, Math.min(1, turn.heading / staging.rest))
+      staging.key.position.set(staging.face.x + keySide * 1.5, staging.face.y + 1.3, staging.face.z + 2.4)
       staging.key.target.position.copy(staging.face)
       // The rim sits low and wide on his far side. It edges his jaw and shoulder, and stays far from the pale wing above them.
       staging.rim.position.set(staging.face.x - staging.side * 1.9, staging.face.y, staging.face.z - 0.9)
@@ -445,12 +447,18 @@ watch(canvas, async (element) => {
     }
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
-    if (mascot._tag === 'Mesh') mascot.footContacts((place, planted, index) => {
-      const patch = footShadows[index]!
-      patch.position.x = place.x
-      patch.position.z = place.z
-      patch.material.uniforms.uStrength!.value = planted
-    })
+    if (mascot._tag === 'Mesh' && footShadows.length) {
+      // The large shadow lies between his feet. A turn on his feet moves him off his route point, and the shadow goes with him.
+      shadow.position.x = shadow.position.z = 0
+      mascot.footContacts((place, planted, index) => {
+        const patch = footShadows[index]!
+        patch.position.x = place.x
+        patch.position.z = place.z
+        patch.material.uniforms.uStrength!.value = planted
+        shadow.position.x += place.x / 2
+        shadow.position.z += place.z / 2
+      })
+    }
     const reach = mascot._tag === 'Mesh' ? [new Vector3(mascot.extent.left, 0, 0), new Vector3(mascot.extent.right, mascot.extent.height, 0)]
       : [new Vector3(-1.1, -1.25, 0), new Vector3(1.1, 1.3, 0)]
     const corners = reach.map(value => figure.localToWorld(value).project(camera))

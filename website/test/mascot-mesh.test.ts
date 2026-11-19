@@ -490,7 +490,7 @@ test('a lid takes the skin the model names for its eye, and the relief rig\'s li
   }
   const named = dressed('Brundlefly-lid')
   // The named eye's lids are that colour, with no artwork over it. The other eye keeps the relief rig's lid skin.
-  assert.equal(named.lid(0).color.getHexString(), new Color('#C8642D').multiply(new Color(...meshShading.tint)).getHexString(), 'The lid takes the model\'s colour with the site\'s skin tint.')
+  assert.equal(named.lid(0).color.getHexString(), 'c8642d')
   assert.equal(named.lid(0).map, null)
   assert.equal(named.lid(1).map, named.dressing.skin)
   // A named skin texture goes on the lids. It outlives the eye node's material and leaves with the mascot.
@@ -622,25 +622,35 @@ test('a pose without steps in place is the pose it was', () => {
   for (const name of bodyJointNames) assert.deepEqual(stepping.joint(name).quaternion.toArray(), plain.joint(name).quaternion.toArray(), name)
 })
 
-test('the site shades a model\'s skin once: darker and redder, with less room light and more of its own occlusion', () => {
+test('a host can shade a model\'s skin once: darker and redder, with more of its own occlusion, and the wings keep their colour', () => {
   const { scene, node } = millimetreModel()
   const skin = new MeshStandardMaterial({ color: '#ffffff', aoMap: new Texture() })
   const plain = new MeshStandardMaterial({ color: '#808080' })
-  const grey = plain.color.clone()
-  for (const [material, x] of [[skin, 30], [skin, -30], [plain, 0]] as const) {
+  const wing = new MeshStandardMaterial({ color: '#8fa07a', name: 'Brundlefly-wing', aoMap: new Texture() })
+  const [grey, green] = [plain.color.clone(), wing.color.clone()]
+  for (const [material, x] of [[skin, 30], [skin, -30], [plain, 0], [wing, 15]] as const) {
     const part = new Mesh(new BoxGeometry(10, 10, 10), material)
     part.position.set(x, 30, 0)
     node.add(part)
   }
-  ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  ok(createMeshMascot({ scene, animations: [] }, 2.5, meshShading))
   // Two parts share the skin material. It takes the tint once.
   assert.deepEqual(skin.color.toArray().map(value => Number(value.toFixed(4))), [...meshShading.tint])
   assert.ok(skin.color.r > skin.color.g && skin.color.g > skin.color.b, 'The tint must redden the skin.')
-  close(skin.envMapIntensity, meshShading.environment)
   close(skin.aoMapIntensity, meshShading.occlusion)
   // A material with no occlusion map keeps its occlusion setting, and takes the same tint.
   close(plain.aoMapIntensity, 1)
   close(plain.color.g, grey.g * meshShading.tint[1])
+  // The wings keep their pale green and still take the stronger occlusion.
+  assert.deepEqual(wing.color.toArray(), green.toArray())
+  close(wing.aoMapIntensity, meshShading.occlusion)
+  // A host that passes no shading, such as the inspector, shows the model's own materials.
+  const own = millimetreModel()
+  const untouched = new MeshStandardMaterial({ color: '#ffffff', aoMap: new Texture() })
+  own.body.material = untouched
+  ok(createMeshMascot({ scene: own.scene, animations: [] }, 2.5))
+  assert.deepEqual(untouched.color.toArray(), [1, 1, 1])
+  close(untouched.aoMapIntensity, 1)
 })
 
 test('he reports each foot\'s place and how firmly it stands, for a contact shadow', () => {
@@ -659,4 +669,20 @@ test('he reports each foot\'s place and how firmly it stands, for a contact shad
   // In a step in place, one foot carries him and the other is clear of the floor.
   const stepping = contacts({ ...standing, time: 0.1, stepInPlace: 1, stepPhase: 0 }).map(foot => foot.planted).sort()
   assert.ok(stepping[0]! < 0.7 && stepping[1]! > 0.99, `One foot must be lifting and one planted, not ${stepping}.`)
+})
+
+test('through a long stand he stays where he is, though the foot that carries him changes', () => {
+  const { scene, joint } = leggedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const pelvis = () => mascot.root.worldToLocal(joint('pelvis').getWorldPosition(new Vector3()))
+  mascot.pose!(standing, undefined, 0.5)
+  const start = pelvis()
+  let furthest = 0
+  // Two minutes of standing, as in a long talk. His weight shifts from leg to leg the whole time.
+  for (let frame = 1; frame <= 7200; frame++) {
+    mascot.pose!({ ...standing, time: frame / 60 }, undefined, 0.5)
+    const now = pelvis()
+    furthest = Math.max(furthest, Math.hypot(now.x - start.x, now.z - start.z))
+  }
+  assert.ok(furthest < 0.08, `He wandered ${furthest.toFixed(3)} units while he stood.`)
 })
