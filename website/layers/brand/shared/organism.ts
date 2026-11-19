@@ -1,6 +1,7 @@
 import {
   BufferGeometry, CatmullRomCurve3, Color, DoubleSide, Float32BufferAttribute, Group, LineBasicMaterial, LineSegments,
-  Mesh, MeshBasicMaterial, MeshPhysicalMaterial, Raycaster, ShaderMaterial, SphereGeometry, TubeGeometry, Vector2, Vector3,
+  Mesh, MeshBasicMaterial, MeshPhysicalMaterial, Raycaster, ShaderMaterial, SphereGeometry, TubeGeometry, UniformsLib,
+  UniformsUtils, Vector2, Vector3,
 } from 'three'
 import type { Texture } from 'three'
 import { createDripMaterial, createGooDrips } from './goo-drip.ts'
@@ -78,6 +79,8 @@ uniform vec2 uPointer;
 varying vec2 vUv;
 varying vec3 vPosition;
 varying vec3 vNormal;
+varying vec3 vAxis;
+#include <fog_pars_vertex>
 ${lairMotionShader}
 void main() {
   vUv = uv;
@@ -100,8 +103,16 @@ void main() {
   if (uLair > 0.5) p = flexLair(p, uTime);
   vPosition = (modelViewMatrix * vec4(p, 1.0)).xyz;
   vNormal = normalize(normalMatrix * vec3(rotation * normal.xy, normal.z));
+  // The opening faces along local z. The fragment shader blocks light that arrives from behind it.
+  vAxis = normalize(normalMatrix * vec3(0.0, 0.0, 1.0));
   gl_Position = projectionMatrix * vec4(vPosition, 1.0);
+  #ifdef USE_FOG
+  vFogDepth = -vPosition.z;
+  #endif
 }`
+// The tissue takes the lights and the fog of its scene, as the cave and the mascot do.
+// Light strength and direction come from the scene. The artwork keeps its own hue under every light, so the palette holds.
+// The three gains repeat the earlier fixed light under the brand kit lamps: ambient 2 and one direct lamp of 3, both cream.
 export const fragmentShader = `
 uniform sampler2D uTexture;
 uniform float uWetness;
@@ -110,23 +121,90 @@ uniform float uBrightness;
 varying vec2 vUv;
 varying vec3 vPosition;
 varying vec3 vNormal;
+varying vec3 vAxis;
+#include <common>
+#include <lights_pars_begin>
+#include <fog_pars_fragment>
+const float ambientGain = 0.187;
+const float directGain = 0.398;
+const float sheenGain = 0.498;
+void addLight(IncidentLight light, vec3 n, vec3 viewDirection, float gloss, inout float diffuse, inout float sheen) {
+  // The scene casts no shadows. The tissue itself hides a light that sits behind the opening, such as a rim light.
+  float power = luminance(light.color) * smoothstep(-0.15, 0.35, dot(light.direction, normalize(vAxis)));
+  diffuse += power * max(dot(n, light.direction), 0.0);
+  sheen += power * pow(max(dot(n, normalize(light.direction + viewDirection)), 0.0), gloss);
+}
 void main() {
-  vec3 grain = texture2D(uTexture, vUv * vec2(3.0, 1.0)).rgb;
+  vec2 tile = vUv * vec2(3.0, 1.0);
+  vec3 grain = texture2D(uTexture, tile).rgb;
   vec3 skin = mix(grain, vec3(0.034, 0.045, 0.043), uChitin * 0.94);
   vec3 deformed = normalize(cross(dFdx(vPosition), dFdy(vPosition))) * (gl_FrontFacing ? 1.0 : -1.0);
-  float pore = dot(grain, vec3(0.299, 0.587, 0.114));
-  vec3 n = normalize(mix(vNormal, deformed, 0.18) + vec3(dFdx(pore), dFdy(pore), 0.0) * 1.6);
-  vec3 light = normalize(vec3(-0.7, 1.0, 1.7));
+  vec3 n = normalize(mix(vNormal, deformed, 0.18));
+  // Fine relief: pale ridges stand high and dark creases sit low. The height is the artwork's own brightness.
+  // The second mip level and coarser are always filtered smoothly, so a hard-pixel texture raises no grid.
+  vec2 stepX = dFdx(tile), stepY = dFdy(tile);
+  vec2 size = vec2(textureSize(uTexture, 0));
+  float level = max(1.0, 0.5 * log2(max(dot(stepX * size, stepX * size), dot(stepY * size, stepY * size))));
+  float height = luminance(textureLod(uTexture, tile, level).rgb);
+  vec2 rise = vec2(luminance(textureLod(uTexture, tile + stepX, level).rgb) - height,
+    luminance(textureLod(uTexture, tile + stepY, level).rgb) - height) * mix(0.022, 0.008, uChitin);
+  // The slope is height for each world unit, so the relief keeps one strength at every distance.
+  vec3 sigmaX = dFdx(vPosition), sigmaY = dFdy(vPosition);
+  vec3 r1 = cross(sigmaY, n), r2 = cross(n, sigmaX);
+  float area = dot(sigmaX, r1);
+  vec3 slope = sign(area) * (rise.x * r1 + rise.y * r2) / max(abs(area), 0.0000001);
+  n = normalize(n - slope / sqrt(1.0 + dot(slope, slope)));
   vec3 viewDirection = normalize(-vPosition);
-  float diffuse = max(dot(n, light), 0.0);
-  float sheen = pow(max(dot(n, normalize(light + viewDirection)), 0.0), mix(18.0, 90.0, uWetness));
+  float gloss = mix(18.0, 90.0, uWetness);
+  float ambient = luminance(ambientLightColor);
+  float diffuse = 0.0;
+  float sheen = 0.0;
+  IncidentLight light;
+  #if NUM_DIR_LIGHTS > 0
+  for (int i = 0; i < NUM_DIR_LIGHTS; i++) {
+    getDirectionalLightInfo(directionalLights[i], light);
+    addLight(light, n, viewDirection, gloss, diffuse, sheen);
+  }
+  #endif
+  #if NUM_POINT_LIGHTS > 0
+  for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
+    getPointLightInfo(pointLights[i], vPosition, light);
+    addLight(light, n, viewDirection, gloss, diffuse, sheen);
+  }
+  #endif
+  #if NUM_SPOT_LIGHTS > 0
+  for (int i = 0; i < NUM_SPOT_LIGHTS; i++) {
+    getSpotLightInfo(spotLights[i], vPosition, light);
+    addLight(light, n, viewDirection, gloss, diffuse, sheen);
+  }
+  #endif
+  #if NUM_HEMI_LIGHTS > 0
+  for (int i = 0; i < NUM_HEMI_LIGHTS; i++) ambient += luminance(getHemisphereLightIrradiance(hemisphereLights[i], n));
+  #endif
   float rim = pow(1.0 - max(dot(n, viewDirection), 0.0), 3.0);
-  vec3 wet = vec3(0.8, 0.7, 0.45) * sheen * (0.12 + uWetness * 0.75) * (1.0 - uChitin * 0.45);
-  vec3 cold = vec3(0.025, 0.08, 0.085) * rim * (0.3 + uChitin);
-  float depth = exp(-max(0.0, -vPosition.z - 4.0) * 0.16);
-  gl_FragColor = vec4((skin * (0.25 + diffuse * 0.8) + wet + cold) * depth * uBrightness, 1.0);
+  vec3 wet = vec3(0.8, 0.7, 0.45) * sheen * sheenGain * (0.12 + uWetness * 0.75) * (1.0 - uChitin * 0.45);
+  vec3 cold = vec3(0.025, 0.08, 0.085) * rim * (0.3 + uChitin) * min(1.0, ambient * 0.746);
+  vec3 lit = skin * (ambient * ambientGain + diffuse * directGain) + wet + cold;
+  #ifdef USE_FOG
+  #ifdef FOG_EXP2
+  float clear = exp(-fogDensity * fogDensity * vFogDepth * vFogDepth);
+  #else
+  float clear = 1.0 - smoothstep(fogNear, fogFar, vFogDepth);
+  #endif
+  // Fog dims the tissue before the tone curve, as the depth fade below does. Fog after the curve washes the reds to pink.
+  // The power stands in for the display curve, so the tissue darkens with depth about as fast as its neighbours.
+  lit *= pow(clear, 1.8);
+  #else
+  // A scene without fog still darkens the far rings.
+  lit *= exp(-max(0.0, -vPosition.z - 4.0) * 0.16);
+  #endif
+  gl_FragColor = vec4(lit * uBrightness, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
+  #ifdef USE_FOG
+  // The far rings end at the fog colour, as every other surface does.
+  gl_FragColor.rgb += fogColor * (1.0 - clear);
+  #endif
 }`
 
 /** Uneven muscle folds, with the same topology at each depth for membrane attachment. */
@@ -177,8 +255,11 @@ export function createOrganismModel(texture: Texture, presentation: Presentation
     uOpening: { value: 0.5 }, uTwist: { value: 0 },
     uBrightness: { value: brightness },
   }
-  const flesh = new ShaderMaterial({ uniforms: { ...uniforms, uChitin: { value: 0 } }, vertexShader, fragmentShader })
-  const chitin = new ShaderMaterial({ uniforms: { ...uniforms, uChitin: { value: 1 } }, vertexShader, fragmentShader })
+  // The renderer fills the light and fog values. Each material holds its own copy of those, and shares the motion values.
+  const tissue = (chitinAmount: number) => new ShaderMaterial({ vertexShader, fragmentShader, lights: true, fog: true,
+    uniforms: { ...UniformsUtils.clone(UniformsLib.lights), ...UniformsUtils.clone(UniformsLib.fog), ...uniforms, uChitin: { value: chitinAmount } } })
+  const flesh = tissue(0)
+  const chitin = tissue(1)
   const radius = presentation === 'lair' ? 2 : 1.04
   const lairRadius = (layer: number) => radius - layer * 0.18 + Math.sin(layer * 2) * 0.035
   const rings: BufferGeometry[] = []
