@@ -39,6 +39,10 @@ EYE_PUPIL = (0.002, 0.002, 0.003)
 # The pupil and the iris ring on the front of the eyeball: their angles from the front, in radians.
 EYE_PUPIL_ANGLE = 0.17
 EYE_IRIS_ANGLE = 0.50
+# The eyelid skin reaches this far past the edge of the eye opening, in opening radii.
+LID_BAND = 1.3
+# How fast the lid weight falls toward the corners of the opening. A smaller value keeps more weight near the corners.
+LID_CORNER = 0.35
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
 BRISTLE_COLOUR = (0.115, 0.030, 0.022)
 BRISTLE_RADIUS_MM = 0.17
@@ -196,6 +200,45 @@ def rigid_eye_sockets(body, eyes, inner=1.8, outer=3.2):
     return changed
 
 
+def lid_names(index):
+    return f"face-upper-lid-{index}", f"face-lower-lid-{index}"
+
+
+def eyelid_weights(body, eyes):
+    """Give the skin around each eye opening to an upper and a lower eyelid joint. Returns the vertex count.
+
+    Each lid joint sits at the centre of its eyeball, so a turn about its X axis sweeps the lid
+    over the globe. The weight is full at the edge of the opening and fades to nothing over the
+    lid band, so the brow and the cheek stay. It also fades to nothing at the two corners of
+    the opening, so the corners stay and the middle of each lid travels farthest. The skin
+    that lies on the eyeball itself stays on the head.
+    """
+    co = np.empty(len(body.data.vertices) * 3)
+    body.data.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    changed = 0
+    for index, eye in enumerate(eyes):
+        yaw = math.radians(eye.get("yaw_deg", 0.0))
+        offset = co - np.array(eye["socket_centre_mm"])
+        along = offset[:, 0] * math.cos(yaw) + offset[:, 1] * math.sin(yaw)
+        half_width, _, half_height = eye["socket_radii_mm"]
+        across_opening = np.sqrt((along / half_width) ** 2 + (offset[:, 2] / half_height) ** 2)
+        corner = np.clip(1.0 - (along / half_width) ** 2, 0.0, 1.0) ** LID_CORNER
+        band = np.clip(1.0 - (across_opening - 1.0) / LID_BAND, 0.0, 1.0)
+        band = band * band * (3.0 - 2.0 * band)
+        radius = np.sqrt(((co - np.array(eye["centre_mm"])) ** 2).sum(axis=1)) / eye["radius_mm"]
+        off_ball = np.clip((radius - 1.03) / 0.10, 0.0, 1.0)
+        weight = corner * band * off_ball * (radius < 1.9)
+        upper, lower = (body.vertex_groups.get(name) or body.vertex_groups.new(name=name) for name in lid_names(index))
+        for vertex_index in np.nonzero(weight > 0.002)[0]:
+            vertex, share = body.data.vertices[int(vertex_index)], float(weight[vertex_index])
+            for g in vertex.groups:
+                g.weight *= 1.0 - share
+            (upper if offset[vertex_index, 2] >= 0.0 else lower).add([int(vertex_index)], share, "REPLACE")
+            changed += 1
+    return changed
+
+
 def add_skeleton(body, joints, shift, eyes=()):
     """Bind the body to the skeleton (25 body bones and 8 face tentacle bones) and add an idle clip."""
     scene = bpy.context.scene
@@ -239,6 +282,7 @@ def add_skeleton(body, joints, shift, eyes=()):
     bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
     if eyes:
         print(f"RIG eye sockets rigid on the head: {rigid_eye_sockets(body, eyes)} vertices")
+        print(f"RIG eyelid skin: {eyelid_weights(body, eyes)} vertices")
 
     # 2. Point every bone straight up. Each joint then has an identity rest rotation:
     #    +X is screen right, +Y is up, +Z is toward the viewer, for every bone.
@@ -248,6 +292,13 @@ def add_skeleton(body, joints, shift, eyes=()):
     bpy.ops.object.mode_set(mode="EDIT")
     for bone in data.edit_bones:
         bone.use_connect = False
+    # The eyelid joints come after the automatic weights, so the weights of the rest of the head ignore them.
+    for index, eye in enumerate(eyes):
+        for name in lid_names(index):
+            lid = data.edit_bones.new(name)
+            lid.head = Vector(eye["centre_mm"]) - Vector((shift[0], shift[1], 0.0))
+            lid.tail = lid.head + Vector((0.0, 0.0, 4.0))
+            lid.parent = data.edit_bones["head"]
     for bone in data.edit_bones:
         bone.tail = bone.head + Vector((0.0, 0.0, 4.0))
         bone.roll = 0.0
@@ -288,7 +339,7 @@ def add_skeleton(body, joints, shift, eyes=()):
     scene.frame_set(1)
     for pose in arm.pose.bones:
         pose.rotation_euler = (0.0, 0.0, 0.0)
-    print(f"RIG bones {len(data.bones)} weights {method} groups in use {len(used)}")
+    print(f"RIG bones {len(data.bones)} weights {method} groups from the automatic weights {len(used)}")
     return arm
 
 

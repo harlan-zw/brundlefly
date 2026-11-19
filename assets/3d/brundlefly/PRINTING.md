@@ -172,11 +172,13 @@ These steps are untested on a printed part.
 
 Skeleton:
 
-- One skin, 33 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
+- One skin, 37 joints, at most four influences for each vertex. The weights come from Blender's automatic heat weighting.
 - Every joint has an identity rest rotation, in the axes of the root: +X is the figure's left side, +Y is up, +Z is the way the body faces.
 - Left and right are screen left and screen right. So `left-shoulder` is the figure's right shoulder.
 - Body, 25 joints: `pelvis` > `chest` > `head`. From `chest`: `left-shoulder` > `left-elbow` > `left-hand`, `left-rib` > `left-small-elbow` > `left-small-hand`, `left-wing` > `left-wing-tip`, and the same on the right. From `pelvis`: `left-hip` > `left-knee` > `left-foot`, and the same on the right.
 - Face tentacles, 8 joints under `head`: `mouthpart-0` to `mouthpart-3`, from screen left to screen right, each with a `-tip` joint.
+- Eyelids, 4 joints under `head`: `face-upper-lid-0`, `face-lower-lid-0`, `face-upper-lid-1`, `face-lower-lid-1`, the names of the relief rig. Index 0 is the eye on screen left. Each joint sits at the centre of its eyeball. The skin around the opening follows them: full weight at the edge of the opening, none at its two corners, and none on the brow and the cheek.
+- To close an eye, turn the upper lid joint by +1.05 radians about X and the lower lid joint by -0.33 radians about X. At those angles the iris and the pupil are hidden. A larger turn of the upper lid lets the eyeball show through the stretched skin.
 - The eyeball nodes and `anchor-face` are children of the `head` joint. The skin around each eyeball has `head` as its only joint, so the skin does not slide past the eyeball in a pose.
 - One clip, `Brundlefly-idle`, 4 seconds, made to loop: breathing, a small head turn, twitching small arms, swaying tentacles, fluttering wings.
 - The fingers, the toes, and the jaw have no joints.
