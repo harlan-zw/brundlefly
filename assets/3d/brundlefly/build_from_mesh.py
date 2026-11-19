@@ -537,19 +537,33 @@ def teal_mask(view):
 
 
 def erase_painted_eyes(view, reach=20):
-    """Replace each painted eye with the blurred colour around it.
+    """Replace each painted eye with the skin colours around it.
 
     The model has its own eyeballs. A painted eye beside an eyeball reads as a stray patch.
+    The front view finds the whole painted opening and fills it from its edge inward. A view
+    with no clear opening loses a patch around the teal glint.
     """
-    mask = teal_mask(view)
-    for _ in range(reach):                       # grow the glint to cover the whole dark eye
-        grown = mask.copy()
-        grown[1:] |= mask[:-1]
-        grown[:-1] |= mask[1:]
-        grown[:, 1:] |= mask[:, :-1]
-        grown[:, :-1] |= mask[:, 1:]
-        mask = grown
-    view["linear"] = np.where(mask[..., None], view["soft"], view["linear"])
+    mask = np.zeros(view["figure"].shape, dtype=bool)
+    for rows, cols in eye_openings(view):
+        mask[rows, cols] = True
+    if mask.any():
+        mask = dilate(mask, 4)
+    else:
+        mask = dilate(teal_mask(view), reach)
+    colour, known = view["linear"].copy(), ~mask
+    for _ in range(200):
+        if known.all():
+            break
+        total = np.zeros_like(colour)
+        count = np.zeros(known.shape)
+        for axis, shift in ((0, 1), (0, -1), (1, 1), (1, -1)):
+            near = np.roll(known, shift, axis=axis)
+            total += np.where(near[..., None], np.roll(colour, shift, axis=axis), 0.0)
+            count += near
+        take = ~known & (count > 0)
+        colour[take] = total[take] / count[take][:, None]
+        known |= take
+    view["linear"] = colour
     return int(mask.sum())
 
 
@@ -678,64 +692,63 @@ def sheet_colour_fn(views):
     return colour
 
 
-# The eyeball's radius, as a multiple of the half width of the painted eye opening. The eyeball is
-# nearly as wide as the opening, so the lids cover its top and its bottom, as in the sheet.
-EYEBALL_RADIUS = 0.95
-# How deep the opening is cut, as a multiple of its half height. The cut reaches the eyeball.
-SOCKET_DEPTH = 2.5
-# How far the front of the eyeball stands out of the face, in millimetres. Negative is behind the lids.
-# The print model has one colour, so shape alone must show the eyes: its eyeballs stand a little proud.
-WEB_EYE_PROUD = -0.1
-PRINT_EYE_PROUD = 0.15
+# The eyeballs follow the site's relief rig: bulging globes of unequal size between two skin lids.
+# Radii of each globe in build millimetres, screen left first: across, in depth, and in height.
+# They are the relief rig's radii (face.ts) at this build's scale.
+EYE_RADII = ((2.31, 1.81, 2.20), (1.60, 1.34, 1.31))
+# The centre of a globe sits this share of its depth radius behind the skin, so most of it stands proud.
+EYE_SET_BACK = 0.3
+# Each lid is half of a shell around the globe, hinged at the globe centre about the X axis.
+# Open, its edge is this many radians above or below the line of sight. Shut, the two edges meet.
+LID_OPEN = 0.96
+# The shell radius as a multiple of the larger of the globe's depth and height radii, and its
+# half width as a multiple of the globe's. The print model has thicker lids, so they read in one colour.
+LID_RADIUS = 1.10
+LID_WIDTH = 1.055
+PRINT_LID_RADIUS = 1.14
+# The socket is this much larger than the lid shell.
+SOCKET_ROOM = 1.10
 # The sheet draws the smaller wing on the figure's left, which is +X.
 SMALL_WING_SIDE = 1.0
 
 
-def face_slope(f, eye):
-    """How fast the face surface falls away across an eye: depth change per millimetre of x."""
-    xs, ys = [], []
-    for dz in (-0.5, 0.0, 0.5):
-        for dx in (-0.8, -0.4, 0.0, 0.4, 0.8):
-            hit = f.raycast(bm.V(eye["x"] + dx * eye["half_width"], -45.0, eye["z"] + dz * eye["half_height"]), bm.V(0, 1, 0), max_dist=60.0)
-            if hit is not None:
-                xs.append(hit[0])
-                ys.append(hit[1])
-    return float(np.polyfit(xs, ys, 1)[0]) if len(xs) >= 6 else 0.0
+def add_eyes(f, eyes, lids):
+    """A bulging eyeball where the sheet has each eye, at the sizes of the site's relief rig.
 
-
-def add_eyes(f, eyes, middle, proud):
-    """A round eyeball behind an almond opening where the sheet has each eye.
-
-    The opening is as wide and as tall as the painted eye opening, and it lies along the face.
-    It is cut through the skin down to a sphere that sits behind it. The skin above and below
-    the opening covers the sphere, so it reads as the lids, and the corners of the opening
-    stay empty. proud is how far the front of the eyeball stands out of the face, in
-    millimetres. Both openings turn by the same angle, away from the middle.
-    Returns one record for each eye: the eyeball centre and radius, and the opening.
+    lids is the lid shell radius, as a multiple of the globe radius, or None. With it, the two
+    open lids are part of the solid: the print model has no joints, so its lids cannot move.
+    The website model gets its lids in the export, as shells that hinge on the lid joints.
+    Returns the centre and the three radii of each globe.
     """
-    turn = float(np.mean([abs(math.atan(face_slope(f, eye))) for eye in eyes])) if eyes else 0.0
-    turn = min(turn, math.radians(35))
     out = []
-    for eye in eyes:
+    for eye, (across, depth, height) in zip(eyes, EYE_RADII):
         hit = f.raycast(bm.V(eye["x"], -45.0, eye["z"]), bm.V(0, 1, 0), max_dist=60.0)
         if hit is None:
             continue
-        yaw = turn if eye["x"] > middle else -turn
-        rot = bm.rot_xyz(0.0, 0.0, yaw)
-        socket = bm.V(eye["half_width"], eye["half_height"] * SOCKET_DEPTH, eye["half_height"])
-        radius = eye["half_width"] * EYEBALL_RADIUS
-        f.carve_blob(hit, socket, k=0.3, rot=rot)
-        centre = hit + rot @ bm.V(0, radius - proud, 0)
-        f.blob(centre, bm.V(radius, radius, radius), k=0, mat=bm.EYE)
-        out.append({"centre": centre, "radius": radius, "socket_centre": hit, "socket": socket, "yaw": yaw})
+        centre = hit + bm.V(0, depth * EYE_SET_BACK, 0)
+        radii = bm.V(across, depth, height)
+        # A socket first. The generator's own eye bump is larger than the smaller globe, and it
+        # would stand through the lids. The socket leaves a narrow groove around the lids.
+        shell = max(depth, height) * (lids or LID_RADIUS)
+        f.carve_blob(centre, bm.V(across * LID_WIDTH, shell, shell) * SOCKET_ROOM, k=0.2)
+        if lids:
+            outer = bm.V(across * LID_WIDTH, shell, shell)
+            sl, X, Y, Z = f.box(centre - outer, centre + outer, 3 * f.h)
+            solid = bm.sd_ellipsoid(X, Y, Z, centre, outer)
+            # The lids leave a wedge open in front of the globe: all points within LID_OPEN of the line of sight.
+            forward, up = -(Y - centre[1]), Z - centre[2]
+            spoke = np.sqrt(forward ** 2 + up ** 2)
+            wedge = (LID_OPEN - np.abs(np.arctan2(up, forward))) * spoke
+            f.add(np.maximum(solid, wedge + 0 * X), sl, 0.15, bm.FLESH)
+        f.blob(centre, radii, k=0, mat=bm.EYE)
+        out.append({"centre": centre, "radii": radii})
     return out
 
 
-def erase_side_eyes(views):
-    """The side views lose their painted eyes. The front view keeps its eyes: the eyeballs sit on them."""
-    for name, (view, _) in views.items():
-        if name != "front":
-            erase_painted_eyes(view)
+def erase_all_eyes(views):
+    """Every view loses its painted eyes. The eyeballs of the model replace them."""
+    for view, _ in views.values():
+        erase_painted_eyes(view)
 
 
 def main():
@@ -823,7 +836,7 @@ def main():
         # the cut only frays the tip there: the thick leading edge is not a thin part.
         stats["wing_trim_mm3"] = round(trim_small_wing(f, front, views["front"][1], zmax), 1)
         eye_spots = spots
-        erase_side_eyes(views)
+        erase_all_eyes(views)
     if args.rebuild_back:
         rebuild_back(f, zmax)
     if printing:
@@ -832,7 +845,7 @@ def main():
         if args.dimples:
             f.dimples = add_dimples(f, zmax)
     # The eyes come after the thickening step. That step grows thin edges, and it would close the sockets.
-    eyes = add_eyes(f, eye_spots, head[0], PRINT_EYE_PROUD if printing else WEB_EYE_PROUD)
+    eyes = add_eyes(f, eye_spots, PRINT_LID_RADIUS if printing else None)
     anchors = {}
     face = f.raycast(head + bm.V(0, -40.0, -2.0), bm.V(0, 1, 0), max_dist=60.0)
     if face is not None:
@@ -856,9 +869,8 @@ def main():
     site["eyes"] = []
     to_mm = lambda point: [round(float(c) * mesh_scale, 3) for c in (point - bm.V(0, 0, f.mesh_zmin))]
     for eye in eyes:
-        site["eyes"].append({"centre_mm": to_mm(eye["centre"]), "radius_mm": round(float(eye["radius"]) * mesh_scale, 3),
-                             "socket_centre_mm": to_mm(eye["socket_centre"]), "socket_radii_mm": [round(float(r) * mesh_scale, 3) for r in eye["socket"]],
-                             "yaw_deg": round(math.degrees(eye["yaw"]), 2)})
+        site["eyes"].append({"centre_mm": to_mm(eye["centre"]), "radii_mm": [round(float(r) * mesh_scale, 3) for r in eye["radii"]]})
+    site["lids"] = {"open_radians": LID_OPEN, "radius": LID_RADIUS, "width": LID_WIDTH}
     # Where each bristle stood on the website model. The export puts a thin hair there.
     site["bristles"] = [{"root_mm": [round(float(c) * mesh_scale, 3) for c in (root - bm.V(0, 0, f.mesh_zmin))],
                          "tip_mm": [round(float(c) * mesh_scale, 3) for c in (tip - bm.V(0, 0, f.mesh_zmin))]} for root, tip in hairs]

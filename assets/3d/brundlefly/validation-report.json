@@ -9,7 +9,7 @@
   ],
   "min_z_mm": 0,
   "triangles": 200000,
-  "volume_cm3": 25.06,
+  "volume_cm3": 25.08,
   "non_manifold_edges": 0,
   "boundary_edges": 0,
   "degenerate_faces": 0,
@@ -158,6 +158,11 @@
     49.3
    ],
    [
+    -4.2,
+    -23.4,
+    56.1
+   ],
+   [
     17.7,
     9.9,
     58
@@ -207,9 +212,9 @@
    "Zero Faces": "0",
    "Zero Edges": "0",
    "Non-flat Faces": "0",
-   "Thin Faces": "7967",
+   "Thin Faces": "8728",
    "Sharp Edges": "0",
-   "Overhang Faces": "21116"
+   "Overhang Faces": "21305"
   },
   "passes_mesh_checks": true
  },
@@ -222,7 +227,7 @@
   ],
   "min_z_mm": 0,
   "triangles": 200000,
-  "volume_cm3": 48.95,
+  "volume_cm3": 48.98,
   "non_manifold_edges": 0,
   "boundary_edges": 0,
   "degenerate_faces": 0,
@@ -381,6 +386,11 @@
     61.7
    ],
    [
+    -5.3,
+    -29.2,
+    70.1
+   ],
+   [
     22.1,
     12.3,
     72.5
@@ -430,21 +440,21 @@
    "Zero Faces": "0",
    "Zero Edges": "0",
    "Non-flat Faces": "0",
-   "Thin Faces": "4732",
+   "Thin Faces": "5303",
    "Sharp Edges": "0",
-   "Overhang Faces": "21117"
+   "Overhang Faces": "21306"
   },
   "passes_mesh_checks": true
  },
  "thickness_80mm": {
   "file": "brundlefly-80mm.stl",
   "pitch_mm": 0.25,
-  "solid_volume_cm3": 27.11,
+  "solid_volume_cm3": 27.13,
   "stability": {
    "centre_of_mass_mm": [
     -0.23,
-    0.53,
-    35.09
+    0.52,
+    35.1
    ],
    "footprint_x_mm": [
     -32.7,
@@ -454,21 +464,21 @@
     -15.4,
     20.3
    ],
-   "margin_to_footprint_edge_mm": 15.96,
-   "tip_angle_degrees": 24.5,
+   "margin_to_footprint_edge_mm": 15.95,
+   "tip_angle_degrees": 24.4,
    "stands": true
   },
   "checks": {
    "tip_1.5mm": {
     "diameter_mm": 1.5,
-    "thin_volume_mm3": 25.23,
+    "thin_volume_mm3": 24.92,
     "largest_regions": [
      {
-      "volume_mm3": 3.03,
+      "volume_mm3": 2.7,
       "centre_mm": [
-       17.1,
-       7.7,
-       67.1
+       17,
+       7.6,
+       67
       ]
      },
      {
@@ -520,21 +530,21 @@
       ]
      },
      {
-      "volume_mm3": 1.73,
+      "volume_mm3": 1.75,
       "centre_mm": [
        6.3,
-       15.6,
-       47.8
+       15.7,
+       47.7
       ]
      }
     ]
    },
    "limb_2.5mm": {
     "diameter_mm": 2.5,
-    "thin_volume_mm3": 991.31,
+    "thin_volume_mm3": 991.34,
     "largest_regions": [
      {
-      "volume_mm3": 338.81,
+      "volume_mm3": 338.84,
       "centre_mm": [
        -15.4,
        9.5,
@@ -542,7 +552,7 @@
       ]
      },
      {
-      "volume_mm3": 298.05,
+      "volume_mm3": 298,
       "centre_mm": [
        18.2,
        11,
@@ -550,7 +560,7 @@
       ]
      },
      {
-      "volume_mm3": 25.84,
+      "volume_mm3": 25.81,
       "centre_mm": [
        -27.5,
        -4.1,
@@ -558,7 +568,7 @@
       ]
      },
      {
-      "volume_mm3": 25.33,
+      "volume_mm3": 25.39,
       "centre_mm": [
        -3.4,
        -23.5,
@@ -566,7 +576,7 @@
       ]
      },
      {
-      "volume_mm3": 24.94,
+      "volume_mm3": 24.88,
       "centre_mm": [
        19.3,
        -6.1,
@@ -574,7 +584,7 @@
       ]
      },
      {
-      "volume_mm3": 23.92,
+      "volume_mm3": 23.94,
       "centre_mm": [
        27.6,
        -3.9,
@@ -601,7 +611,7 @@
    },
    "wall_1.6mm": {
     "diameter_mm": 1.6,
-    "thin_volume_mm3": 47.72,
+    "thin_volume_mm3": 47.67,
     "largest_regions": [
      {
       "volume_mm3": 3.41,
@@ -636,6 +646,14 @@
       ]
      },
      {
+      "volume_mm3": 3.27,
+      "centre_mm": [
+       28.9,
+       3.4,
+       22.2
+      ]
+     },
+     {
       "volume_mm3": 2.84,
       "centre_mm": [
        9.8,
@@ -658,14 +676,6 @@
        -6.6,
        35.3
       ]
-     },
-     {
-      "volume_mm3": 2.69,
-      "centre_mm": [
-       -10.3,
-       -14.5,
-       0.2
-      ]
      }
     ]
    }
@@ -674,13 +684,13 @@
  "slice_80mm": {
   "profile": "0.2 mm layers, 0.4 mm nozzle, 3 walls, 15% gyroid infill",
   "without_supports": {
-   "filament_cm3": 14,
-   "print_time": "2h 12m 3s"
+   "filament_cm3": 14.06,
+   "print_time": "2h 12m 59s"
   },
   "with_supports_45_degrees": {
-   "filament_cm3": 33.95,
-   "print_time": "4h 22m 41s"
+   "filament_cm3": 33.99,
+   "print_time": "4h 23m 36s"
   },
-  "support_filament_cm3": 19.95
+  "support_filament_cm3": 19.93
  }
 }
