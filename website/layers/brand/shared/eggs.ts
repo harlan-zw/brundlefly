@@ -3,6 +3,9 @@ import {
   TubeGeometry, Vector3,
 } from 'three'
 import type { BufferGeometry, Material, Texture } from 'three'
+import { createFloorDecalGeometry } from './floor-surface'
+import type { FloorSpot } from './floor-surface'
+import { createContactShadowMaterial } from './floor-marks'
 import { sceneLayout } from './scene-layout'
 
 export type EggSacInput = { time: number, breath: number, wetness: number }
@@ -56,6 +59,7 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
   materials.add(tendonMaterial)
 
   const animated: { body: Group, core: Group, phase: number, height: number, base: Vector3 }[] = []
+  const shadows: FloorSpot[] = []
   const clusters = sceneLayout.eggs.map(([x, z], index) => ({ x, z, side: index === 0 ? -1 : 1 }))
   const heights = [1.29, 0.79, 1.06, 0.59]
   for (const [clusterIndex, cluster] of clusters.entries()) {
@@ -68,6 +72,8 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
       body.scale.setScalar(2)
       body.rotation.y = phase
       root.add(body)
+      // The sac is twice its model size. Its shade reaches a little past its widest fold.
+      shadows.push({ x: body.position.x, z: body.position.z, radius: radius * 2 * 2.2, data: [1, 0, 0, 0] })
       const shell = new Mesh(geometry, shells[(index + clusterIndex) % shells.length]!)
       shell.position.set(0, height / 2, 0)
       shell.scale.set(radius, height / 2, radius * (0.88 + index % 2 * 0.13))
@@ -101,6 +107,15 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
       animated.push({ body, core, phase, height, base: core.position.clone() })
     }
   }
+
+  // Soft shade under each sac seats it on the floor. No shadow map is involved.
+  const shadowGeometry = createFloorDecalGeometry(shadows)
+  const shadowMaterial = createContactShadowMaterial()
+  geometries.add(shadowGeometry)
+  materials.add(shadowMaterial)
+  const shade = new Mesh(shadowGeometry, shadowMaterial)
+  shade.renderOrder = 1
+  root.add(shade)
 
   return {
     root,

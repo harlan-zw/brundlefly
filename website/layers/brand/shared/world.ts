@@ -10,6 +10,7 @@ import { createCaveGoo } from './cave-goo'
 import { createEggSacs } from './eggs'
 import { createTissueMaterial } from './tissue-material'
 import { caveCrossSection, createCaveGeometry } from './cave-geometry'
+import { createFloorGeometry } from './floor-surface'
 import type { RoomHeight } from './room-height'
 import { sceneLayout } from './scene-layout'
 import type { SceneSettings } from './scene-settings'
@@ -67,23 +68,10 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   const eggs = createEggSacs(textures.egg, textures.chitin)
   root.add(eggs.root)
 
-  const groundGeometry = new PlaneGeometry(22, 36, 44, 48)
-  const floorPositions = groundGeometry.getAttribute('position')
-  for (let index = 0; index < floorPositions.count; index++) {
-    const x = floorPositions.getX(index)
-    const z = floorPositions.getY(index)
-    // The middle stays nearly level. Raised seams collect at the cave edges.
-    const edge = Math.min(1, Math.max(0, (Math.abs(x) - 2) / 3))
-    const height = Math.sin(x * 3 + z * 0.9) * 0.025 + edge * Math.sin(z * 2.4 + x) * 0.11
-    floorPositions.setZ(index, height)
-  }
-  groundGeometry.computeVertexNormals()
   const floorSkin = createTissueMaterial({ surface: 'floor', texture: textures.floor, color: '#867461',
     bumpScale: 0.14, roughness: 0.79 })
-  const ground = new Mesh(groundGeometry, floorSkin.material)
-  ground.rotation.x = -Math.PI / 2
-  ground.position.set(0, groundLevel - 0.035, 5)
-  root.add(ground)
+  // The floor's shape lives in floor-surface.ts, so marks painted on the floor follow the same triangles.
+  root.add(new Mesh(createFloorGeometry(), floorSkin.material))
 
   // The wall is made of asymmetric connected folds, rather than isolated boulders.
   const livingFolds: { mesh: Mesh, scale: Vector3, phase: number }[] = []
