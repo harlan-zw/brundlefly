@@ -10,6 +10,7 @@ The shape comes from four views: the front and back views of `assets/brand/chara
 1. `source/views/front.png` and `source/views/back.png` are the front and back views, cut from the character sheet. The sheet has no side view. `source/views/shape-side-right.png` and `source/views/shape-side-left.png` are side views that an image model drew from the sheet, for the shape only.
 2. An image-to-3D model reads the four views and returns a base mesh: `source/hunyuan3d-multiview-shape.glb`.
 3. `source/views/side-right.png` and `source/views/side-left.png` colour the sides. An image model painted them over grey renders of the base mesh, so they line up with it. `source/views/front-under.png` is the front view with the mouthparts and the small arms removed. It colours the skin behind those parts.
+   - `source/views/premium/` holds a second set for the website model: front, back, both sides, and the front view without mouthparts and small arms. An image model painted them over grey renders of the base mesh, in the realistic style of `assets/brand/kit/lair/mascot-sculpt-reference.png`. The website texture takes its colours from them. The pixel-art views still place the eyes, trim the smaller wing, and colour the preview of the print model.
 4. `build_from_mesh.py` turns the base mesh into the print model and the website model in Blender:
    - It removes the bristle spikes. It keeps the thin wings and mouthparts. A wing membrane takes its original surface back as a whole.
    - For printing, it grows parts that are thinner than 1.6 mm, by up to 0.5 mm on each side, and it adds the base.
@@ -161,13 +162,14 @@ These steps are untested on a printed part.
 - Through the relief rig's walk cycle the long hands stay at least 2.4 mm from the legs, and the small hands at least 1.1 mm.
 - One root node, `Brundlefly`, with a scale of 0.001 and a turn of 0.5 radians about the vertical, toward screen right. That turn is the three-quarter view of the artwork. The site changes it to turn the figure toward his path.
 - Inside the root, the body faces +Z. The head faces the same way, with a roll. The site turns the head to the viewer.
-- `Brundlefly-body`: about 64,000 triangles. That count includes about 80 bristle hairs of three triangles each; a hair takes the skin weights of the vertex under it. Texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
-- The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork. A surface that a view cannot see, because another part is in front of it, takes the blurred colour of that view, or the colour of `front-under.png` where a mouthpart or a small arm is the part in front. So the body carries no painted copy of a mouthpart or an arm, and a moving part does not leave its picture behind.
+- `Brundlefly-body`: about 52,000 triangles. That count includes about 80 bristle hairs of three triangles each; a hair takes the skin weights of the vertex under it. Texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
+- The base colour is one embedded JPEG texture, 2048 pixels square, painted from the views in `source/views/premium/`. A surface that a view cannot see, because another part is in front of it, takes the blurred colour of that view, or the colour of `front-under.png` where a mouthpart or a small arm is the part in front. So the body carries no painted copy of a mouthpart or an arm, and a moving part does not leave its picture behind.
+- A second embedded JPEG, 1024 pixels square, is the normal map of `Brundlefly-skin`. It holds the fine detail of the painting as relief: dark creases lie deep and pale ridges stand up. It has no tangents; a viewer derives them from the texture coordinates.
 - `Brundlefly-eye-0` and `Brundlefly-eye-1`: eye markers, material `Brundlefly-lid`. Eye 0 is on screen left and is the larger eye. The site hides each marker and builds the relief rig's own eye and lids at it. The body mesh has an empty, dark socket behind each marker, and no eyeball or lid of its own.
   - Each marker is a unit sphere centred on its origin. The site reads its translation as the eye centre, its rest rotation, and its X scale as the half width of the globe: 1.49 mm and 1.04 mm. That is 0.116 and 0.081 of the head width, as on the relief rig. The centre sits 0.65 of the depth radius behind the skin, so the rims of the open lids meet the skin.
   - `Brundlefly-lid` carries the skin for the lids that the site builds: a white base colour factor and a 128 pixel texture of the head skin just above the painted eye of the sheet. The site's lids show the middle 44 percent of it. With the relief rig's own darker lid skin, a shut eye stood out from this head. Each marker supplies `TEXCOORD_0` for this texture and has no `COLOR_0`.
 - `anchor-face`: an empty node at the front of the face.
-- No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 3.94 MB.
+- No base and no compression extension. The site build stops if the file is larger than 4 MiB. The file is 4.03 MB, which leaves about 160 KB.
 
 Skeleton:
 
@@ -201,7 +203,7 @@ node $D/validate.ts
 
 The renders are named `<view>-colour.png`. Copy them to `previews/<view>.png`.
 
-For the website model, add `--variant web` to the build and `--web --glb-tris 64000 --texture-size 1536` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes.
+For the website model, add `--variant web --paint-dir $V/premium` to the build and `--web --glb-tris 52000 --texture-size 2048 --relief-size 1024` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes.
 
 `build_model.py` holds the field library that `build_from_mesh.py` uses. It also holds a first, script-built figure, which is retired.
 

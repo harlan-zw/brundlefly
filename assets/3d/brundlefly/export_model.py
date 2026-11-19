@@ -29,6 +29,8 @@ from mathutils.kdtree import KDTree
 EYE_DARK_SCALE = 1.3
 # The face patches of the jaw, the cheeks, and the brows reach this far behind the eyeball centres, in millimetres.
 FACE_DEPTH_MM = 6.0
+# How strongly the fine detail of the texture turns the surface normal, for the relief map.
+RELIEF_STRENGTH = 5.0
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
 BRISTLE_COLOUR = (0.115, 0.030, 0.022)
 BRISTLE_RADIUS_MM = 0.17
@@ -48,6 +50,7 @@ def parse():
     ap.add_argument("--no-stance", action="store_true", help="web model in the straight stand, without source/stance.json")
     ap.add_argument("--no-texture", action="store_true", help="web model with vertex colours and no texture")
     ap.add_argument("--texture-size", type=int, default=2048)
+    ap.add_argument("--relief-size", type=int, default=0, help="side of the normal map made from the texture's fine detail. It must divide the texture size. 0 writes none.")
     args, _ = ap.parse_known_args(argv)
     return args
 
@@ -484,7 +487,7 @@ def hidden_from_views(points, known, joints, surface):
     return out, under
 
 
-def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface):
+def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface, relief_size=0):
     """Replace the vertex colours with a texture that carries the sheet at its own resolution.
 
     Vertex colours can only be as sharp as the mesh is dense. A texture keeps every pixel
@@ -524,9 +527,16 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface)
     baked = np.abs(position).sum(axis=1) > 1e-6
 
     z_low, z_high = projection["blend_z"]
-    views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high, fit.get("head_u")))
-             for name, fit in projection["views"].items()}
-    bfm.erase_all_eyes(views)
+    paint = projection.get("paint")
+    if paint and paint["views"]:
+        # Painted views: each was painted over a render of this mesh, and none has painted eyes.
+        views_dir = os.path.join(views_dir, paint["folder"])
+        views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high))
+                 for name, fit in paint["views"].items()}
+    else:
+        views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high, fit.get("head_u")))
+                 for name, fit in projection["views"].items()}
+        bfm.erase_all_eyes(views)
     colour = bfm.sheet_colour_fn(views)
     field = position / projection["mesh_scale"]              # texel positions, back in the build's coordinates
     field[:, 2] += projection["field_zmin"]
@@ -559,6 +569,30 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface)
         hair_uv = ((col + 4) / size, (row + 4) / size)
     srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
 
+    relief = None
+    if relief_size:
+        # Surface relief from the painting: dark creases lie deep and pale ridges stand up. The
+        # texture's own fine detail becomes a tangent-space normal map, so light catches it.
+        # Broad patches of pigment are not relief, so the height keeps only the fine part.
+        step = size // relief_size
+        tone = (srgb @ np.array([0.30, 0.59, 0.11])).reshape(size, size)
+        known = baked.reshape(size, size)
+        tone = tone.reshape(relief_size, step, relief_size, step).mean(axis=(1, 3))
+        known = known.reshape(relief_size, step, relief_size, step).all(axis=(1, 3))
+        broad = tone.copy()
+        for _ in range(3):
+            for axis in (0, 1):
+                broad = (np.roll(broad, 2, axis) + np.roll(broad, 1, axis) + broad + np.roll(broad, -1, axis) + np.roll(broad, -2, axis)) / 5.0
+        height = tone - broad
+        du = (np.roll(height, -1, 1) - np.roll(height, 1, 1)) * 0.5
+        dv = (np.roll(height, -1, 0) - np.roll(height, 1, 0)) * 0.5
+        inside = known & np.roll(known, 1, 0) & np.roll(known, -1, 0) & np.roll(known, 1, 1) & np.roll(known, -1, 1)
+        normals = np.stack([-du * RELIEF_STRENGTH * inside, -dv * RELIEF_STRENGTH * inside, np.ones_like(du)], axis=2)
+        normals /= np.linalg.norm(normals, axis=2, keepdims=True)
+        relief = bpy.data.images.new("Brundlefly-relief", relief_size, relief_size, alpha=False, is_data=True)
+        relief.pixels.foreach_set(np.concatenate([normals * 0.5 + 0.5, np.ones((relief_size, relief_size, 1))], axis=2).astype(np.float32).ravel())
+        relief.pack()
+
     albedo = bpy.data.images.new("Brundlefly-albedo", size, size, alpha=False)
     albedo.pixels.foreach_set(np.concatenate([srgb, np.ones((size * size, 1))], axis=1).astype(np.float32).ravel())
     albedo.pack()
@@ -567,9 +601,16 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface)
     for link in list(bsdf.inputs["Base Color"].links):
         material.node_tree.links.remove(link)
     material.node_tree.links.new(target.outputs["Color"], bsdf.inputs["Base Color"])
+    if relief is not None:
+        bump_image = nodes.new("ShaderNodeTexImage")
+        bump_image.image = relief
+        bump_image.image.colorspace_settings.name = "Non-Color"
+        bump = nodes.new("ShaderNodeNormalMap")
+        material.node_tree.links.new(bump_image.outputs["Color"], bump.inputs["Color"])
+        material.node_tree.links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
     for attribute in list(body.data.color_attributes):
         body.data.color_attributes.remove(attribute)
-    return int(baked.sum()), hair_uv
+    return int(baked.sum()), hair_uv, views
 
 
 def add_bristle_hairs(body, bristles, uv):
@@ -680,25 +721,24 @@ def bake_stance(body, arm, stance, followers):
     return max(heights) - floor
 
 
-def lid_skin_image(projection, views_dir, eye, mesh_scale, size=128):
+def lid_skin_image(view, to_image, eye, mesh_scale, field_zmin, size=128):
     """A square patch of the head skin for the eyelids that the site builds. Returns a packed image.
 
     The site's lids show the middle 44 percent of the patch. So the patch is as wide as a lid
-    divided by 0.44, and its middle lies on real skin: the brow just above the painted eye of
-    the sheet's front view. The painted eye itself is filled with the skin around it first.
+    divided by 0.44, and its middle lies on real skin: the brow just above the eye socket in
+    the front view that colours the texture.
     """
-    fit = projection["views"]["front"]
-    view = bfm.load_view(os.path.join(views_dir, fit["image"]))
-    rows, cols = bfm.eye_openings(view)[0]                   # screen left, the larger eye
-    bfm.erase_painted_eyes(view)
-    side = 2.0 * eye["radii_mm"][0] / mesh_scale * 1.055 / 0.44 / fit["body"]["s"]      # pixels of the art
-    centre_col = (cols.min() + cols.max()) / 2.0
-    centre_row = rows.max() + 3.0 + 0.22 * side              # rows run upward: this is above the eye
+    across, depth, height = (r / mesh_scale for r in eye["radii_mm"])
+    centre = np.array(eye["centre_mm"]) / mesh_scale + np.array([0.0, 0.0, field_zmin])
+    side_mm = 2.0 * across * 1.055 / 0.44
+    brow = centre[2] + height * 1.25 + 0.22 * side_mm           # the middle of the patch, above the socket
     grid = (np.arange(size) + 0.5) / size - 0.5
-    col = np.clip(np.rint(centre_col + grid * side).astype(int), 0, view["linear"].shape[1] - 1)
-    row = np.clip(np.rint(centre_row + grid * side).astype(int), 0, view["linear"].shape[0] - 1)
+    x, z = np.meshgrid(centre[0] + grid * side_mm, brow + grid * side_mm)
+    col, row = to_image(x.ravel(), z.ravel())
+    col = np.clip(np.rint(col).astype(int), 0, view["linear"].shape[1] - 1)
+    row = np.clip(np.rint(row).astype(int), 0, view["linear"].shape[0] - 1)
     # Outside the figure the patch takes the nearest drawn colour.
-    linear = np.where(view["figure"][row][:, col][..., None], view["linear"][row][:, col], view["spread"][row][:, col])
+    linear = np.where(view["figure"][row, col][:, None], view["linear"][row, col], view["spread"][row, col]).reshape(size, size, 3)
     srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
     image = bpy.data.images.new("Brundlefly-lid-skin", size, size, alpha=False)
     image.pixels.foreach_set(np.concatenate([srgb, np.ones((size, size, 1))], axis=2).astype(np.float32).ravel())
@@ -735,7 +775,7 @@ def export_web(src, args):
             rig_joints = json.load(fh)["joints_mm"]
     textured = "sheet_projection" in stats and not args.no_texture
     if textured:
-        texels, hair_uv = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"], rig_joints, surface)
+        texels, hair_uv, colour_views = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"], rig_joints, surface, args.relief_size)
         print(f"TEXTURE {args.texture_size} px, {texels} texels on the surface")
 
     root = bpy.data.objects.new("Brundlefly", None)
@@ -752,7 +792,8 @@ def export_web(src, args):
     bsdf.inputs["Roughness"].default_value = 0.42
     if textured and site["eyes"]:
         skin_patch = eye_mat.node_tree.nodes.new("ShaderNodeTexImage")
-        skin_patch.image = lid_skin_image(stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), site["eyes"][0], stats["sheet_projection"]["mesh_scale"])
+        front_view, front_to_image = colour_views["front"]
+        skin_patch.image = lid_skin_image(front_view, front_to_image, site["eyes"][0], stats["sheet_projection"]["mesh_scale"], stats["sheet_projection"]["field_zmin"])
         eye_mat.node_tree.links.new(skin_patch.outputs["Color"], bsdf.inputs["Base Color"])
     for index, eye in enumerate(site["eyes"]):        # 0 is screen left and larger
         mesh = bpy.data.meshes.new(f"Brundlefly-eye-{index}")

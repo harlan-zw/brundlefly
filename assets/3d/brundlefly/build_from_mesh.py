@@ -54,6 +54,7 @@ def parse():
     ap.add_argument("--back-image", help="back view image, projected onto the vertex colours")
     ap.add_argument("--right-image", help="optional view of the figure's right side")
     ap.add_argument("--left-image", help="optional view of the figure's left side")
+    ap.add_argument("--paint-dir", help="folder with front.png, back.png, side-right.png, side-left.png painted over renders of this mesh: the website texture takes its colours from them")
     ap.add_argument("--rebuild-back", action="store_true", help="replace the back with plates drawn from the character sheet")
     ap.add_argument("--dimples", action="store_true", help="add pilot dimples for hand-implanted bristles")
     ap.add_argument("--dump-field", action="store_true", help="also write field.npz, for measuring joints")
@@ -877,6 +878,18 @@ def main():
         # the cut only frays the tip there: the thick leading edge is not a thin part.
         stats["wing_trim_mm3"] = round(trim_small_wing(f, front, views["front"][1], zmax), 1)
         eye_spots = spots
+        # The painted views colour the website texture. Each was painted over a render of this
+        # mesh, so one fit of the whole outline places it, and the head needs no fit of its own.
+        if args.paint_dir:
+            painted = {}
+            for name, file in (("front", "front.png"), ("back", "back.png"), ("right", "side-right.png"), ("left", "side-left.png")):
+                path = os.path.join(args.paint_dir, file)
+                if os.path.exists(path):
+                    setup = VIEW_SETUP[name]
+                    fit = register(load_view(path), f, mirror=setup["mirror"], axis=setup["axis"])
+                    painted[name] = {"image": file, "body": fit, "head": fit}
+            stats["sheet_projection"]["paint"] = {"folder": os.path.basename(os.path.normpath(args.paint_dir)), "views": painted}
+            stats["sheet_fit"]["paint_overlap"] = {name: round(v["body"]["iou"], 3) for name, v in painted.items()}
         erase_all_eyes(views)
     if args.rebuild_back:
         rebuild_back(f, zmax)

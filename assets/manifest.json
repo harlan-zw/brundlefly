@@ -111,8 +111,8 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 16948,
-    "sha256": "63690207dafd71097b86f65c2e19f732fff58d8e0126319f1797bd039801246c"
+    "bytes": 17733,
+    "sha256": "db056ccbfc129c918d4dfdd21d8f4ea2a1893f343f1e4d6d5beccac0ebe47875"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
@@ -131,8 +131,8 @@
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
-    "bytes": 3771372,
-    "sha256": "29cf70d49cbbbb5593b2f9ecd2e74e7a280d0a57ef8c4af42172f499fe02346b"
+    "bytes": 4032924,
+    "sha256": "5c7333aee3cab9f5b3bb3e2f635ab8e119ef8bbde869d83c4b9df1e3f375ed09"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
@@ -141,8 +141,8 @@
   },
   {
     "path": "assets/3d/brundlefly/build_from_mesh.py",
-    "bytes": 47953,
-    "sha256": "66d7edef3fefcd57ad2ef8f64d9f8a39483fd19e9c8ccda62ca0a9af3996c0c3"
+    "bytes": 49087,
+    "sha256": "8102be7535785269e7d3a782dca970c963ebe8cd575134e69a24c4a199d93d94"
   },
   {
     "path": "assets/3d/brundlefly/build_model.py",
@@ -156,8 +156,8 @@
   },
   {
     "path": "assets/3d/brundlefly/export_model.py",
-    "bytes": 44176,
-    "sha256": "9d8012eacca5920ace42a397c31104a1407ceddc89ce1ee8ff54248cdb31f0d2"
+    "bytes": 47006,
+    "sha256": "1905e887361afd90ce29b0d14a0dc72567b3d682aa38dcd76c71f53cd103e4cc"
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",
@@ -186,8 +186,8 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/web-front.png",
-    "bytes": 637436,
-    "sha256": "03e43114b3f903cbba7bdd0db98c7266d05b66ffd63217a4e6f04245c28c23f2"
+    "bytes": 644750,
+    "sha256": "96dfd4d8bbe9e16e70c122e95312e48dde44059e0b9156a632b37a1f805fb08e"
   },
   {
     "path": "assets/3d/brundlefly/previews/web-pose-test.png",
@@ -196,8 +196,8 @@
   },
   {
     "path": "assets/3d/brundlefly/previews/web-three-quarter.png",
-    "bytes": 633825,
-    "sha256": "f69abd9ff2ad28af1537ac4061c7a1124d0fba65577fc87b81c305c3228abd35"
+    "bytes": 635700,
+    "sha256": "57e01b6bd975f179d60b9e9e0e936e074162d0ebffa52cd39ae23176b6e1b501"
   },
   {
     "path": "assets/3d/brundlefly/render_previews.py",
@@ -235,6 +235,31 @@
     "sha256": "ec7c45ceae1d88b277b1b5749758d1bd8ee573d5ee66094856f66633011746b5"
   },
   {
+    "path": "assets/3d/brundlefly/source/views/premium/back.png",
+    "bytes": 911427,
+    "sha256": "61b593bd13e5de9e35195871c54e87e1f2434ee4372c4b693c49773792c898e5"
+  },
+  {
+    "path": "assets/3d/brundlefly/source/views/premium/front-under.png",
+    "bytes": 796538,
+    "sha256": "e27e6b7735798238c43be8ab37bb1f9632a9eba67b102b55b540839f0be63a7d"
+  },
+  {
+    "path": "assets/3d/brundlefly/source/views/premium/front.png",
+    "bytes": 1335706,
+    "sha256": "f2ccb51668c311a383c1c1034af445e58f5884f6ca3917bcaaa774993a99cff4"
+  },
+  {
+    "path": "assets/3d/brundlefly/source/views/premium/side-left.png",
+    "bytes": 698640,
+    "sha256": "c3d23eaa952ba02813f04e717804685124e09d28af36b6f22bd02bda42af3dc6"
+  },
+  {
+    "path": "assets/3d/brundlefly/source/views/premium/side-right.png",
+    "bytes": 670423,
+    "sha256": "43133ece8f790e7a4e30d95b588d43b28b1831e4cc382a782f40eb0c6803f2d4"
+  },
+  {
     "path": "assets/3d/brundlefly/source/views/shape-side-left.png",
     "bytes": 1200790,
     "sha256": "529fcc98b2265b1d9ecaeccaf8800de57d2bb28c1db7ca123351694f73d12dd6"
@@ -265,6 +290,11 @@
     "sha256": "296fc9ec8387864be297413b93c371900f3197e091a03aebe373f5e97e22168b"
   },
   {
+    "path": "assets/3d/brundlefly/test/web-textures.test.ts",
+    "bytes": 2210,
+    "sha256": "7ebef6131e164f3f4e360012de31d2de0b440367995a625f32fd65f6181a87d6"
+  },
+  {
     "path": "assets/3d/brundlefly/validate.ts",
     "bytes": 4357,
     "sha256": "359a482684e32ce677a9df2515c475e6518b9a9651a9f818daf95548b2ba9445"
@@ -281,7 +311,7 @@
   },
   {
     "path": "assets/prompts/figurine.json",
-    "bytes": 5847,
-    "sha256": "a2713a65fb540c7511b3d388c61ff7aaab79a4754a7e4d35b50b39dd0b827337"
+    "bytes": 8655,
+    "sha256": "da0e68cb7a12d0f0bedc5e44add108d7202cf1111751b3d34daabf42718c0e64"
   }
 ]
