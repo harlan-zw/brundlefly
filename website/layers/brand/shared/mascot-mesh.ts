@@ -1,5 +1,7 @@
 import { AnimationMixer, Box3, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, Texture, Vector3 } from 'three'
 import type { AnimationClip } from 'three'
+import { fixationDrift, wanderingLook } from './eye-gaze.ts'
+import type { EyeFocus } from './eye-gaze.ts'
 import { bodyJointNames, poseBody } from './mascot-pose.ts'
 import type { BodyJointName, MascotPoseInput } from './mascot-pose.ts'
 
@@ -44,6 +46,26 @@ function findMouthparts(scene: Object3D) {
     mouthparts.push({ base, tip: tip && atRest(tip) ? tip : undefined })
   }
 }
+type MeshEye = { node: Object3D | undefined, rest: Quaternion, upperLid: Object3D | undefined, lowerLid: Object3D | undefined }
+/** Eyeballs and their lids, from screen left to right. Each part is optional, so a file can have eyes that aim and no lids that blink. */
+function findEyes(scene: Object3D) {
+  const eyes: MeshEye[] = []
+  for (let index = 0; ; index++) {
+    const node = scene.getObjectByName(`Brundlefly-eye-${index}`)
+    const [upperLid, lowerLid] = [`face-upper-lid-${index}`, `face-lower-lid-${index}`].map((name) => {
+      const lid = scene.getObjectByName(name)
+      return lid && atRest(lid) ? lid : undefined
+    })
+    if (!node && !upperLid && !lowerLid) return eyes
+    eyes.push({ node, rest: node ? node.quaternion.clone() : new Quaternion(), upperLid, lowerLid })
+  }
+}
+// The iris stays inside the lid opening at these turns, in radians.
+const maxEyeYaw = 0.35
+const maxEyePitch = 0.22
+// A shut eye: the upper lid turns down this far and the lower lid turns up this far, in radians.
+const upperLidClose = 0.6
+const lowerLidClose = 0.2
 // One slow cycle of the mouthparts, in radians for each second.
 const mouthpartRate = Math.PI * 2 / 4
 export type MeshMascot = ReturnType<typeof assemble>
@@ -102,6 +124,40 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   // Any rest rotation that is not the vertical turn stays as the file has it.
   const stanceRest = stanceNode ? sideTurn.setFromAxisAngle(vertical, stanceYaw).invert().multiply(stanceNode.quaternion).clone() : undefined
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
+  const eyes = bodyJoints ? findEyes(scene) : []
+  const eyeNodes = eyes.flatMap(eye => eye.node ? [eye.node] : [])
+  // Both eyes take one direction, from the point between them, so he never looks cross-eyed.
+  const eyeFrame = eyeNodes[0]?.parent
+  const betweenEyes = eyeNodes.reduce((sum, node) => sum.add(node.position), new Vector3()).divideScalar(Math.max(1, eyeNodes.length))
+  const gaze = { yaw: 0, pitch: 0 }
+  let gazedAt: number | undefined
+  const eyeTurn = new Quaternion()
+  const watched = new Vector3()
+  /** Eyes snap toward a new target in a saccade, as on the relief rig. Stopped or jumping time sets the gaze at once. */
+  function aimEyes(time: number, focus: EyeFocus) {
+    if (!eyeFrame) return
+    const drift = fixationDrift(time)
+    let yaw = 0, pitch = 0
+    if (focus._tag === 'Wander') {
+      const wander = wanderingLook(time)
+      yaw = (wander.x + drift.x) * maxEyeYaw
+      pitch = (wander.y + drift.y) * maxEyePitch
+    }
+    if (focus._tag === 'Watch') {
+      eyeFrame.updateWorldMatrix(true, false)
+      eyeFrame.worldToLocal(watched.set(focus.target.x, focus.target.y, focus.target.z)).sub(betweenEyes)
+      yaw = Math.atan2(watched.x, watched.z) + drift.x * 0.5 * maxEyeYaw
+      pitch = Math.atan2(watched.y, Math.hypot(watched.x, watched.z)) + drift.y * 0.5 * maxEyePitch
+    }
+    const delta = gazedAt === undefined ? Infinity : time - gazedAt
+    const blend = delta > 0 && delta < 0.25 ? 1 - Math.exp(-30 * delta) : 1
+    gazedAt = time
+    gaze.yaw += (clamp(yaw, maxEyeYaw) - gaze.yaw) * blend
+    gaze.pitch += (clamp(pitch, maxEyePitch) - gaze.pitch) * blend
+    // The turn is in the head's frame. Each eye keeps its own rest rotation under it.
+    eyeTurn.setFromEuler(turn.set(-gaze.pitch, gaze.yaw, 0, 'YXZ'))
+    for (const eye of eyes) eye.node?.quaternion.copy(eyeTurn).multiply(eye.rest)
+  }
   // The rig contract gives every joint an identity rest rotation, so the head looks along +Z of its parent at rest.
   const head = scene.getObjectByName('head')
   const clipPose = new Quaternion()
@@ -174,6 +230,13 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
         tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2, 0, 0)
       })
       turnHead(look, input.mannerism?.turns.head)
+      aimEyes(input.time, input.eyes ?? { _tag: 'Ahead' })
+      // A squint narrows the smaller, screen-right eye more than the larger one, as on the relief rig.
+      eyes.forEach(({ upperLid, lowerLid }, index) => {
+        const closure = Math.min(1, body.blink + (input.squint ?? 0) * (index === 0 ? 0.18 : 0.63))
+        upperLid?.rotation.set(closure * upperLidClose, 0, 0)
+        lowerLid?.rotation.set(-closure * lowerLidClose, 0, 0)
+      })
     } : undefined,
     /** Why the file cannot take the pose code. Undefined when it can. */
     poseGap: found._tag === 'Err' ? found.reason : undefined,

@@ -269,3 +269,73 @@ test('a model with a turned root mirrors that turn by side, and its head stays t
   unturned.root.updateMatrixWorld(true)
   assert.ok(plain.node.quaternion.angleTo(new Quaternion()) < 1e-9)
 })
+
+/** A jointed model with two eye nodes and four lid joints under the head, as the figurine file has them. */
+function eyedModel() {
+  const model = jointedModel()
+  const head = model.joint('head')
+  const add = (name: string, x: number) => {
+    const node = name.startsWith('face-') ? new Bone() : new Object3D()
+    node.name = name
+    node.position.set(x, 1, 15)
+    head.add(node)
+    return node
+  }
+  const eyes = [add('Brundlefly-eye-0', -4), add('Brundlefly-eye-1', 4)]
+  // The file gives each eye the head's roll as its rest rotation.
+  for (const eye of eyes) eye.rotation.z = -0.2
+  const lids = { upper: [add('face-upper-lid-0', -4), add('face-upper-lid-1', 4)], lower: [add('face-lower-lid-0', -4), add('face-lower-lid-1', 4)] }
+  return { ...model, eyes, lids }
+}
+/** The direction an eye faces, as yaw and pitch in the head's frame. */
+function gaze(eye: Object3D) {
+  const forward = new Vector3(0, 0, 1).applyQuaternion(eye.quaternion)
+  return { yaw: Math.atan2(forward.x, forward.z), pitch: Math.asin(forward.y) }
+}
+
+test('the eyes keep their rest rotation when they look ahead, and turn within their limits to watch a point', () => {
+  const { scene, eyes } = eyedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const rest = eyes[0]!.quaternion.clone()
+  mascot.pose!({ ...standing, eyes: { _tag: 'Ahead' } })
+  assert.ok(eyes[0]!.quaternion.angleTo(rest) < 1e-6, 'Looking ahead must keep the rest rotation, with its roll.')
+  // A point far up and to screen right is beyond both limits. `time` advances, so each call is a new frame.
+  const target = mascot.facePoint(new Vector3()).add(new Vector3(40, 40, 10))
+  for (let frame = 0; frame < 60; frame++) mascot.pose!({ ...standing, time: frame / 60, eyes: { _tag: 'Watch', target } })
+  for (const eye of eyes) {
+    const { yaw, pitch } = gaze(eye)
+    assert.ok(Math.abs(yaw - 0.35) < 0.02 && Math.abs(pitch - 0.22) < 0.02, `The eye must stop at its limits, not at ${yaw.toFixed(2)}, ${pitch.toFixed(2)}.`)
+  }
+  // Both eyes turn the same way, so he does not look cross-eyed.
+  assert.ok(Math.abs(gaze(eyes[0]!).yaw - gaze(eyes[1]!).yaw) < 1e-6)
+})
+
+test('wandering eyes move on their own and stay inside the lid opening', () => {
+  const { scene, eyes } = eyedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  let widest = 0
+  for (let frame = 0; frame < 1500; frame++) {
+    mascot.pose!({ ...standing, time: frame / 60, eyes: { _tag: 'Wander' } })
+    const { yaw, pitch } = gaze(eyes[0]!)
+    assert.ok(Math.abs(yaw) <= 0.36 && Math.abs(pitch) <= 0.23, 'The iris must stay inside the opening.')
+    widest = Math.max(widest, Math.abs(yaw))
+  }
+  assert.ok(widest > 0.2, 'The eyes must travel while they wander.')
+})
+
+test('a blink closes the upper lid down and the lower lid up, and an open eye leaves both at rest', () => {
+  const { scene, lids } = eyedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  mascot.pose!({ ...standing, blink: 1 })
+  for (const lid of lids.upper) close(lid.rotation.x, 0.6)
+  for (const lid of lids.lower) close(lid.rotation.x, -0.2)
+  mascot.pose!({ ...standing, blink: 0.5 })
+  close(lids.upper[0]!.rotation.x, 0.3)
+  mascot.pose!({ ...standing, blink: 0 })
+  for (const lid of [...lids.upper, ...lids.lower]) close(lid.rotation.x, 0)
+  // A squint narrows the smaller, screen-right eye more than the larger one, as on the relief rig.
+  mascot.pose!({ ...standing, blink: 0, squint: 0.5 })
+  assert.ok(lids.upper[1]!.rotation.x > lids.upper[0]!.rotation.x && lids.upper[0]!.rotation.x > 0)
+  // A file without eyes or lids poses as before.
+  assert.doesNotThrow(() => ok(createMeshMascot({ scene: jointedModel().scene, animations: [] }, 2.5)).pose!({ ...standing, blink: 1, eyes: { _tag: 'Wander' } }))
+})

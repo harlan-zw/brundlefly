@@ -332,7 +332,11 @@ The site fits the model to the height of the relief rig and puts its lowest poin
 The model keeps its own origin, facing, and materials: +Y is up and the face points to +Z.
 If the file has the relief rig's 25 body joints, each with an identity rest rotation, the site poses it with the relief rig's code.
 The model then idles, walks the same route, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
-It has no jaw, brow, or eyelid joints, so it does not blink or change expression.
+Nodes named Brundlefly-eye-0 and Brundlefly-eye-1 are his eyeballs. The site turns them to wander, to watch a visitor, and to follow a habit's cue.
+Each eye turns at most 0.35 rad to a side and 0.22 rad up or down, so the iris stays inside the lid opening.
+Joints named face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 are his eyelids. The site turns them to blink and to squint.
+A shut eye turns the upper lid 0.6 rad down and the lower lid 0.2 rad up. A file without lid joints does not blink.
+It has no jaw or brow joints, so its expression does not change.
 If the file turns its top node about the vertical, the site mirrors that turn when he walks to the other side, so he faces his path.
 He turns a little before each walk and holds his side while he stands. His head stays toward the viewer at rest.
 Any other file loops its Brundlefly-idle clip, or sways about its feet if it has no clip. That model stands at the mascot start point.
