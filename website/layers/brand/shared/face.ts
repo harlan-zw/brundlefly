@@ -26,6 +26,16 @@ export const referenceEyes = {
   lid: { open: 0.96, radius: 1.055, depth: 1.13, forward: 0.42, flatten: 0.35, squint: [0.18, 0.63], uvSpread: 0.22 },
 } as const
 
+/**
+ * How the reference face moves, in face units and radians. His voice drops the jaw, moves it forward, turns it open, and spreads the cheeks.
+ * A raised brow lifts the skin over each eye. The mesh mascot moves its face joints by the same numbers.
+ */
+export const referenceFace = {
+  jaw: { drop: 0.055, forward: 0.018, turn: 0.16 },
+  cheeks: { left: -0.004, right: 0.006 },
+  brows: [0.018, 0.027],
+} as const
+
 /** Places projected head pixels in face-local units. The body uses `covers` to hide only what the sculpt hides. */
 export function createHeadOutline({ width, height, data }: HeadProjection['raster']) {
   let minX = width - 1, maxX = 0, minY = height - 1, maxY = 0
@@ -298,14 +308,14 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
     const voice = Math.max(0, Math.min(1, speaking))
     const close = Math.max(0, Math.min(1, blink))
     animatedNodes.forEach((bone, index) => { bone.position.copy(anchors[index]!); bone.rotation.set(0, 0, 0); bone.scale.set(1, 1, 1) })
-    animatedNodes[0]!.position.y -= voice * 0.055
-    animatedNodes[0]!.position.z += voice * 0.018
-    animatedNodes[0]!.rotation.x = -voice * 0.16
-    animatedNodes[1]!.position.x -= voice * 0.004
-    animatedNodes[2]!.position.x += voice * 0.006
+    animatedNodes[0]!.position.y -= voice * referenceFace.jaw.drop
+    animatedNodes[0]!.position.z += voice * referenceFace.jaw.forward
+    animatedNodes[0]!.rotation.x = -voice * referenceFace.jaw.turn
+    animatedNodes[1]!.position.x += voice * referenceFace.cheeks.left
+    animatedNodes[2]!.position.x += voice * referenceFace.cheeks.right
     for (let index = 0; index < eyes.length; index++) {
       const closure = Math.min(1, close + squint * referenceEyes.lid.squint[index]!)
-      animatedNodes[3 + index]!.position.y += brow * (index === 0 ? 0.018 : 0.027)
+      animatedNodes[3 + index]!.position.y += brow * referenceFace.brows[index]!
       animatedNodes[5 + index * 2]!.rotation.x = -referenceEyes.lid.open * (1 - closure)
       animatedNodes[6 + index * 2]!.rotation.x = referenceEyes.lid.open * (1 - closure)
       const z = depthAt(eyes[index]!.x, eyes[index]!.y) - eyes[index]!.rz * 0.3

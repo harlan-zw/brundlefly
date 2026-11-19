@@ -244,7 +244,7 @@ watch(canvas, async (element) => {
       if (inspector && idle && delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % meshMascot.idleDuration
       meshMascot.update(!idle ? 0 : inspector ? clipTime.value : elapsed)
       // Manual shows the pose the controls set, when the file can take the relief rig's pose code.
-      if (!idle) meshMascot.pose?.({ time: 0, pressure: currentPressure, pointer, transform, speaking, blink: blink ?? 0, squint })
+      if (!idle) meshMascot.pose?.({ time: 0, pressure: currentPressure, pointer, transform, speaking, blink: blink ?? 0, brow, squint })
     }
     else if (mixer && clips && clip !== 'Manual') {
       if (activeClip !== clip) {

@@ -414,3 +414,36 @@ test('disposal removes the dressed eyes and leaves the host\'s textures', () => 
   assert.equal(joint('head').getObjectByName('reference-eye-0'), undefined)
   assert.equal(hostReleased, false, 'The host owns the artwork and the skin texture.')
 })
+
+test('his voice drops the jaw and a raised brow lifts the brow, by the relief rig\'s travel in the mascot\'s own units', () => {
+  const { scene, joint } = jointedModel()
+  const head = joint('head')
+  const add = (name: string, x: number, y: number) => {
+    const bone = new Bone()
+    bone.name = name
+    bone.position.set(x, y, 12)
+    head.add(bone)
+    return bone
+  }
+  const [jaw, cheekLeft, cheekRight, browLeft, browRight] = [add('face-jaw', 0, -2), add('face-cheek-left', -6, 0), add('face-cheek-right', 5, 0), add('face-brow-0', -4, 4), add('face-brow-1', 4, 3)]
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  // Travel is read in the head's frame and in the mascot's units, so the check holds for a file in any unit.
+  // His voice also turns the head a little, so a world position would mix the two.
+  mascot.root.updateMatrixWorld(true)
+  const unit = head.getWorldScale(new Vector3()).x
+  const place = (bone: Object3D) => bone.position.clone().multiplyScalar(unit)
+  mascot.pose!(standing)
+  const rest = [jaw, cheekLeft, cheekRight, browLeft, browRight].map(place)
+  mascot.pose!({ ...standing, speaking: 1, brow: 1 })
+  const moved = [jaw, cheekLeft, cheekRight, browLeft, browRight].map(place)
+  close(moved[0]!.y - rest[0]!.y, -0.055)
+  close(moved[0]!.z - rest[0]!.z, 0.018)
+  close(jaw.rotation.x, -0.16)
+  close(moved[1]!.x - rest[1]!.x, -0.004)
+  close(moved[2]!.x - rest[2]!.x, 0.006)
+  close(moved[3]!.y - rest[3]!.y, 0.018)
+  close(moved[4]!.y - rest[4]!.y, 0.027)
+  // A silent, level face returns every joint to rest.
+  mascot.pose!(standing)
+  ;[jaw, cheekLeft, cheekRight, browLeft, browRight].forEach((bone, index) => assert.ok(place(bone).distanceTo(rest[index]!) < 1e-9))
+})

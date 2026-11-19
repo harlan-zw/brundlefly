@@ -3,7 +3,7 @@ import type { AnimationClip, Material } from 'three'
 import { fixationDrift, lookToward, pupilDirection, pupilSize, wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus, Look } from './eye-gaze.ts'
 import { createEyeMaterial } from './eye-material.ts'
-import { referenceEyes as reliefEyes } from './face.ts'
+import { referenceEyes as reliefEyes, referenceFace } from './face.ts'
 import { createReferenceEyes } from './mascot-eyes.ts'
 import type { EyeDressing } from './mascot-eyes.ts'
 import { bodyJointNames, poseBody } from './mascot-pose.ts'
@@ -49,6 +49,19 @@ function findMouthparts(scene: Object3D) {
     const tip = scene.getObjectByName(`mouthpart-${index}-tip`)
     mouthparts.push({ base, tip: tip && atRest(tip) ? tip : undefined })
   }
+}
+type FaceJoint = { joint: Object3D, rest: Vector3, unit: number }
+/**
+ * The relief rig's face joints, each optional. `unit` is one face unit of the relief rig in the joint's own units,
+ * so the relief rig's travel suits a file in any unit.
+ */
+function findFaceJoints(scene: Object3D) {
+  const find = (name: string): FaceJoint | undefined => {
+    const joint = scene.getObjectByName(name)
+    if (!joint?.parent || !atRest(joint)) return undefined
+    return { joint, rest: joint.position.clone(), unit: 1 / joint.parent.getWorldScale(new Vector3()).x }
+  }
+  return { jaw: find('face-jaw'), cheekLeft: find('face-cheek-left'), cheekRight: find('face-cheek-right'), brows: [find('face-brow-0'), find('face-brow-1')] }
 }
 type MeshEye = { node: Object3D | undefined, upperLid: Object3D | undefined, lowerLid: Object3D | undefined }
 /** Eyeballs and their lids, from screen left to right. Each part is optional, so a file can have eyes that aim and no lids that blink. */
@@ -152,6 +165,9 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   // Any rest rotation that is not the vertical turn stays as the file has it.
   const stanceRest = stanceNode ? sideTurn.setFromAxisAngle(vertical, stanceYaw).invert().multiply(stanceNode.quaternion).clone() : undefined
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
+  // The fit is in place, so each joint's parent has its final scale inside the mascot.
+  root.updateMatrixWorld(true)
+  const faceJoints = bodyJoints ? findFaceJoints(scene) : undefined
   const eyes = findEyes(scene)
   const eyeNodes = eyes.flatMap(eye => eye.node ? [eye.node] : [])
   const wetEye = dressEyes(eyeNodes)
@@ -268,6 +284,17 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       const yaw = stanceYaw * Math.max(-1, Math.min(1, facing))
       if (stanceNode && stanceRest) stanceNode.quaternion.setFromAxisAngle(vertical, yaw).multiply(stanceRest)
       bodyJoints.get('head')!.rotation.y -= yaw * (1 - Math.min(1, Math.max(0, input.gait ?? 0)) * 0.5)
+      // His voice moves the jaw and the cheeks, and a raised brow lifts the skin over each eye, by the relief rig's numbers.
+      if (faceJoints) {
+        const { jaw, cheekLeft, cheekRight, brows } = faceJoints
+        if (jaw) {
+          jaw.joint.position.set(jaw.rest.x, jaw.rest.y - body.speaking * referenceFace.jaw.drop * jaw.unit, jaw.rest.z + body.speaking * referenceFace.jaw.forward * jaw.unit)
+          jaw.joint.rotation.x = -body.speaking * referenceFace.jaw.turn
+        }
+        if (cheekLeft) cheekLeft.joint.position.x = cheekLeft.rest.x + body.speaking * referenceFace.cheeks.left * cheekLeft.unit
+        if (cheekRight) cheekRight.joint.position.x = cheekRight.rest.x + body.speaking * referenceFace.cheeks.right * cheekRight.unit
+        brows.forEach((brow, index) => { if (brow) brow.joint.position.y = brow.rest.y + (input.brow ?? 0) * referenceFace.brows[index]! * brow.unit })
+      }
       // The mouthparts drift on their own and open with his voice. Neighbours open in opposite directions.
       const phase = input.time * mouthpartRate
       mouthparts.forEach(({ base, tip }, index) => {

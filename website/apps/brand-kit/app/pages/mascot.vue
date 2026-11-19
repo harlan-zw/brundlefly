@@ -58,7 +58,7 @@ function loadClips(available: Record<string, number>) {
         <input id="inspector-time" v-model.number="time" :disabled="clip === 'Manual'" type="range" min="0" :max="duration" step="0.01" @pointerdown="playing = false" @keydown="playing = false">
         <label for="inspector-speech">Speech <output>{{ speech.toFixed(2) }}</output></label><input id="inspector-speech" v-model.number="speech" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
         <label for="inspector-blink">Blink <output>{{ blink.toFixed(2) }}</output></label><input id="inspector-blink" v-model.number="blink" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
-        <label for="inspector-brow">Brow <output>{{ brow.toFixed(2) }}</output></label><input id="inspector-brow" v-model.number="brow" :disabled="shown === 'mesh'" type="range" min="0" max="1" step="0.05" @input="manual">
+        <label for="inspector-brow">Brow <output>{{ brow.toFixed(2) }}</output></label><input id="inspector-brow" v-model.number="brow" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
         <label for="inspector-squint">Squint <output>{{ squint.toFixed(2) }}</output></label><input id="inspector-squint" v-model.number="squint" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
       </aside>
     </div>

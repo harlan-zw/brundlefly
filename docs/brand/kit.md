@@ -338,7 +338,9 @@ Each node gives its eye a centre, a rest rotation, and a width. The height and d
 So the model needs only a socket at each eye. It needs no eyeball, lid, or eye material of its own.
 If the head artwork or the face skin fails to load, the site keeps the file's own eyeballs and draws them with the wet-eye shader.
 It then turns the lid joints face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 to blink: 0.96 rad down for an upper lid and 0.96 rad up for a lower lid, the relief rig's lid travel.
-It has no jaw or brow joints, so its expression does not change.
+Joints named face-jaw, face-cheek-left, face-cheek-right, face-brow-0, and face-brow-1 move his face, each optional.
+His voice drops and opens the jaw and spreads the cheeks. A raised brow lifts the skin over each eye.
+The travel comes from referenceFace in face.ts, scaled to the model's own units. A file without these joints keeps a still face.
 If the file turns its top node about the vertical, the site mirrors that turn when he walks to the other side, so he faces his path.
 He turns a little before each walk and holds his side while he stands. His head stays toward the viewer at rest.
 Any other file loops its Brundlefly-idle clip, or sways about its feet if it has no clip. That model stands at the mascot start point.
@@ -491,8 +493,8 @@ Drag to orbit and scroll to zoom. Bones and wireframe reveal the weighted model.
 Choose Idle, Walk, or Speaking for the exported animation clips. Play, pause, change speed, or scrub time.
 Manual speech, blink, brow, and squint controls stop clip playback and show a fixed pose.
 Mapped and Sprite switch the artwork. Download GLB exports the selected rig.
-Mesh shows the full 3D model. Idle plays its clip or its sway. Walk, Speaking, Brow, and Download GLB apply only to the relief rig.
-If the model can take the relief rig's pose code, Manual poses it from the Speech, Blink, and Squint controls.
+Mesh shows the full 3D model. Idle plays its clip or its sway. Walk, Speaking, and Download GLB apply only to the relief rig.
+If the model can take the relief rig's pose code, Manual poses it from the Speech, Blink, Brow, and Squint controls.
 Bones applies only to a model with a skeleton.
 If the model file is absent, Mesh shows the mapped relief rig and the status line says so.
 
