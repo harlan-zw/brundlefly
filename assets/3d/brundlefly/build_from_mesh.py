@@ -22,6 +22,7 @@ import bmesh
 import bpy
 import numpy as np
 import openvdb as vdb
+from mathutils.kdtree import KDTree
 
 sys.dont_write_bytecode = True   # keep __pycache__ out of the asset folder
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +38,14 @@ BRISTLE_MIN_MM = 0.8          # a removed spike shorter than this is not a brist
 BRISTLE_BODY_MM = 1.3         # a bristle stands on a part of the body that is at least this deep
 LO = np.array([-48.0, -40.0, -1.6])
 HI = np.array([48.0, 40.0, 84.0])
+PROXY_TRIS = 66000            # the posed print model takes its skin weights from a copy of this size, as the website model does
+JOINT_SLACK_MM = 1.5          # a joint of rig-joints.json may stand this far outside the straight solid
+RIGID_ENDS = ("hand", "small-hand", "foot")   # the posed print model keeps each of these in one piece
+SLOT_MM = 1.2                 # a slot under 1 mm does not print clean, and supports cannot leave it. The rest is one voxel of tolerance.
+SLOT_MIN_MM3 = 0.1            # a narrower slot smaller than this is a skin fold, and it stays
+SLOT_NARROWED_MM = 0.3        # the pose made a slot if its walls came this much closer
+WING_ROOT_MM = 3.0            # the posed print model braces this much of each wing, from the body outward
+WING_ROOT_GROWTH_MM = 0.35    # the brace, on each side of the membrane
 
 
 def parse():
@@ -57,8 +66,11 @@ def parse():
     ap.add_argument("--paint-dir", help="folder with front.png, back.png, side-right.png, side-left.png painted over renders of this mesh: the website texture takes its colours from them")
     ap.add_argument("--rebuild-back", action="store_true", help="replace the back with plates drawn from the character sheet")
     ap.add_argument("--dimples", action="store_true", help="add pilot dimples for hand-implanted bristles")
-    ap.add_argument("--dump-field", action="store_true", help="also write field.npz, for measuring joints")
+    ap.add_argument("--dump-field", action="store_true", help="also write field.npz, for measuring joints, and with --stance pose.npz, for measuring the pose")
+    ap.add_argument("--stance", help="print model only: pose the solid into this stance of the website model, such as source/stance.json")
     args, _ = ap.parse_known_args(argv)
+    if args.stance and args.variant != "print":
+        ap.error("--stance poses the print model only. The website model takes its stance in export_model.py.")
     return args
 
 
@@ -777,12 +789,20 @@ WEB_EYE_NUDGE = ((0.3, 0.2), (0.0, 0.0))
 SMALL_WING_SIDE = 1.0
 
 
-def add_eyes(f, eyes, solid):
+def eye_centre(f, x, z, back):
+    """The centre of a globe: this far behind the skin that a ray from the front meets at (x, z). None if it meets none."""
+    hit = f.raycast(bm.V(x, -45.0, z), bm.V(0, 1, 0), max_dist=60.0)
+    return None if hit is None else hit + bm.V(0, back, 0)
+
+
+def add_eyes(f, eyes, solid, placed=None):
     """A socket where the sheet has each eye, at the proportions of the site's relief rig.
 
     With solid, the socket also gets a globe and two open lids as part of the model: the
     print model has no joints, so its lids cannot move. Without it the socket stays empty:
     the site builds the relief rig's own eye and lids at each marker.
+    placed gives each eye a centre and a turn, for a head that a stance has moved: the turn is
+    a rotation matrix from the eye's own axes to the model's. An eye without a centre is left out.
     Returns the centre and the three radii of each globe.
     """
     out = []
@@ -790,10 +810,9 @@ def add_eyes(f, eyes, solid):
     for index, (eye, (across, depth, height)) in enumerate(zip(eyes, EYE_RADII)):
         toward_nose, deeper = (0.0, 0.0) if solid else WEB_EYE_NUDGE[index]
         x = eye["x"] + toward_nose * across * (1.0 if eye["x"] < middle else -1.0)
-        hit = f.raycast(bm.V(x, -45.0, eye["z"]), bm.V(0, 1, 0), max_dist=60.0)
-        if hit is None:
+        centre, turn = (eye_centre(f, x, eye["z"], depth * (EYE_SET_BACK + deeper)), None) if placed is None else placed[index]
+        if centre is None:
             continue
-        centre = hit + bm.V(0, depth * (EYE_SET_BACK + deeper), 0)
         radii = bm.V(across, depth, height)
         # The socket holds the globe and the lid shell, with a narrow groove around them. It also
         # removes the generator's own eye bump, which is larger than the smaller globe.
@@ -801,17 +820,391 @@ def add_eyes(f, eyes, solid):
         if solid:
             round_shell = max(depth, height) * PRINT_LID_RADIUS
             shell = bm.V(across * LID_SHELL[0], round_shell, round_shell)
-        f.carve_blob(centre, shell * (SOCKET_ROOM if solid else WEB_SOCKET_ROOM), k=0.2)
+        f.carve_blob(centre, shell * (SOCKET_ROOM if solid else WEB_SOCKET_ROOM), k=0.2, rot=turn)
         if solid:
-            sl, X, Y, Z = f.box(centre - shell, centre + shell, 3 * f.h)
-            lids = bm.sd_ellipsoid(X, Y, Z, centre, shell)
+            reach = shell if turn is None else np.full(3, shell.max())
+            sl, X, Y, Z = f.box(centre - reach, centre + reach, 3 * f.h)
+            lids = bm.sd_ellipsoid(X, Y, Z, centre, shell, turn)
             # The lids leave a wedge open in front of the globe: all points within LID_OPEN of the line of sight.
             forward, up = -(Y - centre[1]), Z - centre[2]
+            if turn is not None:                       # the same two distances, along the turned eye's own axes
+                across_x = X - centre[0]
+                forward, up = (-(turn[0, 1] * across_x - turn[1, 1] * forward + turn[2, 1] * up),
+                               turn[0, 2] * across_x - turn[1, 2] * forward + turn[2, 2] * up)
             wedge = (LID_OPEN - np.abs(np.arctan2(up, forward))) * np.sqrt(forward ** 2 + up ** 2)
             f.add(np.maximum(lids, wedge), sl, 0.15, bm.FLESH)
-            f.blob(centre, radii, k=0, mat=bm.EYE)
+            f.blob(centre, radii, k=0, mat=bm.EYE, rot=turn)
         out.append({"centre": centre, "radii": radii})
     return out
+
+
+def surface_of(f):
+    """The surface of the field: points in millimetres, triangles, and quads."""
+    grid = vdb.FloatGrid(bm.BIG)
+    grid.copyFromArray(np.ascontiguousarray(f.F))
+    points, tris, quads = grid.convertToPolygons(0.0, 0.0)
+    return points.astype(np.float64) * f.h + f.lo, tris, quads
+
+
+def largest_shell_object(name, points, tris, quads):
+    """A triangle mesh object of the largest shell of a surface."""
+    mesh = bpy.data.meshes.new(name)
+    mesh.vertices.add(len(points))
+    mesh.vertices.foreach_set("co", np.ascontiguousarray(points, dtype=np.float32).ravel())
+    mesh.loops.add(len(quads) * 4 + len(tris) * 3)
+    mesh.polygons.add(len(quads) + len(tris))
+    mesh.loops.foreach_set("vertex_index", np.concatenate([quads.ravel(), tris.ravel()]).astype(np.int32))
+    mesh.polygons.foreach_set("loop_start", np.concatenate([np.arange(len(quads)) * 4, len(quads) * 4 + np.arange(len(tris)) * 3]).astype(np.int32))
+    mesh.update()
+    mesh.validate()
+    work = bmesh.new()
+    work.from_mesh(mesh)
+    for comp in sorted(islands(work), key=len, reverse=True)[1:]:
+        bmesh.ops.delete(work, geom=comp, context="VERTS")
+    bmesh.ops.triangulate(work, faces=work.faces)
+    work.to_mesh(mesh)
+    work.free()
+    mesh.update()
+    ob = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(ob)
+    return ob
+
+
+def vertex_array(mesh):
+    co = np.empty(len(mesh.vertices) * 3)
+    mesh.vertices.foreach_get("co", co)
+    return co.reshape(-1, 3)
+
+
+def rigid_end(body, joints, name, blend=3.0):
+    """Make the skin past the last joint of a limb follow that joint only. Returns the number of vertices changed.
+
+    The automatic weights give some fingers and toes to the bone before the joint. On the
+    website model that shows as a soft stretch. On a solid it tears the finger into a thin
+    sheet when the joint turns. The skin past the joint is found over the mesh, so a hand
+    does not take skin from a leg beside it. The change fades in over `blend` millimetres.
+    """
+    start, end = np.array(joints[name]), np.array(joints[name + "-end"])
+    along = (end - start) / np.linalg.norm(end - start)
+    co = vertex_array(body.data)
+    past = (co - start) @ along
+    near = np.linalg.norm(co - start, axis=1) < 2.5 * np.linalg.norm(end - start)
+    pool = set(np.nonzero((past > 0.0) & near)[0].tolist())
+    if not pool:
+        return 0
+    neighbours = {}
+    for edge in body.data.edges:
+        a, b = edge.vertices
+        if a in pool and b in pool:
+            neighbours.setdefault(a, []).append(b)
+            neighbours.setdefault(b, []).append(a)
+    seed = min(pool, key=lambda i: float(np.linalg.norm(co[i] - end)))
+    reached, stack = {seed}, [seed]
+    while stack:
+        for other in neighbours.get(stack.pop(), ()):
+            if other not in reached:
+                reached.add(other)
+                stack.append(other)
+    group = body.vertex_groups[name]
+    for index in reached:
+        t = min(past[index] / blend, 1.0)
+        firm = t * t * (3.0 - 2.0 * t)
+        own = 0.0
+        for g in body.data.vertices[index].groups:
+            if g.group == group.index:
+                own = g.weight
+            g.weight *= 1.0 - firm
+        group.add([index], own * (1.0 - firm) + firm, "REPLACE")
+    return len(reached)
+
+
+def body_distance(f, radius=1.4, reach=BAND * 0.2):
+    """Distance in millimetres out of the body: the solid without its thin parts. An opening by `radius` removes the wings.
+
+    The distance is true up to `reach` millimetres from the surface of the body, and constant past it.
+    """
+    shape = tuple(int(n) for n in f.n)
+    grid = vdb.FloatGrid(float(BAND))
+    grid.copyFromArray(np.ascontiguousarray(f.F / f.h, dtype=np.float32))
+    points, tris, quads = grid.convertToPolygons(-radius / f.h, 0.0)
+    points, tris, quads = level_set(points, tris=tris, quads=quads).convertToPolygons(radius / f.h, 0.0)
+    return dense(level_set(points, tris=tris, quads=quads, band=math.ceil(reach / f.h)), shape) * f.h
+
+
+def wings_off_body(body, f, to_field, blend=1.0):
+    """Take the wing joints off the skin of the body. Returns the number of vertices changed.
+
+    The automatic weights spread each wing joint over the back, far from the wing. When the wing
+    turns, that skin slides over the skin beside it, and the solid gets a ragged step along the
+    edge of the slide. The website model hides the step under its texture. A print shows it.
+    The body is the solid without its thin parts. Skin on that body follows the chest in place
+    of a wing. Skin that stands `blend` millimetres out of it is wing, and keeps its weights.
+    to_field maps the vertices to the field.
+    """
+    opened = body_distance(f)
+    wings = {g.index for g in body.vertex_groups if "wing" in g.name}
+    chest = body.vertex_groups["chest"]
+    place = np.clip(np.rint((to_field(vertex_array(body.data)) - f.lo) / f.h).astype(int), 0, f.n - 1)
+    changed = 0
+    for vertex in body.data.vertices:
+        held = sum(g.weight for g in vertex.groups if g.group in wings)
+        if held <= 0.0:
+            continue
+        out = float(opened[tuple(place[vertex.index])])
+        t = min(max(out / blend, 0.0), 1.0)
+        keep = t * t * (3.0 - 2.0 * t)
+        if keep >= 1.0:
+            continue
+        own = 0.0
+        for g in vertex.groups:
+            if g.group in wings:
+                g.weight *= keep
+            elif g.group == chest.index:
+                own = g.weight
+        chest.add([vertex.index], own + held * (1.0 - keep), "REPLACE")
+        changed += 1
+    return changed
+
+
+def pose_solid(f, stance, joints, eyes, heights):
+    """Pose the print solid into a stance of the website model. Returns where the eyes went and a record of the pose.
+
+    The website model gets its stance as a rigged mesh, in export_model.py. The print solid takes
+    the same road: its surface is bound to the same skeleton and posed by the same joint turns,
+    and the posed surface becomes the field again. The surface is the dense one, so the folds of
+    the skin survive. Only the skin weights come from a decimated copy, because the automatic
+    weights need a small mesh. Each dense vertex takes the weights of the nearest face of that copy.
+    Two changes to the weights are for the solid only: each hand and foot stays in one piece,
+    and the skin of the body does not follow a wing. See rigid_end and wings_off_body.
+    The joints of rig-joints.json are in millimetres of the website model in its straight stand:
+    its lowest point at height zero, its wing tip at bm.HEIGHT_MM. heights are the same two
+    heights on this build, in the millimetres of the field. They give the scale between the two.
+    The stance's turn of the whole body is left out: the figure faces the front of its base.
+    eyes are (centre, radii) pairs on the straight solid. They ride on the head joint.
+    """
+    import export_model as ex   # export_model.py imports this file, so this import cannot stand at the top
+    scene = bpy.context.scene
+    frames = (scene.render.fps, scene.frame_start, scene.frame_end)
+    floor, top = heights
+    straight_depth = [f.sample(centre) for centre, _ in eyes]
+    to_rig = bm.HEIGHT_MM / (top - floor)
+    lift = np.array([0.0, 0.0, floor])
+    record = {"joint_mm_per_field_mm": round(float(to_rig), 5), "joint_floor_mm": round(float(floor), 3)}
+
+    # 1. The joints must fit the straight solid. On the website build every joint lies inside its
+    #    solid, but for the two wing roots: they stand about 1 mm behind the back.
+    depth = {name: f.sample(np.array(place) / to_rig + lift) for name, place in joints.items() if not name.endswith("-end")}
+    far = sorted(name for name, value in depth.items() if value > JOINT_SLACK_MM)
+    if far:
+        raise SystemExit(f"Joints outside the solid: {', '.join(far)}. Measure rig-joints.json again for this base mesh.")
+    record["joints"] = {"inside": sum(1 for value in depth.values() if value < 0.0),
+                        "outside_by_mm": {name: round(float(value), 2) for name, value in depth.items() if value >= 0.0}}
+
+    # 2. The dense surface and its small copy, in the millimetres of the joints.
+    points, tris, quads = surface_of(f)
+    dense_ob = largest_shell_object("Brundlefly-pose", (points - lift) * to_rig, tris, quads)
+    proxy = ex.decimated(dense_ob, PROXY_TRIS, "Brundlefly-pose-proxy")
+    rig_eyes = [{"centre_mm": list((centre - lift) * to_rig), "radii_mm": list(radii * to_rig)} for centre, radii in eyes]
+    arm = ex.add_skeleton(proxy, joints, (0.0, 0.0), rig_eyes)
+    record["rigid_ends"] = {f"{side}-{end}": rigid_end(proxy, joints, f"{side}-{end}") for side in ("left", "right") for end in RIGID_ENDS}
+    record["wing_weights_off_body"] = wings_off_body(proxy, f, lambda rig_points: rig_points / to_rig + lift)
+    action = arm.animation_data.action
+    arm.animation_data.action = None                 # the idle clip must not move the stance
+
+    # 3. The weights go to the dense surface while the skeleton is at rest.
+    for o in scene.objects:
+        o.select_set(False)
+    bpy.context.view_layer.objects.active = dense_ob
+    dense_ob.select_set(True)
+    transfer = dense_ob.modifiers.new("Weights", "DATA_TRANSFER")
+    transfer.object = proxy
+    transfer.use_vert_data = True
+    transfer.data_types_verts = {"VGROUP_WEIGHTS"}
+    transfer.vert_mapping = "POLYINTERP_NEAREST"
+    transfer.layers_vgroup_select_src = "ALL"
+    transfer.layers_vgroup_select_dst = "NAME"
+    bpy.ops.object.datalayout_transfer(modifier=transfer.name)
+    bpy.ops.object.modifier_apply(modifier=transfer.name)
+    dense_ob.modifiers.new("Armature", "ARMATURE").object = arm
+    rest = vertex_array(dense_ob.data)
+    normals = np.empty(len(rest) * 3)
+    dense_ob.data.vertex_normals.foreach_get("vector", normals)
+    normals = normals.reshape(-1, 3)
+    probe = slice(None, None, max(1, len(rest) // 500))
+    if np.mean([f.sample(point) for point in (rest[probe] + normals[probe] * 0.5) / to_rig + lift]) < 0.0:
+        normals = -normals                               # the surface came out with its faces turned inward
+    unbound = sum(1 for v in dense_ob.data.vertices if not v.groups)
+    if unbound:
+        raise SystemExit(f"{unbound} vertices of the dense surface took no skin weights.")
+
+    # 4. The stance, as export_model.bake_stance sets it, without the turn of the whole body.
+    ex.pose_skeleton(arm, stance)
+    head = arm.pose.bones["head"].matrix @ arm.data.bones["head"].matrix_local.inverted()
+    deps = bpy.context.evaluated_depsgraph_get()
+    posed = vertex_array(dense_ob.evaluated_get(deps).data)
+    edges = np.empty(len(dense_ob.data.edges) * 2, dtype=np.int32)
+    dense_ob.data.edges.foreach_get("vertices", edges)
+    edges = edges.reshape(-1, 2)
+    stretch = np.linalg.norm(posed[edges[:, 0]] - posed[edges[:, 1]], axis=1) / np.maximum(np.linalg.norm(rest[edges[:, 0]] - rest[edges[:, 1]], axis=1), 1e-9)
+    record["edge_stretch"] = {"largest": round(float(stretch.max()), 2), "over_1.5": int((stretch > 1.5).sum()), "under_0.5": int((stretch < 0.5).sum()), "edges": len(edges)}
+    names = [g.name for g in dense_ob.vertex_groups]
+    owner = np.array([names[max(v.groups, key=lambda g: g.weight).group] for v in dense_ob.data.vertices])
+    faces = np.empty(len(dense_ob.data.polygons) * 3, dtype=np.int32)
+    dense_ob.data.polygons.foreach_get("vertices", faces)
+
+    # 5. Back to the millimetres of the field. The lowest sole goes back to the height it had.
+    drop = float(posed[:, 2].min() - rest[:, 2].min())
+    back = lambda rig_points: (rig_points - np.array([0.0, 0.0, drop])) / to_rig + lift
+    surface = back(posed)
+    record["sole_lift_mm"] = round(-drop / to_rig, 3)
+    record["lowest_sole_mm"] = {side: {"straight": round(float(rest[owner == f"{side}-foot", 2].min() / to_rig + floor), 3),
+                                       "posed": round(float(surface[owner == f"{side}-foot", 2].min()), 3)} for side in ("left", "right")}
+    record["bounds_mm"] = [[round(float(c), 2) for c in surface.min(axis=0)], [round(float(c), 2) for c in surface.max(axis=0)]]
+    room = BAND * f.h + 0.5
+    if (surface.min(axis=0) < f.lo + room).any() or (surface.max(axis=0) > f.lo + (f.n - 1) * f.h - room).any():
+        raise SystemExit(f"The posed figure leaves the grid: {record['bounds_mm']}.")
+    # The posed surface can pass through itself, at a fold or where two parts meet. The level set
+    # of such a surface is the solid that it encloses. Its distances inside are then wrong near
+    # the hidden faces, so the field is made a second time from its own clean surface.
+    shape = tuple(int(n) for n in f.n)
+    first = level_set((surface - f.lo) / f.h, tris=faces.reshape(-1, 3))
+    clean, clean_tris, clean_quads = first.convertToPolygons(0.0, 0.0)
+    f.F = dense(level_set(clean, tris=clean_tris, quads=clean_quads), shape) * f.h
+    f.M[f.F < 2.0] = bm.FLESH
+
+    turn = np.array(head.to_3x3())
+    shift = np.array(head.translation)
+    placed = [(back((centre - lift) * to_rig @ turn.T + shift), turn) for centre, _ in eyes]
+    # Each globe centre must lie as deep under the posed skin as it lay under the straight skin.
+    record["eye_centre_depth_mm"] = {"straight": [round(-float(d), 2) for d in straight_depth], "posed": [round(-f.sample(centre), 2) for centre, _ in placed]}
+    w, x, y, z = head.to_quaternion()
+    record["head_turn_degrees"] = round(float(np.degrees(2.0 * np.arccos(min(abs(w), 1.0)))), 2)
+    # For the steps after the pose and for --dump-field: the posed surface, the joint that each
+    # point follows most, the same points in the straight stand with their normals, and each joint
+    # before and after the pose.
+    spots = [name for name in joints if name in arm.pose.bones]
+    record["posed"] = {"points": surface, "owner": owner, "rest": rest / to_rig + lift, "normals": normals, "joints": np.array(spots),
+                       "joints_rest": np.array([joints[name] for name in spots]) / to_rig + lift,
+                       "joints_posed": back(np.array([arm.pose.bones[name].head for name in spots]))}
+
+    for ob in (dense_ob, proxy):
+        mesh = ob.data
+        bpy.data.objects.remove(ob)
+        bpy.data.meshes.remove(mesh)
+    skeleton = arm.data
+    bpy.data.objects.remove(arm)
+    bpy.data.armatures.remove(skeleton)
+    bpy.data.actions.remove(action)
+    scene.render.fps, scene.frame_start, scene.frame_end = frames
+    return placed, record
+
+
+def skin_tree(points):
+    tree = KDTree(len(points))
+    for index, point in enumerate(points.tolist()):
+        tree.insert(point, index)
+    tree.balance()
+    return tree
+
+
+def fuse_slots(f, skin, straight, owner):
+    """Fill each slot that the pose made narrower than SLOT_MM. Returns a record of each slot filled.
+
+    A closing fills every slot under SLOT_MM: the solid grows by half of it and shrinks back.
+    Most of what it fills is the sculpted folds of the skin, which the straight model has too.
+    Those stay. A slot is filled only where the pose brought its walls together: the skin points
+    around it were farther apart in the straight stand. skin and straight are the same points
+    after and before the pose. owner names the joint that each point follows most.
+    """
+    half = SLOT_MM / 2
+    shape = tuple(int(n) for n in f.n)
+    grid = vdb.FloatGrid(float(BAND))
+    grid.copyFromArray(np.ascontiguousarray(f.F / f.h, dtype=np.float32))
+    grown, tris, quads = grid.convertToPolygons(half / f.h, 0.0)
+    closed = dense(level_set(grown, tris=tris, quads=quads), shape) * f.h + half
+    cells = [tuple(cell) for cell in np.argwhere((closed < 0) & (f.F >= 0)).tolist()]
+    pool, tree, filled = set(cells), skin_tree(skin), []
+    steps = [(i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1) for k in (-1, 0, 1) if (i, j, k) != (0, 0, 0)]
+    for start in cells:
+        if start not in pool:
+            continue
+        pool.discard(start)
+        slot, stack = [start], [start]
+        while stack:
+            x, y, z = stack.pop()
+            for i, j, k in steps:
+                other = (x + i, y + j, z + k)
+                if other in pool:
+                    pool.discard(other)
+                    slot.append(other)
+                    stack.append(other)
+        volume = len(slot) * f.h ** 3
+        if volume < SLOT_MIN_MM3:
+            continue
+        # How much closer the pose brought the skin around the slot, at up to 60 of its cells.
+        closer, joints = [], {}
+        for cell in slot[:: max(1, len(slot) // 60)]:
+            near = [index for _, index, _ in tree.find_range(np.array(cell) * f.h + f.lo, half + 0.5)]
+            if len(near) < 2:
+                continue
+            first = near[0]
+            closer.append(float((np.linalg.norm(straight[near] - straight[first], axis=1) - np.linalg.norm(skin[near] - skin[first], axis=1)).max()))
+            for index in near:
+                joints[owner[index]] = joints.get(owner[index], 0) + 1
+        if not closer or float(np.median(closer)) < SLOT_NARROWED_MM:
+            continue
+        index = np.array(slot)
+        lo, hi = np.maximum(index.min(axis=0) - 2, 0), np.minimum(index.max(axis=0) + 3, f.n)
+        box = tuple(slice(int(a), int(b)) for a, b in zip(lo, hi))
+        mask = np.zeros(tuple(int(b - a) for a, b in zip(lo, hi)), dtype=bool)
+        mask[tuple((index - lo).T)] = True
+        mask = max_filter(mask, 2)
+        f.F[box] = np.where(mask, np.minimum(f.F[box], closed[box]), f.F[box])
+        filled.append({"volume_mm3": round(volume, 2), "centre_mm": [round(float(c), 1) for c in index.mean(axis=0) * f.h + f.lo],
+                       "walls_closer_by_mm": round(float(np.median(closer)), 2),
+                       "joints": [str(name) for name in sorted(joints, key=joints.get, reverse=True)[:2]]})
+    return filled
+
+
+def brace_wing_roots(f, skin, owner):
+    """Grow each wing where it leaves the body. Returns the volume added in cubic millimetres.
+
+    thicken() does not grow a thin part within about 1.3 mm of a thick one: it reads the depth
+    of the thick part there. So the root of a wing stays as thin as the generator made it, and
+    the turn of the wing joint stretches the membrane at that same place. The root is where a
+    printed wing breaks. Each wing grows by WING_ROOT_GROWTH_MM on each side over its first
+    WING_ROOT_MM millimetres, and the growth fades out over the next millimetre.
+    skin is the posed surface. owner names the joint that each of its points follows most.
+    """
+    out_of_body = body_distance(f, reach=WING_ROOT_MM + 2.0)
+    cells = np.clip(np.rint((skin[np.char.find(owner, "wing") >= 0] - f.lo) / f.h).astype(int), 0, f.n - 1)
+    out = out_of_body[tuple(cells.T)]
+    cells, out = cells[out < WING_ROOT_MM + 1.0], out[out < WING_ROOT_MM + 1.0]
+    if not len(cells):
+        return 0.0
+    lo, hi = np.maximum(cells.min(axis=0) - 8, 0), np.minimum(cells.max(axis=0) + 9, f.n)
+    box = tuple(slice(int(a), int(b)) for a, b in zip(lo, hi))
+    t = np.clip((WING_ROOT_MM + 1.0 - out) / 1.0, 0.0, 1.0)
+    weight = np.zeros(tuple(int(b - a) for a, b in zip(lo, hi)), dtype=np.float32)
+    np.maximum.at(weight, tuple((cells - lo).T), (t * t * (3.0 - 2.0 * t)).astype(np.float32))
+    growth = box_blur(max_filter(weight, 4), 2) * WING_ROOT_GROWTH_MM      # 4 voxels reach from each face to the middle of the membrane
+    before = int((f.F[box] < 0).sum())
+    f.F[box] = (f.F[box] - growth).astype(np.float32)
+    return float(int((f.F[box] < 0).sum()) - before) * f.h ** 3
+
+
+def carried_colours(colour_fn, skin, straight, normals):
+    """A colour function for the posed solid: each point takes the colour that its skin has in the straight stand.
+
+    The sheet views show the straight stand, so they cannot be projected onto the posed solid.
+    """
+    colours = colour_fn(straight, normals)
+    tree = skin_tree(skin)
+
+    def colour(xyz, normal):
+        return colours[[tree.find(point)[1] for point in xyz.tolist()]]
+
+    return colour
 
 
 def erase_all_eyes(views):
@@ -920,13 +1313,41 @@ def main():
         erase_all_eyes(views)
     if args.rebuild_back:
         rebuild_back(f, zmax)
+    placed = None
     if printing:
+        if args.stance:
+            # The frame of the joints, on this build. The website build keeps the claw tips under
+            # the toes, and its lowest point is one of them. This build removes them. So the floor
+            # of that frame is the lowest point of the source surface, and not of this solid.
+            source_floor = float(level_set((points - LO) / h, tris=tris).convertToPolygons(0.0, 0.0)[0][:, 2].min()) * h + LO[2]
+            heights = (source_floor, float(surface_of(f)[0][:, 2].max()))
         stats["max_growth_mm"] = round(thicken(f, args.min_radius, args.max_growth), 3)
+        if args.stance:
+            # The pose comes after the steps that read the sheet views: they need the straight stand.
+            # It comes before the base and the eyes: the base lies under the new footprint, and the
+            # eyes are found on the straight head and then ride on the head joint.
+            with open(args.stance) as fh:
+                stance = json.load(fh)
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "rig-joints.json")) as fh:
+                joints = json.load(fh)["joints_mm"]
+            found = [(eye_centre(f, eye["x"], eye["z"], radii[1] * EYE_SET_BACK), bm.V(*radii)) for eye, radii in zip(eye_spots, EYE_RADII)]
+            placed, pose = pose_solid(f, stance, joints, [(c, r) for c, r in found if c is not None], heights)
+            placed = [placed.pop(0) if c is not None else (None, None) for c, _ in found]
+            dump = pose.pop("posed")
+            if args.dump_field:
+                np.savez_compressed(os.path.join(args.out, "pose.npz"), **dump)
+            # A turned joint stretches the skin beside it, and a stretched membrane is thinner. So thin parts grow once more.
+            pose["max_growth_after_pose_mm"] = round(thicken(f, args.min_radius, args.max_growth), 3)
+            pose["wing_root_brace_mm3"] = round(brace_wing_roots(f, dump["points"], dump["owner"]), 1)
+            pose["slots_filled"] = fuse_slots(f, dump["points"], dump["rest"], dump["owner"])
+            if getattr(f, "colour_fn", None) is not None:
+                f.colour_fn = carried_colours(f.colour_fn, dump["points"], dump["rest"], dump["normals"])
+            stats["stance"] = {"file": os.path.basename(args.stance), **pose}
         stats["base"] = add_base(f)
         if args.dimples:
             f.dimples = add_dimples(f, zmax)
     # The eyes come after the thickening step. That step grows thin edges, and it would close the sockets.
-    eyes = add_eyes(f, eye_spots, solid=printing)
+    eyes = add_eyes(f, eye_spots, solid=printing, placed=placed)
     anchors = {}
     face = f.raycast(head + bm.V(0, -40.0, -2.0), bm.V(0, 1, 0), max_dist=60.0)
     if face is not None:

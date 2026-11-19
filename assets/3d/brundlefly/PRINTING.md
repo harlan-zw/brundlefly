@@ -210,6 +210,18 @@ The renders are named `<view>-colour.png`. Copy them to `previews/<view>.png`.
 
 For the website model, add `--variant web --paint-dir $V/premium` to the build and `--web --glb-tris 66000 --texture-size 2048 --relief-size 1024 --image-quality 80` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes. The frames in `source/views/premium/head.json` and `head-views.json` also fit this base mesh only. Then run `node $D/compact_glb.ts <exported file> $D/brundlefly-web.glb`. The export reads `field.npz` from the build folder for the fold shadow, so the build needs `--dump-field`.
 
+To give the print model the stance of the website model, add `--stance $D/source/stance.json` to the print build. The export and the checks do not change. Without the flag, the print model keeps the straight stand.
+
+- The build poses the solid after it grows the thin parts, and before it adds the base and the eyes. The steps before the pose read the sheet views, and those views show the straight stand.
+- The build binds the dense surface to the skeleton of `source/rig-joints.json` and turns the joints as `export_model.py` does for the website model. The posed surface becomes the solid again. The skin weights come from a copy of 66,000 triangles.
+- The turn of the whole body in `stance.json` is left out. The figure faces the front of its base.
+- Each hand, small hand, and foot stays in one piece, and the skin of the body does not follow a wing. The automatic weights tear a finger and leave a ragged step on the back when the solid is posed.
+- After the pose, thin parts grow once more. Each wing also grows by 0.35 mm on each side over its first 3 mm from the body: the turn of the wing joint stretches the membrane there. Then each slot that the pose made narrower than 1.2 mm is filled. A slot under 1 mm does not print clean.
+- The base lies under the new footprint. The globe and the lids of each eye take the turn of the head joint.
+- The posed figure is lower than the straight one, and the file is still 80 mm tall. So each part is about 3 percent larger than on the straight model.
+- `build-stats.json` records the pose under `stance`: the fit of the joints, the stretch of the skin, the height of each sole, and each slot filled.
+- The colours of the preview follow the skin through the pose.
+
 `build_model.py` holds the field library that `build_from_mesh.py` uses. It also holds a first, script-built figure, which is retired.
 
 The scripts are Python where Blender, trimesh, or scipy make it necessary. The check runner is TypeScript.
