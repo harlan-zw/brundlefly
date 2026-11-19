@@ -71,7 +71,7 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   // Glassy dark chitin. Its flat facets catch sharp glints from the wet environment.
   const chitin = new MeshPhysicalMaterial({ color: '#4A4F44', map: textures.chitin, bumpMap: textures.chitin,
     bumpScale: 0.12, roughness: 0.42, clearcoat: 1, clearcoatRoughness: 0.1 })
-  const eggs = createEggSacs(textures.egg, textures.chitin)
+  const eggs = createEggSacs(textures.egg, textures.chitin, textures.floor)
   root.add(eggs.root)
 
   const floorSkin = createTissueMaterial({ surface: 'floor', texture: textures.floor, color: '#867461',
@@ -192,7 +192,7 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   root.add(occlusion)
 
   // Spores, low mist, and one light shaft give the dark some depth.
-  const air = createAir(quality)
+  const air = createAir(quality, textures.floor)
   root.add(air.root)
 
   const ambient = new HemisphereLight(new Color('#A4B5A0'), new Color('#080B08'), 0.85)

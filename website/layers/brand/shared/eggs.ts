@@ -1,11 +1,12 @@
 import {
-  CatmullRomCurve3, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, SphereGeometry,
+  CatmullRomCurve3, Color, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, SphereGeometry,
   TubeGeometry, Vector3,
 } from 'three'
 import type { BufferGeometry, Material, Texture } from 'three'
+import { eggGlow, eggPulse } from './egg-pulse'
 import { createFloorDecalGeometry } from './floor-surface'
 import type { FloorSpot } from './floor-surface'
-import { createContactShadowMaterial } from './floor-marks'
+import { createContactShadowMaterial, createFloorGlowMaterial } from './floor-marks'
 import { sceneLayout } from './scene-layout'
 
 export type EggSacInput = { time: number, breath: number, wetness: number }
@@ -29,8 +30,11 @@ function shellGeometry() {
   return geometry
 }
 
-/** Floor-edge sacs preserve the central walking corridor and contain no additional characters. */
-export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
+/**
+ * Floor-edge sacs preserve the central walking corridor and contain no additional characters.
+ * `floorTexture` is the floor's colour map. The glow that the sacs cast on the floor reads it.
+ */
+export function createEggSacs(eggTexture: Texture, chitinTexture: Texture, floorTexture: Texture) {
   const root = new Group()
   root.name = 'Floor egg sacs'
   const geometries = new Set<BufferGeometry>()
@@ -39,10 +43,12 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
   const sphere = new SphereGeometry(1, 14, 10)
   geometries.add(geometry)
   geometries.add(sphere)
+  // The first membrane glows olive, like slime. The other two glow rust, like the flesh.
+  const glowColors = ['#777648', '#AA604B', '#AA604B']
   const shells = ['#989273', '#896361', '#A27560'].map((color, index) => {
     const material = new MeshPhysicalMaterial({ color, map: eggTexture, bumpMap: eggTexture,
       bumpScale: 0.026, transparent: true, opacity: 0.66, roughness: 0.23,
-      emissive: index === 0 ? '#777648' : '#AA604B', emissiveMap: eggTexture, emissiveIntensity: 0.32,
+      emissive: glowColors[index]!, emissiveMap: eggTexture, emissiveIntensity: 0.32,
       clearcoat: 1, clearcoatRoughness: 0.09, transmission: 0.04, thickness: 0.09,
       ior: 1.36, depthWrite: false })
     materials.add(material)
@@ -60,6 +66,7 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
 
   const animated: { body: Group, core: Group, phase: number, height: number, base: Vector3 }[] = []
   const shadows: FloorSpot[] = []
+  const glows: FloorSpot[] = []
   const clusters = sceneLayout.eggs.map(([x, z], index) => ({ x, z, side: index === 0 ? -1 : 1 }))
   const heights = [1.29, 0.79, 1.06, 0.59]
   for (const [clusterIndex, cluster] of clusters.entries()) {
@@ -74,7 +81,11 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
       root.add(body)
       // The sac is twice its model size. Its shade reaches a little past its widest fold.
       shadows.push({ x: body.position.x, z: body.position.z, radius: radius * 2 * 2.2, data: [1, 0, 0, 0] })
-      const shell = new Mesh(geometry, shells[(index + clusterIndex) % shells.length]!)
+      const membrane = (index + clusterIndex) % shells.length
+      // The sac's own colour spills on the floor around it. The fourth number names the sac whose pulse the spill follows.
+      const spill = new Color(glowColors[membrane]!).multiplyScalar(0.8)
+      glows.push({ x: body.position.x, z: body.position.z, radius: radius * 2 * 3.4, data: [spill.r, spill.g, spill.b, animated.length] })
+      const shell = new Mesh(geometry, shells[membrane]!)
       shell.position.set(0, height / 2, 0)
       shell.scale.set(radius, height / 2, radius * (0.88 + index % 2 * 0.13))
       shell.rotation.z = cluster.side * (0.07 + index % 2 * 0.09)
@@ -108,13 +119,23 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
     }
   }
 
+  // Each sac's glow reaches the floor as a painted mark, not a lamp. A lamp would cost every material in the room.
+  const glowLevels = new Float32Array(animated.length).fill(1)
+  const glowGeometry = createFloorDecalGeometry(glows)
+  const glowMaterial = createFloorGlowMaterial(glowLevels, floorTexture)
+  geometries.add(glowGeometry)
+  materials.add(glowMaterial)
+  const floorGlow = new Mesh(glowGeometry, glowMaterial)
+  floorGlow.renderOrder = 1
+  root.add(floorGlow)
   // Soft shade under each sac seats it on the floor. No shadow map is involved.
+  // It draws after the glow, so the sac blocks its own light where it touches the floor.
   const shadowGeometry = createFloorDecalGeometry(shadows)
   const shadowMaterial = createContactShadowMaterial()
   geometries.add(shadowGeometry)
   materials.add(shadowMaterial)
   const shade = new Mesh(shadowGeometry, shadowMaterial)
-  shade.renderOrder = 1
+  shade.renderOrder = 2
   root.add(shade)
 
   return {
@@ -122,8 +143,11 @@ export function createEggSacs(eggTexture: Texture, chitinTexture: Texture) {
     update({ time, breath, wetness }: EggSacInput) {
       const response = Math.min(1, Math.max(0, breath))
       const wet = Math.min(1, Math.max(0, wetness))
-      for (const { body, core, phase, height, base } of animated) {
-        const pulse = Math.sin(time * 0.55 + phase)
+      for (let index = 0; index < animated.length; index++) {
+        const { body, core, phase, height, base } = animated[index]!
+        const pulse = eggPulse(time, phase)
+        // The floor light swells and wavers with the sac that casts it.
+        glowLevels[index] = eggGlow(time, phase, breath)
         body.scale.set(2 * (1 + pulse * 0.018 * response), 2 * (1 + pulse * 0.032 * response), 2 * (1 + pulse * 0.014 * response))
         core.position.set(base.x + Math.sin(time * 0.31 + phase) * 0.008 * response,
           base.y + Math.sin(time * 0.4 + phase) * height * 0.008 * response, base.z)

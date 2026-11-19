@@ -2,7 +2,7 @@ import {
   AdditiveBlending, BufferGeometry, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, Mesh,
   PlaneGeometry, Points, PointsMaterial, ShaderMaterial, Vector3,
 } from 'three'
-import type { Material } from 'three'
+import type { Material, Texture } from 'three'
 import { createFloorDecalGeometry, floorSurface } from './floor-surface'
 import { createFloorGlowMaterial } from './floor-marks'
 import { fogSurvival, fogUniforms } from './fog-fade'
@@ -135,7 +135,7 @@ void main() {
 }
 
 /** One soft shaft falls from a crack in the roof. It is a cone that adds light. It is no lamp, so it costs the other materials nothing. */
-function createShaft(airTime: { value: number }) {
+function createShaft(airTime: { value: number }, floorTexture: Texture) {
   const top = new Vector3(...shaft.top), foot = new Vector3(...shaft.foot)
   const length = top.distanceTo(foot)
   const geometry = new CylinderGeometry(shaft.topRadius, shaft.footRadius, length, 28, 1, true)
@@ -170,10 +170,10 @@ void main() {
   cone.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), top.clone().sub(foot).normalize())
   cone.renderOrder = 2
   // A pale pool marks the landing. It breathes with the shaft.
-  const pool = new Color(cream).multiplyScalar(0.16)
+  const pool = new Color(cream).multiplyScalar(1.8)
   const level = new Float32Array([1])
   const poolGeometry = createFloorDecalGeometry([{ x: foot.x, z: foot.z, radius: shaft.footRadius * 1.5, data: [pool.r, pool.g, pool.b, 0] }])
-  const poolMaterial = createFloorGlowMaterial(level)
+  const poolMaterial = createFloorGlowMaterial(level, floorTexture)
   const landing = new Mesh(poolGeometry, poolMaterial)
   landing.renderOrder = 1
   return {
@@ -185,9 +185,10 @@ void main() {
 /**
  * The air of the lair: drifting spores, low mist, and one light shaft.
  * `spores` is the share of the full spore count. `haze` turns on the mist and the shaft.
+ * `floorTexture` is the floor's colour map, which the shaft's landing mark reads. The renderer owns it.
  * Every motion reads the time that `update` receives. Nothing here reads a clock.
  */
-export function createAir(quality: AirQuality) {
+export function createAir(quality: AirQuality, floorTexture: Texture) {
   const root = new Group()
   root.name = 'Lair air'
   const airTime = { value: 0 }
@@ -206,7 +207,7 @@ export function createAir(quality: AirQuality) {
     geometries.add(mist.geometry)
     materials.add(mist.material)
   }
-  const lightShaft = quality.haze ? createShaft(airTime) : undefined
+  const lightShaft = quality.haze ? createShaft(airTime, floorTexture) : undefined
   if (lightShaft) {
     root.add(...lightShaft.objects)
     lightShaft.geometries.forEach(value => geometries.add(value))

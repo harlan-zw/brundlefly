@@ -1,15 +1,25 @@
 import { AdditiveBlending, Color, CustomBlending, DoubleSide, OneMinusSrcAlphaFactor, ShaderMaterial, SrcAlphaFactor } from 'three'
+import type { Texture } from 'three'
+import { floorSurface } from './floor-surface'
 import { fogSurvival, fogUniforms } from './fog-fade'
+
+const glsl = (value: number) => `(${value.toFixed(4)})`
 
 const markVertex = `
 attribute vec3 spot;
 attribute vec4 spotData;
+uniform mat3 uFloorUv;
 varying vec2 vReach;
 varying vec4 vSpotData;
+varying vec2 vFloorUv;
 #include <fog_pars_vertex>
 void main() {
   vReach = (position.xz - spot.xy) / spot.z;
   vSpotData = spotData;
+  // The floor's own texture coordinates at this point, so a mark can read the floor's colour.
+  vec2 lattice = vec2((position.x - ${glsl(-floorSurface.width / 2)}) / ${glsl(floorSurface.width)},
+    1.0 - (position.z - ${glsl(floorSurface.z - floorSurface.depth / 2)}) / ${glsl(floorSurface.depth)});
+  vFloorUv = (uFloorUv * vec3(lattice, 1.0)).xy;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mvPosition;
   #include <fog_vertex>
@@ -49,27 +59,31 @@ void main() {
 
 /**
  * Light that falls on the floor, for createFloorDecalGeometry. It is a fake: no lamp exists, so no other material pays for it.
- * A spot's first three data numbers are its colour. The fourth is its index in `levels`, the live strength of each light source.
- * The caller owns `levels` and writes it each frame. The glow takes fog: it adds light, so fog removes its share.
+ * The light is multiplied by the floor's own texture, as real light is. A flat tint would read as paint over the floor.
+ * A spot's first three data numbers are its light colour. The fourth is its index in `levels`, the live strength of each light source.
+ * The caller owns `levels` and writes it each frame. The renderer owns `floor`. The glow takes fog: it adds light, so fog removes its share.
  */
-export function createFloorGlowMaterial(levels: Float32Array) {
+export function createFloorGlowMaterial(levels: Float32Array, floor: Texture) {
   return new ShaderMaterial({
     ...onTheFloor,
     blending: AdditiveBlending, fog: true,
     defines: { GLOW_SOURCES: levels.length },
-    uniforms: { ...fogUniforms(), uGlowLevel: { value: levels } },
+    // The floor's material keeps this matrix current. It draws first, so the matrix is ready here.
+    uniforms: { ...fogUniforms(), uGlowLevel: { value: levels }, uFloorMap: { value: floor }, uFloorUv: { value: floor.matrix } },
     vertexShader: markVertex,
     fragmentShader: `
 uniform float uGlowLevel[GLOW_SOURCES];
+uniform sampler2D uFloorMap;
 varying vec2 vReach;
 varying vec4 vSpotData;
+varying vec2 vFloorUv;
 #include <fog_pars_fragment>
 ${fogSurvival}
 void main() {
   float reach = dot(vReach, vReach);
   float light = exp(-reach * 3.4) * (1.0 - smoothstep(0.7, 1.0, sqrt(reach)));
   light *= uGlowLevel[int(vSpotData.w + 0.5)] * fogSurvival();
-  gl_FragColor = vec4(vSpotData.rgb * light, 1.0);
+  gl_FragColor = vec4(texture2D(uFloorMap, vFloorUv).rgb * vSpotData.rgb * light, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`,
