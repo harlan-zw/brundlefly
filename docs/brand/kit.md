@@ -333,6 +333,7 @@ The model keeps its own origin, facing, and materials: +Y is up and the face poi
 If the file has the relief rig's 25 body joints, each with an identity rest rotation, the site poses it with the relief rig's code.
 The model then idles, walks, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
 A full body also takes motion that would tear the relief: a longer stride with a foot lift, a pelvis that twists against the chest, forearms and wings that follow through, and a slow shift of weight while he stands. That motion is addBodyDepth in mascot-pose.ts.
+The site grounds the mesh each frame: the foot that is lower, against its own rest height, rests on the floor. So his body rises and settles with his legs, and no foot sinks into the floor.
 The mesh walks its own route, meshWalk in scene-layout.ts. It is about 2.5 units wide and 2 deep, so the relief rig's route takes it into the egg sacs.
 Nodes named Brundlefly-eye-0 and Brundlefly-eye-1 mark his eyes. The site hides each node and builds the relief rig's eye in its place.
 The built eye uses the relief rig's globe artwork, wet-eye shader, shell lids, blink, squint, and gaze. Their numbers come from referenceEyes in face.ts.

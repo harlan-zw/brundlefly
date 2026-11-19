@@ -138,7 +138,7 @@ export const clipPoses = {
 } as const
 
 /** Whole-figure motion that `addBodyDepth` adds, in rig units, and a bounce for loose parts such as mouthparts. */
-export type BodyDepth = { rootX: number, rootY: number, bounce: number }
+export type BodyDepth = { rootX: number, bounce: number }
 
 /**
  * Adds the motion a full body can take and a flat relief cannot. It runs after `poseBody` and adds to its turns.
@@ -190,5 +190,5 @@ export function addBodyDepth(joint: (name: BodyJointName) => Turnable, input: Ma
   turn('head', 0, 0, shift * 0.012)
   turn('left-wing', 0, 0, Math.sin(time * 0.5 + 1) * 0.03 * still)
   turn('right-wing', 0, 0, -Math.sin(time * 0.5 + 2.2) * 0.02 * still)
-  return { rootX: shift * 0.015, rootY: gait * Math.abs(Math.cos(walkPhase)) * 0.02, bounce }
+  return { rootX: shift * 0.015, bounce }
 }

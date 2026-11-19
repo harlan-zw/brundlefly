@@ -498,3 +498,28 @@ test('standing, his weight shifts from leg to leg while both legs stay upright',
   mascot.pose!({ ...standing, time: Math.PI / 2 / 0.42, gait: 1, walkPhase: 0 })
   close(mascot.root.children[0]!.position.x, 0)
 })
+
+test('through the walk one foot always rests at its floor height and neither foot goes below it', () => {
+  const { scene, joint } = jointedModel()
+  // Legs as chains, with the feet staggered in depth as in the artwork's stance: the left foot forward, the right foot back.
+  for (const [side, depth] of [['left', 6], ['right', -6]] as const) {
+    joint(`${side}-hip`).position.set(side === 'left' ? -8 : 8, 46, 0)
+    joint(`${side}-hip`).add(joint(`${side}-knee`))
+    joint(`${side}-knee`).position.set(0, -16, depth)
+    joint(`${side}-knee`).add(joint(`${side}-foot`))
+    joint(`${side}-foot`).position.set(0, -14, depth / 2)
+  }
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const heights = () => (['left-foot', 'right-foot'] as const).map(name => mascot.root.worldToLocal(joint(name).getWorldPosition(new Vector3())).y)
+  mascot.pose!(standing)
+  const rest = heights()
+  let lifted = 0
+  for (let step = 0; step < 16; step++) {
+    mascot.pose!({ ...standing, gait: 1, walkPhase: step * Math.PI / 8 })
+    const above = heights().map((height, index) => height - rest[index]!)
+    assert.ok(Math.min(...above) > -1e-6, `A foot is below the floor at step ${step}.`)
+    assert.ok(Math.min(...above) < 1e-6, `Both feet are off the floor at step ${step}.`)
+    lifted = Math.max(lifted, ...above)
+  }
+  assert.ok(lifted > 0.02, 'The free foot must lift clear of the floor during a step.')
+})

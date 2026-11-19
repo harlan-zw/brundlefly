@@ -178,6 +178,12 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
   // The fit is in place, so each joint's parent has its final scale inside the mascot.
   root.updateMatrixWorld(true)
+  // A leg that swings on a full body also moves its foot up or down, which a flat relief never shows.
+  // So the figure is grounded each frame: the foot that is lower, measured against its own rest height, rests on the floor.
+  const feet = bodyJoints ? [bodyJoints.get('left-foot')!, bodyJoints.get('right-foot')!] : []
+  const footPoint = new Vector3()
+  const footHeight = (foot: Object3D) => root.worldToLocal(foot.getWorldPosition(footPoint)).y
+  const footRest = feet.map(footHeight)
   const faceJoints = bodyJoints ? findFaceJoints(scene) : undefined
   const eyes = findEyes(scene)
   const eyeNodes = eyes.flatMap(eye => eye.node ? [eye.node] : [])
@@ -290,7 +296,7 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       // The mesh is a full body, so it takes the fuller motion that would tear the relief.
       const depth = addBodyDepth(name => bodyJoints.get(name)!, input)
       pivot.rotation.y = body.root.rotationY
-      pivot.position.set(depth.rootX, body.root.positionY + depth.rootY, 0)
+      pivot.position.set(depth.rootX, 0, 0)
       pivot.scale.y = body.root.scaleY
       // `facing` is 1 for the side the file faces and -1 for the other side. The body turns and the head stays toward the viewer.
       // While he walks, the head keeps half of the turn, so he looks along his path.
@@ -316,6 +322,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
           0, Math.sin(phase + index * 1.7) * 0.07 * body.calm)
         tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2 + depth.bounce * 0.09, 0, 0)
       })
+      // The legs set his height: his body rises as they straighten and settles as each foot lands.
+      pivot.position.y = Math.max(...feet.map((foot, index) => footRest[index]! - footHeight(foot)))
       turnHead(look, input.mannerism?.turns.head)
       aimEyes(input.time, input.eyes ?? { _tag: 'Ahead' })
       // The relief rig's lids blink when the host supplied them. The file's own lid joints then stay at rest.
