@@ -347,8 +347,10 @@ It then turns the lid joints face-upper-lid-0, face-lower-lid-0, face-upper-lid-
 Joints named face-jaw, face-cheek-left, face-cheek-right, face-brow-0, and face-brow-1 move his face, each optional.
 His voice drops and opens the jaw and spreads the cheeks. A raised brow lifts the skin over each eye.
 The travel comes from referenceFace in face.ts, scaled to the model's own units. A file without these joints keeps a still face.
-If the file turns its top node about the vertical, the site mirrors that turn when he walks to the other side, so he faces his path.
-He turns a little before each walk and holds his side while he stands. His head stays toward the viewer at rest.
+If the file turns its top node about the vertical, the site turns that node as he moves. While he walks he faces his direction of travel, up to 1.3 rad from the viewer, so he never turns his back.
+While he stands he holds the file's three-quarter turn, to the side he last faced. He turns to the next side a little before he leaves. His head stays toward the viewer at rest.
+His legs cycle once for each stride of ground he covers. The site measures that stride from the model, so a planted foot does not slide, and it walks the mesh at 1.5 times the relief rig's speed.
+A foot that carries him stays level, so its sole lies flat on the floor.
 Any other file loops its Brundlefly-idle clip, or sways about its feet if it has no clip. That model stands at the mascot start point.
 The scene logs the joint that stopped the pose code, and reports the motion in its data-mascot-motion attribute: posed, clip, or sway.
 If the file has a joint named head, the head turns to the camera while a visitor hovers or the dialog is open. A hover also tilts it.

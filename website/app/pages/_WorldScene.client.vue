@@ -10,7 +10,7 @@ import {
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
-import { advanceFacing, advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
+import { advanceHeading, advanceStroll, startStroll, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
@@ -280,8 +280,8 @@ watch(canvas, async (element) => {
     ? position => overMascot((position.x + 1) * renderWidth / 2, (1 - position.y) * renderHeight / 2)
     : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
   let stroll = startStroll(sceneLayout.mascot, 0)
-  // The side the mesh faces. The relief rig is flat artwork and always faces screen right.
-  let facing = 1
+  // The mesh's turn about the vertical. The relief rig is flat artwork and always faces screen right.
+  let heading = mascot._tag === 'Mesh' ? mascot.restHeading : 0
   let elapsed = 0
   let faceElapsed = 0
   // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
@@ -291,6 +291,11 @@ watch(canvas, async (element) => {
   const walks = mascot._tag === 'Relief' || meshPose !== undefined
   // The mesh is a full body, so it walks a route that keeps it clear of the egg sacs.
   const route = meshPose ? sceneLayout.meshWalk : sceneLayout.walk
+  // His legs cycle once for each stride of ground he covers, so a planted foot does not slide. The relief rig keeps its own cadence.
+  const stride = mascot._tag === 'Mesh' ? mascot.strideLength : undefined
+  const meshCadence = stride ? Math.PI * 2 / (stride * figure.scale.x) : undefined
+  // A full body reads as heavy at about one walk cycle in 1.6 seconds. That needs more speed than the relief rig's short cycle.
+  const walkPace = meshPose ? 1.5 : 1
   mascotMotion.value = walks ? 'posed' : mascot._tag === 'Mesh' && mascot.motion._tag === 'Clip' ? 'clip' : 'sway'
   if (mascot._tag === 'Mesh' && mascot.poseGap) console.warn(`The Brundlefly mesh keeps its own motion. ${mascot.poseGap}`)
   let lastReaction = reaction
@@ -352,10 +357,15 @@ watch(canvas, async (element) => {
     const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
     // A mesh without the relief rig's joints stands where the relief rig starts.
+    const walkSpeed = settings.value.walkSpeed * walkPace
+    // Only the part of his travel that lies along his facing moves his legs. He cannot turn his back, so some legs of the route are partly sideways.
+    const along = meshPose ? Math.max(0.35, Math.cos(travelYaw(stroll, route) - heading)) : 1
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
-      pauses: sceneLayout.walkPauses, walkSpeed: settings.value.walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free' })
-    if (meshPose && faceMotion && visibility.value === 'visible') facing = advanceFacing(facing, stroll, route, delta)
-    const pose = faceMotion ? strollPose(stroll, settings.value.walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
+      pauses: sceneLayout.walkPauses, walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free',
+      cadence: meshCadence ? meshCadence * along : undefined })
+    if (mascot._tag === 'Mesh' && meshPose && faceMotion && visibility.value === 'visible') heading = advanceHeading(heading, stroll,
+      { delta, route, walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3 })
+    const pose = faceMotion ? strollPose(stroll, walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
     figure.rotation.y = stroll.heading
     if (environmentMotion.value) elapsed += delta
@@ -386,7 +396,7 @@ watch(canvas, async (element) => {
         brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
           : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
         squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 }
-      if (meshPose) meshPose(input, look, facing)
+      if (meshPose) meshPose(input, look, heading)
       else if (mascot._tag === 'Relief') mascot.update(input)
     }
     shadow.position.x = figure.position.x

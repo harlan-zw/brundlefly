@@ -1,4 +1,4 @@
-import { AnimationMixer, Box3, BufferAttribute, Color, DataTexture, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector3 } from 'three'
+import { AnimationMixer, Box3, BufferAttribute, Color, DataTexture, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three'
 import type { AnimationClip, Material } from 'three'
 import { fixationDrift, lookToward, pupilDirection, pupilSize, wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus, Look } from './eye-gaze.ts'
@@ -184,6 +184,46 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   const footPoint = new Vector3()
   const footHeight = (foot: Object3D) => root.worldToLocal(foot.getWorldPosition(footPoint)).y
   const footRest = feet.map(footHeight)
+  const legTurn = new Quaternion()
+  /** Turns the body joints for one frame. The figure's place, face, and eyes follow in `pose`. */
+  function turnJoints(input: MascotPoseInput) {
+    // Some joints only move during a habit. Clearing every joint stops a habit's turn from accumulating across frames.
+    for (const joint of bodyJoints!.values()) joint.rotation.set(0, 0, 0)
+    const body = poseBody(name => bodyJoints!.get(name)!, input)
+    // The mesh is a full body, so it takes the fuller motion that would tear the relief.
+    const depth = addBodyDepth(name => bodyJoints!.get(name)!, input)
+    // A foot that carries him stays level: it undoes the tilt of its leg, so its sole lies flat and no toe goes under the floor.
+    // A lifted foot keeps its own turn.
+    const gait = Math.min(1, Math.max(0, input.gait ?? 0))
+    const lift = gait * Math.cos(input.walkPhase ?? input.time * 3.6)
+    feet.forEach((foot, index) => {
+      legTurn.identity()
+      for (let joint = foot.parent; joint && joint !== stanceNode; joint = joint.parent) legTurn.premultiply(joint.quaternion)
+      foot.quaternion.slerp(legTurn.invert(), 1 - Math.max(0, index === 0 ? lift : -lift))
+    })
+    return { body, depth }
+  }
+  /**
+   * The ground one walk cycle covers, in the mascot's own units: how far each foot travels back under him while it carries him.
+   * The host walks him at this length, so a planted foot does not slide.
+   */
+  function measureStride() {
+    if (!bodyJoints) return undefined
+    const place = (foot: Object3D, walkPhase: number) => {
+      turnJoints({ time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: 1, walkPhase })
+      return root.worldToLocal(foot.getWorldPosition(new Vector3()))
+    }
+    const travel = (foot: Object3D, from: number, to: number) => {
+      const [start, end] = [place(foot, from), place(foot, to)]
+      return Math.hypot(start.x - end.x, start.z - end.z)
+    }
+    // The left foot carries him through the second and third quarters of the cycle, and the right foot through the others.
+    const length = travel(feet[0]!, Math.PI / 2, Math.PI * 1.5) + travel(feet[1]!, Math.PI * 1.5, Math.PI * 2.5)
+    for (const joint of bodyJoints.values()) joint.rotation.set(0, 0, 0)
+    return length > 1e-6 ? length : undefined
+  }
+  const strideLength = measureStride()
+  const turns = Math.abs(stanceYaw) > 1e-3
   const faceJoints = bodyJoints ? findFaceJoints(scene) : undefined
   const eyes = findEyes(scene)
   const eyeNodes = eyes.flatMap(eye => eye.node ? [eye.node] : [])
@@ -289,19 +329,16 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
      * Poses the skeleton with the relief rig's code: idle, walk, speech, and mannerisms. The file's own clip does not run.
      * It exists only for a file with every body joint at an identity rest rotation.
      */
-    pose: bodyJoints ? (input: MascotPoseInput, look?: MeshMascotLook, facing = 1) => {
-      // Some joints only move during a habit. Clearing every joint stops a habit's turn from accumulating across frames.
-      for (const joint of bodyJoints.values()) joint.rotation.set(0, 0, 0)
-      const body = poseBody(name => bodyJoints.get(name)!, input)
-      // The mesh is a full body, so it takes the fuller motion that would tear the relief.
-      const depth = addBodyDepth(name => bodyJoints.get(name)!, input)
+    pose: bodyJoints ? (input: MascotPoseInput, look?: MeshMascotLook, heading = stanceYaw) => {
+      const { body, depth } = turnJoints(input)
       pivot.rotation.y = body.root.rotationY
       pivot.position.set(depth.rootX, 0, 0)
       pivot.scale.y = body.root.scaleY
-      // `facing` is 1 for the side the file faces and -1 for the other side. The body turns and the head stays toward the viewer.
+      // `heading` is his turn about the vertical: zero faces the viewer and a positive turn faces screen right.
+      // Only a file that turns its own top node can be turned. The body turns and the head stays toward the viewer.
       // While he walks, the head keeps half of the turn, so he looks along his path.
-      const yaw = stanceYaw * Math.max(-1, Math.min(1, facing))
-      if (stanceNode && stanceRest) stanceNode.quaternion.setFromAxisAngle(vertical, yaw).multiply(stanceRest)
+      const yaw = turns ? heading : 0
+      if (turns && stanceNode && stanceRest) stanceNode.quaternion.setFromAxisAngle(vertical, yaw).multiply(stanceRest)
       bodyJoints.get('head')!.rotation.y -= yaw * (1 - Math.min(1, Math.max(0, input.gait ?? 0)) * 0.5)
       // His voice moves the jaw and the cheeks, and a raised brow lifts the skin over each eye, by the relief rig's numbers.
       if (faceJoints) {
@@ -344,6 +381,10 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       if (referenceEyes || eyeNodes.length === 0) return
       referenceEyes = createReferenceEyes(eyes.flatMap(({ node, lid }) => node ? [{ node, lid }] : []), dressing)
     },
+    /** The turn about the vertical that the file gives him at rest: the artwork's three-quarter turn. Zero for a file that cannot be turned. */
+    restHeading: turns ? stanceYaw : 0,
+    /** The ground one walk cycle covers, in the mascot's own units. Undefined for a file whose feet do not move with its legs. */
+    strideLength,
     /** Why the file cannot take the pose code. Undefined when it can. */
     poseGap: found._tag === 'Err' ? found.reason : undefined,
     dispose() {

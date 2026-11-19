@@ -251,27 +251,31 @@ test('a habit keeps its head motion while the head watches the visitor', () => {
   assert.ok(Math.abs(Math.atan2(settled.x, settled.y)) < 0.01, 'The tilt must end with the habit.')
 })
 
-test('a model with a turned root mirrors that turn by side, and its head stays toward the viewer at rest', () => {
+test('a model with a turned root takes a heading, and its head stays toward the viewer at rest', () => {
   const { scene, node, joint } = jointedModel()
   // The file turns its root to the three-quarter stance of the artwork.
   node.rotation.y = 0.5
   const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
   const yaw = (object: Object3D) => { mascot.root.updateMatrixWorld(true); const forward = new Vector3(0, 0, 1).transformDirection(object.matrixWorld); return Math.atan2(forward.x, forward.z) }
+  assert.equal(mascot.restHeading, 0.5)
+  // With no heading he keeps the file's own turn.
   mascot.pose!(standing)
   close(yaw(joint('pelvis')), 0.5)
   close(yaw(joint('head')), 0)
-  mascot.pose!(standing, undefined, -1)
+  mascot.pose!(standing, undefined, -0.5)
   close(yaw(joint('pelvis')), -0.5)
   close(yaw(joint('head')), 0)
   // Mid-turn he faces the viewer squarely.
   mascot.pose!(standing, undefined, 0)
   close(yaw(joint('pelvis')), 0)
-  // At a full stride the head keeps half of the body's turn, so he looks along his path.
-  mascot.pose!({ ...standing, gait: 1, walkPhase: 0 }, undefined, -1)
-  assert.ok(Math.abs(yaw(joint('head')) + 0.25) < 0.05, 'The head must keep part of the turn while he walks.')
+  // At a full stride he faces his travel, and the head keeps half of the body's turn, so he looks along his path.
+  mascot.pose!({ ...standing, gait: 1, walkPhase: 0 }, undefined, -1.2)
+  close(yaw(joint('pelvis')), -1.2)
+  assert.ok(Math.abs(yaw(joint('head')) + 0.6) < 0.05, 'The head must keep part of the turn while he walks.')
   // A file with no root turn does not turn.
   const plain = jointedModel()
   const unturned = ok(createMeshMascot({ scene: plain.scene, animations: [] }, 2.5))
+  assert.equal(unturned.restHeading, 0)
   unturned.pose!(standing, undefined, -1)
   unturned.root.updateMatrixWorld(true)
   assert.ok(plain.node.quaternion.angleTo(new Quaternion()) < 1e-9)
@@ -522,4 +526,14 @@ test('through the walk one foot always rests at its floor height and neither foo
     lifted = Math.max(lifted, ...above)
   }
   assert.ok(lifted > 0.02, 'The free foot must lift clear of the floor during a step.')
+  // A foot that carries him lies level, whatever its leg does. So its sole is flat on the floor.
+  const level = new Quaternion()
+  mascot.pose!({ ...standing, gait: 1, walkPhase: Math.PI * 0.75 })
+  assert.ok(joint('left-hip').quaternion.angleTo(level) > 0.2, 'The leg itself must swing.')
+  assert.ok(joint('left-foot').getWorldQuaternion(new Quaternion()).angleTo(level) < 1e-6, 'The planted left foot must be level.')
+  mascot.pose!({ ...standing, gait: 1, walkPhase: Math.PI * 1.75 })
+  assert.ok(joint('right-foot').getWorldQuaternion(new Quaternion()).angleTo(level) < 1e-6, 'The planted right foot must be level.')
+  assert.ok(joint('left-foot').getWorldQuaternion(new Quaternion()).angleTo(level) > 0.05, 'A lifted foot keeps its own turn.')
+  // One walk cycle covers the ground both feet travel under him. With these legs that is well under his height.
+  assert.ok(mascot.strideLength! > 0.2 && mascot.strideLength! < 2, `The stride must be a plausible length, not ${mascot.strideLength}.`)
 })
