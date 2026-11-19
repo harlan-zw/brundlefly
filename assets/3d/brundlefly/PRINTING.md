@@ -102,6 +102,8 @@ The print model keeps the proportions of the artwork, so some parts are thin.
 - The two wings are about 1.6 mm thick at 80 mm. Each wing is about 2.0 mm or more over its first 3 mm from the body.
 - Fingers, claws, small arms, and mouthparts are 1.6 mm or more.
 - Each long arm is 3.3 mm or more at its elbow and at its wrist. Each small arm is 2.6 mm or more.
+- Each leg is 2.6 mm or more between the foot and the knee. The thinner leg is 2.63 mm there, and the other leg is 2.84 mm.
+- Each foot meets the base over about 150 mm²: 159 mm² and 151 mm², in a slice 0.3 mm above the top of the base.
 - The voxel check reports 14 mm³ under 1.5 mm in the whole model. Each spot is 2.5 mm³ or smaller. They are the front rim of the base, the edge of the smaller wing, and stubs on the back.
 - The check uses 0.25 mm voxels. Read each limit with a tolerance of 0.25 mm.
 
@@ -112,6 +114,7 @@ To thicken further, rebuild with `--min-radius 1.0 --max-growth 0.7`. The figure
 
 - The wings. They are thin and they overhang.
 - The two long arms. Each one reaches forward and out, and only the shoulder holds it.
+- The two ankles. The crouched figure stands on them, and the thinner leg is 2.6 mm.
 - Fingers, claws, and the small arms. Supports attach near them.
 - The hanging mouthparts. They are thin and they start in mid-air.
 - Support scars under the hands, the chin, and the belly. TPU supports are hard to remove cleanly.
@@ -130,6 +133,36 @@ To thicken further, rebuild with `--min-radius 1.0 --max-growth 0.7`. The figure
 - Voxel thickness check at 0.25 mm pitch.
 - Stability: the centre of mass is 17.4 mm inside the footprint edge. The solid model tips at about 28 degrees.
 - PrusaSlicer slice with supports and without supports.
+
+## Changes for printing after the pose
+
+The print model has the stance of the website model. Three parts of it differ from that model, and each one is for the print.
+
+- The hands and the fingers keep their shape from the base mesh. Each hand turns at the wrist as one piece.
+- The site can curl the fingers of the website model. The print model does not take that curl.
+- A rigid hand prints better, and the fingers stay separate. With the automatic weights, some fingers tore into thin sheets.
+- Each wing is thicker at its root. It grows by 0.35 mm on each side over its first 3 mm from the body.
+- That brace adds about 71 mm³ over the two wings. The turn of the wing joint stretches the membrane there, and a printed wing breaks at its root.
+- The pose brings the root of the smaller wing against the shoulder beside it. The slot between them was under 1 mm wide.
+- A slot under 1 mm does not print clean, and supports cannot leave it. So the build fills that slot with about 6 mm³.
+- The smaller wing and that shoulder are one piece there.
+- The build fills 15 smaller slots in the same way. All 16 take about 14 mm³.
+
+The volumes are from `build-stats.json`, which the build writes beside its working file. They are at the scale of the 80 mm file.
+
+## Measurements that are not in the report
+
+`validation-report.json` does not hold these values. Each one is from a single measurement outside this folder, on the 80 mm file.
+
+- The distance to the website model: half of its vertices within 0.2 mm, nine tenths within 0.9 mm.
+- The thickness of each long arm (3.3 mm), of each small arm (2.6 mm), and of each wing root (2.0 mm).
+- The thickness of each leg between the foot and the knee: 2.63 mm and 2.84 mm.
+- The area where each foot meets the base: 159 mm² and 151 mm².
+- The long hand that reaches about 2 mm past the front edge of the base.
+
+Each section of an arm or a leg lies across the line between two joints. Its thickness is the diameter of the largest circle that fits in it.
+On the straight model of commit `a9fac8c`, the same legs are 2.56 mm and 2.76 mm, and the same feet meet the base over 151 mm² and 143 mm².
+The reach of the head and of the larger wing past the base is the difference of two values in the report.
 
 ## Checks the printer must confirm
 
