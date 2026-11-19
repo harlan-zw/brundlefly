@@ -1,7 +1,8 @@
-import { AnimationMixer, Box3, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, Texture, Vector3 } from 'three'
-import type { AnimationClip } from 'three'
-import { fixationDrift, wanderingLook } from './eye-gaze.ts'
+import { AnimationMixer, Box3, BufferAttribute, DataTexture, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector3 } from 'three'
+import type { AnimationClip, Material } from 'three'
+import { fixationDrift, pupilSize, wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus } from './eye-gaze.ts'
+import { createEyeMaterial } from './eye-material.ts'
 import { bodyJointNames, poseBody } from './mascot-pose.ts'
 import type { BodyJointName, MascotPoseInput } from './mascot-pose.ts'
 
@@ -46,7 +47,7 @@ function findMouthparts(scene: Object3D) {
     mouthparts.push({ base, tip: tip && atRest(tip) ? tip : undefined })
   }
 }
-type MeshEye = { node: Object3D | undefined, rest: Quaternion, upperLid: Object3D | undefined, lowerLid: Object3D | undefined }
+type MeshEye = { node: Object3D | undefined, upperLid: Object3D | undefined, lowerLid: Object3D | undefined }
 /** Eyeballs and their lids, from screen left to right. Each part is optional, so a file can have eyes that aim and no lids that blink. */
 function findEyes(scene: Object3D) {
   const eyes: MeshEye[] = []
@@ -57,30 +58,55 @@ function findEyes(scene: Object3D) {
       return lid && atRest(lid) ? lid : undefined
     })
     if (!node && !upperLid && !lowerLid) return eyes
-    eyes.push({ node, rest: node ? node.quaternion.clone() : new Quaternion(), upperLid, lowerLid })
+    eyes.push({ node, upperLid, lowerLid })
   }
 }
 // The iris stays inside the lid opening at these turns, in radians.
 const maxEyeYaw = 0.35
 const maxEyePitch = 0.22
-// A shut eye: the upper lid turns down this far and the lower lid turns up this far, in radians.
-const upperLidClose = 0.6
-const lowerLidClose = 0.2
+// A shut eye: the upper lid turns down this far and the lower lid turns up as far, in radians. The relief rig's lids travel the same.
+const lidClose = 0.96
+/** The relief rig's wet-eye shader draws each eyeball, so both mascots have the same eyes. The file's own eye material is released. */
+function dressEyes(nodes: readonly Object3D[]) {
+  const globes: Mesh[] = []
+  for (const node of nodes) node.traverse((object) => { if (object instanceof Mesh) globes.push(object) })
+  if (globes.length === 0) return undefined
+  // The shader paints the iris and the pupil over a base texture. One blue-black texel is the globe.
+  const globe = new DataTexture(new Uint8Array([10, 13, 17, 255]), 1, 1)
+  globe.colorSpace = SRGBColorSpace
+  globe.needsUpdate = true
+  const eye = createEyeMaterial(globe)
+  const released = new Set<Mesh['material']>()
+  for (const mesh of globes) {
+    if (!released.has(mesh.material)) { released.add(mesh.material); releaseMaterials(mesh) }
+    mesh.material = eye.material
+    // The shader places the iris by the direction of each vertex from the centre of the eyeball.
+    const position = mesh.geometry.getAttribute('position')
+    const directions = new Float32Array(position.count * 3)
+    const direction = new Vector3()
+    for (let index = 0; index < position.count; index++) direction.fromBufferAttribute(position, index).normalize().toArray(directions, index * 3)
+    mesh.geometry.setAttribute('eyeSphere', new BufferAttribute(directions, 3))
+  }
+  return eye
+}
 // One slow cycle of the mouthparts, in radians for each second.
 const mouthpartRate = Math.PI * 2 / 4
 export type MeshMascot = ReturnType<typeof assemble>
 export type MeshMascotResult = { _tag: 'Ok', mascot: MeshMascot } | { _tag: 'Err', reason: string }
 
+function releaseMaterials(mesh: Mesh) {
+  for (const material of (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as Material[]) {
+    for (const value of Object.values(material)) if (value instanceof Texture) value.dispose()
+    material.dispose()
+  }
+}
 /** Releases every GPU resource a loaded model holds. */
 export function releaseMeshSource(scene: Object3D) {
   scene.traverse((object) => {
     if (!(object instanceof Mesh)) return
     object.geometry.dispose()
     if (object instanceof SkinnedMesh) object.skeleton.dispose()
-    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-      for (const value of Object.values(material)) if (value instanceof Texture) value.dispose()
-      material.dispose()
-    }
+    releaseMaterials(object)
   })
 }
 
@@ -124,18 +150,20 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   // Any rest rotation that is not the vertical turn stays as the file has it.
   const stanceRest = stanceNode ? sideTurn.setFromAxisAngle(vertical, stanceYaw).invert().multiply(stanceNode.quaternion).clone() : undefined
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
-  const eyes = bodyJoints ? findEyes(scene) : []
+  const eyes = findEyes(scene)
   const eyeNodes = eyes.flatMap(eye => eye.node ? [eye.node] : [])
+  const wetEye = dressEyes(eyeNodes)
   // Both eyes take one direction, from the point between them, so he never looks cross-eyed.
   const eyeFrame = eyeNodes[0]?.parent
   const betweenEyes = eyeNodes.reduce((sum, node) => sum.add(node.position), new Vector3()).divideScalar(Math.max(1, eyeNodes.length))
-  const gaze = { yaw: 0, pitch: 0 }
+  // The shader takes the gaze in the eyeball's own frame. The file can give the eyeball a rest rotation in the head.
+  const fromHead = eyeNodes[0]?.quaternion.clone().invert()
+  const gaze = { yaw: 0, pitch: 0, pupil: pupilSize('Ahead', 0), shine: 0 }
   let gazedAt: number | undefined
-  const eyeTurn = new Quaternion()
   const watched = new Vector3()
-  /** Eyes snap toward a new target in a saccade, as on the relief rig. Stopped or jumping time sets the gaze at once. */
+  /** Eyes snap toward a new target in a saccade and the pupil eases its size, as on the relief rig. Stopped or jumping time sets both at once. */
   function aimEyes(time: number, focus: EyeFocus) {
-    if (!eyeFrame) return
+    if (!eyeFrame || !fromHead || !wetEye) return
     const drift = fixationDrift(time)
     let yaw = 0, pitch = 0
     if (focus._tag === 'Wander') {
@@ -150,13 +178,16 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       pitch = Math.atan2(watched.y, Math.hypot(watched.x, watched.z)) + drift.y * 0.5 * maxEyePitch
     }
     const delta = gazedAt === undefined ? Infinity : time - gazedAt
-    const blend = delta > 0 && delta < 0.25 ? 1 - Math.exp(-30 * delta) : 1
+    const blend = (rate: number) => delta > 0 && delta < 0.25 ? 1 - Math.exp(-rate * delta) : 1
     gazedAt = time
-    gaze.yaw += (clamp(yaw, maxEyeYaw) - gaze.yaw) * blend
-    gaze.pitch += (clamp(pitch, maxEyePitch) - gaze.pitch) * blend
-    // The turn is in the head's frame. Each eye keeps its own rest rotation under it.
-    eyeTurn.setFromEuler(turn.set(-gaze.pitch, gaze.yaw, 0, 'YXZ'))
-    for (const eye of eyes) eye.node?.quaternion.copy(eyeTurn).multiply(eye.rest)
+    gaze.yaw += (clamp(yaw, maxEyeYaw) - gaze.yaw) * blend(30)
+    gaze.pitch += (clamp(pitch, maxEyePitch) - gaze.pitch) * blend(30)
+    gaze.pupil += (pupilSize(focus._tag, time) - gaze.pupil) * blend(2.5)
+    gaze.shine += ((focus._tag === 'Watch' ? 1 : 0) - gaze.shine) * blend(2.5)
+    // The iris slides under the cornea. The eyeball itself does not turn.
+    watched.set(Math.sin(gaze.yaw) * Math.cos(gaze.pitch), Math.sin(gaze.pitch), Math.cos(gaze.yaw) * Math.cos(gaze.pitch)).applyQuaternion(fromHead)
+    wetEye.updateGaze(watched, gaze.pupil, gaze.shine)
+    wetEye.updateTime(time)
   }
   // The rig contract gives every joint an identity rest rotation, so the head looks along +Z of its parent at rest.
   const head = scene.getObjectByName('head')
@@ -198,6 +229,7 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     facePoint: (target: Vector3) => faceAnchor.getWorldPosition(target),
     /** `time` is seconds of visible motion. Zero is the authored rest pose. `look` applies only to a file with a `head` joint. */
     update(time: number, look?: MeshMascotLook) {
+      wetEye?.updateTime(time)
       if (mixer) mixer.setTime(time)
       else {
         const phase = time * swayRate
@@ -234,8 +266,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       // A squint narrows the smaller, screen-right eye more than the larger one, as on the relief rig.
       eyes.forEach(({ upperLid, lowerLid }, index) => {
         const closure = Math.min(1, body.blink + (input.squint ?? 0) * (index === 0 ? 0.18 : 0.63))
-        upperLid?.rotation.set(closure * upperLidClose, 0, 0)
-        lowerLid?.rotation.set(-closure * lowerLidClose, 0, 0)
+        upperLid?.rotation.set(closure * lidClose, 0, 0)
+        lowerLid?.rotation.set(-closure * lidClose, 0, 0)
       })
     } : undefined,
     /** Why the file cannot take the pose code. Undefined when it can. */
