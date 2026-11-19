@@ -143,6 +143,16 @@ watch(canvas, async (element) => {
     console.warn(`The Brundlefly mesh could not load. The relief rig takes its place. ${meshResult.reason}`)
     meshUnavailable.value = true
   }
+  if (meshMascot && projectionTexture && faceTexture) {
+    // The mesh gets the relief rig's eyes, from the same head artwork and face skin.
+    const projectionImage = projectionTexture.image as HTMLImageElement
+    const projectionRaster = document.createElement('canvas')
+    projectionRaster.width = 180
+    projectionRaster.height = Math.round(180 * projectionImage.height / projectionImage.width)
+    const projectionPainter = projectionRaster.getContext('2d')!
+    projectionPainter.drawImage(projectionImage, 0, 0, projectionRaster.width, projectionRaster.height)
+    meshMascot.dressEyes({ projection: { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) }, skin: faceTexture })
+  }
   const reliefMascot = !meshMascot && mascotTexture ? (() => {
     mascotTexture.colorSpace = SRGBColorSpace
     mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping

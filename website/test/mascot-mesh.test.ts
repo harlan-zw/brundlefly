@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { AnimationClip, Bone, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, ShaderLib, SphereGeometry, UniformsUtils, Vector2, Vector3, VectorKeyframeTrack } from 'three'
+import { AnimationClip, Bone, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, ShaderLib, SphereGeometry, Texture, UniformsUtils, Vector2, Vector3, VectorKeyframeTrack } from 'three'
 import type { WebGLRenderer } from 'three'
 import { poseMannerisms } from '../layers/brand/shared/mannerism.ts'
 import { createMeshMascot, loadMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
@@ -353,4 +353,64 @@ test('a blink closes the upper lid down and the lower lid up, and an open eye le
   assert.ok(lids.upper[1]!.rotation.x > lids.upper[0]!.rotation.x && lids.upper[0]!.rotation.x > 0)
   // A file without eyes or lids poses as before.
   assert.doesNotThrow(() => ok(createMeshMascot({ scene: jointedModel().scene, animations: [] }, 2.5)).pose!({ ...standing, blink: 1, eyes: { _tag: 'Wander' } }))
+})
+
+/** The reference head's artwork, as a host supplies it: an opaque square, so every eye point lies inside it. */
+function eyeDressing() {
+  const [width, height] = [40, 44]
+  return { projection: { texture: new Texture(), raster: { width, height, data: new Uint8ClampedArray(width * height * 4).fill(200) } }, skin: new Texture() }
+}
+
+test('dressed eyes take the relief rig\'s proportions, artwork shader, and shell lids at each eye node', () => {
+  const { scene, eyes, lids, joint } = eyedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  mascot.dressEyes(eyeDressing())
+  const head = joint('head')
+  const built = [0, 1].map(index => head.getObjectByName(`reference-eye-${index}`)!)
+  // Each built eye stands where its node stands, with the node's roll, and the node itself is hidden.
+  built.forEach((root, index) => {
+    assert.ok(root.position.distanceTo(eyes[index]!.position) < 1e-9 && root.quaternion.angleTo(eyes[index]!.quaternion) < 1e-6)
+    assert.equal(eyes[index]!.visible, false)
+  })
+  // The node sets the width. The height and depth keep the relief rig's proportions for that eye.
+  const globeGeometry = (built[0]!.children[0] as Mesh).geometry
+  globeGeometry.computeBoundingBox()
+  const size = globeGeometry.boundingBox!.getSize(new Vector3())
+  close(size.x / 2, 3)
+  assert.ok(Math.abs(size.y / size.x - 0.074 / 0.078) < 0.02, 'The larger eye must keep the reference height.')
+  // Open lids stand 0.96 rad back from shut, and a blink brings both shells together, as on the relief rig.
+  const hinge = (name: string) => head.getObjectByName(name)!
+  mascot.pose!({ ...standing, blink: 0 })
+  close(hinge('reference-upper-lid-0').rotation.x, -0.96)
+  close(hinge('reference-lower-lid-0').rotation.x, 0.96)
+  mascot.pose!({ ...standing, blink: 1 })
+  close(hinge('reference-upper-lid-1').rotation.x, 0)
+  close(hinge('reference-lower-lid-1').rotation.x, 0)
+  // The file's own lid joints stay at rest once the reference lids blink.
+  for (const lid of [...lids.upper, ...lids.lower]) close(lid.rotation.x, 0)
+  // A squint shuts the smaller, screen-right eye further.
+  mascot.pose!({ ...standing, blink: 0, squint: 0.5 })
+  assert.ok(hinge('reference-upper-lid-1').rotation.x > hinge('reference-upper-lid-0').rotation.x)
+  // The gaze reaches the built globes through the same shader uniforms, with the relief rig's wider range.
+  const target = mascot.facePoint(new Vector3()).add(new Vector3(40, 0, 10))
+  for (let frame = 0; frame < 60; frame++) mascot.pose!({ ...standing, time: frame / 60, eyes: { _tag: 'Watch', target } })
+  const globe = built[1]!.children[0] as Mesh
+  globe.quaternion.copy(built[1]!.quaternion)
+  assert.ok(Math.abs(eyeUniforms(globe).yaw - 0.55) < 0.02)
+})
+
+test('disposal removes the dressed eyes and leaves the host\'s textures', () => {
+  const { scene, joint } = eyedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const dressing = eyeDressing()
+  let hostReleased = false
+  for (const texture of [dressing.projection.texture, dressing.skin]) texture.addEventListener('dispose', () => { hostReleased = true })
+  mascot.dressEyes(dressing)
+  const shell = (joint('head').getObjectByName('reference-upper-lid-0')!.children[0] as Mesh).geometry
+  let shellReleased = false
+  shell.addEventListener('dispose', () => { shellReleased = true })
+  mascot.dispose()
+  assert.ok(shellReleased, 'The lid shells must be released.')
+  assert.equal(joint('head').getObjectByName('reference-eye-0'), undefined)
+  assert.equal(hostReleased, false, 'The host owns the artwork and the skin texture.')
 })

@@ -332,11 +332,12 @@ The site fits the model to the height of the relief rig and puts its lowest poin
 The model keeps its own origin, facing, and materials: +Y is up and the face points to +Z.
 If the file has the relief rig's 25 body joints, each with an identity rest rotation, the site poses it with the relief rig's code.
 The model then idles, walks the same route, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
-Nodes named Brundlefly-eye-0 and Brundlefly-eye-1 are his eyeballs. The site draws them with the relief rig's wet-eye shader, in place of the file's eye material.
-The gaze wanders, watches a visitor, and follows a habit's cue. The iris slides under the cornea; the eyeball does not turn.
-The gaze turns at most 0.35 rad to a side and 0.22 rad up or down, so the iris stays inside the lid opening.
-Joints named face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 are his eyelids. The site turns them to blink and to squint.
-A shut eye turns the upper lid 1.05 rad down and the lower lid 0.33 rad up. A file without lid joints does not blink.
+Nodes named Brundlefly-eye-0 and Brundlefly-eye-1 mark his eyes. The site hides each node and builds the relief rig's eye in its place.
+The built eye uses the relief rig's globe artwork, wet-eye shader, shell lids, blink, squint, and gaze. Their numbers come from referenceEyes in face.ts.
+Each node gives its eye a centre, a rest rotation, and a width. The height and depth keep the relief rig's proportions.
+So the model needs only a socket at each eye. It needs no eyeball, lid, or eye material of its own.
+If the head artwork or the face skin fails to load, the site keeps the file's own eyeballs and draws them with the wet-eye shader.
+It then turns the lid joints face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 to blink: 1.05 rad down for an upper lid and 0.33 rad up for a lower lid.
 It has no jaw or brow joints, so its expression does not change.
 If the file turns its top node about the vertical, the site mirrors that turn when he walks to the other side, so he faces his path.
 He turns a little before each walk and holds his side while he stands. His head stays toward the viewer at rest.
@@ -354,6 +355,7 @@ The scene element reports the visible mascot in its data-mascot attribute: relie
 | assets/3d/brundlefly/brundlefly-web.glb | GLB 2.0, 4 MiB or less | Web export of the figurine model |
 | website/scripts/sync-brand.ts | TypeScript | Copies the model to /brand/3d/ for the site and the kit, and enforces the size limit |
 | website/layers/brand/shared/mascot-mesh.ts | TypeScript | Load, fit, floor contact, idle motion, face point, and disposal |
+| website/layers/brand/shared/mascot-eyes.ts | TypeScript | The relief rig's eyes, built at the mesh's eye nodes |
 | website/layers/brand/shared/mascot-pose.ts | TypeScript | Joint turns for idle, walk, speech, and mannerisms, shared by the relief rig and the mesh |
 
 Plain GLTFLoader reads the file. Draco, meshopt, and KTX2 data need decoders that the site does not load.
