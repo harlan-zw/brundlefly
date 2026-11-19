@@ -22,9 +22,14 @@ export type SceneAudioDependencies = {
 type SoundScope = { nodes: Set<AudioNode>, sources: Set<AudioScheduledSourceNode>, start: number, duration: number, voice: boolean, envelope: (time: number) => number }
 export type VoiceSyllable = { start: number, duration: number, pitch: number, strength: number }
 
-export function createVoicePhrase(kind: 'open' | 'reply', replyLength: number, random: () => number) {
+/** How long his voice lasts, in seconds. A reply lasts longer for a longer line. The dialog paces the line's words by it. */
+export function voiceDuration(kind: 'open' | 'reply', replyLength: number) {
   const length = Number.isFinite(replyLength) ? Math.max(0, Math.min(1000, replyLength)) : 120
-  const duration = kind === 'open' ? 1.2 : Math.min(8, 3 + length / 65)
+  return kind === 'open' ? 1.2 : Math.min(8, 3 + length / 65)
+}
+
+export function createVoicePhrase(kind: 'open' | 'reply', replyLength: number, random: () => number) {
+  const duration = voiceDuration(kind, replyLength)
   const syllables: VoiceSyllable[] = []
   let start = 0
   while (start < duration - 0.15) {
@@ -423,7 +428,7 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
       const vowel = vowels[Math.floor(dependencies.random() * vowels.length)]!
       formants.forEach((filter, index) => filter.frequency.setTargetAtTime(vowel[index]!, at + syllable.start, 0.03))
     }
-    // One envelope drives both the sound and the face, so the mouth moves only while he is audible.
+    // One envelope drives both the sound and the face. A line with no sound moves his mouth from the same syllables, in _SceneAudio.vue.
     const loudness = ownSound(scope, context.createGain())
     const points = Math.max(2, Math.ceil(duration * 120) + 1)
     loudness.gain.setValueCurveAtTime(Float32Array.from({ length: points }, (_, index) => scope.envelope(at + index / (points - 1) * duration)), at, duration)
