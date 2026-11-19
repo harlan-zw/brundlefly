@@ -1214,6 +1214,22 @@ def add_bristle_hairs(body, bristles, uv):
     return count
 
 
+def pose_skeleton(arm, stance):
+    """Turn the joints of the skeleton into a stance. Returns the rotation mode that each turned joint had.
+
+    The print build poses its solid with this function too, so the two models take one stance.
+    """
+    modes = {}
+    for name, (x, y, z, w) in stance["rotations"].items():
+        bone = arm.pose.bones[name]
+        modes[name] = bone.rotation_mode
+        bone.rotation_mode = "QUATERNION"
+        bone.rotation_quaternion = Quaternion((w, x, y, z))       # bone axes are the site's axes: X right, Y up, Z to the viewer
+    arm.pose.bones["pelvis"].location = Vector(stance["pelvis_offset_mm"])
+    bpy.context.view_layer.update()
+    return modes
+
+
 def bake_stance(body, arm, stance, followers):
     """Make the stance the rest shape of the website model. Returns the height of the figure.
 
@@ -1226,14 +1242,7 @@ def bake_stance(body, arm, stance, followers):
     action = arm.animation_data.action if arm.animation_data else None
     if action:
         arm.animation_data.action = None
-    modes = {}
-    for name, (x, y, z, w) in stance["rotations"].items():
-        bone = arm.pose.bones[name]
-        modes[name] = bone.rotation_mode
-        bone.rotation_mode = "QUATERNION"
-        bone.rotation_quaternion = Quaternion((w, x, y, z))       # bone axes are the site's axes: X right, Y up, Z to the viewer
-    arm.pose.bones["pelvis"].location = Vector(stance["pelvis_offset_mm"])
-    bpy.context.view_layer.update()
+    modes = pose_skeleton(arm, stance)
     # A finger's hinge turns with its hand. The site reads it in the joint's own axes: X right, Y up, Z forward.
     for bone in arm.pose.bones:
         if "hinge_model" in bone.bone:
