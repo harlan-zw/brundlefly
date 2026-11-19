@@ -320,7 +320,7 @@ watch(canvas, async (element) => {
   // The mesh is a full body, so its conversation is staged: a head-and-shoulders shot, and two lights for his face that rise with the shot.
   // Both lights stay in the scene at zero, so opening the dialog compiles no new shader. The relief rig keeps its full-body shot and the lair's light.
   const staging = mascot._tag === 'Mesh' ? { eyeLine: mascot.eyeLine, face: new Vector3(), placed: false, side: 1 as 1 | -1, drift: 0,
-    key: new SpotLight('#F2DEB8', 0, 7, 0.34, 0.9, 2), rim: new PointLight('#6FB7C0', 0, 4, 2) } : undefined
+    key: new SpotLight('#F2DEB8', 0, 7, 0.34, 0.9, 2), rim: new PointLight('#6FB7C0', 0, 3.5, 2) } : undefined
   if (staging) scene.add(staging.key, staging.key.target, staging.rim)
   const basePosition = new Vector3()
   const baseTarget = new Vector3()
@@ -368,10 +368,11 @@ watch(canvas, async (element) => {
       staging.placed = true
       if (paused && faceMotion) staging.drift += delta
       staging.key.intensity = blend * 16
-      staging.rim.intensity = blend * 5
+      staging.rim.intensity = blend * 3
       staging.key.position.set(staging.face.x + staging.side * 1.5, staging.face.y + 1.3, staging.face.z + 2.4)
       staging.key.target.position.copy(staging.face)
-      staging.rim.position.set(staging.face.x - staging.side * 1.3, staging.face.y + 0.8, staging.face.z - 1.5)
+      // The rim sits low and wide on his far side. It edges his jaw and shoulder, and stays far from the pale wing above them.
+      staging.rim.position.set(staging.face.x - staging.side * 1.9, staging.face.y, staging.face.z - 0.9)
     }
     const focus = staging ? resolveConversationCloseUp(staging.face, renderWidth, renderHeight, camera.fov, staging.side, staging.drift)
       : resolveConversationFocus(face, renderWidth, renderHeight, camera.fov)
