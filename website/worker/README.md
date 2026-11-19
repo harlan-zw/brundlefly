@@ -1,8 +1,8 @@
 # Dialogue Worker
 
 The Worker serves the static scene and two same-origin APIs.
-`GET /api/visit` assigns an anonymous session's daily ordinal and seeded greeting.
-It includes the opening index so the browser can select the matching precomputed branch.
+`GET /api/visit` assigns an anonymous session's daily ordinal. It returns that count and whether the session has a visitor row from an earlier day.
+The browser picks the opening from those two facts and its own clock, and selects the matching precomputed branch when one exists.
 `POST /api/dialogue` sends bounded history and text to GPT-6 Luna through AI Gateway.
 
 The configuration declares `AI`, `DIALOGUE_DB`, and `ASSETS` bindings.
