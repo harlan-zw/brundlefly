@@ -24,11 +24,9 @@ import build_from_mesh as bfm  # noqa: E402  (the sheet projection lives there)
 from mathutils.bvhtree import BVHTree
 from mathutils.kdtree import KDTree
 
-# The eyeball nodes are this much larger than the eyeballs fused into the body,
-# so the decimated body surface never shows through a node.
-EYE_NODE_SCALE = 1.02
-# The texture is dark on each eyeball, out to this many eyeball radii.
-EYE_DARK_SCALE = 1.05
+# The texture is dark inside each eye socket: out to this many eyeball radii from the eyeball centre.
+# The socket is 1.16 to 1.24 eyeball radii, so this covers its wall and its rim.
+EYE_DARK_SCALE = 1.3
 # Linear colours of an eyeball node. The eye is a dark, wet globe, as on the site's relief rig: the
 # iris is a dark teal that grows lighter toward its edge, and the highlight does most of the work.
 # A pale iris hides the highlight and reads as a doll's eye.
@@ -39,8 +37,6 @@ EYE_PUPIL = (0.002, 0.002, 0.003)
 # The pupil and the iris ring on the front of the eyeball: their angles from the front, in radians.
 EYE_PUPIL_ANGLE = 0.15
 EYE_IRIS_ANGLE = 0.40
-# Side of the square patch of texels that each lid takes, in pixels. A multiple of 8.
-LID_PATCH = 64
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
 BRISTLE_COLOUR = (0.115, 0.030, 0.022)
 BRISTLE_RADIUS_MM = 0.17
@@ -166,7 +162,7 @@ def eye_reach(points, eye):
     return np.sqrt((local ** 2).sum(axis=1))
 
 
-def rigid_eye_sockets(body, eyes, inner=1.6, outer=2.6):
+def rigid_eye_sockets(body, eyes, inner=2.4, outer=4.0):
     """Weight the skin around each eyeball to the head bone only.
 
     The eyeball nodes follow the head bone rigidly. Heat weights give the skin beside them a
@@ -192,72 +188,6 @@ def rigid_eye_sockets(body, eyes, inner=1.6, outer=2.6):
         head.add([int(index)], 1.0 - others, "REPLACE")
         changed += 1
     return changed
-
-
-def lid_names(index):
-    return f"face-upper-lid-{index}", f"face-lower-lid-{index}"
-
-
-def add_eyelids(body, eyes, lids, patches, centres):
-    """Add an upper and a lower lid to each eye, as shells that hinge on the lid joints. Returns the triangle count.
-
-    Each lid is half of a shell around the eyeball: round about the X axis through the eyeball
-    centre, so it can turn about that axis and stay clear of the globe. The rest shape is the
-    open eye: each lid is turned back by the open angle. A turn of the upper lid joint by that
-    angle about +X, and of the lower lid joint by the same angle about -X, shuts the eye.
-    Every vertex of a lid follows its lid joint only. patches gives one square of the texture
-    for each lid, as (u, v, side), in the order upper then lower for each eye.
-    centres are the eyeball centres in the rest shape. The lids go in after the stance, because
-    their hinge must lie along the X axis of the lid joints, and the stance tilts the head.
-    """
-    mesh = bmesh.new()
-    mesh.from_mesh(body.data)
-    deform = mesh.verts.layers.deform.verify()
-    uv_layer = mesh.loops.layers.uv.verify()
-    across_steps, around_steps = 14, 18
-    count = 0
-    for index, (eye, centre) in enumerate(zip(eyes, centres)):
-        across, depth, height = eye["radii_mm"]
-        shell, half_width = max(depth, height) * lids["radius"], across * lids["width"]
-        for part, (name, side) in enumerate(zip(lid_names(index), (1.0, -1.0))):
-            group = (body.vertex_groups.get(name) or body.vertex_groups.new(name=name)).index
-            patch_u, patch_v, patch_side = patches[index * 2 + part]
-            rows, coords = [], {}
-            # One extra ring at the open edge, on the globe, gives the lid a visible thickness.
-            for step in range(-1, around_steps + 1):
-                angle = side * (lids["open_radians"] + math.pi * max(step, 0) / around_steps)
-                reach = shell if step >= 0 else max(depth, height) * 1.0
-                row = []
-                for k in range(across_steps + 1):
-                    u = -1.0 + 2.0 * k / across_steps
-                    spoke = reach * math.sqrt(max(1.0 - u * u, 0.0))
-                    # Forward is -Y and up is +Z. The angle runs from the line of sight over the top, or under the bottom.
-                    vertex = mesh.verts.new(centre + Vector((u * half_width, -spoke * math.cos(angle), spoke * math.sin(angle))))
-                    vertex[deform][group] = 1.0
-                    # Across the lid runs across the patch. The first half of the arc from the edge fills its height.
-                    along = min(max(step, 0) / (around_steps * 0.55), 1.0)
-                    coords[vertex] = (patch_u + patch_side * (0.06 + 0.88 * k / across_steps), patch_v + patch_side * (0.06 + 0.88 * along))
-                    row.append(vertex)
-                rows.append(row)
-            for a, b in zip(rows, rows[1:]):
-                for k in range(across_steps):
-                    quad = (a[k], a[k + 1], b[k + 1], b[k])
-                    if len({v.co.to_tuple(5) for v in quad}) < 3:
-                        continue
-                    for corners in ((quad[0], quad[1], quad[2]), (quad[0], quad[2], quad[3])):
-                        if len({v.co.to_tuple(5) for v in corners}) < 3:
-                            continue
-                        face = mesh.faces.new(corners)
-                        face.smooth = True
-                        face.normal_update()
-                        if face.normal.dot(face.calc_center_median() - centre) < 0:
-                            face.normal_flip()
-                        for loop in face.loops:
-                            loop[uv_layer].uv = coords[loop.vert]
-                        count += 1
-    mesh.to_mesh(body.data)
-    mesh.free()
-    return count
 
 
 def add_skeleton(body, joints, shift, eyes=()):
@@ -312,13 +242,6 @@ def add_skeleton(body, joints, shift, eyes=()):
     bpy.ops.object.mode_set(mode="EDIT")
     for bone in data.edit_bones:
         bone.use_connect = False
-    # The eyelid joints come after the automatic weights, so the weights of the rest of the head ignore them.
-    for index, eye in enumerate(eyes):
-        for name in lid_names(index):
-            lid = data.edit_bones.new(name)
-            lid.head = Vector(eye["centre_mm"]) - Vector((shift[0], shift[1], 0.0))
-            lid.tail = lid.head + Vector((0.0, 0.0, 4.0))
-            lid.parent = data.edit_bones["head"]
     for bone in data.edit_bones:
         bone.tail = bone.head + Vector((0.0, 0.0, 4.0))
         bone.roll = 0.0
@@ -411,7 +334,7 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
     field[:, 2] += projection["field_zmin"]
     linear = np.tile(bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.FLESH]), (size * size, 1))
     linear[baked] = colour(field[baked], normal[baked])
-    # Under each eyeball node the texture is dark, so no lit skin shows at the edge of the node.
+    # Inside each eye socket the texture is dark, so the gap around the eye reads as shadow.
     dark = bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.EYE])
     for eye in eyes:
         linear[baked & (eye_reach(position, eye) < EYE_DARK_SCALE)] = dark
@@ -428,37 +351,6 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
         row, col = int(rows[0]) * 8, int(cols[0]) * 8
         block[row - 8:row + 16, col - 8:col + 16] = BRISTLE_COLOUR
         hair_uv = ((col + 4) / size, (row + 4) / size)
-    # Each lid takes a square patch of unused texels and a strip of the sheet's front view: the
-    # skin just above or just below the painted eye opening. So a shut lid carries the sheet's skin.
-    unused = ~used.reshape(size // 8, 8, size // 8, 8).any(axis=(1, 3))
-    if hair_uv is not None:
-        unused[max(int(rows[0]) - 2, 0):int(rows[0]) + 3, max(int(cols[0]) - 2, 0):int(cols[0]) + 3] = False
-    front_view = views["front"][0] if "front" in views else None
-    openings = bfm.eye_openings(front_view) if front_view else []
-    lid_uv = []
-    span = LID_PATCH // 8
-    for opening_rows, opening_cols in openings:
-        c0, c1, r0, r1 = opening_cols.min(), opening_cols.max(), opening_rows.min(), opening_rows.max()
-        depth = max(int((c1 - c0) * 0.55), 4)
-        for upper in (True, False):
-            window = np.lib.stride_tricks.sliding_window_view(unused, (span, span)).all(axis=(2, 3))
-            where = np.argwhere(window)
-            if len(where) == 0:
-                lid_uv = None
-                break
-            row, col = int(where[0][0]), int(where[0][1])
-            unused[row:row + span, col:col + span] = False
-            # The patch runs from the edge of the opening (v = 0) away from the eye (v = 1).
-            v, u = np.meshgrid(np.linspace(0.0, 1.0, LID_PATCH), np.linspace(0.0, 1.0, LID_PATCH), indexing="ij")
-            art_col = np.clip(np.rint(c0 + u * (c1 - c0)).astype(int), 0, front_view["linear"].shape[1] - 1)
-            away = np.rint(3 + v * depth).astype(int)
-            art_row = np.clip(r1 + away if upper else r0 - away, 0, front_view["linear"].shape[0] - 1)
-            block[row * 8:row * 8 + LID_PATCH, col * 8:col * 8 + LID_PATCH] = front_view["linear"][art_row, art_col]
-            lid_uv.append((col * 8 / size, row * 8 / size, LID_PATCH / size))
-        if lid_uv is None:
-            break
-    if lid_uv is not None and len(lid_uv) != 4:
-        lid_uv = None
     srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
 
     albedo = bpy.data.images.new("Brundlefly-albedo", size, size, alpha=False)
@@ -471,7 +363,7 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes):
     material.node_tree.links.new(target.outputs["Color"], bsdf.inputs["Base Color"])
     for attribute in list(body.data.color_attributes):
         body.data.color_attributes.remove(attribute)
-    return int(baked.sum()), hair_uv, lid_uv
+    return int(baked.sum()), hair_uv
 
 
 def add_bristle_hairs(body, bristles, uv):
@@ -603,7 +495,7 @@ def export_web(src, args):
 
     textured = "sheet_projection" in stats and not args.no_texture
     if textured:
-        texels, hair_uv, lid_uv = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"])
+        texels, hair_uv = bake_sheet_texture(body, stats["sheet_projection"], os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "views"), args.texture_size, site["eyes"])
         print(f"TEXTURE {args.texture_size} px, {texels} texels on the surface")
 
     root = bpy.data.objects.new("Brundlefly", None)
@@ -653,7 +545,7 @@ def export_web(src, args):
         scene.collection.objects.link(ob)
         cx, cy, cz = eye["centre_mm"]
         ob.location = (cx - px, cy - py, cz)
-        ob.scale = [r * EYE_NODE_SCALE for r in eye["radii_mm"]]
+        ob.scale = list(eye["radii_mm"])
         ob.parent = root
         parts.append(ob)
     for name, (ax, ay, az) in site["anchors"].items():
@@ -682,18 +574,10 @@ def export_web(src, args):
     if textured and hair_uv is not None and site.get("bristles"):
         print(f"BRISTLES {add_bristle_hairs(body, site['bristles'], hair_uv)} hairs")
     stance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "source", "stance.json")
-    lids_after_stance = False
     if rigged and os.path.exists(stance_path) and not args.no_stance:
         with open(stance_path) as fh:
             stance = json.load(fh)
         height = bake_stance(body, arm, stance, [o for o in parts if o.parent_type == "BONE"])
-        lids_after_stance = True
-    if rigged and textured and lid_uv is not None and site.get("lids"):
-        bpy.context.view_layer.update()
-        # The lid joints sit at the eyeball centres, and they have moved with the head.
-        centres = [body.matrix_world.inverted() @ (arm.matrix_world @ arm.data.bones[lid_names(index)[0]].head_local) for index in range(len(site["eyes"]))]
-        print(f"LIDS {add_eyelids(body, site['eyes'], site['lids'], lid_uv, centres)} triangles")
-    if lids_after_stance:
         root.rotation_euler = (0.0, 0.0, stance.get("root_yaw_radians", 0.0))   # the body's turn, for the site to change
         print(f"STANCE baked, figure height {height:.2f} mm, root yaw {stance.get('root_yaw_radians', 0.0)} rad")
 

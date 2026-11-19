@@ -692,32 +692,36 @@ def sheet_colour_fn(views):
     return colour
 
 
-# The eyeballs follow the site's relief rig: bulging globes of unequal size between two skin lids.
+# The eyes follow the site's relief rig. On the website the site builds that rig's own eyes and
+# lids at each eye node, so the website model has an empty socket and a marker for each eye.
+# The print model has its own globe and two open lids, in the same proportions.
 # Radii of each globe in build millimetres, screen left first: across, in depth, and in height.
-# They are the relief rig's radii (face.ts) at this build's scale.
-EYE_RADII = ((2.31, 1.81, 2.20), (1.60, 1.34, 1.31))
-# The centre of a globe sits this share of its depth radius behind the skin, so most of it stands proud.
-EYE_SET_BACK = 0.3
+# The widths are 0.116 and 0.081 of the head width, as on the relief rig (face.ts). The head
+# width is the site's measure of this model's head, 12.4 mm at the build's scale.
+EYE_RADII = ((1.44, 1.13, 1.37), (1.01, 0.84, 0.82))
+# The centre of a globe sits this share of its depth radius behind the skin. At this depth the
+# rims of the open lids meet the skin, so the globe sits in the head and does not stand on it.
+EYE_SET_BACK = 0.65
 # Each lid is half of a shell around the globe, hinged at the globe centre about the X axis.
-# Open, its edge is this many radians above or below the line of sight. Shut, the two edges meet.
+# Open, its edge is this many radians above or below the line of sight.
 LID_OPEN = 0.96
-# The shell radius as a multiple of the larger of the globe's depth and height radii, and its
-# half width as a multiple of the globe's. The print model has thicker lids, so they read in one colour.
-LID_RADIUS = 1.10
-LID_WIDTH = 1.055
-PRINT_LID_RADIUS = 1.14
+# The lid shell of the relief rig, as multiples of the globe radii: across and in height, and in depth.
+LID_SHELL = (1.055, 1.13)
+# The print model's lid shell is round about the hinge. Its radius is this multiple of the larger of
+# the globe's depth and height radii. It is thicker than the relief's, so it reads in one colour.
+PRINT_LID_RADIUS = 1.22
 # The socket is this much larger than the lid shell.
 SOCKET_ROOM = 1.10
 # The sheet draws the smaller wing on the figure's left, which is +X.
 SMALL_WING_SIDE = 1.0
 
 
-def add_eyes(f, eyes, lids):
-    """A bulging eyeball where the sheet has each eye, at the sizes of the site's relief rig.
+def add_eyes(f, eyes, solid):
+    """A socket where the sheet has each eye, at the proportions of the site's relief rig.
 
-    lids is the lid shell radius, as a multiple of the globe radius, or None. With it, the two
-    open lids are part of the solid: the print model has no joints, so its lids cannot move.
-    The website model gets its lids in the export, as shells that hinge on the lid joints.
+    With solid, the socket also gets a globe and two open lids as part of the model: the
+    print model has no joints, so its lids cannot move. Without it the socket stays empty:
+    the site builds the relief rig's own eye and lids at each marker.
     Returns the centre and the three radii of each globe.
     """
     out = []
@@ -727,20 +731,21 @@ def add_eyes(f, eyes, lids):
             continue
         centre = hit + bm.V(0, depth * EYE_SET_BACK, 0)
         radii = bm.V(across, depth, height)
-        # A socket first. The generator's own eye bump is larger than the smaller globe, and it
-        # would stand through the lids. The socket leaves a narrow groove around the lids.
-        shell = max(depth, height) * (lids or LID_RADIUS)
-        f.carve_blob(centre, bm.V(across * LID_WIDTH, shell, shell) * SOCKET_ROOM, k=0.2)
-        if lids:
-            outer = bm.V(across * LID_WIDTH, shell, shell)
-            sl, X, Y, Z = f.box(centre - outer, centre + outer, 3 * f.h)
-            solid = bm.sd_ellipsoid(X, Y, Z, centre, outer)
+        # The socket holds the globe and the lid shell, with a narrow groove around them. It also
+        # removes the generator's own eye bump, which is larger than the smaller globe.
+        shell = bm.V(across * LID_SHELL[0], depth * LID_SHELL[1], height * LID_SHELL[0])
+        if solid:
+            round_shell = max(depth, height) * PRINT_LID_RADIUS
+            shell = bm.V(across * LID_SHELL[0], round_shell, round_shell)
+        f.carve_blob(centre, shell * SOCKET_ROOM, k=0.2)
+        if solid:
+            sl, X, Y, Z = f.box(centre - shell, centre + shell, 3 * f.h)
+            lids = bm.sd_ellipsoid(X, Y, Z, centre, shell)
             # The lids leave a wedge open in front of the globe: all points within LID_OPEN of the line of sight.
             forward, up = -(Y - centre[1]), Z - centre[2]
-            spoke = np.sqrt(forward ** 2 + up ** 2)
-            wedge = (LID_OPEN - np.abs(np.arctan2(up, forward))) * spoke
-            f.add(np.maximum(solid, wedge + 0 * X), sl, 0.15, bm.FLESH)
-        f.blob(centre, radii, k=0, mat=bm.EYE)
+            wedge = (LID_OPEN - np.abs(np.arctan2(up, forward))) * np.sqrt(forward ** 2 + up ** 2)
+            f.add(np.maximum(lids, wedge), sl, 0.15, bm.FLESH)
+            f.blob(centre, radii, k=0, mat=bm.EYE)
         out.append({"centre": centre, "radii": radii})
     return out
 
@@ -845,7 +850,7 @@ def main():
         if args.dimples:
             f.dimples = add_dimples(f, zmax)
     # The eyes come after the thickening step. That step grows thin edges, and it would close the sockets.
-    eyes = add_eyes(f, eye_spots, PRINT_LID_RADIUS if printing else None)
+    eyes = add_eyes(f, eye_spots, solid=printing)
     anchors = {}
     face = f.raycast(head + bm.V(0, -40.0, -2.0), bm.V(0, 1, 0), max_dist=60.0)
     if face is not None:
@@ -870,7 +875,7 @@ def main():
     to_mm = lambda point: [round(float(c) * mesh_scale, 3) for c in (point - bm.V(0, 0, f.mesh_zmin))]
     for eye in eyes:
         site["eyes"].append({"centre_mm": to_mm(eye["centre"]), "radii_mm": [round(float(r) * mesh_scale, 3) for r in eye["radii"]]})
-    site["lids"] = {"open_radians": LID_OPEN, "radius": LID_RADIUS, "width": LID_WIDTH}
+    site["socket_scale"] = [LID_SHELL[0] * SOCKET_ROOM, LID_SHELL[1] * SOCKET_ROOM, LID_SHELL[0] * SOCKET_ROOM]
     # Where each bristle stood on the website model. The export puts a thin hair there.
     site["bristles"] = [{"root_mm": [round(float(c) * mesh_scale, 3) for c in (root - bm.V(0, 0, f.mesh_zmin))],
                          "tip_mm": [round(float(c) * mesh_scale, 3) for c in (tip - bm.V(0, 0, f.mesh_zmin))]} for root, tip in hairs]
