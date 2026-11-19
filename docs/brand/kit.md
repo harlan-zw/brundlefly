@@ -361,6 +361,8 @@ A click anywhere in its hover area opens the dialog, because the model has gaps 
 A node named Brundlefly-base is removed.
 While the dialog is open, the camera takes a head-and-shoulders shot of the point between the two eye nodes, from the side he faces.
 A key light and a rim light rise with that shot, the fog thickens, and a dark ring closes around his head.
+The model's skin is painted flat, with no shadow in it, so the site shades it: `meshShading` in mascot-mesh.ts tints the skin darker and redder, takes less of the room's even light, and raises the model's own occlusion.
+Between talks the key light holds a low level above his head and falls off toward his feet. A small contact shadow sits under each foot and fades as the foot lifts.
 A file without eye nodes uses an empty node named anchor-face for that point.
 If the file is absent or unreadable, the mesh mode shows the relief rig and logs a warning.
 The rig inspection page has the same model as its Mesh texture option.

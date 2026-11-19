@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { AnimationClip, Bone, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, ShaderLib, SphereGeometry, Texture, UniformsUtils, Vector2, Vector3, VectorKeyframeTrack } from 'three'
+import { AnimationClip, Bone, Box3, BoxGeometry, Color, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, ShaderLib, SphereGeometry, Texture, UniformsUtils, Vector2, Vector3, VectorKeyframeTrack } from 'three'
 import type { WebGLRenderer } from 'three'
 import { poseMannerisms } from '../layers/brand/shared/mannerism.ts'
+import { meshShading } from '../layers/brand/shared/mascot-mesh.ts'
 import { createMeshMascot, loadMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
 import { bodyJointNames } from '../layers/brand/shared/mascot-pose.ts'
 
@@ -489,7 +490,7 @@ test('a lid takes the skin the model names for its eye, and the relief rig\'s li
   }
   const named = dressed('Brundlefly-lid')
   // The named eye's lids are that colour, with no artwork over it. The other eye keeps the relief rig's lid skin.
-  assert.equal(named.lid(0).color.getHexString(), 'c8642d')
+  assert.equal(named.lid(0).color.getHexString(), new Color('#C8642D').multiply(new Color(...meshShading.tint)).getHexString(), 'The lid takes the model\'s colour with the site\'s skin tint.')
   assert.equal(named.lid(0).map, null)
   assert.equal(named.lid(1).map, named.dressing.skin)
   // A named skin texture goes on the lids. It outlives the eye node's material and leaves with the mascot.
@@ -619,4 +620,43 @@ test('a pose without steps in place is the pose it was', () => {
   ok(createMeshMascot({ scene: plain.scene, animations: [] }, 2.5)).pose!({ ...standing, time: 1.3 })
   ok(createMeshMascot({ scene: stepping.scene, animations: [] }, 2.5)).pose!({ ...standing, time: 1.3, stepInPlace: 0, stepPhase: 2 })
   for (const name of bodyJointNames) assert.deepEqual(stepping.joint(name).quaternion.toArray(), plain.joint(name).quaternion.toArray(), name)
+})
+
+test('the site shades a model\'s skin once: darker and redder, with less room light and more of its own occlusion', () => {
+  const { scene, node } = millimetreModel()
+  const skin = new MeshStandardMaterial({ color: '#ffffff', aoMap: new Texture() })
+  const plain = new MeshStandardMaterial({ color: '#808080' })
+  const grey = plain.color.clone()
+  for (const [material, x] of [[skin, 30], [skin, -30], [plain, 0]] as const) {
+    const part = new Mesh(new BoxGeometry(10, 10, 10), material)
+    part.position.set(x, 30, 0)
+    node.add(part)
+  }
+  ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  // Two parts share the skin material. It takes the tint once.
+  assert.deepEqual(skin.color.toArray().map(value => Number(value.toFixed(4))), [...meshShading.tint])
+  assert.ok(skin.color.r > skin.color.g && skin.color.g > skin.color.b, 'The tint must redden the skin.')
+  close(skin.envMapIntensity, meshShading.environment)
+  close(skin.aoMapIntensity, meshShading.occlusion)
+  // A material with no occlusion map keeps its occlusion setting, and takes the same tint.
+  close(plain.aoMapIntensity, 1)
+  close(plain.color.g, grey.g * meshShading.tint[1])
+})
+
+test('he reports each foot\'s place and how firmly it stands, for a contact shadow', () => {
+  const { scene } = leggedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const contacts = (input: Parameters<NonNullable<typeof mascot.pose>>[0]) => {
+    mascot.pose!(input, undefined, 0.5)
+    const seen: { planted: number, x: number }[] = []
+    mascot.footContacts((place, planted) => seen.push({ planted, x: place.x }))
+    return seen
+  }
+  const standingFeet = contacts(standing)
+  assert.equal(standingFeet.length, 2)
+  assert.ok(standingFeet.every(foot => foot.planted > 0.9), 'Both feet stand on the floor at rest.')
+  assert.ok(Math.abs(standingFeet[0]!.x - standingFeet[1]!.x) > 0.1, 'Each foot reports its own place.')
+  // In a step in place, one foot carries him and the other is clear of the floor.
+  const stepping = contacts({ ...standing, time: 0.1, stepInPlace: 1, stepPhase: 0 }).map(foot => foot.planted).sort()
+  assert.ok(stepping[0]! < 0.7 && stepping[1]! > 0.99, `One foot must be lifting and one planted, not ${stepping}.`)
 })

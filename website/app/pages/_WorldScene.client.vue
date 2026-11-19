@@ -273,6 +273,18 @@ watch(canvas, async (element) => {
   shadow.rotation.x = -Math.PI / 2
   shadow.position.y = -2.19
   scene.add(shadow)
+  // The mesh has real feet. A small dark patch under each one ties it to the floor, and fades as the foot lifts.
+  const footShadowGeometry = new PlaneGeometry(0.66, 0.5)
+  const footShadows = mascot._tag === 'Mesh' ? [0, 1].map(() => {
+    const patch = new Mesh(footShadowGeometry, new ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uStrength: { value: 0 } },
+      vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+      fragmentShader: 'uniform float uStrength;varying vec2 vUv;void main(){float r=length((vUv-.5)*2.0);gl_FragColor=vec4(0.0,0.0,0.0,max(0.0,1.0-r*r)*.62*uStrength);}',
+    }))
+    patch.rotation.x = -Math.PI / 2
+    patch.position.y = -2.185
+    scene.add(patch)
+    return patch
+  }) : []
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
   const raycaster = new Raycaster()
   // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.
@@ -368,8 +380,9 @@ watch(canvas, async (element) => {
       else staging.face.lerp(eyes, 1 - Math.exp(-delta / 0.7))
       staging.placed = true
       if (paused && faceMotion) staging.drift += delta
-      staging.key.intensity = blend * 16
-      staging.rim.intensity = blend * 3
+      // At rest the key holds a low level above his head. It falls off toward his feet, which gives his body its shape.
+      staging.key.intensity = 6 + blend * 18
+      staging.rim.intensity = blend * 4
       staging.key.position.set(staging.face.x + staging.side * 1.5, staging.face.y + 1.3, staging.face.z + 2.4)
       staging.key.target.position.copy(staging.face)
       // The rim sits low and wide on his far side. It edges his jaw and shoulder, and stays far from the pale wing above them.
@@ -432,6 +445,12 @@ watch(canvas, async (element) => {
     }
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
+    if (mascot._tag === 'Mesh') mascot.footContacts((place, planted, index) => {
+      const patch = footShadows[index]!
+      patch.position.x = place.x
+      patch.position.z = place.z
+      patch.material.uniforms.uStrength!.value = planted
+    })
     const reach = mascot._tag === 'Mesh' ? [new Vector3(mascot.extent.left, 0, 0), new Vector3(mascot.extent.right, mascot.extent.height, 0)]
       : [new Vector3(-1.1, -1.25, 0), new Vector3(1.1, 1.3, 0)]
     const corners = reach.map(value => figure.localToWorld(value).project(camera))
@@ -467,6 +486,7 @@ watch(canvas, async (element) => {
     world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
     staging?.key.dispose(); staging?.rim.dispose()
     shadowGeometry.dispose(); shadowMaterial.dispose(); environment.dispose(); renderer.dispose()
+    footShadowGeometry.dispose(); footShadows.forEach(patch => patch.material.dispose())
   }
   status.value = { _tag: 'Ready' }
   refresh()
