@@ -141,8 +141,14 @@ def main():
         paths = []
         for name in names:
             direction = Vector(VIEWS[name]).normalized()
-            cam.location = centre + direction * size * 5
-            cam.rotation_euler = (centre - cam.location).to_track_quat("-Z", "Y").to_euler()
+            turn = (-direction).to_track_quat("-Z", "Y")
+            # Frame the model as this view sees it. A view from a corner sees the box wider than its longest side.
+            across = [(p - centre).dot(turn @ Vector((1.0, 0.0, 0.0))) for p in pts]
+            height = [(p - centre).dot(turn @ Vector((0.0, 1.0, 0.0))) for p in pts]
+            cam_data.ortho_scale = max(max(across) - min(across), max(height) - min(height)) * 1.08
+            middle = centre + turn @ Vector(((max(across) + min(across)) / 2, (max(height) + min(height)) / 2, 0.0))
+            cam.location = middle + direction * size * 5
+            cam.rotation_euler = turn.to_euler()
             path = os.path.join(args.out, f"{args.prefix}{name}-{mode}.png")
             sc.render.filepath = path
             bpy.ops.render.render(write_still=True)
