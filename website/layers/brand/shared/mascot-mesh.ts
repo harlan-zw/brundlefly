@@ -1,11 +1,11 @@
-import { AnimationMixer, Box3, BufferAttribute, DataTexture, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector3 } from 'three'
+import { AnimationMixer, Box3, BufferAttribute, Color, DataTexture, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector3 } from 'three'
 import type { AnimationClip, Material } from 'three'
 import { fixationDrift, lookToward, pupilDirection, pupilSize, wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus, Look } from './eye-gaze.ts'
 import { createEyeMaterial } from './eye-material.ts'
 import { referenceEyes as reliefEyes, referenceFace } from './face.ts'
 import { createReferenceEyes } from './mascot-eyes.ts'
-import type { EyeDressing } from './mascot-eyes.ts'
+import type { EyeDressing, LidSkin } from './mascot-eyes.ts'
 import { bodyJointNames, poseBody } from './mascot-pose.ts'
 import type { BodyJointName, MascotPoseInput } from './mascot-pose.ts'
 
@@ -63,7 +63,16 @@ function findFaceJoints(scene: Object3D) {
   }
   return { jaw: find('face-jaw'), cheekLeft: find('face-cheek-left'), cheekRight: find('face-cheek-right'), brows: [find('face-brow-0'), find('face-brow-1')] }
 }
-type MeshEye = { node: Object3D | undefined, upperLid: Object3D | undefined, lowerLid: Object3D | undefined }
+type MeshEye = { node: Object3D | undefined, lid: LidSkin | undefined, upperLid: Object3D | undefined, lowerLid: Object3D | undefined }
+/**
+ * A model names the skin beside an eye by giving that eye node a material named `Brundlefly-lid`: a base colour, and a skin texture if it has one.
+ */
+function namedLidSkin(node: Object3D | undefined): LidSkin | undefined {
+  if (!(node instanceof Mesh) || Array.isArray(node.material)) return undefined
+  const material: Material & { color?: unknown, map?: unknown } = node.material
+  if (material.name !== lidMaterialName || !(material.color instanceof Color)) return undefined
+  return { colour: material.color.clone(), map: material.map instanceof Texture ? material.map : undefined }
+}
 /** Eyeballs and their lids, from screen left to right. Each part is optional, so a file can have eyes that aim and no lids that blink. */
 function findEyes(scene: Object3D) {
   const eyes: MeshEye[] = []
@@ -74,7 +83,7 @@ function findEyes(scene: Object3D) {
       return lid && atRest(lid) ? lid : undefined
     })
     if (!node && !upperLid && !lowerLid) return eyes
-    eyes.push({ node, upperLid, lowerLid })
+    eyes.push({ node, lid: namedLidSkin(node), upperLid, lowerLid })
   }
 }
 // The file's own eyeballs sit behind a narrow lid opening. The iris stays inside it at these turns, in radians.
@@ -109,9 +118,11 @@ const mouthpartRate = Math.PI * 2 / 4
 export type MeshMascot = ReturnType<typeof assemble>
 export type MeshMascotResult = { _tag: 'Ok', mascot: MeshMascot } | { _tag: 'Err', reason: string }
 
+const lidMaterialName = 'Brundlefly-lid'
 function releaseMaterials(mesh: Mesh) {
   for (const material of (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as Material[]) {
-    for (const value of Object.values(material)) if (value instanceof Texture) value.dispose()
+    // A lid material's texture goes on to the built lids. It is released with the mascot.
+    if (material.name !== lidMaterialName) for (const value of Object.values(material)) if (value instanceof Texture) value.dispose()
     material.dispose()
   }
 }
@@ -320,13 +331,14 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
      */
     dressEyes(dressing: EyeDressing) {
       if (referenceEyes || eyeNodes.length === 0) return
-      referenceEyes = createReferenceEyes(eyeNodes, dressing)
+      referenceEyes = createReferenceEyes(eyes.flatMap(({ node, lid }) => node ? [{ node, lid }] : []), dressing)
     },
     /** Why the file cannot take the pose code. Undefined when it can. */
     poseGap: found._tag === 'Err' ? found.reason : undefined,
     dispose() {
       // The built eyes hold the host's textures. They leave before the model's own materials and textures are released.
       referenceEyes?.dispose()
+      for (const eye of eyes) eye.lid?.map?.dispose()
       mixer?.stopAllAction()
       mixer?.uncacheRoot(scene)
       releaseMeshSource(scene)

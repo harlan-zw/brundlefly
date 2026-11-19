@@ -447,3 +447,33 @@ test('his voice drops the jaw and a raised brow lifts the brow, by the relief ri
   mascot.pose!(standing)
   ;[jaw, cheekLeft, cheekRight, browLeft, browRight].forEach((bone, index) => assert.ok(place(bone).distanceTo(rest[index]!) < 1e-9))
 })
+
+test('a lid takes the skin the model names for its eye, and the relief rig\'s lid skin without one', () => {
+  const dressed = (name: string, map?: Texture) => {
+    const { scene, eyes, joint } = eyedModel()
+    const skin = new MeshStandardMaterial({ color: '#C8642D', name, map: map ?? null })
+    eyes[0]!.material = skin
+    const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+    const dressing = eyeDressing()
+    mascot.dressEyes(dressing)
+    const lid = (index: number) => (joint('head').getObjectByName(`reference-upper-lid-${index}`)!.children[0] as Mesh).material as MeshStandardMaterial
+    return { lid, dressing, mascot }
+  }
+  const named = dressed('Brundlefly-lid')
+  // The named eye's lids are that colour, with no artwork over it. The other eye keeps the relief rig's lid skin.
+  assert.equal(named.lid(0).color.getHexString(), 'c8642d')
+  assert.equal(named.lid(0).map, null)
+  assert.equal(named.lid(1).map, named.dressing.skin)
+  // A named skin texture goes on the lids. It outlives the eye node's material and leaves with the mascot.
+  const modelSkin = new Texture()
+  let released = false
+  modelSkin.addEventListener('dispose', () => { released = true })
+  const textured = dressed('Brundlefly-lid', modelSkin)
+  assert.equal(textured.lid(0).map, modelSkin)
+  assert.equal(released, false, 'The lid texture must stay while the lids use it.')
+  textured.mascot.dispose()
+  assert.ok(released, 'The lid texture must be released with the mascot.')
+  // Any other material name is the file's own eye material, and gives no lid colour.
+  const plain = dressed('Brundlefly-eye')
+  assert.equal(plain.lid(0).map, plain.dressing.skin)
+})

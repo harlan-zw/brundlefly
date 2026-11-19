@@ -335,7 +335,10 @@ The model then idles, walks the same route, speaks, and performs the same manner
 Nodes named Brundlefly-eye-0 and Brundlefly-eye-1 mark his eyes. The site hides each node and builds the relief rig's eye in its place.
 The built eye uses the relief rig's globe artwork, wet-eye shader, shell lids, blink, squint, and gaze. Their numbers come from referenceEyes in face.ts.
 Each node gives its eye a centre, a rest rotation, and a width. The height and depth keep the relief rig's proportions.
-So the model needs only a socket at each eye. It needs no eyeball, lid, or eye material of its own.
+So the model needs only a socket at each eye. It needs no eyeball or lid of its own.
+A model can name the skin beside an eye: it gives that eye node a material named Brundlefly-lid, with a base colour and, if it has one, a small skin texture.
+The built lids of that eye then take that skin. A lid shows the middle 44 percent of the texture, across and up.
+Without that material the lids take the relief rig's lid skin, which is the colour of the relief rig's head.
 If the head artwork or the face skin fails to load, the site keeps the file's own eyeballs and draws them with the wet-eye shader.
 It then turns the lid joints face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 to blink: 0.96 rad down for an upper lid and 0.96 rad up for a lower lid, the relief rig's lid travel.
 Joints named face-jaw, face-cheek-left, face-cheek-right, face-brow-0, and face-brow-1 move his face, each optional.

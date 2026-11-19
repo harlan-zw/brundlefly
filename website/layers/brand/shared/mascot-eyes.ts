@@ -1,5 +1,5 @@
 import { Float32BufferAttribute, Group, Mesh, MeshPhysicalMaterial, NoColorSpace, RepeatWrapping, SphereGeometry, Vector3 } from 'three'
-import type { BufferGeometry, Object3D, Texture } from 'three'
+import type { BufferGeometry, Color, Object3D, Texture } from 'three'
 import { createEyeMaterial } from './eye-material.ts'
 import { createHeadOutline, referenceEyes } from './face.ts'
 import type { HeadProjection } from './face.ts'
@@ -7,6 +7,11 @@ import { applyMascotSurface } from './mascot-surface.ts'
 
 /** The reference head's artwork and face skin. The caller owns both textures. */
 export type EyeDressing = { projection: HeadProjection, skin: Texture }
+
+/** The model's skin beside an eye: a colour, and a small skin texture when the model has one. The caller owns the texture. */
+export type LidSkin = { colour: Color, map: Texture | undefined }
+/** Where an eye is built. `lid` is the model's skin beside that eye, when the model names one. */
+export type EyeAnchor = { node: Object3D, lid: LidSkin | undefined }
 
 /** The radius of an anchor in its parent's units. An anchor is an eyeball mesh, or an empty node whose scale is the radius. */
 function anchorRadius(anchor: Object3D) {
@@ -21,7 +26,7 @@ function anchorRadius(anchor: Object3D) {
  * An anchor gives the eye its centre, its rest rotation, and its width. The other radii keep the reference proportions.
  * Each anchor is hidden, because the built eye takes its place.
  */
-export function createReferenceEyes(anchors: readonly Object3D[], { projection, skin }: EyeDressing) {
+export function createReferenceEyes(anchors: readonly EyeAnchor[], { projection, skin }: EyeDressing) {
   const { uvAt, localAt } = createHeadOutline(projection.raster)
   const { width, height } = projection.raster
   const eye = createEyeMaterial(projection.texture)
@@ -31,12 +36,22 @@ export function createReferenceEyes(anchors: readonly Object3D[], { projection, 
   heightTexture.needsUpdate = true
   const lidSkin = new MeshPhysicalMaterial({ map: skin, color: '#BAAA96', bumpMap: heightTexture, bumpScale: 0.004,
     roughness: 0.72, metalness: 0.02, clearcoat: 0.03 })
-  const surface = applyMascotSurface(lidSkin, 'skin')
+  const lidMaterials = [lidSkin]
+  const surfaces = [applyMascotSurface(lidSkin, 'skin')]
   const geometries: BufferGeometry[] = []
   const { lid } = referenceEyes
   const point = new Vector3()
-  const built = anchors.slice(0, referenceEyes.radii.length).flatMap((anchor, index) => {
+  const built = anchors.slice(0, referenceEyes.radii.length).flatMap(({ node: anchor, lid: modelSkin }, index) => {
     if (!anchor.parent) return []
+    // The relief rig's lid skin is the colour of the relief rig's head. A model that names its own skin gets lids in that skin,
+    // with the same surface relief.
+    let lidMaterial = lidSkin
+    if (modelSkin) {
+      lidMaterial = new MeshPhysicalMaterial({ color: modelSkin.colour, map: modelSkin.map ?? null, bumpMap: heightTexture, bumpScale: 0.004,
+        roughness: 0.72, metalness: 0.02, clearcoat: 0.03 })
+      lidMaterials.push(lidMaterial)
+      surfaces.push(applyMascotSurface(lidMaterial, 'skin'))
+    }
     const [rx, ry, rz] = referenceEyes.radii[index]!
     const [cx, cy] = referenceEyes.centres[index]!
     const centre = localAt(width * cx, height * cy)
@@ -73,7 +88,7 @@ export function createReferenceEyes(anchors: readonly Object3D[], { projection, 
       geometries.push(cap)
       const hinge = new Group()
       hinge.name = `reference-${upper ? 'upper' : 'lower'}-lid-${index}`
-      hinge.add(new Mesh(cap, lidSkin))
+      hinge.add(new Mesh(cap, lidMaterial))
       root.add(hinge)
       return hinge
     })
@@ -97,14 +112,14 @@ export function createReferenceEyes(anchors: readonly Object3D[], { projection, 
   return {
     eye,
     shut,
-    updateTime(time: number) { eye.updateTime(time); surface.update(time) },
+    updateTime(time: number) { eye.updateTime(time); surfaces.forEach(surface => surface.update(time)) },
     /** Removes the built eyes and releases them. The caller's two textures stay. */
     dispose() {
       for (const { root } of built) root.removeFromParent()
       geometries.forEach(geometry => geometry.dispose())
-      surface.dispose()
+      surfaces.forEach(surface => surface.dispose())
       eye.dispose()
-      lidSkin.dispose()
+      lidMaterials.forEach(material => material.dispose())
       heightTexture.dispose()
     },
   }
