@@ -559,3 +559,64 @@ test('through the walk one foot always rests at its floor height and neither foo
   // One walk cycle covers the ground both feet travel under him. With these legs that is well under his height.
   assert.ok(mascot.strideLength! > 0.2 && mascot.strideLength! < 2, `The stride must be a plausible length, not ${mascot.strideLength}.`)
 })
+
+/** Legs as chains at the figurine's own joint places, in millimetres. His feet stand 18 and 12 millimetres from the axis he turns about. */
+function leggedModel() {
+  const model = jointedModel()
+  model.node.rotation.y = 0.5
+  const place = (side: 'left' | 'right', hip: [number, number, number], knee: [number, number, number], foot: [number, number, number]) => {
+    model.joint(`${side}-hip`).position.set(...hip)
+    model.joint(`${side}-hip`).add(model.joint(`${side}-knee`))
+    model.joint(`${side}-knee`).position.set(knee[0] - hip[0], knee[1] - hip[1], knee[2] - hip[2])
+    model.joint(`${side}-knee`).add(model.joint(`${side}-foot`))
+    model.joint(`${side}-foot`).position.set(foot[0] - knee[0], foot[1] - knee[1], foot[2] - knee[2])
+  }
+  place('left', [-7, 31.5, -2.9], [-9.3, 25, 6.6], [-18, 10, 1.6])
+  place('right', [1.2, 31.4, -7.4], [8.5, 22.8, -1.5], [6, 9.7, -10.4])
+  return model
+}
+
+test('he turns in place on lifted feet, and the foot he stands on stays where it is', () => {
+  const { scene, joint } = leggedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const names = ['left-foot', 'right-foot'] as const
+  const places = () => names.map(name => mascot.root.worldToLocal(joint(name).getWorldPosition(new Vector3())))
+  mascot.pose!(standing, undefined, 0.5)
+  const rest = places()
+  // A figure on a turntable drags each foot along an arc: its distance from the axis, times the turn.
+  const turntable = rest.reduce((sum, foot) => sum + Math.hypot(foot.x, foot.z), 0) * 1
+  // He turns one radian, to the other side, at the pace of his steps in place: 1.2 radians and 12 radians of step cycle a second.
+  let before = rest
+  let slid = 0
+  const lifted = [0, 0]
+  const frames = 50
+  for (let step = 1; step <= frames; step++) {
+    const time = step / 60
+    mascot.pose!({ ...standing, time, stepInPlace: 1, stepPhase: time * 12 }, undefined, 0.5 - step / frames)
+    const now = places()
+    const heights = now.map((foot, index) => foot.y - rest[index]!.y)
+    heights.forEach((height, index) => { lifted[index] = Math.max(lifted[index]!, height) })
+    // The foot that carries him is the lower one, in this frame and in the frame before.
+    const support = heights[1]! < heights[0]! ? 1 : 0
+    const carried = before[support]!.y - rest[support]!.y < 1e-6 && heights[support]! < 1e-6
+    if (carried) slid += Math.hypot(now[support]!.x - before[support]!.x, now[support]!.z - before[support]!.z)
+    before = now
+  }
+  assert.ok(lifted[0]! > 0.02 && lifted[1]! > 0.02, `Each foot must leave the floor in turn, not ${lifted}.`)
+  assert.ok(slid < turntable * 0.2, `The foot he stands on slid ${slid.toFixed(3)} of a turntable's ${turntable.toFixed(3)}.`)
+  // The turn moved his place a little. A walk brings him back onto his route.
+  for (let step = 1; step <= 120; step++) mascot.pose!({ ...standing, time: frames / 60 + step / 60, gait: 1, walkPhase: step * 0.1 }, undefined, -0.5)
+  mascot.pose!({ ...standing, time: 4 }, undefined, -0.5)
+  const fresh = leggedModel()
+  const reference = ok(createMeshMascot({ scene: fresh.scene, animations: [] }, 2.5))
+  reference.pose!({ ...standing, time: 4 }, undefined, -0.5)
+  const [walked, expected] = [mascot, reference].map((value, index) => value.root.worldToLocal((index ? fresh.joint : joint)('pelvis').getWorldPosition(new Vector3())))
+  assert.ok(Math.hypot(walked!.x - expected!.x, walked!.z - expected!.z) < 0.01, 'After a walk he must stand on his route again.')
+})
+
+test('a pose without steps in place is the pose it was', () => {
+  const [plain, stepping] = [leggedModel(), leggedModel()]
+  ok(createMeshMascot({ scene: plain.scene, animations: [] }, 2.5)).pose!({ ...standing, time: 1.3 })
+  ok(createMeshMascot({ scene: stepping.scene, animations: [] }, 2.5)).pose!({ ...standing, time: 1.3, stepInPlace: 0, stepPhase: 2 })
+  for (const name of bodyJointNames) assert.deepEqual(stepping.joint(name).quaternion.toArray(), plain.joint(name).quaternion.toArray(), name)
+})

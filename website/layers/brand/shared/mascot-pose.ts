@@ -18,6 +18,8 @@ export type BodyJointName = typeof bodyJointNames[number]
 export type MascotPoseInput = {
   time: number, pressure: number, pointer: Vector2, transform: Transform
   gait?: number, walkPhase?: number, gaze?: { yaw: number, tilt: number }
+  /** Steps in place, for a full body that turns where it stands: how far each foot lifts, from 0 to 1, and the cycle of those steps. */
+  stepInPlace?: number, stepPhase?: number
   speaking?: number, blink?: number, brow?: number, squint?: number, eyes?: EyeFocus, mannerism?: MannerismPose
 }
 /** Whole-figure motion and face inputs that the pose produces beside the joint turns. */
@@ -167,6 +169,16 @@ export function addBodyDepth(joint: (name: BodyJointName) => Turnable, input: Ma
   turn('right-knee', -rightLift * 0.22, 0, 0)
   turn('left-foot', leftLift * 0.16, 0, 0)
   turn('right-foot', rightLift * 0.16, 0, 0)
+  // Steps in place: each foot lifts in turn with no stride, so he can turn where he stands. They fade as a walk takes over.
+  const inPlace = Math.min(1, Math.max(0, input.stepInPlace ?? 0)) * (1 - gait)
+  const leftStep = inPlace * Math.max(0, Math.cos(input.stepPhase ?? 0))
+  const rightStep = inPlace * Math.max(0, -Math.cos(input.stepPhase ?? 0))
+  turn('left-knee', -leftStep * 0.4, 0, 0)
+  turn('right-knee', -rightStep * 0.4, 0, 0)
+  turn('left-foot', leftStep * 0.27, 0, 0)
+  turn('right-foot', rightStep * 0.27, 0, 0)
+  turn('pelvis', 0, 0, (leftStep - rightStep) * 0.03)
+  turn('chest', 0, 0, (rightStep - leftStep) * 0.03)
   // Spine: the pelvis follows the leading leg and drops over the lifted one. The chest twists against it and leans into the walk.
   turn('pelvis', 0, stride * 0.06, stride * 0.03)
   turn('chest', gait * 0.03, -stride * 0.11, 0)

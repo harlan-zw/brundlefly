@@ -10,7 +10,7 @@ import {
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
-import { advanceHeading, advanceStroll, startStroll, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
+import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
@@ -281,7 +281,8 @@ watch(canvas, async (element) => {
     : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
   let stroll = startStroll(sceneLayout.mascot, 0)
   // The mesh's turn about the vertical. The relief rig is flat artwork and always faces screen right.
-  let heading = mascot._tag === 'Mesh' ? mascot.restHeading : 0
+  // His feet carry every turn, so he never spins where he stands.
+  let turn = startTurn(mascot._tag === 'Mesh' ? mascot.restHeading : 0)
   let elapsed = 0
   let faceElapsed = 0
   // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
@@ -359,7 +360,7 @@ watch(canvas, async (element) => {
     if (staging) {
       // Between talks the shot takes the side he faces and starts from rest. During a talk it keeps that side, so the camera never crosses him.
       const resting = !paused && focusProgress === 0
-      if (resting) { staging.side = heading < 0 ? -1 : 1; staging.drift = 0 }
+      if (resting) { staging.side = turn.side; staging.drift = 0 }
       // His head turns to the camera, and the camera frames his head. A slow follow keeps that loop calm and leaves his head free to act in the frame.
       // A still frame has no later frame to catch up in, so it takes his face as it is.
       const eyes = staging.eyeLine(new Vector3())
@@ -384,15 +385,20 @@ watch(canvas, async (element) => {
     // A mesh without the relief rig's joints stands where the relief rig starts.
     const walkSpeed = settings.value.walkSpeed * walkPace
     // Only the part of his travel that lies along his facing moves his legs. He cannot turn his back, so some legs of the route are partly sideways.
-    const along = meshPose ? Math.max(0.35, Math.cos(travelYaw(stroll, route) - heading)) : 1
+    const along = meshPose ? Math.max(0.35, Math.cos(travelYaw(stroll, route) - turn.heading)) : 1
+    const attentionNow = paused ? 'talking' as const : hovered.value ? 'noticed' as const : 'free' as const
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
-      pauses: sceneLayout.walkPauses, walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free',
+      pauses: sceneLayout.walkPauses, walkSpeed, attention: attentionNow,
       cadence: meshCadence ? meshCadence * along : undefined })
-    if (mascot._tag === 'Mesh' && meshPose && faceMotion && visibility.value === 'visible') heading = advanceHeading(heading, stroll,
-      { delta, route, walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3 })
+    if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
+      const facing = { route, walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow }
+      // With motion off he has no steps to turn with, so he stands where the turn would end.
+      turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
+    }
     const pose = faceMotion ? strollPose(stroll, walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
-    figure.rotation.y = stroll.heading
+    // The relief rig leans a little toward its travel. The mesh's turn already faces it.
+    figure.rotation.y = meshPose ? 0 : stroll.heading
     if (environmentMotion.value) elapsed += delta
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
@@ -421,7 +427,7 @@ watch(canvas, async (element) => {
         brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
           : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
         squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 }
-      if (meshPose) meshPose(input, look, heading)
+      if (meshPose) meshPose({ ...input, stepInPlace: turn.steps, stepPhase: turn.phase }, look, turn.heading)
       else if (mascot._tag === 'Relief') mascot.update(input)
     }
     shadow.position.x = figure.position.x

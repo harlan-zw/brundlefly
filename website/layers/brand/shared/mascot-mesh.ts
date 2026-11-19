@@ -210,6 +210,35 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       for (let joint = foot.parent; joint && joint !== stanceNode; joint = joint.parent) legTurn.premultiply(joint.quaternion)
       foot.quaternion.slerp(legTurn.invert(), Math.min(1, Math.max(0, 1 - (rise - drops[index]!) / plantedBand)))
     })
+    // The foot he stands on.
+    return drops[1]! > drops[0]! ? 1 : 0
+  }
+  // He has no leg solver, so any move of his body drags the foot he stands on: a turn swings it like a figure on a turntable,
+  // and a step in place pushes it along the floor. So while he stands, that foot keeps its place and his body moves over it.
+  // A walk covers the ground itself, so the hold lets go as he walks and his place returns to his route.
+  const shift = new Vector2()
+  // His feet do not stand under the axis he turns about, so a turn to the other side moves him about a tenth of his height.
+  const shiftLimit = height * 0.13
+  const hold = { foot: 0, x: 0, z: 0, time: 0, held: false }
+  const stood = new Vector3()
+  function standOnFoot(support: number, time: number, gait: number) {
+    const elapsed = Math.min(0.1, Math.max(0, time - hold.time))
+    hold.time = time
+    root.worldToLocal(feet[support]!.getWorldPosition(stood))
+    if (gait > 0.05 || !hold.held || hold.foot !== support) {
+      // A walk fades the shift. A new foot takes the hold where it stands now, so nothing jumps.
+      if (gait > 0.05) shift.multiplyScalar(Math.exp(-gait * elapsed * 4))
+      Object.assign(hold, { foot: support, x: stood.x + shift.x, z: stood.z + shift.y, held: gait <= 0.05 })
+    }
+    else {
+      shift.set(hold.x - stood.x, hold.z - stood.z)
+      if (shift.length() > shiftLimit) {
+        shift.setLength(shiftLimit)
+        Object.assign(hold, { x: stood.x + shift.x, z: stood.z + shift.y })
+      }
+    }
+    pivot.position.x += shift.x
+    pivot.position.z = shift.y
   }
   /**
    * The ground one walk cycle covers, in the mascot's own units: how far each foot travels back under him while it carries him.
@@ -374,7 +403,7 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
         tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2 + depth.bounce * 0.09, 0, 0)
       })
       // The legs set his height: his body rises as they straighten and settles as each foot lands.
-      plantFeet()
+      standOnFoot(plantFeet(), input.time, Math.min(1, Math.max(0, input.gait ?? 0)))
       turnHead(look, input.mannerism?.turns.head)
       aimEyes(input.time, input.eyes ?? { _tag: 'Ahead' })
       // The relief rig's lids blink when the host supplied them. The file's own lid joints then stay at rest.
