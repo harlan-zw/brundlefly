@@ -166,7 +166,8 @@ watch(canvas, async (element) => {
   if (!context) { status.value = { _tag: 'Fallback', reason: 'context' }; return }
   // A missing or broken model file is an error value. The relief rig then takes its place.
   const [results, meshResult] = await Promise.all([Promise.allSettled([
-    new TextureLoader().loadAsync('/brand/kit/modular/flesh-diffuse.png'),
+    // The tunnel's tissue is a smooth painting of the kit's pixel-art flesh tile, with every fold in the same place.
+    new TextureLoader().loadAsync('/brand/kit/lair/tunnel-diffuse.webp'),
     new TextureLoader().loadAsync('/brand/character.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/goo-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/chitin-diffuse.png'),
@@ -210,7 +211,8 @@ watch(canvas, async (element) => {
   projectionTexture.magFilter = LinearFilter
   bodyProjectionTexture.wrapS = bodyProjectionTexture.wrapT = ClampToEdgeWrapping
   bodyProjectionTexture.magFilter = LinearFilter
-  texture.magFilter = mascotTexture.magFilter = NearestFilter
+  // The relief mascot is pixel artwork, so it keeps hard pixels. The tissue of the lair is a surface in a lit room: hard pixels show there as a grid.
+  mascotTexture.magFilter = NearestFilter
   const image = mascotTexture.image as HTMLImageElement
   const raster = document.createElement('canvas')
   raster.width = 180

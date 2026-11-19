@@ -1,0 +1,14 @@
+{
+  "tool": "Codex CLI built-in image generation",
+  "date": "2026-11-19",
+  "reference": [
+    "assets/brand/kit/modular/flesh-diffuse.png",
+    "assets/3d/brundlefly/source/views/premium/head.png"
+  ],
+  "master": "assets/source/tunnel-diffuse.png",
+  "runtime": "assets/brand/kit/lair/tunnel-diffuse.webp",
+  "runtimePreparation": "The cool pixels of the chitin nodules move 0.7 of the way to the chitin token #343C3B at their own lightness, because the generator painted them teal. Then each colour channel takes the mean and the spread of flesh-diffuse.png, in linear light. Then 1254px WebP, quality 88, method 6.",
+  "prompt": "Make ONE image with your built-in image generation tool, and save it as tunnel-paint.png in this folder.\n\nTwo images are attached.\nImage 1 (flesh-pixel.png) is a square texture tile of living tissue for the wall of an organic tunnel, drawn as pixel art with dithering. It gives the exact layout: where each fold, band, pale membrane, olive mucus channel, and dark chitin nodule lies, and the palette.\nImage 2 (style.png) is a finished painting of a creature's head. It gives the target quality and surface style only: realistic, high-end game creature tissue with pores, fine wrinkles, thin veins, and mottled pigment. Do not copy its shapes.\n\nRepaint image 1 at the quality of image 2. Keep the layout, the proportions, and the position of every fold and band EXACTLY as in image 1, edge to edge, so the result can replace it as a texture. Keep the palette: muted rust flesh, bruised purple membrane, pale cream membrane bands, olive mucus channels, dark blue-black chitin nodules. Replace every pixel cluster and every dither pattern with smooth, continuous, detailed painted tissue. No visible square pixels, no dithering, no grid.\n\nThis is a colour texture. Paint it with flat, even, shadowless light: no cast shadows, no directional light, no bright specular highlights, no vignette. Soft shading inside deep folds is fine. The image must fill the whole square to all four edges, with no border, no background, no text, no creature, no eyes. Square image, at the highest resolution you support.\n\nDo not write code to draw the image. Do not edit any other file. Reply with the saved file path and its pixel size, or say plainly that image generation failed.",
+  "usage": "The tissue of the tunnel wall and the wall folds on the home page. It replaces flesh-diffuse.png there. The brand kit keeps flesh-diffuse.png.",
+  "known_issue": "The image is generated and is not canonical artwork. The generator reported that some small contours shifted from the reference. The painting has soft highlights on its folds, although the brief asked for flat light."
+}
