@@ -1,14 +1,18 @@
-import { Color, CustomBlending, DoubleSide, OneMinusSrcAlphaFactor, ShaderMaterial, SrcAlphaFactor } from 'three'
+import { AdditiveBlending, Color, CustomBlending, DoubleSide, OneMinusSrcAlphaFactor, ShaderMaterial, SrcAlphaFactor } from 'three'
+import { fogSurvival, fogUniforms } from './fog-fade'
 
 const markVertex = `
 attribute vec3 spot;
 attribute vec4 spotData;
 varying vec2 vReach;
 varying vec4 vSpotData;
+#include <fog_pars_vertex>
 void main() {
   vReach = (position.xz - spot.xy) / spot.z;
   vSpotData = spotData;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
 }`
 
 /**
@@ -37,6 +41,35 @@ void main() {
   float shade = exp(-reach * 8.0) * 0.55 + exp(-reach * 2.4) * 0.4;
   shade *= 1.0 - smoothstep(0.7, 1.0, sqrt(reach));
   gl_FragColor = vec4(uShade, shade * vSpotData.x);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`,
+  })
+}
+
+/**
+ * Light that falls on the floor, for createFloorDecalGeometry. It is a fake: no lamp exists, so no other material pays for it.
+ * A spot's first three data numbers are its colour. The fourth is its index in `levels`, the live strength of each light source.
+ * The caller owns `levels` and writes it each frame. The glow takes fog: it adds light, so fog removes its share.
+ */
+export function createFloorGlowMaterial(levels: Float32Array) {
+  return new ShaderMaterial({
+    ...onTheFloor,
+    blending: AdditiveBlending, fog: true,
+    defines: { GLOW_SOURCES: levels.length },
+    uniforms: { ...fogUniforms(), uGlowLevel: { value: levels } },
+    vertexShader: markVertex,
+    fragmentShader: `
+uniform float uGlowLevel[GLOW_SOURCES];
+varying vec2 vReach;
+varying vec4 vSpotData;
+#include <fog_pars_fragment>
+${fogSurvival}
+void main() {
+  float reach = dot(vReach, vReach);
+  float light = exp(-reach * 3.4) * (1.0 - smoothstep(0.7, 1.0, sqrt(reach)));
+  light *= uGlowLevel[int(vSpotData.w + 0.5)] * fogSurvival();
+  gl_FragColor = vec4(vSpotData.rgb * light, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`,
