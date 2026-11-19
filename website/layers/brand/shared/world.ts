@@ -10,9 +10,13 @@ import { createCaveGoo } from './cave-goo'
 import { createEggSacs } from './eggs'
 import { createTissueMaterial } from './tissue-material'
 import { caveCrossSection, createCaveGeometry } from './cave-geometry'
+import { createFloorGeometry } from './floor-surface'
 import type { RoomHeight } from './room-height'
 import { sceneLayout } from './scene-layout'
+import { fullSceneQuality } from './scene-quality'
+import type { SceneQuality } from './scene-quality'
 import type { SceneSettings } from './scene-settings'
+import { createAir } from './air'
 
 export type WorldTextures = { chitin: Texture, floor: Texture, egg: Texture, room: Texture, roomHeight: RoomHeight }
 export type WorldInput = { time: number, pressure: number, settings: SceneSettings }
@@ -40,8 +44,11 @@ function foldGeometry(seed: number) {
   return geometry
 }
 
-/** An open chamber surrounds the walkable foreground without obstructing the mascot. */
-export function createWorld(texture: Texture, gooTexture: Texture, textures: WorldTextures) {
+/**
+ * An open chamber surrounds the walkable foreground without obstructing the mascot.
+ * `quality` thins the air for weak devices: its `spores` share and its `haze` switch. The chamber itself is the same at every tier.
+ */
+export function createWorld(texture: Texture, gooTexture: Texture, textures: WorldTextures, quality: SceneQuality = fullSceneQuality) {
   const root = new Group()
   root.name = 'Brundlefly chamber'
   // Connected angular cave shoulders surround the clearing and both player camera positions.
@@ -64,26 +71,13 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   // Glassy dark chitin. Its flat facets catch sharp glints from the wet environment.
   const chitin = new MeshPhysicalMaterial({ color: '#4A4F44', map: textures.chitin, bumpMap: textures.chitin,
     bumpScale: 0.12, roughness: 0.42, clearcoat: 1, clearcoatRoughness: 0.1 })
-  const eggs = createEggSacs(textures.egg, textures.chitin)
+  const eggs = createEggSacs(textures.egg, textures.chitin, textures.floor)
   root.add(eggs.root)
 
-  const groundGeometry = new PlaneGeometry(22, 36, 44, 48)
-  const floorPositions = groundGeometry.getAttribute('position')
-  for (let index = 0; index < floorPositions.count; index++) {
-    const x = floorPositions.getX(index)
-    const z = floorPositions.getY(index)
-    // The middle stays nearly level. Raised seams collect at the cave edges.
-    const edge = Math.min(1, Math.max(0, (Math.abs(x) - 2) / 3))
-    const height = Math.sin(x * 3 + z * 0.9) * 0.025 + edge * Math.sin(z * 2.4 + x) * 0.11
-    floorPositions.setZ(index, height)
-  }
-  groundGeometry.computeVertexNormals()
   const floorSkin = createTissueMaterial({ surface: 'floor', texture: textures.floor, color: '#867461',
     bumpScale: 0.14, roughness: 0.79 })
-  const ground = new Mesh(groundGeometry, floorSkin.material)
-  ground.rotation.x = -Math.PI / 2
-  ground.position.set(0, groundLevel - 0.035, 5)
-  root.add(ground)
+  // The floor's shape lives in floor-surface.ts, so marks painted on the floor follow the same triangles.
+  root.add(new Mesh(createFloorGeometry(), floorSkin.material))
 
   // The wall is made of asymmetric connected folds, rather than isolated boulders.
   const livingFolds: { mesh: Mesh, scale: Vector3, phase: number }[] = []
@@ -197,6 +191,10 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
   occlusion.position.set(0, groundLevel + 0.002, -2.2)
   root.add(occlusion)
 
+  // Spores, low mist, and one light shaft give the dark some depth.
+  const air = createAir(quality, textures.floor)
+  root.add(air.root)
+
   const ambient = new HemisphereLight(new Color('#A4B5A0'), new Color('#080B08'), 0.85)
   root.add(ambient)
   // A broad, feathered key follows the walking area, rather than lighting the nearest wall.
@@ -234,6 +232,7 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
       caveFilm.update({ time, breath: settings.breath, flow: settings.flow, wetness: settings.wetness, key: settings.key, fill: settings.fill, rim: settings.rim })
       caveSlime.update({ time, breath: settings.breath, flow: settings.flow })
       eggs.update({ time, breath: settings.breath, wetness: settings.wetness })
+      air.update(time)
       tunnel.update({ time: time * settings.breath, pressure: response * 0.25, wetness: settings.wetness, pointer, opening: settings.opening, transform: 'squeeze', flow: settings.flow })
       for (const { mesh, scale, phase } of livingFolds) {
         mesh.scale.set(scale.x * (1 + Math.sin(time * 0.48 + phase) * 0.014 * settings.breath + response * 0.015),
@@ -246,6 +245,8 @@ export function createWorld(texture: Texture, gooTexture: Texture, textures: Wor
       root.remove(tunnel.root)
       eggs.dispose()
       root.remove(eggs.root)
+      air.dispose()
+      root.remove(air.root)
       caveSlime.dispose()
       root.remove(caveSlime.root)
       caveFilm.dispose()
