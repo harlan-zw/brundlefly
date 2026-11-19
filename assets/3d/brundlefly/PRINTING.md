@@ -241,16 +241,22 @@ Skeleton:
 
 Blender 5.3 as a Flatpak, PrusaSlicer as a Flatpak, Node 24, and `uv` are necessary. Use absolute paths.
 The Flatpak apps reach the home folder only. Put `OUT` under your home folder.
+Run each recipe as one Bash block. Each block uses a fresh build folder and stops if any stage fails.
+The build folder stays in `~/scratch` for inspection.
 
 ```bash
-D=/abs/path/to/assets/3d/brundlefly
-OUT=$HOME/scratch/brundlefly-build
-V=$D/source/views
-VIEWS="--front-image $V/front.png --back-image $V/back.png --right-image $V/side-right.png --left-image $V/side-left.png"
-flatpak run org.blender.Blender -b --factory-startup --python $D/build_from_mesh.py -- --source $D/source/hunyuan3d-multiview-shape.glb --out $OUT $VIEWS --stance $D/source/stance.json
-flatpak run org.blender.Blender -b --factory-startup --python $D/export_model.py -- --blend $OUT/brundlefly-work.blend --out $D --tris 200000 --glb-tris 120000
-flatpak run org.blender.Blender -b --factory-startup --python $D/render_previews.py -- --blend $D/brundlefly.blend --out $OUT/previews --modes colour --views front,three-quarter,side,back,top
-node $D/validate.ts
+(
+set -e
+D="/abs/path/to/assets/3d/brundlefly"
+mkdir -p "$HOME/scratch"
+OUT=$(mktemp -d "$HOME/scratch/brundlefly-build.XXXXXX")
+V="$D/source/views"
+VIEWS=(--front-image "$V/front.png" --back-image "$V/back.png" --right-image "$V/side-right.png" --left-image "$V/side-left.png")
+flatpak run org.blender.Blender -b --factory-startup --python-exit-code 1 --python "$D/build_from_mesh.py" -- --source "$D/source/hunyuan3d-multiview-shape.glb" --out "$OUT" "${VIEWS[@]}" --stance "$D/source/stance.json"
+flatpak run org.blender.Blender -b --factory-startup --python-exit-code 1 --python "$D/export_model.py" -- --blend "$OUT/brundlefly-work.blend" --out "$D" --tris 200000 --glb-tris 120000
+flatpak run org.blender.Blender -b --factory-startup --python-exit-code 1 --python "$D/render_previews.py" -- --blend "$D/brundlefly.blend" --out "$OUT/previews" --modes colour --views front,three-quarter,side,back,top
+node "$D/validate.ts"
+)
 ```
 
 The renders are named `<view>-colour.png`. Copy them to `previews/<view>.png`.
@@ -285,13 +291,21 @@ The files of the jar variant are not in this folder. Build them with the steps b
 - The two soles are flat and level, so the print starts on two feet and the figure stands on the floor of the jar.
 - With flat soles the figure reads as settled on the floor of the jar, and not as afloat.
 
-Build, with the variables of the "Rebuild" section:
+Build with this separate Bash block. Set `D` to the same absolute path as in the "Rebuild" section.
 
 ```bash
-node $D/stance_float.ts
-flatpak run org.blender.Blender -b --factory-startup --python $D/build_from_mesh.py -- --source $D/source/hunyuan3d-multiview-shape.glb --out $OUT $VIEWS --stance $D/source/stance-float.json --no-base
-flatpak run org.blender.Blender -b --factory-startup --python $D/export_model.py -- --blend $OUT/brundlefly-work.blend --out $OUT --tris 200000 --glb-tris 120000 --name brundlefly-jar
-node $D/validate.ts --dir $OUT --name brundlefly-jar
+(
+set -e
+D="/abs/path/to/assets/3d/brundlefly"
+mkdir -p "$HOME/scratch"
+OUT=$(mktemp -d "$HOME/scratch/brundlefly-jar-build.XXXXXX")
+V="$D/source/views"
+VIEWS=(--front-image "$V/front.png" --back-image "$V/back.png" --right-image "$V/side-right.png" --left-image "$V/side-left.png")
+node "$D/stance_float.ts"
+flatpak run org.blender.Blender -b --factory-startup --python-exit-code 1 --python "$D/build_from_mesh.py" -- --source "$D/source/hunyuan3d-multiview-shape.glb" --out "$OUT" "${VIEWS[@]}" --stance "$D/source/stance-float.json" --no-base
+flatpak run org.blender.Blender -b --factory-startup --python-exit-code 1 --python "$D/export_model.py" -- --blend "$OUT/brundlefly-work.blend" --out "$OUT" --tris 200000 --glb-tris 120000 --name brundlefly-jar
+node "$D/validate.ts" --dir "$OUT" --name brundlefly-jar
+)
 ```
 
 The export writes `brundlefly-jar-80mm.stl`, `brundlefly-jar-100mm.stl`, `brundlefly-jar.blend`, and `brundlefly-jar-preview.glb`.
