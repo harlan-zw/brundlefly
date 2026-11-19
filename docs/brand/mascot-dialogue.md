@@ -156,7 +156,8 @@ Choices: "Why does the wall heal?", "Write one about you.", "What else is on the
 
 ## Seeded conversation openings
 
-The server greeting starts with the verified daily count: "You're my {ordinal} visitor today."
+The greeting starts with the verified daily count: "You're my {ordinal} visitor today."
+The server returns that count and whether the visit is a return. The browser picks the line and renders the greeting.
 The count picks one of these lines, so a reopened dialog keeps its opening.
 The greeting costs no model request. Each choice can become the next user turn.
 `website/shared/conversation.ts` holds the exact strings.
@@ -170,8 +171,72 @@ The greeting costs no model request. Each choice can become the next user turn.
 | Writing | Words are easier to rearrange than joints. Brought something that won't sit right? | He leans closer. | My writing sounds wrong. / Tell me what you do. / I just came to look. |
 | Stillness | You stayed, which is new. Most things in here only stop moving when something goes wrong. | He goes very still. | Are you all right? / What is this place? / I was promised useful Skills. |
 
-A returning greeting needs a verified earlier conversation. The server stores no conversations, so it never claims one.
+A returning greeting needs a verified earlier visit: a session cookie that matches a visitor row from an earlier day.
+The server stores no conversations, so he never claims to remember one.
 Do not invent personal memories or details about other visitors.
+
+### Conditional openings
+
+A return visit or a late hour replaces the line above. A return wins over the hour. The count picks one of the two lines.
+The late window is 23:00 to 04:59 by the visitor's own clock. The browser reads the hour and does not send it.
+The session cookie lasts 24 hours, so the site detects a return only across one UTC day change.
+These openings have no precomputed replies. Each choice gets a live reply.
+
+| Condition | Line after the count | Beat | Mood | Three visitor choices |
+| --- | --- | --- | --- | --- |
+| Return visit | You've been here before. The room kept that much. It kept nothing else, and neither did I, so start anywhere. | He tilts his head. | neutral | What does the room keep? / Why don't you remember? / Show me what you make. |
+| Return visit | Back again. Good. I've turned the eggs since, and one wing got slightly worse. That's all the news. | One wing twitches. | amused | Worse how? / How are the eggs? / What do you make here? |
+| Late hour | The opening's gone dark. You're up late, or I am. I stopped being able to tell. | He looks toward the light. | neutral | Do you sleep? / What happens here at night? / Why are you still up? |
+| Late hour | Late for a visit. I don't mind. The drips slow down at night, and there's less to count. | He listens to the ceiling. | neutral | What do you count? / Is it quiet at night? / What is this place? |
+
+The return lines claim an earlier visit only. The late lines hedge the hour and never state a clock time.
+
+### Approved openings outside the rotation
+
+The owner approved these lines on 2026-11-19. The site does not show them yet.
+The six general lines are in `website/shared/conversation.ts` as held openings. They have no precomputed replies.
+In the rotation they would send about half of all first choices to live replies, so they wait for that decision.
+The Skill page and egg lines need facts the site does not sense yet. `{skill}` is a Skill name from the catalog.
+
+| Opening | Line after the count | Beat | Mood | Three visitor choices |
+| --- | --- | --- | --- | --- |
+| General | I practised a greeting. Then you arrived and both wings buzzed, so now you know I practised. | His wings buzz once. | amused | Let's hear the greeting. / Why do they buzz? / What is this place? |
+| General | Hh. Sorry. The first word always takes a run-up. This mouth was built for something else. | His jaw catches. | neutral | Does it hurt to talk? / Take your time. / What was it built for? |
+| General | Hold on. Dust in one eye. The wrist handles that now. It never asked me. It just started. | He wipes an eye with his wrist. | amused | Do your hands do that often? / Which parts are still yours? / Are you all right? |
+| General | Ignore the small hands. They rub together when someone new comes in. I've asked what they're planning. They don't say. | His small hands rub together. | amused | Should I be worried? / What else do they do? / Hello, small hands. |
+| General | The ceiling dripped in threes all day. Then you came in and it lost count. I'd like to know what it was counting. | He listens to the ceiling. | curious | What do you think it counts? / Does it always drip? / Sorry to interrupt. |
+| General | The light at the opening moved when you came in. I looked. I always look. Then I remembered I had company. | He looks toward the light. | neutral | What's out there? / Why do you always look? / Are you all right? |
+| Arrival from a Skill page | You came in from the {skill} page. Ask me about it if you like. I explain better than I fly. | One wing twitches. | amused | Tell me about {skill}. / Can you fly? / How do you know where I was? |
+| Arrival from a Skill page | You came by way of the Skills. I've read every one with a claw under each line. Want to know which does what? | He leans closer. | curious | Which Skill edits prose? / Why read with a claw? / I just came to look. |
+| Eggs hovered before talking | The eggs went quiet just before you spoke. They do that when someone leans in. They don't mind, I think. | He goes very still. | wary | What's inside them? / Did I bother them? / How many are there? |
+| Eggs hovered before talking | The eggs like being looked at. I can tell, because nothing happened. With eggs, that's approval. | He glances at the eggs. | amused | What's inside them? / What does disapproval look like? / I was promised useful Skills. |
+
+The egg lines speak from the eggs' side. He never says he saw the visitor.
+
+## Fallback lines
+
+When no reply comes back, he says one of these lines as speech. All six use the mood neutral.
+A plain status and the "Try again" control stay beside the line. `website/COPY.md` holds those strings.
+No line claims he heard the message. No line promises that the retry will work.
+A fallback line is not a reply. It never enters the conversation history, so the model never reads it.
+A failed greeting has no visitor text. It uses only the two lines that mention none.
+An expired session and a rate limit show their plain sentence with no fallback line.
+
+| Line | Beat | After a failed greeting |
+| --- | --- | --- |
+| That didn't come out. The mouth does this sometimes. Your words are safe. Mine went missing. | His jaw catches. | No |
+| The words jammed on the way out. It's this mouth. Nothing you said did it. | He tilts his head. | No |
+| A wing went off in the middle of that, and I lost the sentence. Ask me again, if you don't mind. | One wing twitches. | No |
+| That came out as noise. I won't hand you noise. Give me another go. | His wings buzz once. | Yes |
+| I lost my place. The ceiling dripped and I started counting. Ask again and I'll keep my hands still. | He listens to the ceiling. | No |
+| I opened my mouth and nothing fit through. Some days it's a narrow door. Try me once more. | His jaw catches. | Yes |
+
+## Listening lines
+
+While a live reply loads, the dialog shows one stage direction. The first is "He listens…".
+The site picks the line before it knows the visitor's topic, so none is a joke.
+They are stage directions outside the reply beat list. The scene does not perform them.
+`website/COPY.md` holds the seven strings.
 
 ## Dialogue presentation
 
@@ -256,6 +321,7 @@ The website README documents the local generator and its checkpoint directory.
 ### Worker and storage
 
 The Worker serves static Nuxt exports and same-origin `/api/dialogue` and `/api/visit` handlers.
+`/api/visit` returns the daily count and whether the session has a visitor row from an earlier day.
 A Workers AI binding routes Luna through the dedicated `brundlefly` AI Gateway.
 The build extracts this system prompt into a server-only module. No provider key reaches the browser.
 User-supplied text reaches Cloudflare and OpenAI. The dialogue states this before submission.

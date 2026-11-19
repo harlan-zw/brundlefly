@@ -145,9 +145,12 @@ The dialog uses “Close”, “Your text”, “Send”, and “Conversation”
 Its scope note is “AI replies use Cloudflare and OpenAI. Avoid sharing private details.”
 The note opens from a “!” button beside the title. The button label is “About AI replies”.
 The character prompt and starter conversations live in `docs/brand/mascot-dialogue.md`.
-The pending message is “He listens…”.
-Generation errors use “The room swallowed that reply. Try again.”.
-The retry action is “Try again”. Rate limits use “Give him a moment. Try again later.”.
+The pending message starts as “He listens…”. Later replies rotate it with six more stage directions:
+“He turns the words over…”, “All four hands go still…”, “He works his jaw…”, “He weighs a word…”, “One wing folds flat…”, and “He looks at the wall, then back…”.
+A missing reply uses “No reply came back. Your text is still here.”. A missing greeting uses “No reply came back.”.
+With a missing reply he also says one fallback line as speech. The openings and the fallback lines live in `docs/brand/mascot-dialogue.md`.
+The retry action is “Try again”. Rate limits use “Replies are limited. Wait a minute and try again, or come back after midnight UTC.”.
+An expired session uses “Your session ended and this conversation was cleared. Select “Try again” to start a new one.”.
 Choice buttons use “Your reply” as their accessible group label.
 The aside label is “Brundlefly's movement”. History uses “Conversation history”.
 Anonymous counting: “The site keeps a daily visitor session count and temporary rate-limit records. It does not save your conversation.”
