@@ -321,6 +321,12 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     extent: { left: bounds.min.x * scale, right: bounds.max.x * scale, height },
     /** World position of his face, for the conversation close-up. */
     facePoint: (target: Vector3) => faceAnchor.getWorldPosition(target),
+    /** World position of the point between his eyes, for a shot that frames his head. A file without eye nodes gives the face point. */
+    eyeLine(target: Vector3) {
+      if (!eyeFrame) return faceAnchor.getWorldPosition(target)
+      eyeFrame.updateWorldMatrix(true, false)
+      return eyeFrame.localToWorld(target.copy(betweenEyes))
+    },
     /** `time` is seconds of visible motion. Zero is the authored rest pose. `look` applies only to a file with a `head` joint. */
     update(time: number, look?: MeshMascotLook) {
       if (referenceEyes) referenceEyes.updateTime(time)
