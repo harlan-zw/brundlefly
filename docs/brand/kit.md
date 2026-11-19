@@ -483,7 +483,7 @@ The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 | File | Role |
 | --- | --- |
 | assets/source/room-diffuse.png | Full-resolution room texture master |
-| assets/brand/kit/lair/room-diffuse.webp | Runtime room texture, at the size of its master |
+| assets/brand/kit/lair/room-diffuse.webp | Runtime room texture, 1024 pixels |
 | assets/source/tunnel-diffuse.png | Smooth painting of the flesh tile, as generated |
 | assets/brand/kit/lair/tunnel-diffuse.webp | Runtime tissue of the tunnel wall and the wall folds on the homepage |
 | assets/prompts/tunnel-diffuse.json | Exact prompt, references, and runtime preparation |
