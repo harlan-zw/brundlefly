@@ -470,10 +470,10 @@ A wet eye shader adds small gaze shifts, ripples, and sparse grazing reflections
 Skin-textured lids cover both eyes during blinking, without repeating the pupil artwork.
 Skin and wing shaders vary microscopic normals and roughness while keeping the mapped artwork fixed.
 The room uses generated colour and height maps with world-scale projection across walls and ceiling.
-Large connected cave facets, ceiling shelves, and recesses replace the rounded room box.
+Large connected cave folds, ceiling shelves, and recesses replace the rounded room box.
 The height map raises folds into the chamber. Recomputed mesh normals and height bump supply depth lighting.
 Cavity shading darkens recessed pores. Height varies roughness and limits glow inside those cavities.
-The cave walls breathe along shared projection normals, keeping sharp fold seams connected.
+The cave walls breathe along shared projection normals, keeping fold seams connected.
 Layered spatial noise adds uneven swelling and regional pulses across the walls.
 Moving wet patches vary surface roughness and fine reflections without sliding the mapped artwork.
 Wet membranes attach to the carved shelves through raycast roots.
