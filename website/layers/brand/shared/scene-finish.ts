@@ -4,6 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
+import { TexturePass } from 'three/addons/postprocessing/TexturePass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import type { SceneQuality } from './scene-quality.ts'
 
@@ -24,6 +25,14 @@ export type SceneFinish = {
 }
 
 const screenVertex = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }'
+
+// Bound every finishing allocation, including the scene and bloom, independently of display density.
+const maxPixels = 1920 * 1080
+function finishSize(renderer: WebGLRenderer): Vector2 {
+  const size = renderer.getDrawingBufferSize(new Vector2())
+  const scale = Math.min(1, Math.sqrt(maxPixels / Math.max(1, size.x * size.y)))
+  return size.set(Math.max(1, Math.floor(size.x * scale)), Math.max(1, Math.floor(size.y * scale)))
+}
 
 // Blur behind the focus distance only. Each pixel gathers a disc of neighbours as wide as its own blur.
 // A neighbour that is nearer and sharp is left out, so his outline does not smear into the lair behind him.
@@ -103,20 +112,34 @@ export function createSceneFinish(renderer: WebGLRenderer, scene: Scene, camera:
     const supported = gl.getInternalformatParameter(gl.RENDERBUFFER, format, gl.SAMPLES) as Int32Array
     if (!supported.includes(samples)) return undefined
   }
-  const size = renderer.getDrawingBufferSize(new Vector2())
+  const size = finishSize(renderer)
   const depth = new DepthTexture(size.x, size.y, UnsignedIntType)
-  const target = new WebGLRenderTarget(size.x, size.y, { type: HalfFloatType, samples, depthTexture: depth })
+  const sceneTarget = new WebGLRenderTarget(size.x, size.y, { type: HalfFloatType, samples, depthTexture: depth })
+  const scenePass = new RenderPass(scene, camera)
+  // The composer clones this target. Neither copy needs scene attachments.
+  const target = new WebGLRenderTarget(size.x, size.y, { type: HalfFloatType, depthBuffer: false })
   const composer = new EffectComposer(renderer, target)
-  composer.addPass(new RenderPass(scene, camera))
+  // Dimensions are already device pixels. Do not multiply them by the display density again.
+  composer.setPixelRatio(1)
+  const picture = new TexturePass(sceneTarget.texture)
+  composer.addPass(picture)
   const blur = quality.depthBlur ? new ShaderPass({
-    uniforms: { tDiffuse: { value: null }, tDepth: { value: null }, uTexel: { value: new Vector2() }, uNear: { value: camera.near }, uFar: { value: camera.far }, uFocus: { value: 3 }, uAmount: { value: 0 } },
+    uniforms: { tDiffuse: { value: null }, tDepth: { value: null }, uTexel: { value: new Vector2(1 / size.x, 1 / size.y) }, uNear: { value: camera.near }, uFar: { value: camera.far }, uFocus: { value: 3 }, uAmount: { value: 0 } },
     vertexShader: screenVertex, fragmentShader: blurFragment,
   }) : undefined
-  if (blur) composer.addPass(blur)
+  if (blur) {
+    // ShaderPass clones constructor uniforms. Bind the scene attachment after that clone.
+    blur.uniforms.tDepth!.value = depth
+    composer.addPass(blur)
+  }
   // Only light above the white point blooms: wet glints, the drips, and the eyes. Lit skin stays below it.
   const bloom = new UnrealBloomPass(new Vector2(size.x, size.y), 0.1, 0.45, 2.6)
+  for (const bloomTarget of [bloom.renderTargetBright, ...bloom.renderTargetsHorizontal, ...bloom.renderTargetsVertical]) {
+    bloomTarget.depthBuffer = false
+  }
   composer.addPass(bloom)
-  composer.addPass(new OutputPass())
+  const output = new OutputPass()
+  composer.addPass(output)
   const grade = new ShaderPass({ uniforms: { tDiffuse: { value: null }, uSize: { value: new Vector2(size.x, size.y) }, uTime: { value: 0 } }, vertexShader: screenVertex, fragmentShader: gradeFragment })
   composer.addPass(grade)
   // The blur's shader compiles the first time the pass draws. The first frame draws it once with no blur, so the compile
@@ -124,11 +147,12 @@ export function createSceneFinish(renderer: WebGLRenderer, scene: Scene, camera:
   let blurWarm = false
   return {
     render({ time, focus, focusDistance }) {
+      const previousTarget = renderer.getRenderTarget()
+      scenePass.render(renderer, sceneTarget, sceneTarget, 0, false)
+      renderer.setRenderTarget(previousTarget)
       if (blur) {
         blur.enabled = focus > 0.001 || !blurWarm
         blurWarm = true
-        // The scene is drawn into the composer's read buffer, so its depth is there.
-        blur.uniforms.tDepth!.value = composer.readBuffer.depthTexture
         blur.uniforms.uFocus!.value = focusDistance
         blur.uniforms.uAmount!.value = focus
         blur.uniforms.uNear!.value = camera.near
@@ -137,15 +161,20 @@ export function createSceneFinish(renderer: WebGLRenderer, scene: Scene, camera:
       grade.uniforms.uTime!.value = time
       composer.render()
     },
-    setSize(width, height) {
-      composer.setSize(width, height)
-      const pixels = renderer.getDrawingBufferSize(new Vector2())
+    setSize() {
+      const pixels = finishSize(renderer)
+      sceneTarget.setSize(pixels.x, pixels.y)
+      composer.setSize(pixels.x, pixels.y)
       blur?.uniforms.uTexel!.value.set(1 / pixels.x, 1 / pixels.y)
       grade.uniforms.uSize!.value.copy(pixels)
     },
     dispose() {
       composer.dispose()
+      sceneTarget.dispose()
+      scenePass.dispose()
+      picture.dispose()
       bloom.dispose()
+      output.dispose()
       blur?.dispose()
       grade.dispose()
       depth.dispose()
