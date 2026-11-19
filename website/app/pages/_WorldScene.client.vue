@@ -15,6 +15,7 @@ import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { resolveSceneQuality } from '@brundlefly/brand/shared/scene-quality'
 import { createSceneFinish } from '@brundlefly/brand/shared/scene-finish'
+import { createFloorReflection } from '@brundlefly/brand/shared/floor-reflection'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
@@ -301,6 +302,9 @@ watch(canvas, async (element) => {
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
   // The finishing pass draws the scene through its own target. A tier without it draws straight to the canvas.
   const finish = createSceneFinish(renderer, scene, camera, quality)
+  // The wet floor mirrors the room at the highest tier only: it draws the room a second time.
+  const reflection = quality.reflection ? createFloorReflection(768, 432) : undefined
+  if (reflection) scene.add(reflection.mesh)
   const raycaster = new Raycaster()
   // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.
   hit = mascot._tag === 'Mesh'
@@ -479,6 +483,7 @@ watch(canvas, async (element) => {
     const corners = reach.map(value => figure.localToWorld(value).project(camera))
     bounds = { left: (corners[0]!.x + 1) * renderWidth / 2, right: (corners[1]!.x + 1) * renderWidth / 2,
       top: (1 - corners[1]!.y) * renderHeight / 2, bottom: (1 - corners[0]!.y) * renderHeight / 2 }
+    reflection?.update(settings.value.wetness)
     if (finish) finish.render({ time: elapsed, focus: blend, focusDistance: camera.position.distanceTo(staging ? staging.face : face) })
     else renderer.render(scene, camera)
   }
@@ -509,7 +514,7 @@ watch(canvas, async (element) => {
     endView()
     renderer.setAnimationLoop(null)
     world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
-    staging?.key.dispose(); staging?.rim.dispose(); finish?.dispose()
+    staging?.key.dispose(); staging?.rim.dispose(); finish?.dispose(); reflection?.dispose()
     shadowGeometry.dispose(); shadowMaterial.dispose(); environment.dispose(); renderer.dispose()
     footShadowGeometry.dispose(); footShadows.forEach(patch => patch.material.dispose())
   }
