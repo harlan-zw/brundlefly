@@ -119,10 +119,14 @@ export function createSceneFinish(renderer: WebGLRenderer, scene: Scene, camera:
   composer.addPass(new OutputPass())
   const grade = new ShaderPass({ uniforms: { tDiffuse: { value: null }, uSize: { value: new Vector2(size.x, size.y) }, uTime: { value: 0 } }, vertexShader: screenVertex, fragmentShader: gradeFragment })
   composer.addPass(grade)
+  // The blur's shader compiles the first time the pass draws. The first frame draws it once with no blur, so the compile
+  // does not stall the camera on the frame that opens the first conversation.
+  let blurWarm = false
   return {
     render({ time, focus, focusDistance }) {
       if (blur) {
-        blur.enabled = focus > 0.001
+        blur.enabled = focus > 0.001 || !blurWarm
+        blurWarm = true
         // The scene is drawn into the composer's read buffer, so its depth is there.
         blur.uniforms.tDepth!.value = composer.readBuffer.depthTexture
         blur.uniforms.uFocus!.value = focusDistance

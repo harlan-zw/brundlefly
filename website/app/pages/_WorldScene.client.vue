@@ -396,7 +396,12 @@ watch(canvas, async (element) => {
       // A still frame has no later frame to catch up in, so it takes his face as it is.
       const eyes = staging.eyeLine(new Vector3())
       if (resting || !faceMotion || !staging.placed) staging.face.copy(eyes)
-      else staging.face.lerp(eyes, 1 - Math.exp(-delta / 0.7))
+      else {
+        // His head moves as he acts, and it bobs as he stops from a walk. The frame holds still for a small move
+        // and follows only the part of a larger one. A frame that chased every move swung for seconds after the shot landed.
+        const reach = staging.face.distanceTo(eyes)
+        if (reach > 0.1) staging.face.lerp(eyes, (1 - 0.1 / reach) * (1 - Math.exp(-delta / 0.5)))
+      }
       staging.placed = true
       if (paused && faceMotion) staging.drift += delta
       // At rest the key holds a low level above his head. It falls off toward his feet, which gives his body its shape.
