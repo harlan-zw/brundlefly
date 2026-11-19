@@ -50,6 +50,18 @@ MOUTHPART_FLESH = 0.7
 # The skin patch for surfaces that no view sees: its scale on the model, in build millimetres for each pixel, and its strength.
 DETAIL_MM_PER_PIXEL = 0.07
 DETAIL_AMOUNT = 1.0
+# The close shot of a conversation frames the head and the shoulders. That part of the website model
+# gets more triangles and more of the texture. The centre lies between the head joint and the face,
+# in the millimetres of the working mesh. The focus is 1 within the first distance and 0 past the second.
+CLOSE_SHOT_CENTRE = (0.0, -14.0, 60.0)
+CLOSE_SHOT_FULL_MM = 14.0
+CLOSE_SHOT_REACH_MM = 22.0
+# How strongly the decimation spares the close shot. 0.08 leaves about 2.4 times the triangles for each square millimetre there.
+CLOSE_SHOT_TRIANGLES = 0.08
+# How much larger a UV island in the close shot is than one elsewhere, along each side.
+CLOSE_SHOT_TEXELS = 1.6
+# The close painting of the head fades in over this share of its width from each border.
+DETAIL_FEATHER = 0.09
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
 BRISTLE_COLOUR = (0.115, 0.030, 0.022)
 BRISTLE_RADIUS_MM = 0.17
@@ -89,10 +101,16 @@ def self_intersections(mesh):
     return count
 
 
-def clean_decimated(ob, target, name):
+def close_shot_focus(points):
+    """From 0 to 1 for each point of the working mesh: how far it belongs to the close shot of the head."""
+    distance = np.linalg.norm(np.asarray(points, dtype=np.float64) - np.array(CLOSE_SHOT_CENTRE), axis=1)
+    return smooth_step((CLOSE_SHOT_REACH_MM - distance) / (CLOSE_SHOT_REACH_MM - CLOSE_SHOT_FULL_MM))
+
+
+def clean_decimated(ob, target, name, focus=None):
     """Decimate, and lower the budget in small steps until no faces intersect."""
     for step in range(8):
-        copy = decimated(ob, int(target * (1 - 0.015 * step)), name)
+        copy = decimated(ob, int(target * (1 - 0.015 * step)), name, focus)
         hits = self_intersections(copy.data)
         if hits == 0:
             return copy
@@ -103,8 +121,11 @@ def clean_decimated(ob, target, name):
     raise SystemExit("Decimation left intersecting faces at every budget.")
 
 
-def decimated(ob, target, name):
-    """A new object with at most target triangles. Vertex colours survive."""
+def decimated(ob, target, name, focus=None):
+    """A new object with at most target triangles. Vertex colours survive.
+
+    focus gives each vertex a value from 0 to 1. The decimation keeps more triangles where it is high.
+    """
     count = len(ob.data.polygons)
     copy = ob.copy()
     copy.data = ob.data.copy()
@@ -114,12 +135,24 @@ def decimated(ob, target, name):
         mod = copy.modifiers.new("Decimate", "DECIMATE")
         mod.decimate_type = "COLLAPSE"
         mod.ratio = target / count
+        if focus is not None:
+            # The modifier collapses an edge later when the weights of its two vertices are low.
+            group = copy.vertex_groups.new(name="decimate")
+            levels = np.rint((1.0 - 0.5 * np.asarray(focus)) * 20).astype(int)
+            for level in np.unique(levels):
+                group.add(np.nonzero(levels == level)[0].tolist(), level / 20.0, "REPLACE")
+            mod.vertex_group = group.name
+            mod.vertex_group_factor = CLOSE_SHOT_TRIANGLES
         deps = bpy.context.evaluated_depsgraph_get()
         mesh = bpy.data.meshes.new_from_object(copy.evaluated_get(deps), preserve_all_data_layers=True, depsgraph=deps)
         copy.modifiers.clear()
         old = copy.data
         copy.data = mesh
         bpy.data.meshes.remove(old)
+        # The new mesh carries the weights of the group. Removing the group here removes them too,
+        # so the first skin group of the skeleton does not inherit them.
+        for group in list(copy.vertex_groups):
+            copy.vertex_groups.remove(group)
     bm = bmesh.new()
     bm.from_mesh(copy.data)
     bmesh.ops.dissolve_degenerate(bm, dist=1e-5, edges=bm.edges)
@@ -694,6 +727,100 @@ def fold_shadow(field_path, points, known, size, small):
     return fold.reshape(small, step, small, step).mean(axis=(1, 3))
 
 
+def enlarge_close_shot_islands(mesh, scale):
+    """Make the UV islands of the close shot larger, each about its own centre. Returns (islands made larger, islands).
+
+    An island grows by its share of the close shot, so an island that lies half in it grows half as much.
+    The islands overlap afterward. The caller packs them again, which keeps their sizes relative to each other.
+    """
+    loops = len(mesh.loops)
+    uv = np.empty(loops * 2)
+    mesh.uv_layers.active.data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2)
+    corner_vertex = np.empty(loops, dtype=np.int32)
+    mesh.loops.foreach_get("vertex_index", corner_vertex)
+    co = np.empty(len(mesh.vertices) * 3)
+    mesh.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    faces = loops // 3                                         # the mesh is triangles
+    # Two triangles are in one island when they share a vertex at the same place in the UV square.
+    _, corner = np.unique(np.column_stack([corner_vertex, np.rint(uv * 1e6).astype(np.int64)]), axis=0, return_inverse=True)
+    corner = corner.reshape(faces, 3)
+    label = np.arange(faces)
+    while True:
+        lowest = np.full(corner.max() + 1, faces)
+        np.minimum.at(lowest, corner, label[:, None])
+        merged = lowest[corner].min(axis=1)
+        merged = merged[merged]                                 # follow one link, so long islands settle fast
+        if (merged == label).all():
+            break
+        label = merged
+    _, island = np.unique(label, return_inverse=True)
+    a, b, c = (co[corner_vertex.reshape(faces, 3)[:, k]] for k in range(3))
+    area = np.linalg.norm(np.cross(b - a, c - a), axis=1) / 2.0
+    focus = close_shot_focus((a + b + c) / 3.0)
+    count = island.max() + 1
+    share = np.bincount(island, area * focus, count) / np.maximum(np.bincount(island, area, count), 1e-9)
+    factor = 1.0 + (scale - 1.0) * share
+    loop_island = np.repeat(island, 3)
+    centre = np.column_stack([np.bincount(loop_island, uv[:, k], count) for k in range(2)]) / np.bincount(loop_island, minlength=count)[:, None]
+    uv = centre[loop_island] + (uv - centre[loop_island]) * factor[loop_island][:, None]
+    mesh.uv_layers.active.data.foreach_set("uv", uv.ravel())
+    return int((share > 0.5).sum()), int(count)
+
+
+def fill_painted_sockets(view, to_image, eyes, projection, pixel_mm):
+    """Fill the dark socket that a painted view has at each eye with the skin around it.
+
+    A painted view has a dark socket at each eye, and it paints both about as large as the larger one.
+    The model shades its own sockets, at their true sizes. The disc is small, so the wrinkles around
+    the eyes stay. pixel_mm is the size of one pixel of the view, in build millimetres.
+    """
+    scale = projection["mesh_scale"]
+    reach = PAINTED_SOCKET_RADII * max(eye["radii_mm"][0] for eye in eyes) / scale / pixel_mm
+    dark = np.zeros(view["figure"].shape, dtype=bool)
+    rows, cols = np.mgrid[0:dark.shape[0], 0:dark.shape[1]]
+    for eye in eyes:
+        centre = np.array(eye["centre_mm"]) / scale
+        col, row = to_image(np.array([centre[0]]), np.array([centre[2] + projection["field_zmin"]]))
+        dark |= ((cols - col[0]) ** 2 + (rows - row[0]) ** 2 < reach ** 2) & view["figure"] & (view["rgb"].max(axis=2) < 0.30)
+    if dark.any():
+        filled = bfm.dilate(dark, max(2, int(round(0.14 / pixel_mm))))
+        bfm.fill_from_edges(view, filled)
+        # The fill grows from the pale rim of the painted socket, so it comes out too light.
+        view["linear"][filled] *= PAINTED_SOCKET_TONE
+    return int(dark.sum())
+
+
+def load_detail_view(folder, projection, eyes):
+    """The close painting of the head, if the folder has one: (view name, image data, to_image, weight).
+
+    head.json gives the frame of the painting in the millimetres of the working mesh. The painting was
+    made over a render in that frame, so nothing is fitted. The weight is 1 where the painting replaces
+    the view it belongs to, and it falls to 0 at the borders of the painting and at the outline of the figure.
+    """
+    path = os.path.join(folder, "head.json")
+    if not os.path.exists(path):
+        return None
+    with open(path) as fh:
+        frame = json.load(fh)
+    view = bfm.load_view(os.path.join(folder, frame["image"]))
+    height, width = view["figure"].shape
+    scale, zmin = projection["mesh_scale"], projection["field_zmin"]
+    (cx, cz), span = frame["centre_mm"], frame["span_mm"]
+
+    def to_image(u, z):                                         # build coordinates in, column and row from the bottom out
+        return ((np.asarray(u) * scale - cx) / span + 0.5) * width - 0.5, (((np.asarray(z) - zmin) * scale - cz) / span + 0.5) * height - 0.5
+
+    pixel_mm = span / width / scale
+    if eyes:
+        print(f"TEXTURE close painting: {fill_painted_sockets(view, to_image, eyes, projection, pixel_mm)} dark socket pixels filled")
+    rows, cols = np.mgrid[0:height, 0:width]
+    border = np.minimum(np.minimum(cols, width - 1 - cols) / width, np.minimum(rows, height - 1 - rows) / height)
+    weight = smooth_step(border / DETAIL_FEATHER) * bfm.erode(view["figure"], 3)
+    return frame["view"], view, to_image, weight
+
+
 def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface, relief_size=0, field_path=None):
     """Replace the vertex colours with a texture that carries the sheet at its own resolution.
 
@@ -710,6 +837,13 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.uv.smart_project(angle_limit=math.radians(78), island_margin=0.002)   # fewer islands, fewer split vertices
     bpy.ops.object.mode_set(mode="OBJECT")
+    grown = enlarge_close_shot_islands(body.data, CLOSE_SHOT_TEXELS)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.select_all(action="SELECT")
+    bpy.ops.uv.pack_islands(rotate=False, scale=True, margin_method="FRACTION", margin=0.002, shape_method="CONCAVE")
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print(f"TEXTURE {grown[0]} of {grown[1]} UV islands are larger for the close shot")
 
     material = body.data.materials[0]
     nodes = material.node_tree.nodes
@@ -740,25 +874,11 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
         views_dir = os.path.join(views_dir, paint["folder"])
         views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high))
                  for name, fit in paint["views"].items()}
-        # The painted front view has a dark socket at each eye, and it paints both as large as the
-        # larger one. The model shades its own sockets, at their true sizes. So the dark paint
-        # near each eye is filled with the skin around it. The disc is small, so the wrinkles
-        # around the eyes stay.
         if "front" in views and eyes:
-            view, to_image = views["front"]
-            scale = projection["mesh_scale"]
-            reach = PAINTED_SOCKET_RADII * max(eye["radii_mm"][0] for eye in eyes) / scale / paint["views"]["front"]["body"]["s"]
-            dark = np.zeros(view["figure"].shape, dtype=bool)
-            rows, cols = np.mgrid[0:dark.shape[0], 0:dark.shape[1]]
-            for eye in eyes:
-                centre = np.array(eye["centre_mm"]) / scale
-                col, row = to_image(np.array([centre[0]]), np.array([centre[2] + projection["field_zmin"]]))
-                dark |= ((cols - col[0]) ** 2 + (rows - row[0]) ** 2 < reach ** 2) & view["figure"] & (view["rgb"].max(axis=2) < 0.30)
-            if dark.any():
-                filled = bfm.dilate(dark, 2)
-                bfm.fill_from_edges(view, filled)
-                # The fill grows from the pale rim of the painted socket, so it comes out too light.
-                view["linear"][filled] *= PAINTED_SOCKET_TONE
+            fill_painted_sockets(*views["front"], eyes, projection, paint["views"]["front"]["body"]["s"])
+        detail = load_detail_view(views_dir, projection, eyes)
+        if detail is not None and detail[0] in views:
+            views[detail[0]][0]["detail"] = detail[1:]
     else:
         views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high, fit.get("head_u")))
                  for name, fit in projection["views"].items()}
@@ -1096,7 +1216,7 @@ def export_web(src, args):
     surface = np.empty(len(src.data.vertices) * 3)
     src.data.vertices.foreach_get("co", surface)
     surface = surface.reshape(-1, 3)
-    body = clean_decimated(src, args.glb_tris, "Brundlefly-body")
+    body = clean_decimated(src, args.glb_tris, "Brundlefly-body", close_shot_focus(surface))
     body.data.name = "Brundlefly-body"
     skin = body.data.materials[0]
     skin.name = "Brundlefly-skin"
@@ -1127,6 +1247,8 @@ def export_web(src, args):
     if textured and site["eyes"]:
         skin_patch = eye_mat.node_tree.nodes.new("ShaderNodeTexImage")
         front_view, front_to_image = colour_views["front"]
+        if "detail" in front_view:                    # the close painting of the head is sharper
+            front_view, front_to_image = front_view["detail"][:2]
         skin_patch.image = lid_skin_image(front_view, front_to_image, site["eyes"][0], stats["sheet_projection"]["mesh_scale"], stats["sheet_projection"]["field_zmin"])
         eye_mat.node_tree.links.new(skin_patch.outputs["Color"], bsdf.inputs["Base Color"])
     for index, eye in enumerate(site["eyes"]):        # 0 is screen left and larger

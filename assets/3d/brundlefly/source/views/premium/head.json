@@ -1,0 +1,7 @@
+{
+  "image": "head.png",
+  "view": "front",
+  "centre_mm": [0.0, 58.0],
+  "span_mm": 36.0,
+  "note": "The frame of head.png in the millimetres of the working mesh: the centre across and in height, and the side of the square. The painting was made over an orthographic render in this frame."
+}

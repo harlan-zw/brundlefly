@@ -712,6 +712,20 @@ def sheet_colour_fn(views):
             else:                                   # with two views only, soften what faces sideways
                 sideways = np.clip(1.0 - np.abs(normal[:, 1]) / 0.55, 0.0, 1.0)[:, None]
                 sample = view["linear"][row, col] * (1 - sideways) + view["soft"][row, col] * sideways
+            if "detail" in view:
+                # A closer painting of one part of this view replaces the view there. It has more
+                # pixels than the texture has texels, so it is read between pixels.
+                detail, detail_to_image, detail_weight = view["detail"]
+                dc, dr = detail_to_image(xyz[:, setup["axis"]], xyz[:, 2])
+                high, wide = detail_weight.shape
+                ok = (dc >= 0) & (dc <= wide - 1.001) & (dr >= 0) & (dr <= high - 1.001)
+                c0, r0 = np.floor(dc[ok]).astype(int), np.floor(dr[ok]).astype(int)
+                fc, fr = (dc[ok] - c0)[:, None], (dr[ok] - r0)[:, None]
+                image = detail["linear"]
+                close = (image[r0, c0] * (1 - fc) + image[r0, c0 + 1] * fc) * (1 - fr) + (image[r0 + 1, c0] * (1 - fc) + image[r0 + 1, c0 + 1] * fc) * fr
+                share = detail_weight[np.rint(dr[ok]).astype(int), np.rint(dc[ok]).astype(int)][:, None]
+                sample = sample.copy()
+                sample[ok] = sample[ok] * (1 - share) + close * share
             if hidden is not None and name in hidden:
                 behind = hidden[name][:, None]
                 sample = sample * (1 - behind) + view["soft"][row, col] * behind
