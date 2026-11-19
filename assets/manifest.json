@@ -111,8 +111,8 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 21496,
-    "sha256": "2dd71ebada1bb45d7f826a89d65004073c324520f3fc53ec7919bda0d3fac5d8"
+    "bytes": 21953,
+    "sha256": "0e2b149f743f08a2ef46ee5bf6198c3b4d233c16c4f51019598e71afa688edc7"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
@@ -131,8 +131,8 @@
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-web.glb",
-    "bytes": 3493072,
-    "sha256": "bac150ef6744ae864ddc227669ddef0bbf775565ba6262c4758e7c68930e9fdd"
+    "bytes": 3487552,
+    "sha256": "2b435c593f8557472dd66c8da518a5e0710f788d635b7f06812d5162e94a333c"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly.blend",
@@ -161,8 +161,8 @@
   },
   {
     "path": "assets/3d/brundlefly/export_model.py",
-    "bytes": 73827,
-    "sha256": "07f2521db5ba6a054db51f3303fde14f32c11589a9512f3dc58baa31995e68a9"
+    "bytes": 80730,
+    "sha256": "2ec732a292b394d2bf57f3919dc510a5383200ccef4bb898cc9b312eb6758cdb"
   },
   {
     "path": "assets/3d/brundlefly/previews/back.png",
@@ -255,6 +255,21 @@
     "sha256": "8a9570c0b17ca0cb906f36672e7d42fe7a205489973e5c1a702d6251204a508c"
   },
   {
+    "path": "assets/3d/brundlefly/source/views/premium/head-left.png",
+    "bytes": 2188135,
+    "sha256": "51c6d285ab7e70fed56f8f8c86ad658cb1c73461353837a344219028d47bdf56"
+  },
+  {
+    "path": "assets/3d/brundlefly/source/views/premium/head-right.png",
+    "bytes": 2128120,
+    "sha256": "ce8d0e60933cc8a11e278df0837e9ff45c796157f6b39351b8b98676cc7307d3"
+  },
+  {
+    "path": "assets/3d/brundlefly/source/views/premium/head-views.json",
+    "bytes": 542,
+    "sha256": "2a0b51cb5d1442fef8075402de37a2d60703c0f66333ee32bac91e4a21978d5e"
+  },
+  {
     "path": "assets/3d/brundlefly/source/views/premium/head.json",
     "bytes": 293,
     "sha256": "858a7cae691bddab45c6dccdd7ec2dd5af6edb60380aaf8b07ec68738e66bc88"
@@ -326,7 +341,7 @@
   },
   {
     "path": "assets/prompts/figurine.json",
-    "bytes": 10782,
-    "sha256": "911fcbe8a5f9ea0c5c548bb069bdde2272be96295259d13feb77fd879ceff3f9"
+    "bytes": 12663,
+    "sha256": "c9de78f90955fe961637935800e9f1ce63a687e1abb2ff3bd2c083f8505b3704"
   }
 ]

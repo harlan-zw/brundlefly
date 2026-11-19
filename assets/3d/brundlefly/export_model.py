@@ -58,6 +58,13 @@ CLOSE_SHOT_REACH_MM = 22.0
 CLOSE_SHOT_TRIANGLES = 0.08
 # How much larger a UV island in the close shot is than one elsewhere, along each side.
 CLOSE_SHOT_TEXELS = 1.6
+# The oblique paintings of the head colour the skull only: fully within the first distance of its
+# centre, in the millimetres of the working mesh, and not at all past the second.
+SKULL_CENTRE = (0.0, -13.0, 61.0)
+SKULL_FULL_MM = 11.0
+SKULL_REACH_MM = 14.0
+# An oblique painting colours a surface that faces it at least this squarely, and fully from the second value.
+OBLIQUE_FACING = (0.3, 0.6)
 # The close painting of the head fades in over this share of its width from each border.
 DETAIL_FEATHER = 0.09
 # Linear colour, base radius, and longest length of a bristle hair on the website model.
@@ -591,6 +598,29 @@ def add_skeleton(body, joints, shift, eyes=()):
     return arm
 
 
+def behind_nearest(across, height, depth, surface_across, surface_height, surface_depth, cell=0.4):
+    """How far each point lies behind the nearest surface on its line of sight, in millimetres.
+
+    across and height place a point in the picture, and depth grows away from the viewer. The
+    surface arrays hold a dense set of points on the model, in the same three measures.
+    """
+    low_u, low_v = surface_across.min(), surface_height.min()
+    su = np.floor((surface_across - low_u) / cell).astype(int)
+    sv = np.floor((surface_height - low_v) / cell).astype(int)
+    shape = (int(su.max()) + 1, int(sv.max()) + 1)
+    nearest = np.full(shape[0] * shape[1], np.inf)
+    np.minimum.at(nearest, su * shape[1] + sv, surface_depth)
+    u = np.clip(np.floor((across - low_u) / cell).astype(int), 0, shape[0] - 1)
+    v = np.clip(np.floor((height - low_v) / cell).astype(int), 0, shape[1] - 1)
+    flat = u * shape[1] + v
+    # A neighbour cell can hold the true nearest surface at the edge of a part.
+    grid = nearest.reshape(shape)
+    spread = grid.copy()
+    spread[1:] = np.minimum(spread[1:], grid[:-1]); spread[:-1] = np.minimum(spread[:-1], grid[1:])
+    spread[:, 1:] = np.minimum(spread[:, 1:], grid[:, :-1]); spread[:, :-1] = np.minimum(spread[:, :-1], grid[:, 1:])
+    return depth - spread.reshape(-1)[flat]
+
+
 def hidden_from_views(points, known, joints, surface):
     """For each sheet view, how far it cannot see each surface point: 0 is in plain view, 1 is hidden.
 
@@ -614,21 +644,7 @@ def hidden_from_views(points, known, joints, surface):
         across = setup["axis"]                       # the axis that runs across the picture
         depth_axis, toward = setup["facing"]         # the surface normal that faces the view
         depth = points[:, depth_axis] * -toward      # larger is farther from the viewer
-        low_u, low_v = surface[:, across].min(), surface[:, 2].min()
-        su = np.floor((surface[:, across] - low_u) / cell).astype(int)
-        sv = np.floor((surface[:, 2] - low_v) / cell).astype(int)
-        shape = (int(su.max()) + 1, int(sv.max()) + 1)
-        nearest = np.full(shape[0] * shape[1], np.inf)
-        np.minimum.at(nearest, su * shape[1] + sv, surface[:, depth_axis] * -toward)
-        u = np.clip(np.floor((points[:, across] - low_u) / cell).astype(int), 0, shape[0] - 1)
-        v = np.clip(np.floor((points[:, 2] - low_v) / cell).astype(int), 0, shape[1] - 1)
-        flat = u * shape[1] + v
-        # A neighbour cell can hold the true nearest surface at the edge of a part.
-        grid = nearest.reshape(shape)
-        spread = grid.copy()
-        spread[1:] = np.minimum(spread[1:], grid[:-1]); spread[:-1] = np.minimum(spread[:-1], grid[1:])
-        spread[:, 1:] = np.minimum(spread[:, 1:], grid[:, :-1]); spread[:, :-1] = np.minimum(spread[:, :-1], grid[:, 1:])
-        behind = depth - spread.reshape(-1)[flat]
+        behind = behind_nearest(points[:, across], points[:, 2], depth, surface[:, across], surface[:, 2], surface[:, depth_axis] * -toward, cell)
         out[name] = np.where(known & np.isfinite(behind), smooth_step((behind - slack) / 0.6), 0.0)
     under = {}
     if joints and "front" in out:
@@ -767,27 +783,113 @@ def enlarge_close_shot_islands(mesh, scale):
     return int((share > 0.5).sum()), int(count)
 
 
-def fill_painted_sockets(view, to_image, eyes, projection, pixel_mm):
+def fill_painted_sockets(view, spots, eyes, projection, pixel_mm):
     """Fill the dark socket that a painted view has at each eye with the skin around it.
 
     A painted view has a dark socket at each eye, and it paints both about as large as the larger one.
     The model shades its own sockets, at their true sizes. The disc is small, so the wrinkles around
-    the eyes stay. pixel_mm is the size of one pixel of the view, in build millimetres.
+    the eyes stay. spots holds the column and the row of each eye centre in the view. pixel_mm is the
+    size of one pixel of the view, in build millimetres.
     """
-    scale = projection["mesh_scale"]
-    reach = PAINTED_SOCKET_RADII * max(eye["radii_mm"][0] for eye in eyes) / scale / pixel_mm
+    reach = PAINTED_SOCKET_RADII * max(eye["radii_mm"][0] for eye in eyes) / projection["mesh_scale"] / pixel_mm
     dark = np.zeros(view["figure"].shape, dtype=bool)
     rows, cols = np.mgrid[0:dark.shape[0], 0:dark.shape[1]]
-    for eye in eyes:
-        centre = np.array(eye["centre_mm"]) / scale
-        col, row = to_image(np.array([centre[0]]), np.array([centre[2] + projection["field_zmin"]]))
-        dark |= ((cols - col[0]) ** 2 + (rows - row[0]) ** 2 < reach ** 2) & view["figure"] & (view["rgb"].max(axis=2) < 0.30)
+    for col, row in spots:
+        dark |= ((cols - col) ** 2 + (rows - row) ** 2 < reach ** 2) & view["figure"] & (view["rgb"].max(axis=2) < 0.30)
     if dark.any():
         filled = bfm.dilate(dark, max(2, int(round(0.14 / pixel_mm))))
         bfm.fill_from_edges(view, filled)
         # The fill grows from the pale rim of the painted socket, so it comes out too light.
         view["linear"][filled] *= PAINTED_SOCKET_TONE
     return int(dark.sum())
+
+
+def eye_spots(to_image, eyes, projection):
+    """The column and the row of each eye centre in a view that looks along Y."""
+    spots = []
+    for eye in eyes:
+        centre = np.array(eye["centre_mm"]) / projection["mesh_scale"]
+        col, row = to_image(np.array([centre[0]]), np.array([centre[2] + projection["field_zmin"]]))
+        spots.append((float(col[0]), float(row[0])))
+    return spots
+
+
+def read_between(image, col, row):
+    """The colours of an image at fractional columns and rows, blended from the four pixels around each."""
+    col = np.clip(col, 0.0, image.shape[1] - 1.001)
+    row = np.clip(row, 0.0, image.shape[0] - 1.001)
+    c0, r0 = np.floor(col).astype(int), np.floor(row).astype(int)
+    fc, fr = (col - c0)[:, None], (row - r0)[:, None]
+    return (image[r0, c0] * (1 - fc) + image[r0, c0 + 1] * fc) * (1 - fr) + (image[r0 + 1, c0] * (1 - fc) + image[r0 + 1, c0 + 1] * fc) * fr
+
+
+def turned(points, yaw, pivot=(0.0, 0.0)):
+    """Points turned about the vertical through the pivot, so that a view from the angle yaw becomes the front view.
+
+    After the turn, X runs across that view and Y grows away from its viewer. Positive yaw puts the viewer toward +X.
+    """
+    c, s = math.cos(yaw), math.sin(yaw)
+    x, y = points[:, 0] - pivot[0], points[:, 1] - pivot[1]
+    out = np.array(points, dtype=np.float64)
+    out[:, 0] = x * c + y * s + pivot[0]
+    out[:, 1] = -x * s + y * c + pivot[1]
+    return out
+
+
+def overlay_oblique_views(linear, position, normal, baked, surface, folder, eyes, projection, front_hidden, keep_front):
+    """Lay the oblique paintings of the head over the base colour. Returns how far each texel took one, from 0 to 1.
+
+    head-views.json lists paintings of the head from angles between the front and the sides. Each
+    was painted over a render in the frame that the file gives, in the millimetres of the working
+    mesh, so nothing is fitted. A texel takes the painting that it faces most squarely, if that
+    painting sees it. The front painting keeps what faces the front, with a narrow blend between
+    the two, because two paintings never agree wrinkle for wrinkle. keep_front marks texels that
+    stay with the front painting whatever they face: the rims of the eyes and the mouthparts.
+    """
+    path = os.path.join(folder, "head-views.json")
+    cover = np.zeros(len(position))
+    if not os.path.exists(path):
+        return cover
+    with open(path) as fh:
+        frame = json.load(fh)
+    pivot, centre_z, span = frame["pivot_mm"], frame["centre_z_mm"], frame["span_mm"]
+    skull = smooth_step((SKULL_REACH_MM - np.linalg.norm(position - np.array(SKULL_CENTRE), axis=1)) / (SKULL_REACH_MM - SKULL_FULL_MM))
+    front_facing = np.clip(-normal[:, 1], 0.0, 1.0) * (1.0 - front_hidden)
+    for entry in frame["views"]:
+        yaw = math.radians(entry["yaw_degrees"])
+        view = bfm.load_view(os.path.join(folder, entry["image"]))
+        height, width = view["figure"].shape
+
+        def to_image(points):                                   # working mesh millimetres in, column and row from the bottom out
+            seen_from = turned(points, yaw, pivot)
+            return ((seen_from[:, 0] - pivot[0]) / span + 0.5) * width - 0.5, ((seen_from[:, 2] - centre_z) / span + 0.5) * height - 0.5, seen_from[:, 1]
+
+        rim = turned(surface, yaw, pivot)
+        if eyes:
+            centres = np.array([eye["centre_mm"] for eye in eyes], dtype=np.float64)
+            cols, rows, depth = to_image(centres)
+            hidden_eye = behind_nearest(turned(centres, yaw, pivot)[:, 0], centres[:, 2], depth, rim[:, 0], rim[:, 2], rim[:, 1])
+            spots = [(float(c), float(r)) for c, r, far in zip(cols, rows, hidden_eye) if not far > 1.0]
+            filled = fill_painted_sockets(view, spots, eyes, projection, span / width / projection["mesh_scale"]) if spots else 0
+        col, row, depth = to_image(position)
+        inside = baked & (col >= 0) & (col <= width - 1.001) & (row >= 0) & (row <= height - 1.001)
+        rows_, cols_ = np.mgrid[0:height, 0:width]
+        border = np.minimum(np.minimum(cols_, width - 1 - cols_) / width, np.minimum(rows_, height - 1 - rows_) / height)
+        weight = smooth_step(border / DETAIL_FEATHER) * bfm.erode(view["figure"], 3)
+        behind = behind_nearest(turned(position, yaw, pivot)[:, 0], position[:, 2], depth, rim[:, 0], rim[:, 2], rim[:, 1])
+        seen = 1.0 - np.where(np.isfinite(behind), smooth_step((behind - 1.0) / 0.6), 0.0)
+        facing = np.clip(-turned(normal, yaw)[:, 1], 0.0, 1.0)
+        share = (smooth_step((facing - OBLIQUE_FACING[0]) / (OBLIQUE_FACING[1] - OBLIQUE_FACING[0])) * seen * skull
+                 * smooth_step((facing - front_facing) / 0.16 + 0.5) * (1.0 - keep_front))
+        share[~inside] = 0.0
+        index = np.nonzero(share > 0.0)[0]
+        share[index] *= weight[np.rint(row[index]).astype(int), np.rint(col[index]).astype(int)]
+        source = np.where(view["figure"][..., None], view["linear"], view["spread"])
+        take = np.maximum(share[index] - cover[index], 0.0) / np.maximum(1.0 - cover[index], 1e-6)   # a later view only adds what is left
+        linear[index] = linear[index] * (1.0 - take[:, None]) + read_between(source, col[index], row[index]) * take[:, None]
+        cover[index] = np.maximum(cover[index], share[index])
+        print(f"TEXTURE oblique painting {entry['image']}: {float((share[baked] > 0.5).mean()):.3f} of the surface, {filled if eyes else 0} dark socket pixels filled")
+    return cover
 
 
 def load_detail_view(folder, projection, eyes):
@@ -812,7 +914,7 @@ def load_detail_view(folder, projection, eyes):
 
     pixel_mm = span / width / scale
     if eyes:
-        print(f"TEXTURE close painting: {fill_painted_sockets(view, to_image, eyes, projection, pixel_mm)} dark socket pixels filled")
+        print(f"TEXTURE close painting: {fill_painted_sockets(view, eye_spots(to_image, eyes, projection), eyes, projection, pixel_mm)} dark socket pixels filled")
     rows, cols = np.mgrid[0:height, 0:width]
     border = np.minimum(np.minimum(cols, width - 1 - cols) / width, np.minimum(rows, height - 1 - rows) / height)
     weight = smooth_step(border / DETAIL_FEATHER) * bfm.erode(view["figure"], 3)
@@ -873,7 +975,7 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
         views = {name: (bfm.load_view(os.path.join(views_dir, fit["image"])), bfm.blended_fit(fit["body"], fit["head"], z_low, z_high))
                  for name, fit in paint["views"].items()}
         if "front" in views and eyes:
-            fill_painted_sockets(*views["front"], eyes, projection, paint["views"]["front"]["body"]["s"])
+            fill_painted_sockets(views["front"][0], eye_spots(views["front"][1], eyes, projection), eyes, projection, paint["views"]["front"]["body"]["s"])
         detail = load_detail_view(views_dir, projection, eyes)
         if detail is not None and detail[0] in views:
             views[detail[0]][0]["detail"] = detail[1:]
@@ -903,6 +1005,14 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface,
         print(f"TEXTURE {name}: {float(value[front_on].mean()):.3f} of the surface that faces it is hidden behind another part")
     plain = np.where(baked, 1.0 - seen / np.maximum(weight, 1e-6), 0.0)
     plain[weight < 1e-6] = 1.0
+    if paint and paint["views"] and "front" in hidden:
+        # The mouthparts and the rim of each eye stay with the front painting. The skin beside and
+        # under the mouthparts does not: an oblique painting leaves out what it cannot see.
+        keep_front = on_mouthpart.copy()
+        for eye in eyes:
+            keep_front = np.maximum(keep_front, 1.0 - smooth_step((eye_reach(position, eye) - 1.2) / 0.6))
+        took = overlay_oblique_views(linear, position, normal, baked, surface, views_dir, eyes, projection, hidden["front"], keep_front)
+        plain *= 1.0 - took
 
     # The mouthparts take the flesh colour of the face around their roots and keep their own light and dark.
     # The painted ones are a pale yellow, which reads as tusks. A share of their own colour stays, toward the tips.
