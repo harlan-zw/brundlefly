@@ -757,7 +757,9 @@ def export_web(src, args):
     for index, eye in enumerate(site["eyes"]):        # 0 is screen left and larger
         mesh = bpy.data.meshes.new(f"Brundlefly-eye-{index}")
         bm = bmesh.new()
-        bmesh.ops.create_uvsphere(bm, u_segments=48, v_segments=32, radius=1.0)
+        # The lid material is textured, so glTF requires UVs even on hidden markers.
+        bm.loops.layers.uv.verify()
+        bmesh.ops.create_uvsphere(bm, u_segments=48, v_segments=32, radius=1.0, calc_uvs=True)
         # The sphere's poles turn to the front and the back, so the rings of vertices run around the
         # line of sight and the pupil and the iris come out round.
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0.0, 0.0, 0.0), matrix=Matrix.Rotation(math.radians(90), 3, "X"))
