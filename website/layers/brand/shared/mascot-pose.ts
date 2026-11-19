@@ -1,4 +1,5 @@
-import type { Euler, Vector2 } from 'three'
+import { Vector2 } from 'three'
+import type { Euler } from 'three'
 import type { Transform } from './organism'
 import { wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus } from './eye-gaze.ts'
@@ -120,4 +121,74 @@ export function poseBody(joint: (name: BodyJointName) => Turnable, input: Mascot
       scaleY: transform === 'squeeze' ? 1 - pressure * 0.04 : 1,
     },
   }
+}
+
+/** The three motions the inspector plays and the relief rig exports as clips. Each maps a time in the clip to a pose input. */
+export const clipPoses = {
+  Idle: { duration: 4.8, pose: (time: number): MascotPoseInput => ({ time, pressure: 0, pointer: new Vector2(), transform: 'squeeze' }) },
+  Walk: { duration: 1.75, pose: (time: number): MascotPoseInput => ({
+    time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: 1,
+    walkPhase: time / 1.75 * Math.PI * 2,
+  }) },
+  Speaking: { duration: 3.2, pose: (time: number): MascotPoseInput => ({
+    time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze',
+    speaking: Math.pow(Math.sin(time * Math.PI * 5 / 3.2), 2) * (0.6 + Math.sin(time * 9) * 0.22),
+    blink: Math.max(0, 1 - Math.abs(time - 2.45) / 0.12),
+  }) },
+} as const
+
+/** Whole-figure motion that `addBodyDepth` adds, in rig units, and a bounce for loose parts such as mouthparts. */
+export type BodyDepth = { rootX: number, rootY: number, bounce: number }
+
+/**
+ * Adds the motion a full body can take and a flat relief cannot. It runs after `poseBody` and adds to its turns.
+ * Walking: a longer stride with a real foot lift, a pelvis that twists against the chest, forearms that follow through,
+ * and wings that lag a step behind. Standing: his weight shifts slowly from one leg to the other, and he breathes deeper.
+ * The relief rig does not use it, because large turns out of the picture plane tear a relief.
+ */
+export function addBodyDepth(joint: (name: BodyJointName) => Turnable, input: MascotPoseInput): BodyDepth {
+  const { time, walkPhase = time * 3.6 } = input
+  const calm = 1 - (input.mannerism?.calm ?? 0)
+  const gait = Math.min(1, Math.max(0, input.gait ?? 0))
+  const still = (1 - gait) * calm
+  const stride = gait * Math.sin(walkPhase)
+  const leftLift = gait * Math.max(0, Math.cos(walkPhase))
+  const rightLift = gait * Math.max(0, -Math.cos(walkPhase))
+  // Loose parts trail the stride by about a sixth of a step.
+  const trail = gait * Math.sin(walkPhase - 0.9)
+  const turn = (name: BodyJointName, x: number, y: number, z: number) => {
+    const { rotation } = joint(name)
+    rotation.set(rotation.x + x, rotation.y + y, rotation.z + z)
+  }
+  // Legs: each thigh swings further, the knee folds as the foot leaves the floor, and the foot trails.
+  turn('left-hip', stride * 0.1, 0, 0)
+  turn('right-hip', -stride * 0.1, 0, 0)
+  turn('left-knee', -leftLift * 0.22, 0, 0)
+  turn('right-knee', -rightLift * 0.22, 0, 0)
+  turn('left-foot', leftLift * 0.16, 0, 0)
+  turn('right-foot', rightLift * 0.16, 0, 0)
+  // Spine: the pelvis follows the leading leg and drops over the lifted one. The chest twists against it and leans into the walk.
+  turn('pelvis', 0, stride * 0.06, stride * 0.03)
+  turn('chest', gait * 0.03, -stride * 0.11, 0)
+  // The head undoes part of the chest's twist and lean, so his eyes stay level and ahead.
+  turn('head', -gait * 0.03, stride * 0.05, 0)
+  // Arms: only the forearm swings forward, after the shoulder. A backward swing would bring a long hand into its own leg.
+  turn('left-elbow', -Math.max(0, trail) * 0.12, 0, 0)
+  turn('right-elbow', -Math.max(0, -trail) * 0.12, 0, 0)
+  // Wings: they lag the stride and bounce twice in each cycle, the large one more than the small one.
+  const bounce = gait * Math.sin(walkPhase * 2 - 1.2)
+  turn('left-wing', 0, trail * 0.07, 0)
+  turn('right-wing', 0, -trail * 0.05, 0)
+  turn('left-wing-tip', bounce * 0.06, 0, 0)
+  turn('right-wing-tip', bounce * 0.04, 0, 0)
+  // Standing: his weight shifts from leg to leg. Each hip turns back by the pelvis's roll, so both legs stay upright.
+  const shift = Math.sin(time * 0.42) * still
+  turn('pelvis', 0, 0, shift * 0.035)
+  turn('left-hip', 0, 0, -shift * 0.035)
+  turn('right-hip', 0, 0, -shift * 0.035)
+  turn('chest', Math.sin(time * 1.4) * 0.02 * still, 0, -shift * 0.03)
+  turn('head', 0, 0, shift * 0.012)
+  turn('left-wing', 0, 0, Math.sin(time * 0.5 + 1) * 0.03 * still)
+  turn('right-wing', 0, 0, -Math.sin(time * 0.5 + 2.2) * 0.02 * still)
+  return { rootX: shift * 0.015, rootY: gait * Math.abs(Math.cos(walkPhase)) * 0.02, bounce }
 }

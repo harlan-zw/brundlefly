@@ -1,12 +1,12 @@
 import {
   AnimationClip, Bone, BufferGeometry, DoubleSide, Float32BufferAttribute, Group, MeshPhysicalMaterial, MeshStandardMaterial, NoColorSpace,
-  QuaternionKeyframeTrack, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector2, Vector3, VectorKeyframeTrack,
+  QuaternionKeyframeTrack, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector3, VectorKeyframeTrack,
 } from 'three'
 import type { Texture } from 'three'
 import { createFaceModel, createHeadOutline } from './face.ts'
 import type { HeadProjection } from './face.ts'
 import { applyMascotSurface } from './mascot-surface.ts'
-import { poseBody } from './mascot-pose.ts'
+import { clipPoses, poseBody } from './mascot-pose.ts'
 import type { BodyJointName, MascotPoseInput } from './mascot-pose.ts'
 
 type Raster = { width: number, height: number, data: Uint8ClampedArray }
@@ -397,21 +397,13 @@ export function createMascotModel(texture: Texture, raster: Raster, faceTexture?
     root, mesh, skeleton, update,
     updateMaterials,
     idleAnimation() {
-      return bakeAnimation('Brundlefly-idle', 4.8, time => ({ time, pressure: 0, pointer: new Vector2(), transform: 'squeeze' }))
+      return bakeAnimation('Brundlefly-idle', clipPoses.Idle.duration, clipPoses.Idle.pose)
     },
     walkAnimation() {
-      const duration = 1.75
-      return bakeAnimation('Brundlefly-walk', duration, time => ({
-        time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: 1,
-        walkPhase: time / duration * Math.PI * 2,
-      }))
+      return bakeAnimation('Brundlefly-walk', clipPoses.Walk.duration, clipPoses.Walk.pose)
     },
     speakingAnimation() {
-      return bakeAnimation('Brundlefly-speaking', 3.2, time => ({
-        time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze',
-        speaking: Math.pow(Math.sin(time * Math.PI * 5 / 3.2), 2) * (0.6 + Math.sin(time * 9) * 0.22),
-        blink: Math.max(0, 1 - Math.abs(time - 2.45) / 0.12),
-      }))
+      return bakeAnimation('Brundlefly-speaking', clipPoses.Speaking.duration, clipPoses.Speaking.pose)
     },
     dispose() { bodySurfaces.forEach(surface => surface.dispose()); face.dispose(); geometry.dispose(); front.dispose(); sides.dispose(); wingMaterial.dispose(); crease.dispose(); heightMap?.dispose(); skeleton.dispose() },
   }

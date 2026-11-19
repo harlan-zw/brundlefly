@@ -331,7 +331,9 @@ The model is the web export of the figurine. The relief rig stays the default ma
 The site fits the model to the height of the relief rig and puts its lowest point on the chamber floor.
 The model keeps its own origin, facing, and materials: +Y is up and the face points to +Z.
 If the file has the relief rig's 25 body joints, each with an identity rest rotation, the site poses it with the relief rig's code.
-The model then idles, walks the same route, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
+The model then idles, walks, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
+A full body also takes motion that would tear the relief: a longer stride with a foot lift, a pelvis that twists against the chest, forearms and wings that follow through, and a slow shift of weight while he stands. That motion is addBodyDepth in mascot-pose.ts.
+The mesh walks its own route, meshWalk in scene-layout.ts. It is about 2.5 units wide and 2 deep, so the relief rig's route takes it into the egg sacs.
 Nodes named Brundlefly-eye-0 and Brundlefly-eye-1 mark his eyes. The site hides each node and builds the relief rig's eye in its place.
 The built eye uses the relief rig's globe artwork, wet-eye shader, shell lids, blink, squint, and gaze. Their numbers come from referenceEyes in face.ts.
 Each node gives its eye a centre, a rest rotation, and a width. The height and depth keep the relief rig's proportions.
@@ -496,7 +498,7 @@ Drag to orbit and scroll to zoom. Bones and wireframe reveal the weighted model.
 Choose Idle, Walk, or Speaking for the exported animation clips. Play, pause, change speed, or scrub time.
 Manual speech, blink, brow, and squint controls stop clip playback and show a fixed pose.
 Mapped and Sprite switch the artwork. Download GLB exports the selected rig.
-Mesh shows the full 3D model. Idle plays its clip or its sway. Walk, Speaking, and Download GLB apply only to the relief rig.
+Mesh shows the full 3D model. If it can take the relief rig's pose code, Idle, Walk, and Speaking pose it as the homepage does. If not, Idle plays its clip or its sway. Download GLB applies only to the relief rig.
 If the model can take the relief rig's pose code, Manual poses it from the Speech, Blink, Brow, and Squint controls.
 Bones applies only to a model with a skeleton.
 If the model file is absent, Mesh shows the mapped relief rig and the status line says so.

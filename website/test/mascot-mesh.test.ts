@@ -189,10 +189,16 @@ test('a mesh with the relief rig joints walks, speaks, and performs a mannerism 
   const { scene, joint } = jointedModel()
   const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
   assert.ok(mascot.pose, 'A file with every body joint must accept the pose code.')
-  // A full stride at its widest: the hips swing in opposite directions and the figure sits low between steps.
+  // A full stride at its widest: the hips swing in opposite directions, further than the relief rig's 0.22 rad.
   mascot.pose({ ...standing, gait: 1, walkPhase: Math.PI / 2 })
-  close(joint('left-hip').rotation.x, 0.22)
-  close(joint('right-hip').rotation.x, -0.22)
+  close(joint('left-hip').rotation.x, 0.32)
+  close(joint('right-hip').rotation.x, -0.32)
+  // The chest twists against the pelvis, so his shoulders counter his hips.
+  assert.ok(joint('pelvis').rotation.y > 0.08 && joint('chest').rotation.y < -0.1)
+  // As a foot leaves the floor its knee folds further than on the relief rig, and the other knee does not.
+  mascot.pose({ ...standing, gait: 1, walkPhase: 0 })
+  close(joint('left-knee').rotation.x, -0.4)
+  close(joint('right-knee').rotation.x, 0)
   // Standing again clears the stride. A turn must not carry over from the frame before.
   mascot.pose(standing)
   close(joint('left-hip').rotation.x, 0)
@@ -476,4 +482,19 @@ test('a lid takes the skin the model names for its eye, and the relief rig\'s li
   // Any other material name is the file's own eye material, and gives no lid colour.
   const plain = dressed('Brundlefly-eye')
   assert.equal(plain.lid(0).map, plain.dressing.skin)
+})
+
+test('standing, his weight shifts from leg to leg while both legs stay upright', () => {
+  const { scene, joint } = jointedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  // A quarter of the way through the slow shift, his weight is fully on one side.
+  mascot.pose!({ ...standing, time: Math.PI / 2 / 0.42 })
+  const roll = joint('pelvis').rotation.z
+  assert.ok(roll > 0.03, 'The pelvis must roll.')
+  close(joint('left-hip').rotation.z, -roll)
+  close(joint('right-hip').rotation.z, -roll)
+  assert.ok(mascot.root.children[0]!.position.x > 0.01, 'His body must move over the loaded leg.')
+  // A full stride leaves no weight shift.
+  mascot.pose!({ ...standing, time: Math.PI / 2 / 0.42, gait: 1, walkPhase: 0 })
+  close(mascot.root.children[0]!.position.x, 0)
 })

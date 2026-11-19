@@ -9,6 +9,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createOrganismModel } from '../../shared/organism'
 import { createMascotModel } from '../../shared/mascot'
 import { loadMeshMascot, reliefStandingHeight } from '../../shared/mascot-mesh'
+import { clipPoses } from '../../shared/mascot-pose'
 import type { Presentation, Transform } from '../../shared/organism'
 
 const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform = 'squeeze', presentation = 'specimen', interactive = true, motionOff = false, exportable = false, mascot = false, framing = 'center', distance, speaking = 0, blink, brow, squint, inspector = false, bones = false, wireframe = false, clip = 'Manual', playing = false, playbackSpeed = 1, textureMode = 'mapped' } = defineProps<{
@@ -216,7 +217,10 @@ watch(canvas, async (element) => {
   const clips = mixer && reliefMascot ? { Idle: reliefMascot.idleAnimation(), Walk: reliefMascot.walkAnimation(), Speaking: reliefMascot.speakingAnimation() } : undefined
   if (clips) emit('clips', Object.fromEntries(Object.entries(clips).map(([name, animation]) => [name, animation.duration])))
   // The mesh has one motion: its idle clip or its sway.
-  else if (inspector && meshMascot) emit('clips', { Idle: meshMascot.idleDuration })
+  // A mesh that takes the relief rig's pose code plays the same three motions. Any other mesh has one motion: its idle clip or its sway.
+  else if (inspector && meshMascot) emit('clips', meshMascot.pose
+    ? Object.fromEntries(Object.entries(clipPoses).map(([name, { duration }]) => [name, duration]))
+    : { Idle: meshMascot.idleDuration })
   let activeClip = ''
   let currentPressure = 0
   let elapsed = 0
@@ -238,7 +242,12 @@ watch(canvas, async (element) => {
     }
     model.update({ time: elapsed, pressure: currentPressure, wetness, pointer, transform,
       opening: opening + (presentation === 'lair' ? Math.min(elapsed / 2, 1) * 0.15 + approach * 0.12 : 0) })
-    if (meshMascot) {
+    const posedClip = inspector && meshMascot?.pose && clip !== 'Manual' ? clipPoses[clip] : undefined
+    if (meshMascot?.pose && posedClip) {
+      if (delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % posedClip.duration
+      meshMascot.pose(posedClip.pose(clipTime.value))
+    }
+    else if (meshMascot) {
       // Every clip except Idle shows the mesh at rest. Outside the inspector the idle motion always runs.
       const idle = !inspector || clip === 'Idle'
       if (inspector && idle && delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % meshMascot.idleDuration

@@ -6,7 +6,7 @@ import { createEyeMaterial } from './eye-material.ts'
 import { referenceEyes as reliefEyes, referenceFace } from './face.ts'
 import { createReferenceEyes } from './mascot-eyes.ts'
 import type { EyeDressing, LidSkin } from './mascot-eyes.ts'
-import { bodyJointNames, poseBody } from './mascot-pose.ts'
+import { addBodyDepth, bodyJointNames, poseBody } from './mascot-pose.ts'
 import type { BodyJointName, MascotPoseInput } from './mascot-pose.ts'
 
 /** Served copy of assets/3d/brundlefly/brundlefly-web.glb. The brand sync script owns that copy. */
@@ -287,8 +287,10 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       // Some joints only move during a habit. Clearing every joint stops a habit's turn from accumulating across frames.
       for (const joint of bodyJoints.values()) joint.rotation.set(0, 0, 0)
       const body = poseBody(name => bodyJoints.get(name)!, input)
+      // The mesh is a full body, so it takes the fuller motion that would tear the relief.
+      const depth = addBodyDepth(name => bodyJoints.get(name)!, input)
       pivot.rotation.y = body.root.rotationY
-      pivot.position.y = body.root.positionY
+      pivot.position.set(depth.rootX, body.root.positionY + depth.rootY, 0)
       pivot.scale.y = body.root.scaleY
       // `facing` is 1 for the side the file faces and -1 for the other side. The body turns and the head stays toward the viewer.
       // While he walks, the head keeps half of the turn, so he looks along his path.
@@ -309,9 +311,10 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       // The mouthparts drift on their own and open with his voice. Neighbours open in opposite directions.
       const phase = input.time * mouthpartRate
       mouthparts.forEach(({ base, tip }, index) => {
-        base.rotation.set(Math.sin(phase * 2 + index * 0.9) * 0.12 * body.calm + body.speaking * 0.3 * (index % 2 === 0 ? 1 : -1),
+        // They also swing with each step, the tips more than the roots.
+        base.rotation.set(Math.sin(phase * 2 + index * 0.9) * 0.12 * body.calm + body.speaking * 0.3 * (index % 2 === 0 ? 1 : -1) + depth.bounce * 0.04,
           0, Math.sin(phase + index * 1.7) * 0.07 * body.calm)
-        tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2, 0, 0)
+        tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2 + depth.bounce * 0.09, 0, 0)
       })
       turnHead(look, input.mannerism?.turns.head)
       aimEyes(input.time, input.eyes ?? { _tag: 'Ahead' })
