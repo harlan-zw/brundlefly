@@ -451,6 +451,28 @@ def load_view(path):
             "box": (xs.min(), xs.max(), ys.min(), ys.max())}
 
 
+def attach_under(view, path):
+    """Give a view its under image: the same picture with the parts in front removed.
+
+    The under image shows the skin behind the mouthparts and behind the small arms. A surface
+    that those parts hide takes its colour from it. The image is resampled to the size of the
+    view, so the two share one frame. Returns the share of the figure that the two have in common.
+    """
+    img = bpy.data.images.load(path)
+    w, h = img.size
+    px = np.empty(w * h * 4, dtype=np.float32)
+    img.pixels.foreach_get(px)
+    bpy.data.images.remove(img)
+    rgb = px.reshape(h, w, 4)[..., :3]
+    rows = np.clip((np.arange(view["figure"].shape[0]) * h / view["figure"].shape[0]).astype(int), 0, h - 1)
+    cols = np.clip((np.arange(view["figure"].shape[1]) * w / view["figure"].shape[1]).astype(int), 0, w - 1)
+    rgb = rgb[rows][:, cols]
+    known = ~outer_background(rgb.max(axis=2) <= 0.08)
+    view["under"] = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    view["under_known"] = known
+    return float((known & view["figure"]).sum() / max((known | view["figure"]).sum(), 1))
+
+
 def register(view, f, mirror, window=None, start=None, axis=0):
     """Fit a sheet view to the model's outline: one scale, one offset across, one in z.
 
@@ -661,10 +683,12 @@ def sheet_colour_fn(views):
     flesh = bm.srgb_to_linear(bm.PALETTE[bm.FLESH])
     has_sides = "right" in views or "left" in views
 
-    def colour(xyz, normal, hidden=None):
+    def colour(xyz, normal, hidden=None, under=None):
         """hidden maps a view name to a value from 0 to 1 for each point: how far that view cannot
         see the point, because another part is in front of it. A hidden point takes the blurred
-        colour of the view. A sharp sample there would paint the part in front onto the part behind."""
+        colour of the view. A sharp sample there would paint the part in front onto the part behind.
+        under maps a view name to a value from 0 to 1 for each point: how far the point lies behind
+        a part that the view's under image has removed. Such a point takes the under image."""
         total = np.zeros((len(xyz), 1))
         mixed = np.zeros((len(xyz), 3))
         fallback = np.zeros((len(xyz), 3))
@@ -685,6 +709,9 @@ def sheet_colour_fn(views):
             if hidden is not None and name in hidden:
                 behind = hidden[name][:, None]
                 sample = sample * (1 - behind) + view["soft"][row, col] * behind
+            if under is not None and name in under and "under" in view:
+                below = (under[name] * view["under_known"][row, col])[:, None]
+                sample = sample * (1 - below) + view["under"][row, col] * below
             weight = (facing ** 2 * inside)[:, None]
             mixed += sample * weight
             total += weight

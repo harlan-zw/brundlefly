@@ -1,22 +1,23 @@
 # Brundlefly figurine: printing instructions
 
 This folder holds a 3D model of Brundlefly for printing and for the website, and the scripts that build it.
-The shape and the colours come from four views: the front and back views of `assets/brand/character-sheet.png`, and two side views drawn in the same style.
+The shape comes from four views: the front and back views of `assets/brand/character-sheet.png`, and two side views drawn in the same style. The colours come from the front and back views and from side views painted over renders of the shape.
 
 ![Front view](previews/front.png)
 
 ## How the model is made
 
-1. `source/views/front.png` and `source/views/back.png` are the front and back views, cut from the character sheet. `source/views/side-right.png` and `source/views/side-left.png` are side views that an image model drew from the sheet. The sheet has no side view.
+1. `source/views/front.png` and `source/views/back.png` are the front and back views, cut from the character sheet. The sheet has no side view. `source/views/shape-side-right.png` and `source/views/shape-side-left.png` are side views that an image model drew from the sheet, for the shape only.
 2. An image-to-3D model reads the four views and returns a base mesh: `source/hunyuan3d-multiview-shape.glb`.
-3. `build_from_mesh.py` turns the base mesh into the print model and the website model in Blender:
+3. `source/views/side-right.png` and `source/views/side-left.png` colour the sides. An image model painted them over grey renders of the base mesh, so they line up with it. `source/views/front-under.png` is the front view with the mouthparts and the small arms removed. It colours the skin behind those parts.
+4. `build_from_mesh.py` turns the base mesh into the print model and the website model in Blender:
    - It removes the bristle spikes. It keeps the thin wings and mouthparts. A wing membrane takes its original surface back as a whole.
    - For printing, it grows parts that are thinner than 1.6 mm, by up to 0.5 mm on each side, and it adds the base.
    - It projects the four views onto the vertex colours. Each surface takes its colour from the views that it faces. The head gets its own image fit, so the face lines up. The wings and the shoulders keep the body fit.
    - It cuts the smaller wing back to its outline in the sheet's front view. The generator makes that wing wider than the sheet draws it.
    - It gives each eye a socket, at the proportions of the site's relief rig: the eye on screen left is about 1.4 times as wide as the other. On the print model each socket holds a globe and two open lids, as part of the solid: half shells that hug the globe above and below. On the website model each socket is empty: the site builds the relief rig's own eye and lids there.
-4. `export_model.py` writes the files. For the website model it bakes the four views into a texture, and it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip. It then poses the figure into the stance of `source/stance.json` and makes that pose the rest shape.
-5. `validate.ts` checks the print files.
+5. `export_model.py` writes the files. For the website model it bakes the four views into a texture, and it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip. It then poses the figure into the stance of `source/stance.json` and makes that pose the rest shape.
+6. `validate.ts` checks the print files.
 
 `assets/prompts/figurine.json` records the generator, the date, and the settings.
 Read the licence note in that file before you sell prints of this mesh.
@@ -30,7 +31,7 @@ Read the licence note in that file before you sell prints of this mesh.
 | `brundlefly.blend` | Editable master. One Blender unit is one millimetre. |
 | `brundlefly-preview.glb` | Coloured preview of the print model, with the base. |
 | `brundlefly-web.glb` | Model for the website: rigged, in the stance of the character artwork, no base, thin bristle hairs, thin parts not thickened. |
-| `source/` | The generated base mesh, the four view images, the joint positions for the skeleton, and the stance of the website model. |
+| `source/` | The generated base mesh, the view images for the shape and for the colours, the joint positions for the skeleton, and the stance of the website model. |
 | `validation-report.json` | Output of `validate.ts` for the two STL files. |
 | `previews/` | Front, side, back, three-quarter, and top renders of the print model, two of the website model, and one pose test of the rig. |
 
@@ -147,10 +148,8 @@ These steps are untested on a printed part.
 
 - The figure stands on an integrated base. A printed figure on two thin legs does not stand without one.
 - One material prints no colour. The print shows shape only.
-- The sheet has no side view. An image model drew the two side views, so the side shape follows that drawing and not canonical artwork.
-- The side views were drawn as mirror images of true side views: in each one the figure faces the wrong way for the side that it shows. The outline is the same either way, and the colours are placed with this in mind.
+- The sheet has no side view. An image model drew two side views for the shape, so the side shape follows that drawing and not canonical artwork. The colours of the sides are a second set of generated images, painted over renders of the mesh.
 - The print model has no bristles, and its thin parts are a little thicker than in the artwork.
-- The generated side views paint an eye socket on each side of the head, behind the eyeball. The sheet has no such socket.
 
 ## Website model
 
@@ -163,7 +162,7 @@ These steps are untested on a printed part.
 - One root node, `Brundlefly`, with a scale of 0.001 and a turn of 0.5 radians about the vertical, toward screen right. That turn is the three-quarter view of the artwork. The site changes it to turn the figure toward his path.
 - Inside the root, the body faces +Z. The head faces the same way, with a roll. The site turns the head to the viewer.
 - `Brundlefly-body`: about 64,000 triangles. That count includes about 80 bristle hairs of three triangles each; a hair takes the skin weights of the vertex under it. Texture coordinates in `TEXCOORD_0`, material `Brundlefly-skin`, single sided, roughness 0.42. It has no `COLOR_0`.
-- The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork. A surface that a view cannot see, because another part is in front of it, takes the blurred colour of that view. So the body carries no painted copy of a mouthpart or an arm, and a moving part does not leave its picture behind.
+- The base colour is one embedded JPEG texture, 1536 pixels square. It holds the four views at the resolution of the artwork. A surface that a view cannot see, because another part is in front of it, takes the blurred colour of that view, or the colour of `front-under.png` where a mouthpart or a small arm is the part in front. So the body carries no painted copy of a mouthpart or an arm, and a moving part does not leave its picture behind.
 - `Brundlefly-eye-0` and `Brundlefly-eye-1`: eye markers, material `Brundlefly-eye`. Eye 0 is on screen left and is the larger eye. The site hides each marker and builds the relief rig's own eye and lids at it. The body mesh has an empty, dark socket behind each marker, and no eyeball or lid of its own.
   - Each marker is a unit sphere centred on its origin. The site reads its translation as the eye centre, its rest rotation, and its X scale as the half width of the globe: 1.49 mm and 1.04 mm. That is 0.116 and 0.081 of the head width, as on the relief rig. The centre sits 0.65 of the depth radius behind the skin, so the rims of the open lids meet the skin.
   - Without the site's eyes the marker shows as a small dark globe: `COLOR_0` holds a dark teal iris and a dark pupil, and the material's base colour factor is white.

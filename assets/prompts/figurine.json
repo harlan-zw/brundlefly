@@ -5,8 +5,8 @@
   "references": [
     "assets/3d/brundlefly/source/views/front.png",
     "assets/3d/brundlefly/source/views/back.png",
-    "assets/3d/brundlefly/source/views/side-left.png",
-    "assets/3d/brundlefly/source/views/side-right.png",
+    "assets/3d/brundlefly/source/views/shape-side-left.png",
+    "assets/3d/brundlefly/source/views/shape-side-right.png",
     "assets/brand/character-sheet.png"
   ],
   "prompt": "None. The model takes view images and no text. The front and back views are cut from the character sheet and enlarged two times with nearest-neighbour. The two side views are generated images, see side_views.",
@@ -14,8 +14,8 @@
     "views": {
       "front": "front.png",
       "back": "back.png",
-      "left": "side-left.png",
-      "right": "side-right.png"
+      "left": "shape-side-left.png",
+      "right": "shape-side-right.png"
     },
     "steps": 30,
     "guidance_scale": 5.0,
@@ -25,14 +25,14 @@
     "num_chunks": 8000,
     "texture": false
   },
-  "usage": "Base shape for the print model and the website model. assets/3d/brundlefly/build_from_mesh.py removes the bristle spikes for printing, thickens thin parts, cuts the smaller wing back to the sheet's outline, adds the base and the eyeballs, and projects the four views onto the colours.",
+  "usage": "Base shape for the print model and the website model. assets/3d/brundlefly/build_from_mesh.py removes the bristle spikes for printing, thickens thin parts, cuts the smaller wing back to the sheet's outline, adds the base and the eye sockets, and projects the views onto the colours. The colours of the sides come from painted_views, not from side_views.",
   "licence_note": "The Space runs Tencent's Hunyuan3D-2 multi-view model. Its community licence sets terms for the model and for use of its output. Nobody reviewed that licence for this project. Check it before commercial use of this mesh.",
   "side_views": {
     "tool": "Codex CLI built-in image generation",
     "date": "2026-11-18",
     "files": [
-      "assets/3d/brundlefly/source/views/side-right.png",
-      "assets/3d/brundlefly/source/views/side-left.png"
+      "assets/3d/brundlefly/source/views/shape-side-right.png",
+      "assets/3d/brundlefly/source/views/shape-side-left.png"
     ],
     "references": [
       "assets/brand/character-sheet.png",
@@ -40,7 +40,29 @@
       "assets/3d/brundlefly/source/views/back.png"
     ],
     "prompt": "Make TWO images: the right side view and the left side view of the existing Brundlefly mascot, in the same pose, pixel-art style, palette, and level of detail as the attached character sheet and its front and back views. Strict orthographic side views on a pure black background. Right side: the figure faces the left edge, the nearest leg is dark segmented chitin with a clawed insect foot, the nearest wing is the larger wing. Left side: the figure faces the right edge, the nearest leg is rusty flesh with a human-like foot, the nearest wing is the smaller wing. Full body, standing, strongly hunched, long arm hanging beside the body, small arm held forward, mouthparts hanging in front of the chest, narrow blue-black eye with a teal glint, dark segmented plates along the back.",
-    "usage": "Left and right inputs for the shape generation, and colour for surfaces that face sideways.",
+    "usage": "Left and right inputs for the shape generation only. They no longer colour the model.",
     "known_issue": "The brief asked for each side view with the figure facing the wrong way, so each image is a mirror image of a true side view. The outline is unaffected. The generator's own convention for its left and right inputs was not verified."
+  },
+  "painted_views": {
+    "tool": "Codex CLI built-in image generation",
+    "date": "2026-11-19",
+    "files": [
+      "assets/3d/brundlefly/source/views/side-right.png",
+      "assets/3d/brundlefly/source/views/side-left.png",
+      "assets/3d/brundlefly/source/views/front-under.png"
+    ],
+    "references": [
+      "assets/brand/character-sheet.png",
+      "assets/3d/brundlefly/source/views/front.png",
+      "assets/3d/brundlefly/source/views/back.png",
+      "Two grey orthographic renders of the model in the straight stand, one from each side, each mirrored to the layout that build_from_mesh.py expects. They are not in the repository."
+    ],
+    "prompts": {
+      "side-right.png and side-left.png": "Make TWO images. Each one is a painted version of a grey 3D render. Keep the render's outline, pose, proportions, and the position of every part exactly, so the result lines up with the render. Only replace the grey surface with the character's colours and surface detail, in the pixel-art style, palette, and level of detail of the character sheet: rusty folded flesh, dark segmented chitin on the crown, the shoulders, and the back plates, pale green-grey wings, dark claws. In the right view the nearest leg is dark chitin; in the left view the nearest leg is rusty flesh. Do not paint an eye, an eye socket, or a dark hollow on the side of the head. Flat, even lighting. Pure black background.",
+      "front-under.png": "Make ONE image by editing the front view. Remove the long mouthparts that hang from the face over the chest, and the two small arms that hang in front of the belly. Where those parts were, paint what is behind them: the lower face, the throat, the chest, and the belly, as continuous skin in the same pixel-art style, palette, and lighting. Everything else stays as in the front view, in the same frame."
+    },
+    "post_processing": "Each image was resized, and each colour channel of its figure pixels was given the mean and the spread of the front view's figure pixels, so the generated images share the sheet's colours.",
+    "usage": "side-right.png and side-left.png colour the surfaces that face sideways. front-under.png colours the skin that the mouthparts and the small arms hide in the front view, so a moving part does not leave a painted copy or a blank patch behind it.",
+    "known_issue": "The generator did not keep every pixel outside the requested change. front-under.png shares 0.89 of its figure with the front view, so it is used only behind the removed parts. The painted side views overlap the model's outline by 0.95 and 0.93."
   }
 }

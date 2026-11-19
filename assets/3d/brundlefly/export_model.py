@@ -521,22 +521,38 @@ def hidden_from_views(points, known, joints, surface):
         spread[:, 1:] = np.minimum(spread[:, 1:], grid[:, :-1]); spread[:, :-1] = np.minimum(spread[:, :-1], grid[:, 1:])
         behind = depth - spread.reshape(-1)[flat]
         out[name] = np.where(known & np.isfinite(behind), smooth_step((behind - slack) / 0.6), 0.0)
+    under = {}
     if joints and "front" in out:
-        rods = []
-        for i in range(4):
-            rods += [(np.array(joints[f"mouthpart-{i}"]), np.array(joints[f"mouthpart-{i}-tip"])), (np.array(joints[f"mouthpart-{i}-tip"]), np.array(joints[f"mouthpart-{i}-tip-end"]))]
-        ends = np.array([p for rod in rods for p in rod])
-        from_rod = np.full(len(points), np.inf)
-        for a, b in rods:
-            step = b - a
-            t = np.clip((points - a) @ step / (step @ step), 0.0, 1.0)
-            from_rod = np.minimum(from_rod, np.linalg.norm(points - (a + t[:, None] * step), axis=1))
+        def rods_of(names):
+            return [(np.array(joints[a]), np.array(joints[b])) for a, b in zip(names, names[1:])]
+        mouth = [rod for i in range(4) for rod in rods_of([f"mouthpart-{i}", f"mouthpart-{i}-tip", f"mouthpart-{i}-tip-end"])]
+        small = [rod for side in ("left", "right") for rod in rods_of([f"{side}-rib", f"{side}-small-elbow", f"{side}-small-hand", f"{side}-small-hand-end"])]
+
+        def from_rods(rods, flat):
+            """Distance of each point from the nearest rod, and how far it lies behind that rod. flat measures in the picture plane only."""
+            best, behind = np.full(len(points), np.inf), np.zeros(len(points))
+            for a, b in rods:
+                step = b - a
+                keep = np.array([1.0, 0.0, 1.0]) if flat else np.ones(3)
+                t = np.clip(((points - a) * keep) @ step / ((step * keep) @ step), 0.0, 1.0)
+                on_rod = a + t[:, None] * step
+                distance = np.linalg.norm((points - on_rod) * keep, axis=1)
+                closer = distance < best
+                best[closer], behind[closer] = distance[closer], (points[:, 1] - on_rod[:, 1])[closer]
+            return best, behind
+        ends = np.array([p for rod in mouth for p in rod])
         zone = (smooth_step((points[:, 0] - (ends[:, 0].min() - 3.5)) / 1.5) * smooth_step(((ends[:, 0].max() + 3.5) - points[:, 0]) / 1.5)
                 * smooth_step((points[:, 2] - (ends[:, 2].min() - 10.0)) / 2.0) * smooth_step(((ends[:, 2].max() - 0.5) - points[:, 2]) / 1.5)
                 * (points[:, 1] < ends[:, 1].max() + 14.0))
-        own = 1.0 - smooth_step((from_rod - 1.3) / 0.8)           # 1 on a mouthpart, 0 away from it
-        out["front"] = np.maximum(out["front"], np.where(known, zone * (1.0 - own), 0.0))
-    return out
+        own = 1.0 - smooth_step((from_rods(mouth, False)[0] - 1.3) / 0.8)           # 1 on a mouthpart, 0 away from it
+        below = zone * (1.0 - own)
+        # The skin behind a small arm: inside the arm's outline in the picture, and behind the arm.
+        across, behind = from_rods(small, True)
+        below = np.maximum(below, (1.0 - smooth_step((across - 2.0) / 1.0)) * smooth_step((behind - 1.6) / 0.8))
+        below = np.where(known, below, 0.0)
+        out["front"] = np.maximum(out["front"], below)
+        under["front"] = below
+    return out, under
 
 
 def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface):
@@ -586,8 +602,11 @@ def bake_sheet_texture(body, projection, views_dir, size, eyes, joints, surface)
     field = position / projection["mesh_scale"]              # texel positions, back in the build's coordinates
     field[:, 2] += projection["field_zmin"]
     linear = np.tile(bfm.bm.srgb_to_linear(bfm.bm.PALETTE[bfm.bm.FLESH]), (size * size, 1))
-    hidden = hidden_from_views(position, baked, joints, surface)
-    linear[baked] = colour(field[baked], normal[baked], {name: value[baked] for name, value in hidden.items()})
+    hidden, under = hidden_from_views(position, baked, joints, surface)
+    under_path = os.path.join(views_dir, "front-under.png")
+    if "front" in views and os.path.exists(under_path):
+        print(f"TEXTURE under image shares {bfm.attach_under(views['front'][0], under_path):.3f} of its figure with the front view")
+    linear[baked] = colour(field[baked], normal[baked], {name: value[baked] for name, value in hidden.items()}, {name: value[baked] for name, value in under.items()})
     for name, value in hidden.items():
         component, direction = bfm.VIEW_SETUP[name]["facing"]
         facing = baked & (normal[:, component] * direction > 0.7)
