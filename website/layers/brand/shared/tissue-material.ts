@@ -1,4 +1,4 @@
-import { BackSide, MeshStandardMaterial, NoColorSpace, ShaderChunk } from 'three'
+import { BackSide, LinearFilter, MeshStandardMaterial, NoColorSpace, ShaderChunk } from 'three'
 import type { Texture } from 'three'
 
 type SurfaceOptions = { texture: Texture, color: string, roughness: number, bumpScale: number }
@@ -53,6 +53,10 @@ vec4 roomTexture(sampler2D surfaceMap, vec3 world) {
 export function createTissueMaterial(options: SurfaceOptions) {
   const heightTexture = (options.surface === 'enclosure' ? options.height : options.texture).clone()
   heightTexture.colorSpace = NoColorSpace
+  // The walls and the floor meet the camera at shallow angles. Sharper filtering there keeps the relief from smearing.
+  // The renderer limits the value to what the device supports. The caller's texture keeps its own settings.
+  heightTexture.anisotropy = 8
+  heightTexture.magFilter = LinearFilter
   heightTexture.needsUpdate = true
   const material = new MeshStandardMaterial({ color: options.color, map: options.texture,
     bumpMap: heightTexture, bumpScale: options.bumpScale, roughness: options.roughness, metalness: 0 })
