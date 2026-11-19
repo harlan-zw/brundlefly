@@ -101,7 +101,7 @@ function createMist(airTime: { value: number }) {
   const material = new ShaderMaterial({
     transparent: true, depthWrite: false, fog: true,
     // The mist takes fog by losing strength with distance. Far mist then sinks into the dark instead of veiling it.
-    uniforms: { ...fogUniforms(), uAirTime: airTime, uMist: { value: new Color('#A4B5A0') }, uMistStrength: { value: 0.11 } },
+    uniforms: { ...fogUniforms(), uAirTime: airTime, uMist: { value: new Color('#A4B5A0') }, uMistStrength: { value: 0.032 } },
     vertexShader: airVertex,
     fragmentShader: `
 uniform float uAirTime;
@@ -141,7 +141,7 @@ function createShaft(airTime: { value: number }, floorTexture: Texture) {
   const geometry = new CylinderGeometry(shaft.topRadius, shaft.footRadius, length, 28, 1, true)
   const material = new ShaderMaterial({
     transparent: true, depthWrite: false, fog: true, side: DoubleSide, blending: AdditiveBlending,
-    uniforms: { ...fogUniforms(), uAirTime: airTime, uShaft: { value: new Color(cream) }, uShaftStrength: { value: 0.058 } },
+    uniforms: { ...fogUniforms(), uAirTime: airTime, uShaft: { value: new Color(cream) }, uShaftStrength: { value: 0.022 } },
     vertexShader: airVertex,
     fragmentShader: `
 uniform float uAirTime;

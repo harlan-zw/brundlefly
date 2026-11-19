@@ -104,7 +104,7 @@ export function createSceneFinish(renderer: WebGLRenderer, scene: Scene, camera:
   }) : undefined
   if (blur) composer.addPass(blur)
   // Only light above the white point blooms: wet glints, the drips, and the eyes. Lit skin stays below it.
-  const bloom = new UnrealBloomPass(new Vector2(size.x, size.y), 0.2, 0.55, 2.6)
+  const bloom = new UnrealBloomPass(new Vector2(size.x, size.y), 0.1, 0.45, 2.6)
   composer.addPass(bloom)
   composer.addPass(new OutputPass())
   const grade = new ShaderPass({ uniforms: { tDiffuse: { value: null }, uSize: { value: new Vector2(size.x, size.y) }, uTime: { value: 0 } }, vertexShader: screenVertex, fragmentShader: gradeFragment })
