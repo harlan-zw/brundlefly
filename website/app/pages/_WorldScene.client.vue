@@ -303,7 +303,7 @@ watch(canvas, async (element) => {
   // The finishing pass draws the scene through its own target. A tier without it draws straight to the canvas.
   const finish = createSceneFinish(renderer, scene, camera, quality)
   // The wet floor mirrors the room at the highest tier only: it draws the room a second time.
-  const reflection = quality.reflection ? createFloorReflection(768, 432) : undefined
+  const reflection = finish && quality.reflection ? createFloorReflection(768, 432) : undefined
   if (reflection) scene.add(reflection.mesh)
   const raycaster = new Raycaster()
   // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.

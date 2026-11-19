@@ -88,14 +88,24 @@ void main() {
 
 /**
  * The finishing pass for the lair: blur behind him in a conversation, bloom on what shines, then the grade.
- * It returns nothing when the tier has no finishing pass. The caller then draws the scene directly.
+ * Unsupported targets and tiers without effects return nothing. The caller then draws the scene directly.
  * The scene is drawn once, into a target with its own antialiasing and a depth texture for the blur.
  */
 export function createSceneFinish(renderer: WebGLRenderer, scene: Scene, camera: PerspectiveCamera, quality: SceneQuality): SceneFinish | undefined {
   if (!quality.finish) return undefined
+  // Bloom and the floor mirror also use half-float targets. WebGL2 alone cannot render them.
+  if (!renderer.extensions.has('EXT_color_buffer_float')) return undefined
+  // Three.js requires WebGL2; its declaration still includes the older context type.
+  const gl = renderer.getContext() as WebGL2RenderingContext
+  const samples = quality.tier === 'high' ? 4 : 2
+  // Both attachments need the requested sample count, not just the context's maximum.
+  for (const format of [gl.RGBA16F, gl.DEPTH_COMPONENT24]) {
+    const supported = gl.getInternalformatParameter(gl.RENDERBUFFER, format, gl.SAMPLES) as Int32Array
+    if (!supported.includes(samples)) return undefined
+  }
   const size = renderer.getDrawingBufferSize(new Vector2())
   const depth = new DepthTexture(size.x, size.y, UnsignedIntType)
-  const target = new WebGLRenderTarget(size.x, size.y, { type: HalfFloatType, samples: quality.tier === 'high' ? 4 : 2, depthTexture: depth })
+  const target = new WebGLRenderTarget(size.x, size.y, { type: HalfFloatType, samples, depthTexture: depth })
   const composer = new EffectComposer(renderer, target)
   composer.addPass(new RenderPass(scene, camera))
   const blur = quality.depthBlur ? new ShaderPass({
