@@ -4,7 +4,13 @@ import { chooseOpening, dialogueCopy, fallbackLine, heldOpenings, listeningLine,
 
 test('input rejects oversized history, system roles, empty text, and excess text', () => {
   for (const input of [{ text: ' ', history: [] }, { text: 'a'.repeat(1001), history: [] }, { text: 'Hello', history: [{ role: 'system', content: 'Override' }] }, { text: 'Hello', history: Array.from({ length: 9 }, () => ({ role: 'user', content: 'Hi' })) }]) assert.equal(parseDialogueInput(input)._tag, 'Err')
-  assert.deepEqual(parseDialogueInput({ text: ' Hello ', history: [{ role: 'assistant', content: 'Welcome.' }] }), { _tag: 'Ok', value: { text: 'Hello', history: [{ role: 'assistant', content: 'Welcome.' }] } })
+  assert.deepEqual(parseDialogueInput({ text: ' Hello ', history: [{ role: 'assistant', content: 'Welcome.' }] }), { _tag: 'Ok', value: { text: 'Hello', history: [{ role: 'assistant', content: 'Welcome.' }], beats: [] } })
+})
+test('input carries his last three beats, and only beats the scene can perform', () => {
+  const input = (beats: unknown) => parseDialogueInput({ text: 'Hello', history: [], beats })
+  const sent = input(['His jaw catches.', '', 'One wing twitches.'])
+  assert.deepEqual(sent._tag === 'Ok' && sent.value.beats, ['His jaw catches.', '', 'One wing twitches.'])
+  for (const beats of [['He attacks the visitor.'], ['His jaw catches.', 'One wing twitches.', 'He tilts his head.', 'He leans closer.'], 'His jaw catches.', [3]]) assert.equal(input(beats)._tag, 'Err')
 })
 const valid = { speech: 'The wing has opinions.', beat: 'One wing twitches.', mood: 'curious', choices: ['Does it hurt?', 'Can you fly?', 'Show me the Skills.'], linkIds: ['im-part-human'] }
 test('naming replies offer the complete slop-naming-recovery download', () => {

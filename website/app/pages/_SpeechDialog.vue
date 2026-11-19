@@ -46,6 +46,8 @@ onClickOutside(noticeAnchor, () => { notice.value = false })
 // Choices and the text field take turns. "Your text" and errors show the field. A new reply shows the choices.
 const mode = ref<'Choices' | 'Compose'>('Choices')
 const history = ref<ConversationHistoryMessage[]>([])
+// His last three beats, newest first. The model reads them so it does not repeat a movement.
+const recentBeats = ref<string[]>([])
 const visited = ref(false)
 const request = shallowRef<{ _tag: 'Idle' } | { _tag: 'Pending', controller: AbortController, chosen: number | undefined, listening: string }
   | { _tag: 'PresetPending', next: Extract<ConversationTurn, { _tag: 'Preset' }>, text: string, chosen: number }>({ _tag: 'Idle' })
@@ -96,6 +98,7 @@ const present = async (next: Exclude<ConversationTurn, { _tag: 'Empty' }>, kind:
   history.value = [...history.value.slice(kind === 'dialogue' ? -6 : -7),
     ...(kind === 'dialogue' ? [{ role: 'user' as const, content: suppliedText.trim() }] : []),
     { role: 'assistant', content: next.reply.text }]
+  recentBeats.value = [next.reply.beat, ...recentBeats.value].slice(0, 3)
   if (kind === 'dialogue' && text.value === suppliedText) text.value = ''
   emit('reaction', next.reply)
   emit('reply', next.reply.text)
@@ -142,7 +145,7 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value, ch
       })
     : $fetch<{ reply: ConversationReply }>('/api/dialogue', {
         method: 'POST', signal: controller.signal, retry: 0, timeout: 20_000,
-        body: { text: message, history: history.value.slice(-8) },
+        body: { text: message, history: history.value.slice(-8), beats: recentBeats.value },
       }).then(value => ({ _tag: 'Reply' as const, value: { reply: value.reply, preset: -1 } }))
   const result = await response.catch((cause: unknown) => {
     if (controller.signal.aborted) return { _tag: 'Cancelled' as const }
@@ -158,6 +161,7 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value, ch
         failure.value = { _tag: 'Expired' }
         visited.value = false
         history.value = []
+        recentBeats.value = []
         turn.value = { _tag: 'Empty' }
       }
       else if (result.status === 429) failure.value = { _tag: 'Limit', kind }
