@@ -5,6 +5,10 @@ The shape comes from four views: the front and back views of `assets/brand/chara
 
 ![Front view](previews/front.png)
 
+The print model has the stance of the website model: the crouch of `assets/brand/character.png`.
+The crouch is lower than the straight stand, and the file is still 80 mm tall. So each part is 3 percent larger than before.
+The files of the straight stand are in the git history, at commit `a9fac8c`.
+
 ## How the model is made
 
 1. `source/views/front.png` and `source/views/back.png` are the front and back views, cut from the character sheet. The sheet has no side view. `source/views/shape-side-right.png` and `source/views/shape-side-left.png` are side views that an image model drew from the sheet, for the shape only.
@@ -13,11 +17,12 @@ The shape comes from four views: the front and back views of `assets/brand/chara
    - `source/views/premium/` holds a second set for the website model: front, back, both sides, and the front view without mouthparts and small arms. An image model painted them over grey renders of the base mesh, in the realistic style of `assets/brand/kit/lair/mascot-sculpt-reference.png`. The website texture takes its colours from them. `head.png` is a closer painting of the head and the shoulders, at 2.5 times the scale of the front view; `head.json` gives its frame on the working mesh. It replaces the front view where it lies, so the head is sharp in the close shot of a conversation. `head-left.png` and `head-right.png` are paintings of the head from 60 degrees to each side of the front, at the same scale; `head-views.json` gives their frame. They colour the cheeks and the temples. The pixel-art views still place the eyes, trim the smaller wing, and colour the preview of the print model.
 4. `build_from_mesh.py` turns the base mesh into the print model and the website model in Blender:
    - It removes the bristle spikes. It keeps the thin wings and mouthparts. A wing membrane takes its original surface back as a whole.
-   - For printing, it grows parts that are thinner than 1.6 mm, by up to 0.5 mm on each side, and it adds the base.
+   - For printing, it grows parts that are thinner than 1.6 mm, by up to 0.5 mm on each side.
+   - For printing, it then poses the solid into the stance of `source/stance.json`, and it adds the base under the posed feet. The "Rebuild" section gives the steps of the pose.
    - It projects the four views onto the vertex colours. Each surface takes its colour from the views that it faces. The head gets its own image fit, so the face lines up. The wings and the shoulders keep the body fit.
    - It cuts the smaller wing back to its outline in the sheet's front view. The generator makes that wing wider than the sheet draws it.
    - It gives each eye a socket, at the proportions of the site's relief rig: the eye on screen left is about 1.4 times as wide as the other. On the print model each socket holds a globe and two open lids, as part of the solid: half shells that hug the globe above and below. On the website model each socket is empty: the site builds the relief rig's own eye and lids there.
-5. `export_model.py` writes the files. For the website model it bakes the four views into a texture, and it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip. It then poses the figure into the stance of `source/stance.json` and makes that pose the rest shape.
+5. `export_model.py` writes the files. For the website model it bakes the four views into a texture, and it adds the skeleton from `source/rig-joints.json`, the skin weights, and an idle clip. It then poses the website model into the stance of `source/stance.json` and makes that pose the rest shape.
 6. `validate.ts` checks the print files.
 
 `assets/prompts/figurine.json` records the generator, the date, and the settings.
@@ -32,7 +37,7 @@ Read the licence note in that file before you sell prints of this mesh.
 | `brundlefly.blend` | Editable master. One Blender unit is one millimetre. |
 | `brundlefly-preview.glb` | Coloured preview of the print model, with the base. |
 | `brundlefly-web.glb` | Model for the website: rigged, in the stance of the character artwork, no base, thin bristle hairs, thin parts not thickened. |
-| `source/` | The generated base mesh, the view images for the shape and for the colours, the joint positions for the skeleton, and the stance of the website model. |
+| `source/` | The generated base mesh, the view images for the shape and for the colours, the joint positions for the skeleton, and the stance of the two models. |
 | `validation-report.json` | Output of `validate.ts` for the two STL files. |
 | `previews/` | Front, side, back, three-quarter, and top renders of the print model, two of the website model, and one pose test of the rig. |
 
@@ -42,11 +47,14 @@ All values are millimetres. They come from `validation-report.json`.
 
 | File | Width (X) | Depth (Y) | Height (Z) | Volume | Triangles |
 | --- | --- | --- | --- | --- | --- |
-| `brundlefly-80mm.stl` | 67.40 | 46.40 | 80.00 | 25.06 cm³ | 200,000 |
-| `brundlefly-100mm.stl` | 84.25 | 58.00 | 100.00 | 48.95 cm³ | 200,000 |
+| `brundlefly-80mm.stl` | 76.42 | 53.09 | 80.00 | 28.49 cm³ | 200,000 |
+| `brundlefly-100mm.stl` | 95.52 | 66.37 | 100.00 | 55.64 cm³ | 200,000 |
 
 Height runs from the underside of the base to the tip of the larger wing.
 The base is about 3 mm thick at 80 mm. The underside is flat.
+The footprint of the base on the bed is 73.5 mm wide and 36.6 mm deep. One long hand reaches about 2 mm past its front edge.
+The head reaches about 6 mm past the front of the base, and the larger wing about 7 mm past its back.
+The figure faces the front of the base. It does not have the turn of the website model.
 
 ## Material
 
@@ -58,9 +66,11 @@ The base is about 3 mm thick at 80 mm. The underside is flat.
 ## Print orientation and supports
 
 - Print upright, with the flat base on the bed.
-- This pose needs supports. With a 45 degree threshold, the slicer used 19.9 cm³ of support for 14.0 cm³ of model.
-- `validation-report.json` lists the points where material starts in mid-air (`mid_air_islands_mm`): 36 at 80 mm.
-- The largest groups are the fingers and claws of the two long-arm hands, the two small-arm hands, and the hanging mouthparts.
+- This pose needs supports. With a 45 degree threshold, the slicer used 19.1 cm³ of support for 15.7 cm³ of model.
+- `validation-report.json` lists the points where material starts in mid-air (`mid_air_islands_mm`): 43 at 80 mm.
+- The largest groups are the fingers and claws of the two long-arm hands, and the two small-arm hands.
+- The hanging mouthparts, the lower edges of the two wings, and the stubs under the lower back are the other groups.
+- The two long arms reach forward and out. The lowest fingertip is about 19 mm above the bed.
 - The head, the belly, and the wings overhang by more than 45 degrees. The slicer supports them.
 - Use tree or organic supports. They touch less surface than grid supports.
 
@@ -74,9 +84,9 @@ Sliced values come from PrusaSlicer 2.9.7 with a generic 0.4 mm FDM profile. The
 | Nozzle | 0.4 mm | Sliced |
 | Walls | 3 | Sliced |
 | Infill | 15 percent gyroid | Sliced |
-| Filament without supports | 14.0 cm³, 2 h 12 min | Sliced |
-| Filament with supports at 45 degrees | 33.9 cm³, 4 h 23 min | Sliced |
-| Support filament | 19.9 cm³ | Sliced, by difference |
+| Filament without supports | 15.7 cm³, 2 h 21 min | Sliced |
+| Filament with supports at 45 degrees | 34.7 cm³, 4 h 24 min | Sliced |
+| Support filament | 19.1 cm³ | Sliced, by difference |
 | Layer height for more detail | 0.12 to 0.16 mm | Estimate |
 | TPU nozzle temperature | 220 to 235 °C | Estimate |
 | TPU print speed | 20 to 30 mm/s | Estimate |
@@ -89,9 +99,10 @@ No TPU printer profile was tested. A real print has not been made.
 
 The print model keeps the proportions of the artwork, so some parts are thin.
 
-- The two wings are about 1.6 mm thick at 80 mm.
+- The two wings are about 1.6 mm thick at 80 mm. Each wing is about 2.0 mm or more over its first 3 mm from the body.
 - Fingers, claws, small arms, and mouthparts are 1.6 mm or more.
-- The voxel check reports 25 mm³ under 1.5 mm in the whole model. Each spot is 2.7 mm³ or smaller. They are wing edges, claw tips, and stubs left by removed bristles.
+- Each long arm is 3.3 mm or more at its elbow and at its wrist. Each small arm is 2.6 mm or more.
+- The voxel check reports 14 mm³ under 1.5 mm in the whole model. Each spot is 2.5 mm³ or smaller. They are the front rim of the base, the edge of the smaller wing, and stubs on the back.
 - The check uses 0.25 mm voxels. Read each limit with a tolerance of 0.25 mm.
 
 For a stronger print, use `brundlefly-100mm.stl`: the wings and the fingers are about 2.0 mm.
@@ -100,10 +111,11 @@ To thicken further, rebuild with `--min-radius 1.0 --max-growth 0.7`. The figure
 ## Likely failure points
 
 - The wings. They are thin and they overhang.
+- The two long arms. Each one reaches forward and out, and only the shoulder holds it.
 - Fingers, claws, and the small arms. Supports attach near them.
 - The hanging mouthparts. They are thin and they start in mid-air.
 - Support scars under the hands, the chin, and the belly. TPU supports are hard to remove cleanly.
-- Stringing between the fingers and between the arms and the body.
+- Stringing between the fingers and between the small arms and the body.
 
 ## Checks that ran
 
@@ -113,10 +125,10 @@ To thicken further, rebuild with `--min-radius 1.0 --max-growth 0.7`. The figure
 - Shells: one. Volume: positive. Self-intersecting face pairs: zero.
 - Height: 80.00 mm and 100.00 mm.
 - Blender 3D Print Toolbox, check all: zero non-manifold edges, zero intersecting faces, one shell.
-- The toolbox also reports 8,448 thin faces and 21,208 overhang faces at 80 mm. The overhang count agrees with the need for supports.
-- Mid-air start points: 36 at 80 mm.
+- The toolbox also reports 5,723 thin faces and 21,213 overhang faces at 80 mm. The overhang count agrees with the need for supports.
+- Mid-air start points: 43 at 80 mm.
 - Voxel thickness check at 0.25 mm pitch.
-- Stability: the centre of mass is 16.0 mm inside the footprint edge. The solid model tips at about 24 degrees.
+- Stability: the centre of mass is 17.4 mm inside the footprint edge. The solid model tips at about 28 degrees.
 - PrusaSlicer slice with supports and without supports.
 
 ## Checks the printer must confirm
@@ -151,13 +163,15 @@ These steps are untested on a printed part.
 - One material prints no colour. The print shows shape only.
 - The sheet has no side view. An image model drew two side views for the shape, so the side shape follows that drawing and not canonical artwork. The colours of the sides are a second set of generated images, painted over renders of the mesh.
 - The print model has no bristles, and its thin parts are a little thicker than in the artwork.
+- The artwork shows the figure turned to one side. The print figure has the same stance, and it faces the front of its base.
+- Each hand and each foot keeps the shape of the straight stand, and each wing is thicker where it leaves the body.
 
 ## Website model
 
 `brundlefly-web.glb` follows the contract that the site loader expects.
 
 - glTF 2.0 binary, metres, Y up. The soles are at height zero.
-- The rest shape is the stance of `assets/brand/character.png`, which is also the stance of the site's relief rig. `source/stance.json` holds the stance, and `export_model.py` bakes it in. The print model keeps the straight stand.
+- The rest shape is the stance of `assets/brand/character.png`, which is also the stance of the site's relief rig. `source/stance.json` holds the stance, and `export_model.py` bakes it in. The print model takes the same stance in its build, without the root turn.
 - In this stance the figure is 77.5 mm tall for the 80 mm build. With the root turn it spans -33.9 to 27.4 mm across the view and -25.5 to 25.1 mm in depth.
 - Through the relief rig's walk cycle the long hands stay at least 2.4 mm from the legs, and the small hands at least 1.1 mm.
 - One root node, `Brundlefly`, with a scale of 0.001 and a turn of 0.5 radians about the vertical, toward screen right. That turn is the three-quarter view of the artwork. The site changes it to turn the figure toward his path.
@@ -200,7 +214,7 @@ D=/abs/path/to/assets/3d/brundlefly
 OUT=$HOME/scratch/brundlefly-build
 V=$D/source/views
 VIEWS="--front-image $V/front.png --back-image $V/back.png --right-image $V/side-right.png --left-image $V/side-left.png"
-flatpak run org.blender.Blender -b --factory-startup --python $D/build_from_mesh.py -- --source $D/source/hunyuan3d-multiview-shape.glb --out $OUT $VIEWS
+flatpak run org.blender.Blender -b --factory-startup --python $D/build_from_mesh.py -- --source $D/source/hunyuan3d-multiview-shape.glb --out $OUT $VIEWS --stance $D/source/stance.json
 flatpak run org.blender.Blender -b --factory-startup --python $D/export_model.py -- --blend $OUT/brundlefly-work.blend --out $D --tris 200000 --glb-tris 120000
 flatpak run org.blender.Blender -b --factory-startup --python $D/render_previews.py -- --blend $D/brundlefly.blend --out $OUT/previews --modes colour --views front,three-quarter,side,back,top
 node $D/validate.ts
@@ -208,17 +222,18 @@ node $D/validate.ts
 
 The renders are named `<view>-colour.png`. Copy them to `previews/<view>.png`.
 
-For the website model, add `--variant web --paint-dir $V/premium` to the build and `--web --glb-tris 66000 --texture-size 2048 --relief-size 1024 --image-quality 80` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes. The frames in `source/views/premium/head.json` and `head-views.json` also fit this base mesh only. Then run `node $D/compact_glb.ts <exported file> $D/brundlefly-web.glb`. The export reads `field.npz` from the build folder for the fold shadow, so the build needs `--dump-field`.
+For the website model, leave out `--stance`, add `--variant web --paint-dir $V/premium` to the build, and add `--web --glb-tris 66000 --texture-size 2048 --relief-size 1024 --image-quality 80` to the export. The export reads `source/rig-joints.json`. Those joint positions fit this base mesh only. Measure them again if the base mesh changes. The frames in `source/views/premium/head.json` and `head-views.json` also fit this base mesh only. Then run `node $D/compact_glb.ts <exported file> $D/brundlefly-web.glb`. The export reads `field.npz` from the build folder for the fold shadow, so the build needs `--dump-field`.
 
-To give the print model the stance of the website model, add `--stance $D/source/stance.json` to the print build. The export and the checks do not change. Without the flag, the print model keeps the straight stand.
+`--stance` gives the print model the stance of the website model. Without the flag, the build makes the straight stand of commit `a9fac8c`.
+A check outside this folder compared the two surfaces, with the root turn of the website model removed. Half of the website model's vertices are within 0.2 mm of the print figure. Nine tenths are within 0.9 mm.
 
 - The build poses the solid after it grows the thin parts, and before it adds the base and the eyes. The steps before the pose read the sheet views, and those views show the straight stand.
 - The build binds the dense surface to the skeleton of `source/rig-joints.json` and turns the joints as `export_model.py` does for the website model. The posed surface becomes the solid again. The skin weights come from a copy of 66,000 triangles.
 - The turn of the whole body in `stance.json` is left out. The figure faces the front of its base.
 - Each hand, small hand, and foot stays in one piece, and the skin of the body does not follow a wing. The automatic weights tear a finger and leave a ragged step on the back when the solid is posed.
-- After the pose, thin parts grow once more. Each wing also grows by 0.35 mm on each side over its first 3 mm from the body: the turn of the wing joint stretches the membrane there. Then each slot that the pose made narrower than 1.2 mm is filled. A slot under 1 mm does not print clean.
+- After the pose, thin parts grow once more. The turn of a wing joint stretches the membrane at its root. So each wing also grows by 0.35 mm on each side over its first 3 mm. Then each slot that the pose made narrower than 1.2 mm is filled. A slot under 1 mm does not print clean.
 - The base lies under the new footprint. The globe and the lids of each eye take the turn of the head joint.
-- The posed figure is lower than the straight one, and the file is still 80 mm tall. So each part is about 3 percent larger than on the straight model.
+- The posed figure is lower than the straight one, and the file is still 80 mm tall. So each part is 3 percent larger than on the straight model.
 - `build-stats.json` records the pose under `stance`: the fit of the joints, the stretch of the skin, the height of each sole, and each slot filled.
 - The colours of the preview follow the skin through the pose.
 
@@ -235,9 +250,9 @@ The scripts are Python where Blender, trimesh, or scipy make it necessary. The c
 > I need a small character figurine printed and delivered to Melbourne by Thursday 26 November 2026.
 >
 > - Part: one-piece figurine with an integrated base. The STL is attached.
-> - Size: 67 × 46 × 80 mm. Volume 25.1 cm³.
-> - Quantity: 1. Please also price 3 units, and the 100 mm version (84 × 58 × 100 mm, 49.0 cm³).
-> - The thinnest parts are the two wings, the fingers, and the claws, at about 1.6 mm. The hands and the head need supports.
+> - Size: 76 × 53 × 80 mm. Volume 28.5 cm³.
+> - Quantity: 1. Please also price 3 units, and the 100 mm version (96 × 66 × 100 mm, 55.6 cm³).
+> - The thinnest parts are the two wings, the fingers, and the claws, at about 1.6 mm. The two long arms reach forward. The hands and the head need supports.
 >
 > Could you tell me:
 >
