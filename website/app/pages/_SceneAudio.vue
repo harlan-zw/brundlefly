@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onScopeDispose, shallowRef, watch } from 'vue'
-import { useDocumentVisibility, useEventListener, useRafFn } from '@vueuse/core'
+import { useDocumentVisibility, useEventListener, useIntervalFn } from '@vueuse/core'
 import { createSceneAudio, createVoicePhrase, defaultSceneAudioMix, phraseVoiceEnvelope } from '#shared/scene-audio'
 import type { SceneAudioMix, SceneAudioState } from '#shared/scene-audio'
 
@@ -12,14 +12,15 @@ let audio: ReturnType<typeof createSceneAudio> | undefined
 let pendingVoice: 'open' | 'reply' | undefined
 let mounted = false
 
-// A line with no sound still moves his mouth. The voice's own syllables run on the frame clock, so one source drives the face at a time.
+// A line with no sound still moves his mouth. The voice's own syllables run on a wall clock, so one source drives the face at a time.
+// The mouth level updates every 50 ms, as the audible voice does. Each update redraws the scene, so a faster clock would draw it twice a frame.
 let mime: { started: number, duration: number, envelope: (elapsed: number) => number } | undefined
-const { pause: restMouth, resume: moveMouth } = useRafFn(({ timestamp }) => {
+const { pause: restMouth, resume: moveMouth } = useIntervalFn(() => {
   if (!mime) { restMouth(); return }
-  const elapsed = (timestamp - (mime.started ||= timestamp)) / 1000
+  const elapsed = (performance.now() - mime.started) / 1000
   if (elapsed < mime.duration) { emit('voice', mime.envelope(elapsed)); return }
   stopMime()
-}, { immediate: false })
+}, 50, { immediate: false })
 function stopMime() {
   if (!mime) return
   mime = undefined
@@ -28,7 +29,7 @@ function stopMime() {
 }
 function startMime(kind: 'open' | 'reply') {
   const phrase = createVoicePhrase(kind, replyLength, Math.random)
-  mime = { started: 0, duration: phrase.duration, envelope: elapsed => phraseVoiceEnvelope(elapsed, 0, phrase.syllables) }
+  mime = { started: performance.now(), duration: phrase.duration, envelope: elapsed => phraseVoiceEnvelope(elapsed, 0, phrase.syllables) }
   moveMouth()
 }
 function requestVoice(kind: 'open' | 'reply') {
