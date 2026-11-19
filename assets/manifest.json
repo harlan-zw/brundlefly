@@ -111,8 +111,8 @@
   },
   {
     "path": "assets/3d/brundlefly/PRINTING.md",
-    "bytes": 21047,
-    "sha256": "4fc494d73ca7716d3642b6c3714158996d030b97af0fd6046a5b1c36dc611ed7"
+    "bytes": 21252,
+    "sha256": "a8a7b51ef4b23a5c83d737325e2726444350b2bcb1697f92b0c7d4aedcafec18"
   },
   {
     "path": "assets/3d/brundlefly/brundlefly-100mm.stl",
@@ -326,7 +326,7 @@
   },
   {
     "path": "assets/prompts/figurine.json",
-    "bytes": 10686,
-    "sha256": "f88d7a6d526ad0aa7d5b25b8d5059542d38725f24663d03e56b7fcadbcfe1909"
+    "bytes": 10782,
+    "sha256": "911fcbe8a5f9ea0c5c548bb069bdde2272be96295259d13feb77fd879ceff3f9"
   }
 ]

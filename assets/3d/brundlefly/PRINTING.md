@@ -173,7 +173,7 @@ These steps are untested on a printed part.
   - `Brundlefly-lid` carries the skin for the lids that the site builds: a white base colour factor and a 256 pixel texture of the head skin just above the eye socket, from the painted front view, blended between its pixels. The site's lids show the middle 44 percent of it. With the relief rig's own darker lid skin, a shut eye stood out from this head. Each marker supplies `TEXCOORD_0` for this texture and has no `COLOR_0`.
 - `anchor-face`: an empty node at the front of the face.
 - No base. `compact_glb.ts` stores normals as bytes, texture coordinates as shorts, and skin weights as bytes, which saves about 0.9 MB. Byte normals need the glTF extension `KHR_mesh_quantization`, and the file lists it as required. three.js reads it with no decoder. Positions stay as floats.
-- The site build stops if the file is larger than 4 MiB. The file is 3.06 MB.
+- The site build stops if the file is larger than 4 MiB. The file is 3.49 MB. That limit is the site's own budget for page weight, set in `website/scripts/sync-brand.ts`. A texture of 3072 pixels made the file 5.5 MB and the head only slightly sharper, so the texture stays at 2048.
 
 Skeleton:
 
