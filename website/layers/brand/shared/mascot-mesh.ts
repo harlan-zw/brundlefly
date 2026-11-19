@@ -192,16 +192,24 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     const body = poseBody(name => bodyJoints!.get(name)!, input)
     // The mesh is a full body, so it takes the fuller motion that would tear the relief.
     const depth = addBodyDepth(name => bodyJoints!.get(name)!, input)
-    // A foot that carries him stays level: it undoes the tilt of its leg, so its sole lies flat and no toe goes under the floor.
-    // A lifted foot keeps its own turn.
-    const gait = Math.min(1, Math.max(0, input.gait ?? 0))
-    const lift = gait * Math.cos(input.walkPhase ?? input.time * 3.6)
+    return { body, depth }
+  }
+  // A foot is fully planted on the floor and free of it once its joint is this far above its rest height: about 2 percent of his height.
+  const plantedBand = height * 0.02
+  /**
+   * Stands him on the floor: the foot that is lower, against its own rest height, rests on it.
+   * A foot on the floor then lies level, by undoing the tilt of its leg, so its sole is flat and no toe goes under.
+   * A foot that has left the floor keeps its own turn.
+   */
+  function plantFeet() {
+    const drops = feet.map((foot, index) => footRest[index]! - footHeight(foot))
+    const rise = Math.max(...drops)
+    pivot.position.y = rise
     feet.forEach((foot, index) => {
       legTurn.identity()
       for (let joint = foot.parent; joint && joint !== stanceNode; joint = joint.parent) legTurn.premultiply(joint.quaternion)
-      foot.quaternion.slerp(legTurn.invert(), 1 - Math.max(0, index === 0 ? lift : -lift))
+      foot.quaternion.slerp(legTurn.invert(), Math.min(1, Math.max(0, 1 - (rise - drops[index]!) / plantedBand)))
     })
-    return { body, depth }
   }
   /**
    * The ground one walk cycle covers, in the mascot's own units: how far each foot travels back under him while it carries him.
@@ -360,7 +368,7 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
         tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2 + depth.bounce * 0.09, 0, 0)
       })
       // The legs set his height: his body rises as they straighten and settles as each foot lands.
-      pivot.position.y = Math.max(...feet.map((foot, index) => footRest[index]! - footHeight(foot)))
+      plantFeet()
       turnHead(look, input.mannerism?.turns.head)
       aimEyes(input.time, input.eyes ?? { _tag: 'Ahead' })
       // The relief rig's lids blink when the host supplied them. The file's own lid joints then stay at rest.

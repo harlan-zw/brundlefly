@@ -526,14 +526,18 @@ test('through the walk one foot always rests at its floor height and neither foo
     lifted = Math.max(lifted, ...above)
   }
   assert.ok(lifted > 0.02, 'The free foot must lift clear of the floor during a step.')
-  // A foot that carries him lies level, whatever its leg does. So its sole is flat on the floor.
+  // The foot he stands on lies level at every step, whatever its leg does. So its sole is flat on the floor.
   const level = new Quaternion()
-  mascot.pose!({ ...standing, gait: 1, walkPhase: Math.PI * 0.75 })
-  assert.ok(joint('left-hip').quaternion.angleTo(level) > 0.2, 'The leg itself must swing.')
-  assert.ok(joint('left-foot').getWorldQuaternion(new Quaternion()).angleTo(level) < 1e-6, 'The planted left foot must be level.')
-  mascot.pose!({ ...standing, gait: 1, walkPhase: Math.PI * 1.75 })
-  assert.ok(joint('right-foot').getWorldQuaternion(new Quaternion()).angleTo(level) < 1e-6, 'The planted right foot must be level.')
-  assert.ok(joint('left-foot').getWorldQuaternion(new Quaternion()).angleTo(level) > 0.05, 'A lifted foot keeps its own turn.')
+  let freeTurn = 0
+  for (let step = 0; step < 16; step++) {
+    mascot.pose!({ ...standing, gait: 1, walkPhase: step * Math.PI / 8 })
+    heights().forEach((height, index) => {
+      const tilt = joint(index === 0 ? 'left-foot' : 'right-foot').getWorldQuaternion(new Quaternion()).angleTo(level)
+      if (height - rest[index]! < 1e-6) assert.ok(tilt < 1e-6, `The foot he stands on is tilted at step ${step}.`)
+      else if (height - rest[index]! > 0.05) freeTurn = Math.max(freeTurn, tilt)
+    })
+  }
+  assert.ok(freeTurn > 0.05, `A foot clear of the floor keeps its own turn, not ${freeTurn} with a lift of ${lifted}.`)
   // One walk cycle covers the ground both feet travel under him. With these legs that is well under his height.
   assert.ok(mascot.strideLength! > 0.2 && mascot.strideLength! < 2, `The stride must be a plausible length, not ${mascot.strideLength}.`)
 })
