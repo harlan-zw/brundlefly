@@ -41,8 +41,6 @@ FOLD_SHADOW_MM = 2.0
 FOLD_SHADOW_IN_COLOUR = 0.25
 # The share of solid above one half at which a fold is fully in shadow.
 FOLD_SHADOW_SPAN = 0.22
-# How much light the wings let through.
-WING_TRANSMISSION = 0.12
 # How strongly the fine detail of the texture turns the surface normal, for the relief map.
 RELIEF_STRENGTH = 4.0
 # How far the mouthparts take the flesh colour of the face, from 0 (their painted colour) to 1.
@@ -1179,17 +1177,16 @@ def lid_skin_image(view, to_image, eye, mesh_scale, field_zmin, size=256):
 
 
 def split_wing_material(body):
-    """Give the wing membranes their own material, which lets a little light through. Returns the face count.
+    """Give the wing membranes their own material, so the site can light them apart from the skin. Returns the face count.
 
     A face is wing when every one of its vertices follows a wing joint more than any other joint.
-    The material is a copy of the skin material, so it uses the same textures.
+    The material is a copy of the skin material, so it uses the same textures. It has no
+    transmission: a viewer draws the whole scene a second time for a transmissive material.
     """
     wing_groups = {g.index for g in body.vertex_groups if "wing" in g.name}
     on_wing = [bool(v.groups) and max(v.groups, key=lambda g: g.weight).group in wing_groups for v in body.data.vertices]
     wing = body.data.materials[0].copy()
     wing.name = "Brundlefly-wing"
-    bsdf = next(n for n in wing.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
-    bsdf.inputs["Transmission Weight"].default_value = WING_TRANSMISSION
     body.data.materials.append(wing)
     slot = len(body.data.materials) - 1
     count = 0
