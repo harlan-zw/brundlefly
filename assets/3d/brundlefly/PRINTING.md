@@ -274,6 +274,76 @@ A check outside this folder compared the two surfaces, with the root turn of the
 
 The scripts are Python where Blender, trimesh, or scipy make it necessary. The check runner is TypeScript.
 
+## Jar variant
+
+The jar variant is a second print model. It has no base. The figure hangs slack, as a specimen in a jar of fluid.
+The files of the jar variant are not in this folder. Build them with the steps below.
+
+- The stance is `source/stance-float.json`. `stance_float.ts` makes that file, and the file repeats the inputs.
+- The head hangs forward and to one side. One long arm hangs, and the other drifts out and forward.
+- The small arms hang in front of the belly. The wings droop, each by a different amount. One leg is ahead of the other.
+- The two soles are flat and level, so the print starts on two feet and the figure stands on the floor of the jar.
+- With flat soles the figure reads as settled on the floor of the jar, and not as afloat.
+
+Build, with the variables of the "Rebuild" section:
+
+```bash
+node $D/stance_float.ts
+flatpak run org.blender.Blender -b --factory-startup --python $D/build_from_mesh.py -- --source $D/source/hunyuan3d-multiview-shape.glb --out $OUT $VIEWS --stance $D/source/stance-float.json --no-base
+flatpak run org.blender.Blender -b --factory-startup --python $D/export_model.py -- --blend $OUT/brundlefly-work.blend --out $OUT --tris 200000 --glb-tris 120000 --name brundlefly-jar
+node $D/validate.ts --dir $OUT --name brundlefly-jar
+```
+
+The export writes `brundlefly-jar-80mm.stl`, `brundlefly-jar-100mm.stl`, `brundlefly-jar.blend`, and `brundlefly-jar-preview.glb`.
+The check writes `brundlefly-jar-validation-report.json`. Keep `$OUT` outside this folder.
+
+What `--no-base` does:
+
+- The bed is a level plane 0.7 mm above the lowest point of the feet, at 80 mm. The print starts on that plane.
+- A bare foot meets that plane on a few toes only. So each foot gets a sole, as a flat pad under it.
+- A sole is the outline of its foot from above, with the gaps between the toes closed.
+- A rim of 1.4 mm goes around that outline, at 80 mm. The rim is for balance, because the mass of the figure is high.
+- A sole is 1.6 mm thick at 80 mm.
+- Only the feet may reach the bed. The build stops if another part hangs that low.
+- Height runs from the soles to the highest point. So each part is 12 percent larger than on the model with the base.
+
+Measured values:
+
+| File | Width (X) | Depth (Y) | Height (Z) | Volume | Triangles |
+| --- | --- | --- | --- | --- | --- |
+| `brundlefly-jar-80mm.stl` | 80.31 | 58.88 | 80.00 | 27.45 cm³ | 199,998 |
+| `brundlefly-jar-100mm.stl` | 100.39 | 73.60 | 100.00 | 53.61 cm³ | 199,998 |
+
+- Both files: one shell, zero non-manifold edges, zero self-intersecting face pairs.
+- Stability: the centre of mass is 12.3 mm inside the edge of the two soles at 80 mm.
+- The solid model tips at about 13 degrees. That is half of the tip angle of the model with the base.
+- Supports at 80 mm: 31.6 cm³ for 15.0 cm³ of model, with a 45 degree threshold. Mid-air start points: 43.
+- Supports at 100 mm: 54.0 cm³ for 26.8 cm³ of model. Mid-air start points: 45.
+- The voxel check reports 10 mm³ under 1.5 mm at 80 mm, and 7 mm³ at 100 mm.
+- Those thin spots are the edge of the smaller wing and stubs on the back.
+- The pose makes no gap under 1 mm between two parts. The smallest such gap is 1.15 mm, between the head and one shoulder.
+- The gaps under 1 mm are those of the sculpt, as on the model with the base.
+- They lie between the toes, between the fingers, and at the roots of the mouthparts.
+- The pose brings the root of the smaller wing against the shoulder beside it. The build makes them one piece there.
+- The small arms hang 4.1 mm and 4.7 mm clear of the legs.
+
+One-off measurements, at 80 mm, that are not in the report:
+
+- Each sole meets the bed over 330 mm² and 289 mm², in a slice 0.05 mm above the bed.
+- Each leg is 2.95 mm and 3.18 mm at its thinnest, between the foot and the knee.
+- Each long arm is 3.6 mm or more at its elbow and at its wrist. Each small arm is 2.7 mm or more.
+- The values at 100 mm come from the same checks, run once on the 100 mm file.
+
+To hold the figure in the jar with clear line:
+
+- By the sliced filament volume, a print with 15 percent infill is lighter than water. So it floats.
+- That is a calculation and not a test.
+- To hold the figure down, tie the line around one ankle, above the sole.
+- The leg is 3 mm thick there, and the foot stops the loop.
+- To hang a solid print from above, pass the line under one long arm at the shoulder.
+- The arm is 6.5 mm thick there.
+- Do not tie a line to a wing or to a finger.
+
 ## Quote request
 
 > Subject: Quote request: 80 mm character figurine, delivery to Melbourne by 26 November
