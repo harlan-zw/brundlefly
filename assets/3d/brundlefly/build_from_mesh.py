@@ -751,6 +751,9 @@ PRINT_LID_RADIUS = 1.22
 SOCKET_ROOM = 1.10
 # The website model's socket is tighter: the site's lids fill it, and a wide socket shows as a dark crescent under an open eye.
 WEB_SOCKET_ROOM = 1.03
+# The fold of skin under each eye of the website model, in globe radii: how far forward of the globe centre
+# and how far below it the fold sits, and its half depth and half height.
+LID_BAG = (0.55, 1.0, 0.55, 0.38)
 # The sheet draws the smaller wing on the figure's left, which is +X.
 SMALL_WING_SIDE = 1.0
 
@@ -776,6 +779,11 @@ def add_eyes(f, eyes, solid):
         if solid:
             round_shell = max(depth, height) * PRINT_LID_RADIUS
             shell = bm.V(across * LID_SHELL[0], round_shell, round_shell)
+        if not solid:
+            # A low fold of skin under the eye, as a lower lid bag. The face falls away below the eye,
+            # so without it the socket gapes there and the edge of the site's open lower lid shows
+            # as a dark band under the globe. The socket is cut after it, so its inside stays clear.
+            f.blob(centre + bm.V(0.0, -depth * LID_BAG[0], -height * LID_BAG[1]), bm.V(across * 0.95, depth * LID_BAG[2], height * LID_BAG[3]), k=0.5, mat=bm.FLESH)
         f.carve_blob(centre, shell * (SOCKET_ROOM if solid else WEB_SOCKET_ROOM), k=0.2)
         if solid:
             sl, X, Y, Z = f.box(centre - shell, centre + shell, 3 * f.h)

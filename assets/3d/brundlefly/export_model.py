@@ -800,7 +800,7 @@ def bake_stance(body, arm, stance, followers):
     return max(heights) - floor
 
 
-def lid_skin_image(view, to_image, eye, mesh_scale, field_zmin, size=128):
+def lid_skin_image(view, to_image, eye, mesh_scale, field_zmin, size=256):
     """A square patch of the head skin for the eyelids that the site builds. Returns a packed image.
 
     The site's lids show the middle 44 percent of the patch. So the patch is as wide as a lid
@@ -814,10 +814,14 @@ def lid_skin_image(view, to_image, eye, mesh_scale, field_zmin, size=128):
     grid = (np.arange(size) + 0.5) / size - 0.5
     x, z = np.meshgrid(centre[0] + grid * side_mm, brow + grid * side_mm)
     col, row = to_image(x.ravel(), z.ravel())
-    col = np.clip(np.rint(col).astype(int), 0, view["linear"].shape[1] - 1)
-    row = np.clip(np.rint(row).astype(int), 0, view["linear"].shape[0] - 1)
-    # Outside the figure the patch takes the nearest drawn colour.
-    linear = np.where(view["figure"][row, col][:, None], view["linear"][row, col], view["spread"][row, col]).reshape(size, size, 3)
+    # Outside the figure the patch takes the nearest drawn colour. The patch is larger than the
+    # part of the view it shows, so it blends between pixels: nearest pixels showed as blocks on a lid.
+    source = np.where(view["figure"][..., None], view["linear"], view["spread"])
+    col = np.clip(col, 0.0, source.shape[1] - 1.001)
+    row = np.clip(row, 0.0, source.shape[0] - 1.001)
+    c0, r0 = np.floor(col).astype(int), np.floor(row).astype(int)
+    fc, fr = (col - c0)[:, None], (row - r0)[:, None]
+    linear = ((source[r0, c0] * (1 - fc) + source[r0, c0 + 1] * fc) * (1 - fr) + (source[r0 + 1, c0] * (1 - fc) + source[r0 + 1, c0 + 1] * fc) * fr).reshape(size, size, 3)
     srgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * np.clip(linear, 0, None) ** (1 / 2.4) - 0.055)
     image = bpy.data.images.new("Brundlefly-lid-skin", size, size, alpha=False)
     image.pixels.foreach_set(np.concatenate([srgb, np.ones((size, size, 1))], axis=2).astype(np.float32).ravel())
