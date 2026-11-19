@@ -337,7 +337,7 @@ The built eye uses the relief rig's globe artwork, wet-eye shader, shell lids, b
 Each node gives its eye a centre, a rest rotation, and a width. The height and depth keep the relief rig's proportions.
 So the model needs only a socket at each eye. It needs no eyeball, lid, or eye material of its own.
 If the head artwork or the face skin fails to load, the site keeps the file's own eyeballs and draws them with the wet-eye shader.
-It then turns the lid joints face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 to blink: 1.05 rad down for an upper lid and 0.33 rad up for a lower lid.
+It then turns the lid joints face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 to blink: 0.96 rad down for an upper lid and 0.96 rad up for a lower lid, the relief rig's lid travel.
 It has no jaw or brow joints, so its expression does not change.
 If the file turns its top node about the vertical, the site mirrors that turn when he walks to the other side, so he faces his path.
 He turns a little before each walk and holds his side while he stands. His head stays toward the viewer at rest.

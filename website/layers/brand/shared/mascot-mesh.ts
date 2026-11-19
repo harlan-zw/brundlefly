@@ -3,6 +3,7 @@ import type { AnimationClip, Material } from 'three'
 import { fixationDrift, lookToward, pupilDirection, pupilSize, wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus, Look } from './eye-gaze.ts'
 import { createEyeMaterial } from './eye-material.ts'
+import { referenceEyes as reliefEyes } from './face.ts'
 import { createReferenceEyes } from './mascot-eyes.ts'
 import type { EyeDressing } from './mascot-eyes.ts'
 import { bodyJointNames, poseBody } from './mascot-pose.ts'
@@ -67,10 +68,6 @@ function findEyes(scene: Object3D) {
 // The relief rig's eyes have their own, wider range.
 const maxEyeYaw = 0.35
 const maxEyePitch = 0.22
-// A shut eye, in radians: the upper lid turns down this far and the lower lid turns up this far.
-// The figurine model's opening sets both. Past about 1.1 rad the eyeball shows through the upper lid's skin.
-const upperLidClose = 1.05
-const lowerLidClose = 0.33
 /** The relief rig's wet-eye shader draws each eyeball, so both mascots have the same eyes. The file's own eye material is released. */
 function dressEyes(nodes: readonly Object3D[]) {
   const globes: Mesh[] = []
@@ -284,9 +281,10 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       if (referenceEyes) { referenceEyes.shut(body.blink, input.squint ?? 0); return }
       // A squint narrows the smaller, screen-right eye more than the larger one, as on the relief rig.
       eyes.forEach(({ upperLid, lowerLid }, index) => {
-        const closure = Math.min(1, body.blink + (input.squint ?? 0) * (index === 0 ? 0.18 : 0.63))
-        upperLid?.rotation.set(closure * upperLidClose, 0, 0)
-        lowerLid?.rotation.set(-closure * lowerLidClose, 0, 0)
+        // The file's lids are open at rest. Each one shuts over the relief rig's lid travel.
+        const closure = Math.min(1, body.blink + (input.squint ?? 0) * (reliefEyes.lid.squint[index] ?? 0))
+        upperLid?.rotation.set(closure * reliefEyes.lid.open, 0, 0)
+        lowerLid?.rotation.set(-closure * reliefEyes.lid.open, 0, 0)
       })
     } : undefined,
     /**
