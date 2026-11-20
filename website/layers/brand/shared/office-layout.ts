@@ -24,7 +24,8 @@ type PropShape =
  */
 export type OfficeProp = PropShape & { id: string, position: Place, size: Place, facing: Facing, rests: 'floor' | 'wall' | 'ceiling' | { on: string } }
 /** `facing` turns him to his work at the stop, as a turn about the vertical: zero faces the viewer, a positive turn is to screen right. */
-export type OfficeStop = { position: Point, pause: number, habit: MannerismTag, facing?: number }
+/** `alternate` is a second habit for the stop. He performs it on every second visit. */
+export type OfficeStop = { position: Point, pause: number, habit: MannerismTag, facing?: number, alternate?: MannerismTag }
 export type OfficePlan = {
   room: { minX: number, maxX: number, minZ: number, maxZ: number, floorY: number, ceilingY: number }
   props: readonly OfficeProp[]
@@ -97,7 +98,8 @@ export const officePlan: OfficePlan = {
   // He works a round: he types at the desk, tends the jars, reads his palm on the way back, and listens to the failing tube.
   // At the two stations he turns to his work, so the viewer sees his shoulder and his hands on it. He stays there longest.
   stops: [
-    { position: [-0.9, -0.95], pause: 7.5, habit: 'TypeKeys', facing: -2.35 },
+    // The whiteboard hangs above the desk. On every second round he writes on it and leaves the keys.
+    { position: [-0.9, -0.95], pause: 7.5, habit: 'TypeKeys', facing: -2.35, alternate: 'WriteBoard' },
     { position: [0.9, -0.95], pause: 6.5, habit: 'TendJar', facing: 2.3 },
     { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
     { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },

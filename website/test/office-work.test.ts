@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { officePlan } from '../layers/brand/shared/office-layout.ts'
-import { keyTaps, mannerismDuration, poseMannerisms } from '../layers/brand/shared/mannerism.ts'
+import { keyTaps, mannerismDuration, markerStrokes, poseMannerisms, roundHabits } from '../layers/brand/shared/mannerism.ts'
 import { advanceTurn, settleTurn, startStroll, startTurn, workLimit } from '../layers/brand/shared/mascot-stroll.ts'
 import type { Stroll } from '../layers/brand/shared/mascot-stroll.ts'
 
@@ -60,4 +60,28 @@ test('the two stations have a work habit, a facing, and the longest stops of his
   const others = officePlan.stops.filter(stop => stop.facing === undefined)
   assert.ok(Math.min(...stations.map(stop => stop.pause)) > Math.max(...others.map(stop => stop.pause)))
   for (const stop of stations) assert.ok(mannerismDuration({ _tag: stop.habit }) < stop.pause)
+})
+
+test('a walk point with a second habit takes it on every second visit, and the others keep theirs', () => {
+  const habits = ['TypeKeys', 'TendJar'] as const
+  const alternates = ['WriteBoard', undefined] as const
+  assert.deepEqual(roundHabits(habits, alternates, []), ['TypeKeys', 'TendJar'])
+  assert.deepEqual(roundHabits(habits, alternates, [1, 1]), ['TypeKeys', 'TendJar'])
+  assert.deepEqual(roundHabits(habits, alternates, [2, 2]), ['WriteBoard', 'TendJar'])
+  assert.deepEqual(roundHabits(habits, alternates, [3, 4]), ['TypeKeys', 'TendJar'])
+  assert.deepEqual(roundHabits(habits, undefined, [2, 2]), ['TypeKeys', 'TendJar'])
+})
+
+test('he writes four lines on the board, and lifts the writing arm higher than for a jar', () => {
+  assert.equal(markerStrokes(0.5), 0)
+  assert.equal(markerStrokes(1), 1)
+  assert.equal(markerStrokes(mannerismDuration({ _tag: 'WriteBoard' })), 4)
+  let last = 0
+  for (let age = 0; age <= 6.2; age += 0.05) { assert.ok(markerStrokes(age) >= last); last = markerStrokes(age) }
+  const board = poseMannerisms([{ mannerism: { _tag: 'WriteBoard' }, age: 2.5, side: -1 }]).turns
+  const jar = poseMannerisms([{ mannerism: { _tag: 'TendJar' }, age: 2.5, side: -1 }]).turns
+  assert.ok(board['right-shoulder']![0] < jar['right-shoulder']![0])
+  assert.equal(board['left-shoulder'], undefined)
+  const desk = officePlan.stops.find(stop => stop.alternate === 'WriteBoard')
+  assert.ok(desk && desk.facing !== undefined && mannerismDuration({ _tag: 'WriteBoard' }) < desk.pause)
 })

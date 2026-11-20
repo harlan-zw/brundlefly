@@ -30,6 +30,8 @@ export type SetLayout = {
   walkHabits: readonly MannerismTag[]
   /** The way he faces at each walk point, as a turn about the vertical. A point without one keeps his three-quarter turn to the viewer. */
   walkFacings?: readonly (number | undefined)[]
+  /** A second habit for a walk point. He performs it on every second visit to the point, so his round is not the same each time. */
+  walkAlternates?: readonly (MannerismTag | undefined)[]
   camera: { desktop: Place, portrait: Place, target: Place }
   /** A set whose lamps are off when a visitor loads it names its entrance. */
   entrance?: SetEntrance
