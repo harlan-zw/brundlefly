@@ -3,8 +3,12 @@ import { onMounted, onScopeDispose, shallowRef, watch } from 'vue'
 import { useDocumentVisibility, useEventListener, useIntervalFn } from '@vueuse/core'
 import { createSceneAudio, createVoicePhrase, defaultSceneAudioMix, phraseVoiceEnvelope } from '#shared/scene-audio'
 import type { SceneAudioMix, SceneAudioState } from '#shared/scene-audio'
+import { ambienceForSet } from '#shared/set-ambience'
+import type { ActionSound } from '#shared/action-sounds'
+import type { SetName } from '@brundlefly/brand/shared/scene-set'
 
-const { talking, replyCount, replyLength = 120, mix = defaultSceneAudioMix } = defineProps<{ talking: boolean, replyCount: number, replyLength?: number, mix?: SceneAudioMix }>()
+// `set` is the set that stands. The sound follows it: each set names its ambience, and a change of set is a cross-fade.
+const { talking, replyCount, replyLength = 120, mix = defaultSceneAudioMix, set = 'lair' } = defineProps<{ talking: boolean, replyCount: number, replyLength?: number, mix?: SceneAudioMix, set?: SetName }>()
 const emit = defineEmits<{ state: [value: SceneAudioState], voice: [envelope: number] }>()
 const state = shallowRef<SceneAudioState>({ muted: false, status: { _tag: 'Idle' } })
 const visibility = useDocumentVisibility()
@@ -70,6 +74,7 @@ watch(() => talking, value => {
 })
 watch(() => replyCount, (value, previous) => { if (talking && value > previous) requestVoice('reply') })
 watch(() => mix, value => audio?.setMix(value), { deep: true })
+watch(() => set, value => audio?.setAmbience(ambienceForSet(value)))
 onMounted(() => {
   audio = createSceneAudio({
     createContext: () => new AudioContext({ latencyHint: 'interactive' }),
@@ -92,6 +97,7 @@ onMounted(() => {
   })
   audio.setVisible(visibility.value === 'visible')
   audio.setMix(mix)
+  audio.setAmbience(ambienceForSet(set))
   audio.setTalking(talking)
   mounted = true
 })
@@ -102,7 +108,9 @@ onScopeDispose(() => {
   emit('voice', 0)
   void audio?.dispose().catch(error => console.error('Brundlefly scene audio cleanup failed.', error))
 })
-defineExpose({ toggle })
+// `keepTime` takes the scene's time, so the office tube buzzes when its light flickers.
+// `playAction` plays a short sound for something he does. Nothing calls it yet.
+defineExpose({ toggle, keepTime: (seconds: number) => audio?.setSceneTime(seconds), playAction: (action: ActionSound) => audio?.playAction(action) })
 </script>
 
 <template />
