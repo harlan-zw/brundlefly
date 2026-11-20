@@ -321,6 +321,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       if (!held) {
         const share = cycleReach(cycle)
         Object.assign(foot, { x: home[index]!.x + strideX * share, z: home[index]!.z + strideZ * share, yaw: bodyYaw })
+        // A foot that begins again late in its swing aims for where that swing ends: half a stance ahead.
+        Object.assign(foot.aim, { x: home[index]!.x + strideX / 2, z: home[index]!.z + strideZ / 2, yaw: bodyYaw })
       }
       else if (inAir && elapsed > 0) {
         const step = swingStep(foot.swing, cycle.progress)

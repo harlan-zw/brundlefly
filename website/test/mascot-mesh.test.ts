@@ -699,6 +699,13 @@ test('his feet take their places again when the host moves him, when time jumps,
   reference.figure.position.set(7, 0, -3)
   pose(reference, { time: 1.52, stance: [0, 0] }, -0.1)
   moved.feet().forEach((foot, index) => assert.ok(foot.distanceTo(reference.feet()[index]!) < 1e-9, 'A foot stayed behind when the host moved him.'))
+  // The host moves him while a foot is late in its swing, past the moment it chose where to land. That foot still comes down under him.
+  const late = walked()
+  late.figure.position.set(-4, 0, 2)
+  for (let frame = 0; frame <= 12; frame++) {
+    pose(late, { time: 1.52 + frame / 60, gait: 1, walkPhase: Math.PI + 0.9 + frame * 0.07, stance: [0.3, 0.2] }, -0.1)
+    late.feet().forEach(foot => assert.ok(Math.hypot(foot.x + 4, foot.z - 2) < 1.3, `A foot went ${Math.hypot(foot.x + 4, foot.z - 2).toFixed(2)} units from him in frame ${frame}.`))
+  }
   // A heading that jumps to the other side, as when motion goes off, leaves no leg twisted: the pose then has no stance.
   assert.deepEqual(pose(walked(), { time: 1.5 }, -0.5), pose(hostedModel(), { time: 1.5 }, -0.5))
 })
