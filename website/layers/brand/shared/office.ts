@@ -10,7 +10,7 @@ import type { SceneSettings } from './scene-settings.ts'
 import { tubeFlicker } from './office-flicker.ts'
 
 /**
- * The parts of the office that Blender built. `model` is the scene of the model file: every prop, the room, the test chamber, and the corridor.
+ * The parts of the office that Blender built. `model` is the scene of the model file: every prop, the room, and the test chamber behind the window.
  * `light` is the baked light map of the room's floor, walls, and ceiling. `lightMax` is the light level that a stored value of one stands for.
  */
 export type OfficeArt = { model: Object3D, lightMax: number, atlas: Texture, floor: Texture, wall: Texture, ceiling: Texture, concrete: Texture, light: Texture }

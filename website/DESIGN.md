@@ -165,9 +165,12 @@ Each set names how it shows him: the tint and occlusion of the mesh, his two sta
 The scene applies that look each time a set rises. The mesh takes each shading from its own colours, so a journey never stacks one tint on another.
 The stage lives in app.vue, above the pages. Each page file is only an address, so a change of address keeps one scene and one conversation.
 
-The office is a late-1990s low-poly research office. Blender builds it: every prop, the room, the test chamber behind the window, and the corridor behind the door.
+The office is a late-1990s low-poly research office. Blender builds it: every prop, the room, and the test chamber behind the window.
+The test chamber is a view through the glass. He never walks into it. The office has no other room.
+The build script can also show a short corridor behind a door that stands ajar. `CORRIDOR` in the script decides.
 Its floor plan is data in shared/office-layout.ts. `checkOfficePlan` proves his walk, his way to the door, and the camera sightlines against that plan.
-The office follows the pixel treatment: its textures are 256 px for each surface, with nearest-neighbour filtering and a palette of 16 to 32 colours.
+The office follows the pixel treatment: its textures are 256 px for each surface, with nearest-neighbour filtering and a small palette.
+Most surfaces have 16 colours. The vending machine has the most, at 48.
 The textures look photographed and worn. Four tiles repeat across the room, and one atlas holds every prop texture.
 The light is baked. A light map holds the light of the floor, the walls, and the ceiling, and every other vertex holds its own light.
 The room takes no light at run time, so its lights are free to light him alone: flat and cool, from above.

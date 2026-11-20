@@ -1,4 +1,4 @@
-"""Builds the office set: every prop, the room, the test chamber, and the corridor. It bakes the light and writes one GLB and one light map.
+"""Builds the office set: every prop, the room, and the test chamber behind the window. It bakes the light and writes one GLB and one light map.
 
 Run it through `pnpm office:build` in website/, which writes plan.json first. Or run it by hand, with absolute paths:
   flatpak run org.blender.Blender -b --factory-startup --python build_office_props.py -- plan.json atlas.json office.glb office-light.png
@@ -42,8 +42,9 @@ CONTRAST = 1.25
 # The light map: pixels across, and pixels for one world unit.
 LM_SIZE = 256
 LUXELS = 8
-# The corridor behind the door is a view, and no room he can enter. With False the door stands shut and the corridor is left out.
-CORRIDOR = True
+# A short corridor can show behind the door: a view, and no room he can enter. It is off: the owner wants no room past the office and the test chamber.
+# With True the door stands ajar and the corridor is built. Rebuild the model after a change.
+CORRIDOR = False
 # The model file stores a position as whole steps of this size.
 GRID = 1 / 1024
 
@@ -657,8 +658,11 @@ def build_door(prop):
         box('atlas', m, (side * (w / 2 + 0.03), 0, (wall + 0.06 + far) / 2), (0.22, h, wall + 0.06 - far), steel, frame_tint, step=1.2, skip='+y-y')
     box('atlas', m, (0, h / 2 + 0.03, (wall + 0.06 + far) / 2), (w + 0.28, 0.22, wall + 0.06 - far), steel, frame_tint, skip='+y')
     box('atlas', m, (0, low + 0.012, (wall + far) / 2), (w - 0.16, 0.024, 0.34), steel, paint('wing', 0.9), skip='-y')
-    # The leaf hangs on the far jamb and stands ajar into the room.
-    swing = m @ frame((-w / 2 + 0.08, 0, wall - 0.1), -math.radians(12 if CORRIDOR else 0))
+    # The leaf hangs on the far jamb. It stands ajar into the room when the corridor is built. A shut door has a dark panel behind its gaps.
+    if not CORRIDOR:
+        quad('atlas', m, [(-w / 2, low, far), (w / 2, low, far), (w / 2, h / 2, far), (-w / 2, h / 2, far)], PLAIN, flat('night'))
+    # A shut leaf sits near the room's face of the wall, where the tubes still reach it.
+    swing = m @ frame((-w / 2 + 0.08, 0, wall - (0.1 if CORRIDOR else 0.02)), -math.radians(12 if CORRIDOR else 0))
     leaf_w, leaf_h = w - 0.18, h - 0.1
     art = Cell('door')
     box('atlas', swing, (leaf_w / 2, -0.03, 0), (leaf_w, leaf_h, 0.07), art, step=1.0, skins={name: steel for name in ('+x', '-x', '+y', '-y')},
@@ -685,7 +689,7 @@ def build_door(prop):
 def build_vending(prop):
     m, w, h, d = stand_of(prop)
     steel = metal()
-    body = paint('bruise', 1.25)
+    body = paint('bruise', 1.6)
     low = -h / 2
     box('atlas', m, (0, low + 0.06, -0.02), (w - 0.08, 0.12, d - 0.1), steel, paint('night', 4), skip='+y-y')
     box('atlas', m, (0, 0.06, -0.01), (w, h - 0.12, d - 0.02), steel, body, step=0.8, skip='-y+z')
@@ -759,7 +763,7 @@ def build_extinguisher(prop):
 def build_locker(prop):
     m, w, h, d = stand_of(prop)
     steel = metal()
-    body = paint('olive', 1.05)
+    body = paint('olive', 1.5)
     low = -h / 2
     art = Cell('locker')
     # Two doors, one over the other, under a sloped top.
@@ -773,7 +777,7 @@ def build_locker(prop):
     tall = straight / 2
     for tier in range(2):
         y = low + 0.1 + tall * (tier + 0.5)
-        box('atlas', m, (0, y, d / 2 + 0.008), (w - 0.04, tall - 0.03, 0.016), art, step=1.0, skip='-z', skins={name: steel for name in ('+x', '-x', '+y', '-y')},
+        box('atlas', m, (0, y, d / 2 + 0.008), (w - 0.04, tall - 0.03, 0.016), art, WHITE * 1.5, step=1.0, skip='-z', skins={name: steel for name in ('+x', '-x', '+y', '-y')},
             tints={name: body for name in ('+x', '-x', '+y', '-y')})
 
 

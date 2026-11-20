@@ -79,7 +79,7 @@ export const officePlan: OfficePlan = {
     { _tag: 'FilingCabinet', id: 'filing-cabinet-2', position: [-5.02, -1.05, -0.08], size: [0.96, 2.3, 1.16], facing: '+x', rests: 'floor' },
     { _tag: 'StorageBox', id: 'storage-box-1', position: [-5.05, 0.3, -1.45], size: [0.7, 0.4, 0.9], facing: '+x', rests: { on: 'filing-cabinet-1' } },
     { _tag: 'StorageBox', id: 'storage-box-2', position: [-5.08, 0.28, -0.05], size: [0.6, 0.36, 0.8], facing: '+x', rests: { on: 'filing-cabinet-2' } },
-    // The door stands ajar into the room, so its box reaches 0.4 from the wall.
+    // The door's box reaches 0.4 from the wall. That holds the leaf if the door stands ajar, so his way out keeps clear of it.
     { _tag: 'Door', id: 'door', position: [5.3, -0.4, -1.75], size: [0.4, 3.6, 1.7], facing: '-x', rests: 'wall' },
     { _tag: 'VendingMachine', id: 'vending-machine', position: [5, -0.55, 1.9], size: [1, 3.3, 1.5], facing: '-x', rests: 'floor' },
     tube('tube-office', -1.65, -3.05, 1.8, 'steady'), tube('tube-science', 1.65, -3.05, 1.8, 'steady'), tube('tube-walk-rear', 0, -1.22, 1.46, 'steady'),
