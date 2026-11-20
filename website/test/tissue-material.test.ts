@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { NoColorSpace, ShaderLib, Texture, UniformsUtils } from 'three'
+import { LinearFilter, NearestFilter, NoColorSpace, ShaderLib, Texture, UniformsUtils } from 'three'
 import type { WebGLRenderer } from 'three'
 import { createTissueMaterial } from '../layers/brand/shared/tissue-material.ts'
 
@@ -45,4 +45,15 @@ test('room motion keeps native material clocks frozen when flow and breath stop'
   assert.ok(Math.abs(shader.uniforms.uTissueBreath!.value - 0.15) < 0.00001)
   assert.ok(Math.abs(shader.uniforms.uTissueFlow!.value - 0.075) < 0.00001)
   surface.dispose(); artwork.dispose()
+})
+
+test('relief filters smoothly at shallow angles, even from hard-pixel artwork, and leaves that artwork as it was', () => {
+  const artwork = new Texture()
+  artwork.magFilter = NearestFilter
+  const floor = createTissueMaterial({ surface: 'floor', texture: artwork, color: '#867461', bumpScale: 0.14, roughness: 0.79 })
+  assert.equal(floor.material.bumpMap!.magFilter, LinearFilter)
+  assert.ok(floor.material.bumpMap!.anisotropy > 1)
+  assert.equal(artwork.magFilter, NearestFilter)
+  assert.equal(artwork.anisotropy, 1)
+  floor.dispose(); artwork.dispose()
 })

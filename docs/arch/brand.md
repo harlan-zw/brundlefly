@@ -36,6 +36,8 @@ The horror comes from anatomy and texture.
 
 Use crisp square pixel clusters and hard edges.
 Use nearest-neighbor resizing for raster exports.
+The tissue of the 3D lair on the homepage is the one exception. It uses smooth filtering and a smooth painting of the flesh tile, because hard pixels show as a grid on a lit surface behind the mesh mascot.
+The mascot artwork, raster exports, and the brand kit keep the pixel treatment.
 Simplify details for small applications.
 Keep the silhouette and eye sockets clear before adding fine wrinkles.
 

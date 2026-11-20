@@ -54,7 +54,7 @@ Conversation pauses walking. Each reply's beat plays as a mannerism from shared/
 System reduced motion and Motion off stop the walk, idle deformation, and mannerisms.
 The separate /brand-kit/ app keeps the composer, material controls, parts, and Motion lab.
 
-shared/world.ts exports createWorld(texture). It returns root, update({ time, pressure }), and dispose().
+shared/world.ts exports createWorld(texture, gooTexture, textures, quality). The quality tier sets the spore count and the haze. It returns root, update({ time, pressure }), and dispose().
 The model combines a rear tunnel, tissue walls, overhead ribs, walkable chitin ground, membranes, slime, and lights.
 The ground uses y=-2.2. The rear tunnel starts at z=-2.5. Leave the foreground center clear for walking.
 The renderer owns the shared texture. Model disposal releases geometry and materials without releasing that texture.

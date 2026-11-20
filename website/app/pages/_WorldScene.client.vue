@@ -13,6 +13,9 @@ import { loadMeshMascot, meshShading } from '@brundlefly/brand/shared/mascot-mes
 import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
+import { resolveSceneQuality } from '@brundlefly/brand/shared/scene-quality'
+import { createSceneFinish } from '@brundlefly/brand/shared/scene-finish'
+import { createFloorReflection } from '@brundlefly/brand/shared/floor-reflection'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
@@ -28,6 +31,9 @@ type MascotMode = 'relief' | 'sprite' | 'mesh'
 const requestedMascot = useRoute().query.mascot
 const mascotMode: MascotMode = requestedMascot === 'sprite' || requestedMascot === 'mesh' ? requestedMascot : 'relief'
 const spriteMascot = mascotMode === 'sprite'
+// `?quality=low`, `medium`, or `high` overrides the tier that the device would get.
+const requestedQuality = useRoute().query.quality
+const shownQuality = ref<string>()
 // The scene reports the mascot it shows. A mesh that cannot load shows the relief rig.
 const shownMascot = ref<MascotMode>()
 // How the visible mascot moves: the relief rig's pose code, the file's own clip, or a whole-body sway.
@@ -161,7 +167,8 @@ watch(canvas, async (element) => {
   if (!context) { status.value = { _tag: 'Fallback', reason: 'context' }; return }
   // A missing or broken model file is an error value. The relief rig then takes its place.
   const [results, meshResult] = await Promise.all([Promise.allSettled([
-    new TextureLoader().loadAsync('/brand/kit/modular/flesh-diffuse.png'),
+    // The tunnel's tissue is a smooth painting of the kit's pixel-art flesh tile, with every fold in the same place.
+    new TextureLoader().loadAsync('/brand/kit/lair/tunnel-diffuse.webp'),
     new TextureLoader().loadAsync('/brand/character.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/goo-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/chitin-diffuse.png'),
@@ -205,7 +212,8 @@ watch(canvas, async (element) => {
   projectionTexture.magFilter = LinearFilter
   bodyProjectionTexture.wrapS = bodyProjectionTexture.wrapT = ClampToEdgeWrapping
   bodyProjectionTexture.magFilter = LinearFilter
-  texture.magFilter = mascotTexture.magFilter = NearestFilter
+  // The relief mascot is pixel artwork, so it keeps hard pixels. The tissue of the lair is a surface in a lit room: hard pixels show there as a grid.
+  mascotTexture.magFilter = NearestFilter
   const image = mascotTexture.image as HTMLImageElement
   const raster = document.createElement('canvas')
   raster.width = 180
@@ -238,12 +246,18 @@ watch(canvas, async (element) => {
   roomHeightRaster.height = roomHeightImage.height
   const roomHeightPainter = roomHeightRaster.getContext('2d')!
   roomHeightPainter.drawImage(roomHeightImage, 0, 0)
+  const quality = resolveSceneQuality({ requested: requestedQuality, coarsePointer: touchScreen.value, cores: navigator.hardwareConcurrency,
+    memory: (navigator as Navigator & { deviceMemory?: number }).deviceMemory, shortSide: Math.min(window.innerWidth, window.innerHeight) })
+  shownQuality.value = quality.tier
   const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture, room: roomTexture,
-    roomHeight: { texture: roomHeightTexture, raster: roomHeightPainter.getImageData(0, 0, roomHeightRaster.width, roomHeightRaster.height) } })
+    roomHeight: { texture: roomHeightTexture, raster: roomHeightPainter.getImageData(0, 0, roomHeightRaster.width, roomHeightRaster.height) } }, quality)
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio))
+  // The floor and the walls run away from the camera at shallow angles. Without this they blur there.
+  const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
+  for (const surface of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, roomTexture, roomHeightTexture]) surface.anisotropy = anisotropy
   const scene = new Scene()
   scene.background = new Color('#080B08')
   const environment = createWetEnvironment(renderer)
@@ -286,6 +300,11 @@ watch(canvas, async (element) => {
     return patch
   }) : []
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
+  // The finishing pass draws the scene through its own target. A tier without it draws straight to the canvas.
+  const finish = createSceneFinish(renderer, scene, camera, quality)
+  // The wet floor mirrors the room at the highest tier only: it draws the room a second time.
+  const reflection = finish && quality.reflection ? createFloorReflection(768, 432) : undefined
+  if (reflection) scene.add(reflection.mesh)
   const raycaster = new Raycaster()
   // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.
   hit = mascot._tag === 'Mesh'
@@ -299,6 +318,8 @@ watch(canvas, async (element) => {
   let faceElapsed = 0
   // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
   const attention = { weight: 0, tilt: 0 }
+  // How much of a walk-pause habit shows. It falls to zero in a conversation and returns after it.
+  let habitWeight = 1
   // A mesh with the relief rig's joints takes the relief rig's pose code. Any other mesh plays its own clip or sway.
   const meshPose = mascot._tag === 'Mesh' ? mascot.pose : undefined
   const walks = mascot._tag === 'Relief' || meshPose !== undefined
@@ -377,7 +398,12 @@ watch(canvas, async (element) => {
       // A still frame has no later frame to catch up in, so it takes his face as it is.
       const eyes = staging.eyeLine(new Vector3())
       if (resting || !faceMotion || !staging.placed) staging.face.copy(eyes)
-      else staging.face.lerp(eyes, 1 - Math.exp(-delta / 0.7))
+      else {
+        // His head moves as he acts, and it bobs as he stops from a walk. The frame holds still for a small move
+        // and follows only the part of a larger one. A frame that chased every move swung for seconds after the shot landed.
+        const reach = staging.face.distanceTo(eyes)
+        if (reach > 0.1) staging.face.lerp(eyes, (1 - 0.1 / reach) * (1 - Math.exp(-delta / 0.5)))
+      }
       staging.placed = true
       if (paused && faceMotion) staging.drift += delta
       // At rest the key holds a low level above his head. It falls off toward his feet, which gives his body its shape.
@@ -429,7 +455,10 @@ watch(canvas, async (element) => {
       // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
       const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
       const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
-      if (habit) layers.push(habit)
+      // A habit turns his head away: to the ceiling, to a palm, to the eggs. In a conversation he faces the visitor.
+      // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
+      habitWeight = faceMotion ? habitWeight + ((paused ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
+      if (habit) layers.push({ ...habit, weight: habitWeight })
       // Directional habits turn toward the nearer egg cluster. Screen right is +x.
       const side = nearestEggs().x >= figure.position.x ? 1 : -1
       const mannerism = poseMannerisms(layers.map(layer => ({ ...layer, side })))
@@ -464,7 +493,9 @@ watch(canvas, async (element) => {
     const corners = reach.map(value => figure.localToWorld(value).project(camera))
     bounds = { left: (corners[0]!.x + 1) * renderWidth / 2, right: (corners[1]!.x + 1) * renderWidth / 2,
       top: (1 - corners[1]!.y) * renderHeight / 2, bottom: (1 - corners[0]!.y) * renderHeight / 2 }
-    renderer.render(scene, camera)
+    reflection?.update(settings.value.wetness)
+    if (finish) finish.render({ time: elapsed, focus: blend, focusDistance: camera.position.distanceTo(staging ? staging.face : face) })
+    else renderer.render(scene, camera)
   }
   refresh = () => {
     const w = Math.max(1, width.value)
@@ -472,6 +503,7 @@ watch(canvas, async (element) => {
     if (w !== renderWidth || h !== renderHeight) {
       renderWidth = w; renderHeight = h
       renderer.setSize(w, h, false)
+      finish?.setSize(w, h)
       camera.aspect = w / h
       camera.updateProjectionMatrix()
     }
@@ -492,7 +524,7 @@ watch(canvas, async (element) => {
     endView()
     renderer.setAnimationLoop(null)
     world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
-    staging?.key.dispose(); staging?.rim.dispose()
+    staging?.key.dispose(); staging?.rim.dispose(); finish?.dispose(); reflection?.dispose()
     shadowGeometry.dispose(); shadowMaterial.dispose(); environment.dispose(); renderer.dispose()
     footShadowGeometry.dispose(); footShadows.forEach(patch => patch.material.dispose())
   }
@@ -502,7 +534,7 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && shownMascot === 'mesh' }" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />

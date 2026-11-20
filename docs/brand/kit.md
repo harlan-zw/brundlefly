@@ -289,7 +289,7 @@ The homepage fills the viewport with the world. The scene has no rectangular pan
 The rear tunnel, tissue walls, overhead arches, and ground form one chamber.
 Brundlefly walks through its clear foreground. His contact shadow anchors him to the floor.
 Clicking him opens the speech dialog. The dialog pauses walking and provides native local text conversation.
-Desktop and mobile use the same world. Frame the mascot and complete tunnel without adding page scrolling.
+Desktop and mobile use the same world, at one of three quality tiers. A weak phone leaves out the finishing pass, the mist, and the light shaft. Only the highest tier blurs the lair behind him in a conversation and mirrors the room in the wet floor. The `quality` query value (`low`, `medium`, `high`) overrides the tier. Frame the mascot and complete tunnel without adding page scrolling.
 The separate brand kit retains its functional layout controls and composition examples.
 
 ## Mascot rig
@@ -472,10 +472,10 @@ A wet eye shader adds small gaze shifts, ripples, and sparse grazing reflections
 Skin-textured lids cover both eyes during blinking, without repeating the pupil artwork.
 Skin and wing shaders vary microscopic normals and roughness while keeping the mapped artwork fixed.
 The room uses generated colour and height maps with world-scale projection across walls and ceiling.
-Large connected cave facets, ceiling shelves, and recesses replace the rounded room box.
+Large connected cave folds, ceiling shelves, and recesses replace the rounded room box.
 The height map raises folds into the chamber. Recomputed mesh normals and height bump supply depth lighting.
 Cavity shading darkens recessed pores. Height varies roughness and limits glow inside those cavities.
-The cave walls breathe along shared projection normals, keeping sharp fold seams connected.
+The cave walls breathe along shared projection normals, keeping fold seams connected.
 Layered spatial noise adds uneven swelling and regional pulses across the walls.
 Moving wet patches vary surface roughness and fine reflections without sliding the mapped artwork.
 Wet membranes attach to the carved shelves through raycast roots.
@@ -485,7 +485,10 @@ The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 | File | Role |
 | --- | --- |
 | assets/source/room-diffuse.png | Full-resolution room texture master |
-| assets/brand/kit/lair/room-diffuse.webp | Compact runtime room texture |
+| assets/brand/kit/lair/room-diffuse.webp | Runtime room texture, 1024 pixels |
+| assets/source/tunnel-diffuse.png | Smooth painting of the flesh tile, as generated |
+| assets/brand/kit/lair/tunnel-diffuse.webp | Runtime tissue of the tunnel wall and the wall folds on the homepage |
+| assets/prompts/tunnel-diffuse.json | Exact prompt, references, and runtime preparation |
 | assets/prompts/room-diffuse.json | Exact prompt, reference, and runtime preparation |
 | assets/source/room-height.png | Full-resolution generated room height master |
 | assets/brand/kit/lair/room-height.webp | Dedicated runtime height, bump, and cavity input |
@@ -493,7 +496,14 @@ The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 | assets/source/cave-direction.png | Generated concept for large cave shapes |
 | assets/brand/kit/lair/cave-direction.webp | Cave concept preview |
 | assets/prompts/cave-direction.json | Exact scene concept prompt |
-| website/layers/brand/shared/cave-geometry.ts | Continuous faceted cave mesh and membrane cross-section |
+| website/layers/brand/shared/cave-geometry.ts | Continuous folded cave mesh and membrane cross-section |
+| website/layers/brand/shared/scene-quality.ts | The quality tier for a device |
+| website/layers/brand/shared/scene-finish.ts | Finishing pass: blur behind him in a conversation, bloom, grade, and grain |
+| website/layers/brand/shared/floor-reflection.ts | The room mirrored in the wet floor |
+| website/layers/brand/shared/air.ts | Spores, floor mist, and one light shaft |
+| website/layers/brand/shared/floor-surface.ts | The floor's shape, shared by the floor and the marks on it |
+| website/layers/brand/shared/floor-marks.ts | Contact shadows and glow under the egg sacs |
+| website/layers/brand/shared/egg-membrane.ts | The bud inside each egg sac and the light on its rim |
 | website/layers/brand/shared/cave-goo.ts | Attached wet membranes, tapered strands, and falling drop cycles |
 | website/layers/brand/shared/room-height.ts | Registered inward height relief with recalculated normals |
 | assets/source/body-projection.png | Full-resolution generated body mapping master |
