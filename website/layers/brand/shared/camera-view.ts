@@ -84,6 +84,19 @@ export const resolveDialogClearance = (width: number, height: number, fieldOfVie
 }
 
 /**
+ * How far the wide view turns, in radians, to keep him in sight at a place on the floor. A narrow screen shows only the middle of a set,
+ * and he can walk out of it. `camera` is where the view stands, as x and z. `yaw` is the turn the visitor gave the view.
+ * `reach` is half his width. Zero when all of him is in the picture already. A screen too narrow for him puts him in its middle.
+ */
+export function resolveFollowYaw(camera: readonly [x: number, z: number], yaw: number, place: readonly [x: number, z: number], reach: number, fieldOfView: number, aspect: number) {
+  const across = place[0] - camera[0], away = camera[1] - place[1]
+  const bearing = Math.atan2(across, away) - yaw
+  const off = Math.atan2(Math.sin(bearing), Math.cos(bearing))
+  const free = Math.max(0, Math.atan(Math.tan(fieldOfView * Math.PI / 360) * aspect) - Math.atan(reach / Math.max(reach, Math.hypot(across, away))))
+  return off > free ? off - free : off < -free ? off + free : 0
+}
+
+/**
  * A head-and-shoulders shot for a full-bodied mascot. The camera stands a little to the side he faces, so he looks out of the frame at the visitor.
  * It drifts slowly with `drift`, in seconds. Zero gives the still shot.
  * `eyes` is the point between his eyes. His head reaches about half a unit above it and his mouthparts about half a unit below.

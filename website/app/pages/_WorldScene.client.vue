@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
-import { useDeviceOrientation, useDocumentVisibility, useElementSize, useEventListener, useMediaQuery, usePreferredReducedMotion, useScreenOrientation } from '@vueuse/core'
+import { useDeviceOrientation, useDocumentVisibility, useElementSize, useEventListener, useMediaQuery, usePreferredReducedMotion, useScreenOrientation, useSessionStorage } from '@vueuse/core'
 import { useRoute } from '#app'
 import {
   ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
@@ -20,14 +20,18 @@ import type { SceneFinish } from '@brundlefly/brand/shared/scene-finish'
 import { createFloorReflection } from '@brundlefly/brand/shared/floor-reflection'
 import type { FloorReflection } from '@brundlefly/brand/shared/floor-reflection'
 import { sceneSets } from '@brundlefly/brand/shared/scene-sets'
+import { mascotInLight } from '@brundlefly/brand/shared/scene-set'
 import type { BuiltSet, SceneSet, SetArt, SetMascot, SetName } from '@brundlefly/brand/shared/scene-set'
+import { advanceEntrance, entranceAct, entranceLight, startEntrance } from '@brundlefly/brand/shared/office-entrance'
+import type { Entrance } from '@brundlefly/brand/shared/office-entrance'
 import { advanceTravel, startTravel, travelShade } from '@brundlefly/brand/shared/set-travel'
 import type { Travel } from '@brundlefly/brand/shared/set-travel'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
-import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveDialogClearance, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
+import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveDialogClearance, resolveFollowYaw, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
+import type { ActionSound } from '#shared/action-sounds'
 import type { ConversationMood } from '#shared/conversation'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
@@ -36,6 +40,10 @@ const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking =
 // `set` is the place the page wants him in. The scene reports the set that stands, and travels when the two differ.
 const shownSet = ref<SetName>(set)
 const travelPhase = ref<Travel['_tag']>('Home')
+// The phase of the entrance in the dark. `Lit` is the room as it stands at every other time.
+const entrancePhase = ref<Entrance['_tag']>('Lit')
+// The entrance shows once in a browser session. A browser that refuses the session store keeps this for the page only, so its next load shows the entrance again.
+const entranceSeen = useSessionStorage('brundlefly-office-entrance', false, { onError: cause => console.warn('The session store is unavailable. The office entrance can show again.', cause) })
 // The dark edge of the picture, as the set that stands asks for it.
 const vignette = ref<SetMascot['vignette']>(sceneSets[set].mascot.vignette)
 // How dark a journey makes the picture, from 0 to 1.
@@ -51,7 +59,9 @@ const shownMascot = ref<MascotMode>()
 // How the visible mascot moves: the relief rig's pose code, the file's own clip, or a whole-body sway.
 const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
 // `shown` names the set that stands after a journey. `stayed` means the other set's artwork did not load.
-const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number] }>()
+// `entrance` says whether this visit found the set dark. `action` names a short sound for something he does.
+const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number],
+  entrance: [dark: boolean], action: [sound: ActionSound] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
@@ -382,13 +392,11 @@ watch(canvas, async (element) => {
   if (lamps.length) scene.add(...lamps)
   // Each set lights him as it lights its own room. The scene applies the set's look each time a set rises: here, and after every journey.
   // The mesh takes its shading from its own colours every time, so no tint stacks on another.
+  // The levels of his lights, his shadows, and the dark edge follow the set's light in every frame.
   const present = ({ mascot: look }: SceneSet) => {
     if (mascot._tag === 'Mesh') mascot.shade(look.shading)
-    shadowMaterial.uniforms.uStrength!.value = look.shadow.body
-    for (const patch of footShadows) patch.material.uniforms.uDark!.value = look.shadow.foot
     staging?.key.color.set(look.key.colour)
     staging?.rim.color.set(look.rim.colour)
-    vignette.value = look.vignette
   }
   present(standing.stage)
   // A journey to another set. He walks `way` during it: to the way out, then in from it.
@@ -400,6 +408,22 @@ watch(canvas, async (element) => {
   const forget = (pending: typeof incoming) => { void pending?.art.then((art) => { if (art._tag === 'Ok') art.release() }) }
   // How far the wide view has turned to keep him clear of the open dialog during a journey, from 0 to 1.
   let lift = 0
+  // A visitor who loads a set with an entrance finds it dark, once in a browser session. He waits in the dark and walks to the switch.
+  // A journey from another set arrives in a lit room, and so does every later load.
+  const entry = standing.stage.layout.entrance
+  let entrance = startEntrance({ offered: entry !== undefined, arrival: 'Load', seen: entranceSeen.value, still: !moving(), walks })
+  if (entry && entrance._tag === 'Dark') {
+    entranceSeen.value = true
+    stroll = startStroll(entry.start, 0)
+    way = [entry.stand]
+  }
+  entrancePhase.value = entrance._tag
+  emit('entrance', entrance._tag === 'Dark')
+  // A narrow screen cannot show the switch. From the dark until he is back in the picture, the wide view turns to keep him in sight.
+  let following = entrance._tag !== 'Lit'
+  let follow: number | undefined
+  // The side of him that the switch is on.
+  const switchSide = entry && entry.facing < 0 ? -1 : 1
   /** The work in the dark: the set that the page wants now replaces the set that stands. A journey back to the same set changes nothing. */
   async function changeSet() {
     const name = set
@@ -447,13 +471,32 @@ watch(canvas, async (element) => {
   const tilt = { yaw: 0, pitch: 0 }
   // A journey needs frames to its end, even without motion: its dark hold is counted in frames.
   const needsFrames = () => visibility.value === 'visible' && (animate.value || (!paused && cameraKeys.size > 0)
-    || (paused && moving()) || travel._tag !== 'Home' || set !== standing.stage.name
+    || (paused && moving()) || travel._tag !== 'Home' || set !== standing.stage.name || entrance._tag !== 'Lit'
     || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001)
   function render(delta: number) {
     renderer.toneMappingExposure = settings.value.exposure
-    scene.environmentIntensity = settings.value.reflections
     const aspect = renderWidth / renderHeight
     const faceMotion = moving()
+    // The entrance in the dark. A visitor who asks for him, or who leaves for another set, ends it at once: the light comes and he is free.
+    const entered = entranceAct(entrance)
+    const phaseBefore = entrance._tag
+    entrance = advanceEntrance(entrance, { delta, arrived: stroll.activity._tag === 'Pausing', skip: paused || set !== standing.stage.name, still: !faceMotion })
+    const act = entranceAct(entrance)
+    if (entrance._tag !== phaseBefore) {
+      entrancePhase.value = entrance._tag
+      // The switch clicks as the light comes. The tubes ring only when they strike.
+      if (entrance._tag === 'Striking' || entrance._tag === 'Hurrying') emit('action', 'LightSwitch')
+      if (entrance._tag === 'Striking') emit('action', 'TubeStrike')
+    }
+    // Free again, he takes up his loop from where he stands.
+    if (entered.held && !act.held) { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
+    const light = entranceLight(entrance)
+    const look = mascotInLight(standing.stage.mascot, light)
+    shadowMaterial.uniforms.uStrength!.value = look.shadow.body
+    for (const patch of footShadows) patch.material.uniforms.uDark!.value = look.shadow.foot
+    if (vignette.value !== look.vignette) vignette.value = look.vignette
+    // His wet skin shows the room's lamps. With the lamps out it shows none.
+    scene.environmentIntensity = settings.value.reflections * light
     // The page wants another set: a journey begins. He leaves his loop and walks straight to the way out.
     if (travel._tag === 'Home' && set !== standing.stage.name) {
       travel = startTravel(travel)
@@ -496,7 +539,15 @@ watch(canvas, async (element) => {
     // The open dialog covers part of the picture. On a journey the wide view turns a little, so he walks in the area the dialog leaves free.
     lift = faceMotion ? lift + (Number(paused && journey) - lift) * Math.min(1, delta * 4) : Number(paused && journey)
     const clear = resolveDialogClearance(renderWidth, renderHeight, fieldOfView)
-    const lifted = { ...cameraView, yaw: cameraView.yaw + lift * clear.yaw, pitch: cameraView.pitch + lift * clear.pitch }
+    // A journey takes him out of the picture on purpose, so the view lets him go.
+    if (journey) following = false
+    // The picture holds his body and the arm he stretches to the switch.
+    const halfWidth = (mascot._tag === 'Mesh' ? (mascot.extent.right - mascot.extent.left) / 2 : 1.1) * figure.scale.x * 1.5
+    const turnTo = following ? resolveFollowYaw([framing[0] + cameraView.x, framing[2] / settings.value.zoom + cameraView.z], cameraView.yaw, stroll.position, halfWidth, fieldOfView, aspect) : 0
+    // He is free again and in the picture: the view is the visitor's alone from here.
+    if (!act.held && turnTo === 0) following = false
+    follow = follow === undefined || !faceMotion ? turnTo : follow + (turnTo - follow) * Math.min(1, delta * 4)
+    const lifted = { ...cameraView, yaw: cameraView.yaw + lift * clear.yaw + follow, pitch: cameraView.pitch + lift * clear.pitch }
     const view = resolveCameraView(tiltCameraView(lifted, tilt), framing, layout.camera.target, settings.value.zoom)
     basePosition.set(...view.position)
     baseTarget.set(...view.target)
@@ -519,7 +570,7 @@ watch(canvas, async (element) => {
       staging.placed = true
       if (talking && faceMotion) staging.drift += delta
       // At rest the key holds a low level above his head. It falls off toward his feet, which gives his body its shape.
-      const { key, rim } = standing.stage.mascot
+      const { key, rim } = look
       staging.key.intensity = key.rest + blend * key.talk
       staging.rim.intensity = rim.rest + blend * rim.talk
       // The key stands on the side his body faces. That follows his turn smoothly, so the light never jumps across him.
@@ -538,13 +589,17 @@ watch(canvas, async (element) => {
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
     // A mesh without the relief rig's joints stands where the relief rig starts.
     // He walks a journey faster than his loop: he has somewhere to be.
-    const walkSpeed = settings.value.walkSpeed * walkPace * (journey ? 1.7 : 1)
-    const attentionNow = journey ? 'free' as const : talking ? 'talking' as const : hovered.value ? 'noticed' as const : 'free' as const
+    // He walks to the switch at that pace too.
+    const walkSpeed = settings.value.walkSpeed * walkPace * (journey || act.held ? 1.7 : 1)
+    // In the dark he has noticed the visitor, and he waits. On his way to the switch a pointer that rests on him does not stop him.
+    const attentionNow = journey ? 'free' as const : talking ? 'talking' as const
+      : entrance._tag === 'Dark' ? 'noticed' as const : act.held ? 'free' as const : hovered.value ? 'noticed' as const : 'free' as const
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
-      pauses: journey ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
+      pauses: journey || act.held ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
       cadence: meshCadence, facing: meshPose ? turn.heading : undefined })
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
-      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow }
+      // At the switch he faces it. After the strike he turns back to the visitor on his feet.
+      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing : undefined }
       // With motion off he has no steps to turn with, so he stands where the turn would end.
       turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
     }
@@ -554,38 +609,43 @@ watch(canvas, async (element) => {
     figure.rotation.y = meshPose ? 0 : stroll.heading
     // The audio hears scene time twice a second, so the office tube buzzes when its light flickers.
     if (environmentMotion.value) { elapsed += delta; if (Math.floor(elapsed * 2) !== Math.floor((elapsed - delta) * 2)) emit('time', elapsed) }
-    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value })
+    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value, light })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
     // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.
     // Reduced motion and Motion off keep the pose.
     const ease = Math.min(1, delta * 4)
-    attention.weight = faceMotion ? attention.weight + (Number(talking || (hovered.value && !journey)) - attention.weight) * ease : 0
+    attention.weight = faceMotion ? attention.weight + (Number(talking || (hovered.value && !journey) || act.watches) - attention.weight) * ease : 0
     attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused && !journey ? 0.07 : 0) - attention.tilt) * ease : 0
-    const look = { target: camera.position, weight: attention.weight, tilt: attention.tilt }
-    if (mascot._tag === 'Mesh' && !meshPose) mascot.update(faceElapsed, look)
+    const watch = { target: camera.position, weight: attention.weight, tilt: attention.tilt }
+    if (mascot._tag === 'Mesh' && !meshPose) mascot.update(faceElapsed, watch)
     else {
       // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
       const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
       // He performs no habit on a journey: its one stop is the way out.
-      const habit = faceMotion && !journey ? pauseMannerism(stroll, layout.walkHabits) : undefined
+      // His stop at the switch is no stop of his loop, so it has no habit either.
+      const habit = faceMotion && !journey && !act.held ? pauseMannerism(stroll, layout.walkHabits) : undefined
       // A habit turns his head away: to the ceiling, to a palm, to the eggs. In a conversation he faces the visitor.
       // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
       habitWeight = faceMotion ? habitWeight + ((talking ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
       if (habit) layers.push({ ...habit, weight: habitWeight })
       // Directional habits turn toward the nearer egg cluster. Screen right is +x.
       const side = nearestEggs().x >= figure.position.x ? 1 : -1
-      const mannerism = poseMannerisms(layers.map(layer => ({ ...layer, side })))
+      const sided: MannerismLayer[] = layers.map(layer => ({ ...layer, side }))
+      // The entrance has two gestures of its own: his reach for the switch, and his greeting after the turn.
+      if (faceMotion && act.reach !== undefined) sided.push({ mannerism: { _tag: 'ReachSwitch' }, age: act.reach, side: switchSide })
+      if (faceMotion && act.greet !== undefined) sided.push({ mannerism: { _tag: 'Greet' }, age: act.greet, side: switchSide })
+      const mannerism = poseMannerisms(sided)
       // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
       const eyes = !faceMotion ? { _tag: 'Ahead' } as const
         : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
-          : talking || (hovered.value && !journey) ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
+          : talking || (hovered.value && !journey) || act.watches ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
       const input = { time: faceElapsed, pressure: 0, pointer, transform: 'squeeze' as const, ...pose, eyes, mannerism,
         speaking: faceMotion ? speaking : 0,
         brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
           : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
         squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 }
-      if (meshPose) meshPose({ ...input, stepInPlace: turn.steps, stepPhase: turn.phase }, look, turn.heading)
+      if (meshPose) meshPose({ ...input, stepInPlace: turn.steps, stepPhase: turn.phase }, watch, turn.heading)
       else if (mascot._tag === 'Relief') mascot.update(input)
     }
     shadow.position.x = figure.position.x
@@ -649,7 +709,7 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-set="shownSet" :data-vignette="vignette" :data-travel="travelPhase" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-set="shownSet" :data-vignette="vignette" :data-travel="travelPhase" :data-entrance="entrancePhase" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && travelPhase === 'Home' && shownMascot === 'mesh' }" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-dark" :style="{ opacity: shade }" aria-hidden="true" />

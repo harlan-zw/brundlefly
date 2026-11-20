@@ -68,6 +68,9 @@ ALBEDO = {'floor': (0.33, 0.35, 0.27), 'wall': (0.55, 0.5, 0.36), 'ceiling': (0.
 # ---------------------------------------------------------------- the kit
 
 FACES = []
+# The room's tubes can be off. A face that keeps its light then has its own: a screen, a small lamp, and all of the test chamber.
+# The model file gives such faces a surface of their own, so the site can dim the room and leave them lit.
+OWN_LIGHT = False
 YAWS = {'+z': 0.0, '+x': math.pi / 2, '-z': math.pi, '-x': -math.pi / 2}
 
 
@@ -152,10 +155,11 @@ def metal(span=2.0):
     return Cell('metal', span)
 
 
-def emit(surface, matrix, points, uvs, tint=WHITE, kind='lit', value=None, node=None, uv1=None):
-    """One flat face. `kind` says how it gets its light: 'lit' takes the bake, 'glow' and 'flicker' shine, 'glass' and 'beam' stay out of the bake."""
+def emit(surface, matrix, points, uvs, tint=WHITE, kind='lit', value=None, node=None, uv1=None, own=None):
+    """One flat face. `kind` says how it gets its light: 'lit' takes the bake, 'glow' and 'flicker' shine, 'glass' and 'beam' stay out of the bake.
+    `own` says the face keeps its light when the room's tubes are off. Without it the face follows `OWN_LIGHT`."""
     FACES.append({'surface': surface, 'points': place(matrix, points), 'uv': np.asarray(uvs, float), 'uv1': None if uv1 is None else np.asarray(uv1, float),
-                  'tint': np.asarray(tint, float), 'kind': kind, 'value': value, 'node': node})
+                  'tint': np.asarray(tint, float), 'kind': kind, 'value': value, 'node': node, 'own': OWN_LIGHT if own is None else own})
 
 
 def quad(surface, matrix, corners, skin, tint=WHITE, step=None, rect=None, **look):
@@ -412,7 +416,7 @@ def build_monitor(prop):
     box('atlas', m, (0.2, low + 0.11, front), (0.2, 0.014, 0.008), PLAIN, flat('night', 2), skip='-z')
     box('atlas', m, (0.3, low + 0.05, front), (0.05, 0.03, 0.012), PLAIN, flat('beige', 0.7), skip='-z')
     quad('atlas', m, [(0.2, low + 0.04, front + 0.002), (0.225, low + 0.04, front + 0.002), (0.225, low + 0.055, front + 0.002), (0.2, low + 0.055, front + 0.002)],
-         PLAIN, kind='glow', value=INK['teal'] * 3)
+         PLAIN, kind='glow', value=INK['teal'] * 3, own=True)
     # A swivel foot, then the tube: a bezel at the front and a case that narrows to the back.
     lathe('atlas', m, (0, low + 0.17, 0.02), [(0.19, 0), (0.17, 0.035), (0.09, 0.035), (0.09, 0.08)], 8, case, WHITE * 0.85)
     base, top = low + 0.25, h / 2
@@ -431,11 +435,11 @@ def build_monitor(prop):
         for j in range(up):
             spots = [(i / across, j / up), ((i + 1) / across, j / up), ((i + 1) / across, (j + 1) / up), (i / across, (j + 1) / up)]
             emit('atlas', m, [(-wide / 2 + wide * a, centre - high / 2 + high * b, glass + 0.022 * (1 - (2 * a - 1) ** 2) * (1 - (2 * b - 1) ** 2)) for a, b in spots],
-                 [picture.uv((0, 0, 1, 1), a, b) for a, b in spots], kind='glow', value=WHITE * 1.15)
+                 [picture.uv((0, 0, 1, 1), a, b) for a, b in spots], kind='glow', value=WHITE * 1.15, own=True)
     for index in range(3):
         box('atlas', m, (0.12 + index * 0.07, base + 0.035, front), (0.04, 0.022, 0.012), PLAIN, flat('beige', 0.75), skip='-z')
     quad('atlas', m, [(-0.3, base + 0.027, front + 0.002), (-0.28, base + 0.027, front + 0.002), (-0.28, base + 0.043, front + 0.002), (-0.3, base + 0.043, front + 0.002)],
-         PLAIN, kind='glow', value=INK['teal'] * 3)
+         PLAIN, kind='glow', value=INK['teal'] * 3, own=True)
 
 
 def build_keyboard(prop):
@@ -677,13 +681,15 @@ def build_door(prop):
     # A lamp over the door, the sign plate beside it, and a keypad on a conduit.
     box('atlas', m, (0, h / 2 + 0.3, wall + 0.05), (0.56, 0.18, 0.1), steel, frame_tint)
     quad('atlas', m, [(-0.24, h / 2 + 0.24, wall + 0.102), (0.24, h / 2 + 0.24, wall + 0.102), (0.24, h / 2 + 0.36, wall + 0.102), (-0.24, h / 2 + 0.36, wall + 0.102)],
-         PLAIN, kind='glow', value=INK['teal'] * 2.2)
+         PLAIN, kind='glow', value=INK['teal'] * 2.2, own=True)
     side = w / 2 + 0.62
+    # The plan places the keypad: it is the switch of the room's tubes, and he walks to it. The door's frame turns the plan's place into its own.
+    plate_x, plate_y = (np.linalg.inv(m) @ np.array([*PLAN['lightSwitch'], 1.0]))[:2]
     box('atlas', m, (side, 0.5, wall + 0.015), (0.62, 0.3, 0.03), steel, frame_tint, skip='-z')
     quad('marks', m, [(side - 0.28, 0.395, wall + 0.032), (side + 0.28, 0.395, wall + 0.032), (side + 0.28, 0.605, wall + 0.032), (side - 0.28, 0.605, wall + 0.032)], Sheet('sign'))
-    box('atlas', m, (side - 0.12, -0.3, wall + 0.03), (0.3, 0.3, 0.06), steel, paint('wing', 1.1), skip='-z', skins={'+z': Cell('keypad')}, tints={'+z': WHITE})
-    pipe('atlas', m, [(side - 0.12, -0.15, wall + 0.03), (side - 0.12, 0.3, wall + 0.03)], 0.02, 5, steel, paint('wing', 1.2))
-    pipe('atlas', m, [(side - 0.12, 0.7, wall + 0.03), (side - 0.12, CEILING - prop['position'][1], wall + 0.03)], 0.02, 5, steel, paint('wing', 1.2))
+    box('atlas', m, (plate_x, plate_y, wall + 0.03), (0.3, 0.3, 0.06), steel, paint('wing', 1.1), skip='-z', skins={'+z': Cell('keypad')}, tints={'+z': WHITE})
+    pipe('atlas', m, [(plate_x, plate_y + 0.15, wall + 0.03), (plate_x, 0.3, wall + 0.03)], 0.02, 5, steel, paint('wing', 1.2))
+    pipe('atlas', m, [(plate_x, 0.7, wall + 0.03), (plate_x, CEILING - prop['position'][1], wall + 0.03)], 0.02, 5, steel, paint('wing', 1.2))
 
 
 def build_vending(prop):
@@ -706,7 +712,7 @@ def build_vending(prop):
     piece(0, window[3], 1, 1, front)
     piece(0, window[1], window[0], window[3], front)
     piece(window[2], window[1], 1, window[3], front, step=0.8)
-    piece(*window, front - 0.01, kind='glow', value=WHITE * 1.05)
+    piece(*window, front - 0.01, kind='glow', value=WHITE * 1.05, own=True)
     # The buttons and the coin plate stand proud. Each shows its own piece of the picture, so the two agree.
     def proud(s, t, across, up, depth):
         rect = (s - across / 2, t - up / 2, s + across / 2, t + up / 2)
@@ -730,7 +736,7 @@ def build_lamp(prop):
     shade = m @ frame(head) @ turn_x(0.5) @ turn_z(-0.25)
     lathe('atlas', shade, (0, 0, 0), [(0.11, -0.1), (0.05, 0.02), (0.035, 0.05)], 8, PLAIN, flat('rust', 1.2))
     cap('atlas', shade, ring((0, 0, 0), 0.035, 8, 0.05), PLAIN, flat('rust', 1.2))
-    cap('atlas', shade, ring((0, 0, 0), 0.1, 8, -0.085), PLAIN, up=False, kind='glow', value=INK['cream'] * 2.4)
+    cap('atlas', shade, ring((0, 0, 0), 0.1, 8, -0.085), PLAIN, up=False, kind='glow', value=INK['cream'] * 2.4, own=True)
 
 
 def build_papers(prop):
@@ -1027,9 +1033,13 @@ def build_props():
         else:
             raise ValueError(f'The plan has a prop this script cannot build: {tag}')
     build_trim()
+    # The test chamber and the corridor are not the office. Their lights stay on when the office is dark.
+    global OWN_LIGHT
+    OWN_LIGHT = True
     build_chamber()
     if CORRIDOR:
         build_corridor()
+    OWN_LIGHT = False
 
 
 # ---------------------------------------------------------------- the bake
@@ -1306,7 +1316,7 @@ def write_glb(groups):
         nodes.append({'name': node_name, 'mesh': len(meshes) - 1, 'translation': [float(v) for v in origin], 'scale': [GRID] * 3})
     document = {
         'asset': {'version': '2.0', 'generator': 'Brundlefly build_office_props.py',
-                  'extras': {'light': 'COLOR_0 holds baked light: rgb is the steady light and alpha the failing tube. Decode a value as value * value * lightMax.', 'lightMax': LIGHT_MAX}},
+                  'extras': {'light': 'COLOR_0 holds baked light: rgb is the steady light and alpha the failing tube. Decode a value as value * value * lightMax. A surface named <name>-own has its own light: it stays lit when the tubes of the room are off.', 'lightMax': LIGHT_MAX}},
         'extensionsUsed': ['KHR_mesh_quantization'], 'extensionsRequired': ['KHR_mesh_quantization'],
         'scene': 0, 'scenes': [{'nodes': list(range(len(nodes)))}], 'nodes': nodes, 'meshes': meshes,
         'materials': [{'name': name} for name in materials], 'accessors': accessors, 'bufferViews': views, 'buffers': [{'byteLength': offset}],
@@ -1351,7 +1361,9 @@ def assemble(shell_faces, lit_faces, other_faces, corners, normals, scale):
     buckets = {}
     for face in shell_faces + lit_faces + other_faces:
         count = len(face['points'])
-        buckets.setdefault((face['node'] or 'office', face['surface']), []).append((cursor, count))
+        # A face with its own light joins the surface `<name>-own`. Glass and beams have looks of their own on the site.
+        own = face['own'] and face['kind'] not in ('glass', 'beam')
+        buckets.setdefault((face['node'] or 'office', face['surface'] + '-own' if own else face['surface']), []).append((cursor, count))
         cursor += count
     origins = {name: np.zeros(3) for name, _ in buckets}
     origins.update(NODE_ORIGINS)

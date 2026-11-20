@@ -14,19 +14,24 @@ import { tubeFlicker } from './office-flicker.ts'
  * `light` is the baked light map of the room's floor, walls, and ceiling. `lightMax` is the light level that a stored value of one stands for.
  */
 export type OfficeArt = { model: Object3D, lightMax: number, atlas: Texture, floor: Texture, wall: Texture, ceiling: Texture, concrete: Texture, light: Texture }
-export type OfficeInput = { time: number, settings: SceneSettings }
+/** `light` is how bright the room's tubes are, from 0 to 1. Zero is a dark room: only the things with their own light show. */
+export type OfficeInput = { time: number, settings: SceneSettings, light: number }
 
 /** How a surface gets its light and its edge. Each look is one shader program. */
 type Look = 'Mapped' | 'Baked' | 'Cut' | 'Glass' | 'Beam'
 // The names of the surfaces in the model file. The build script in assets/3d/office gives each face one of them.
 const looks: Record<string, Look> = { floor: 'Mapped', wall: 'Mapped', ceiling: 'Mapped', concrete: 'Baked', atlas: 'Baked', marks: 'Cut', glass: 'Glass', beam: 'Beam' }
+// A surface with this ending has its own light: a screen, a small lamp, and all of the test chamber. It stays lit when the room's tubes are off.
+const ownLight = '-own'
 
 // The file stores light as a square root, so eight bits keep the dark end fine. `stored * stored * uGain` is the light.
 // `bake` is the light of a vertex: rgb is the steady light and alpha is the failing tube's share. The room's floor, walls, and ceiling read a light map instead.
+// `uRoom` is the level of the room's tubes, from 0 to 1. It scales the baked light of every surface but those with their own light.
 const vertexShader = /* glsl */ `
 attribute vec4 bake;
 uniform float uGain;
 uniform float uFlicker;
+uniform float uRoom;
 uniform vec3 uTube;
 varying vec2 vUv;
 varying vec4 vBake;
@@ -41,8 +46,10 @@ void main() {
   #endif
   #if defined(GLASS) || defined(BEAM)
   vBake = bake;
+  #elif defined(OWN)
+  vBake = vec4(bake.rgb * bake.rgb * uGain + bake.a * bake.a * uGain * uFlicker * uTube * uRoom, 1.0);
   #else
-  vBake = vec4(bake.rgb * bake.rgb * uGain + bake.a * bake.a * uGain * uFlicker * uTube, 1.0);
+  vBake = vec4((bake.rgb * bake.rgb * uGain + bake.a * bake.a * uGain * uFlicker * uTube) * uRoom, 1.0);
   #endif
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }`
@@ -50,6 +57,7 @@ const fragmentShader = /* glsl */ `
 uniform sampler2D map;
 uniform float uGain;
 uniform float uFlicker;
+uniform float uRoom;
 uniform vec3 uTube;
 varying vec2 vUv;
 varying vec4 vBake;
@@ -66,12 +74,12 @@ void main() {
   // The left half of the light map holds the steady light. The right half holds the failing tube's light.
   vec3 steady = texture2D(lightMap, vec2(vLightUv.x * 0.5, vLightUv.y)).rgb;
   float failing = texture2D(lightMap, vec2(vLightUv.x * 0.5 + 0.5, vLightUv.y)).r;
-  vec3 light = steady * steady * uGain + failing * failing * uGain * uFlicker * uTube;
+  vec3 light = (steady * steady * uGain + failing * failing * uGain * uFlicker * uTube) * uRoom;
   gl_FragColor = vec4(texel.rgb * light, 1.0);
   #elif defined(GLASS)
-  // Glass is a thin tint. Its streaks of reflection are brighter and less clear.
+  // Glass is a thin tint. Its streaks of reflection are brighter and less clear. The tint and the streaks show the room's light, so both follow it.
   float streak = dot(texel.rgb, vec3(0.299, 0.587, 0.114));
-  gl_FragColor = vec4(vBake.rgb + texel.rgb * 1.6, min(1.0, vBake.a + streak * 1.4));
+  gl_FragColor = vec4((vBake.rgb + texel.rgb * 1.6) * uRoom, min(1.0, vBake.a + streak * 1.4 * uRoom));
   #elif defined(BEAM)
   gl_FragColor = vec4(vBake.rgb * uGain, 1.0);
   #else
@@ -102,19 +110,21 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
   // The model's uv follows the file format: v runs down from the top of the picture.
   marks.flipY = false
 
-  const uniforms = { uGain: { value: art.lightMax }, uFlicker: { value: 1 }, uTube: { value: new Color(1, 0.94, 0.8) } }
+  const uniforms = { uGain: { value: art.lightMax }, uFlicker: { value: 1 }, uRoom: { value: 1 }, uTube: { value: new Color(1, 0.94, 0.8) } }
   const maps: Record<string, Texture> = { floor: art.floor, wall: art.wall, ceiling: art.ceiling, concrete: art.concrete, marks }
   const materials = new Map<string, ShaderMaterial>()
   const surface = (name: string) => {
     const found = materials.get(name)
     if (found) return found
-    const look = looks[name] ?? 'Baked'
+    const own = name.endsWith(ownLight)
+    const base = own ? name.slice(0, -ownLight.length) : name
+    const look = looks[base] ?? 'Baked'
     const clear = look === 'Glass' || look === 'Beam'
     const made = new ShaderMaterial({
       name, vertexShader, fragmentShader,
-      defines: look === 'Mapped' ? { MAPPED: '' } : look === 'Cut' ? { CUT: '' } : look === 'Glass' ? { GLASS: '' } : look === 'Beam' ? { BEAM: '' } : {},
+      defines: { ...(look === 'Mapped' ? { MAPPED: '' } : look === 'Cut' ? { CUT: '' } : look === 'Glass' ? { GLASS: '' } : look === 'Beam' ? { BEAM: '' } : {}), ...(own ? { OWN: '' } : {}) },
       // Every surface shares the light uniforms, so one write changes the whole room.
-      uniforms: { ...uniforms, map: { value: maps[name] ?? art.atlas }, lightMap: { value: art.light } },
+      uniforms: { ...uniforms, map: { value: maps[base] ?? art.atlas }, lightMap: { value: art.light } },
       transparent: clear, depthWrite: !clear, blending: look === 'Beam' ? AdditiveBlending : NormalBlending,
     })
     materials.set(name, made)
@@ -151,21 +161,35 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
   // Cold light leaks from the test chamber. It is the only strong teal in the room.
   const leak = new PointLight(new Color('#418B90'), 1, 8, 1.6)
   leak.position.set(plan.cues.light[0], plan.cues.light[1], plan.room.minZ - 1.2)
-  root.add(sky, tubes, tubes.target, lamp, leak)
-  const levels = { sky: 1.1, tubes: 1.5, lamp: 3.5, leak: 9 }
+  // In a dark room the eye opens, and the small lights count for more. The chamber's leak edges him from behind,
+  // the screen gives him a little green, and the window of the vending machine a little warmth.
+  // The tubes drown all three, so each share fades out as the tubes come on, and the lit room keeps its look.
+  const screenProp = plan.props.find(prop => prop._tag === 'Monitor')
+  const screen = new PointLight(new Color(0.45, 1, 0.85), 0, 9, 1.6)
+  if (screenProp) screen.position.set(screenProp.position[0], screenProp.position[1] + 0.14, screenProp.position[2] + screenProp.size[2] / 2 + 0.2)
+  const vendingProp = plan.props.find(prop => prop._tag === 'VendingMachine')
+  const vending = new PointLight(new Color(1, 0.92, 0.75), 0, 8, 1.6)
+  if (vendingProp) vending.position.set(vendingProp.position[0] - vendingProp.size[0] / 2 - 0.3, vendingProp.position[1] + 0.3, vendingProp.position[2] - 0.2)
+  root.add(sky, tubes, tubes.target, lamp, leak, screen, vending)
+  const levels = { sky: 1.1, tubes: 1.5, lamp: 3.5, leak: 9, dark: { leak: 126, screen: 6, vending: 1.4 } }
 
   return {
     root,
-    update({ time, settings }: OfficeInput) {
+    update({ time, settings, light }: OfficeInput) {
       // The lighting sliders keep their roles: ambient is the room's light, key his light from above, inner the failing tube, rim the chamber's leak.
       const ambient = settings.ambient / defaultSceneSettings.ambient
       uniforms.uGain.value = art.lightMax * ambient
-      sky.intensity = levels.sky * ambient
-      tubes.intensity = levels.tubes * settings.key / defaultSceneSettings.key
+      // The tubes light the room and him alike, so one level turns both down. The chamber's leak has its own light and stays.
+      const room = Math.max(0, Math.min(1, light))
+      uniforms.uRoom.value = room
+      sky.intensity = levels.sky * ambient * room
+      tubes.intensity = levels.tubes * settings.key / defaultSceneSettings.key * room
       const glow = tubeFlicker(time) * settings.inner / defaultSceneSettings.inner
       uniforms.uFlicker.value = glow
-      lamp.intensity = levels.lamp * glow
-      leak.intensity = levels.leak * settings.rim / defaultSceneSettings.rim
+      lamp.intensity = levels.lamp * glow * room
+      leak.intensity = (levels.leak + levels.dark.leak * (1 - room)) * settings.rim / defaultSceneSettings.rim
+      screen.intensity = levels.dark.screen * (1 - room)
+      vending.intensity = levels.dark.vending * (1 - room)
       // One tick each second. A whole second of scene time must pass, so a still scene keeps a still hand.
       if (hand) hand.rotation.z = -Math.floor(time) / 60 * Math.PI * 2
       // The warning light of the test chamber turns once in four seconds.

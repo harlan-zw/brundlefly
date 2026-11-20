@@ -109,7 +109,7 @@ onScopeDispose(() => {
   void audio?.dispose().catch(error => console.error('Brundlefly scene audio cleanup failed.', error))
 })
 // `keepTime` takes the scene's time, so the office tube buzzes when its light flickers.
-// `playAction` plays a short sound for something he does. Nothing calls it yet.
+// `playAction` plays a short sound for something he does: the scene asks for the switch and the strike of the office tubes.
 defineExpose({ toggle, keepTime: (seconds: number) => audio?.setSceneTime(seconds), playAction: (action: ActionSound) => audio?.playAction(action) })
 </script>
 

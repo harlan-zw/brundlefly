@@ -35,6 +35,10 @@ export type OfficePlan = {
   stops: readonly OfficeStop[]
   /** What his habits look at: the jars for the eggs, the test chamber for the light, the flickering tube for the ceiling. */
   cues: { jars: Place, light: Place, ceiling: Place }
+  /** The middle of the wall plate beside the door. It switches the tubes. The build script puts the plate there. */
+  lightSwitch: Place
+  /** The entrance in the dark: where he stands when a visitor loads the office, where he stands to reach the switch, and the way he faces there. */
+  entrance: { start: Point, stand: Point, facing: number }
 }
 
 const jar = (id: string, x: number, contents: 'specimen' | 'empty'): OfficeProp =>
@@ -97,6 +101,10 @@ export const officePlan: OfficePlan = {
     { position: [0.7, 0.7], pause: 4.1, habit: 'ListenCeiling' },
   ],
   cues: { jars: [2.17, -0.345, -3.75], light: [1.45, 0.95, -4.35], ceiling: [0.7, 2.28, 0.7] },
+  // The plate hangs on the door's wall, on the side nearer the viewer.
+  lightSwitch: [5.47, -0.7, -0.4],
+  // He starts in front of the test chamber window, so its light edges him. The switch is a short walk to his left.
+  entrance: { start: [1.75, -0.9], stand: [4.14, -0.98], facing: 1.3 },
 }
 
 /**
