@@ -15,8 +15,30 @@ const sample = (raster: RoomHeightRaster, u: number, v: number) => {
     + (pixel(ix, iy + 1) * (1 - fx) + pixel(ix + 1, iy + 1) * fx) * fy
 }
 
+// The mesh holds one vertex for each 0.2 to 0.3 units. Finer height detail would alias into random lumps.
+// The mesh takes this averaged copy. The material bump keeps the fine detail.
+const macroSize = 32
+function macroRaster(raster: RoomHeightRaster): RoomHeightRaster {
+  if (raster.width <= macroSize && raster.height <= macroSize) return raster
+  const width = Math.min(macroSize, raster.width), height = Math.min(macroSize, raster.height)
+  const data = new Uint8ClampedArray(width * height * 4)
+  for (let y = 0; y < height; y++) {
+    const top = Math.floor(y * raster.height / height), bottom = Math.max(top + 1, Math.floor((y + 1) * raster.height / height))
+    for (let x = 0; x < width; x++) {
+      const left = Math.floor(x * raster.width / width), right = Math.max(left + 1, Math.floor((x + 1) * raster.width / width))
+      let sum = 0
+      for (let sy = top; sy < bottom; sy++) {
+        for (let sx = left; sx < right; sx++) sum += raster.data[(sy * raster.width + sx) * 4]!
+      }
+      data[(y * width + x) * 4] = sum / ((bottom - top) * (right - left))
+    }
+  }
+  return { width, height, data }
+}
+
 /** Raise texture folds inward. Leave the walkable lower boundary fixed. */
-export function displaceRoomGeometry(geometry: BufferGeometry, raster: RoomHeightRaster, worldOffset: readonly [number, number, number]) {
+export function displaceRoomGeometry(geometry: BufferGeometry, source: RoomHeightRaster, worldOffset: readonly [number, number, number]) {
+  const raster = macroRaster(source)
   const positions = geometry.getAttribute('position')
   const normals = geometry.getAttribute('normal')
   geometry.setAttribute('roomProjectionPosition', new Float32BufferAttribute(Array.from(positions.array), 3))
@@ -33,6 +55,28 @@ export function displaceRoomGeometry(geometry: BufferGeometry, raster: RoomHeigh
     const depth = height * 0.26 * edge * edge * (3 - 2 * edge)
     positions.setXYZ(index, positions.getX(index) - nx * depth, positions.getY(index) - ny * depth,
       positions.getZ(index) - nz * depth)
+  }
+  // Inward relief can push a tight recess through itself. A triangle that turned over moves halfway back to its rest shape.
+  const rest = geometry.getAttribute('roomProjectionPosition')
+  const faces = geometry.index
+  const faceNormal = (attribute: typeof positions, a: number, b: number, c: number) => {
+    const ux = attribute.getX(b) - attribute.getX(a), uy = attribute.getY(b) - attribute.getY(a), uz = attribute.getZ(b) - attribute.getZ(a)
+    const vx = attribute.getX(c) - attribute.getX(a), vy = attribute.getY(c) - attribute.getY(a), vz = attribute.getZ(c) - attribute.getZ(a)
+    return [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx] as const
+  }
+  for (let pass = 0; faces && pass < 12; pass++) {
+    let folded = 0
+    for (let face = 0; face < faces.count; face += 3) {
+      const corners = [faces.getX(face), faces.getX(face + 1), faces.getX(face + 2)] as const
+      const [x, y, z] = faceNormal(positions, ...corners), [rx, ry, rz] = faceNormal(rest, ...corners)
+      if (x * rx + y * ry + z * rz >= 0) continue
+      folded++
+      for (const corner of corners) {
+        positions.setXYZ(corner, (positions.getX(corner) + rest.getX(corner)) / 2,
+          (positions.getY(corner) + rest.getY(corner)) / 2, (positions.getZ(corner) + rest.getZ(corner)) / 2)
+      }
+    }
+    if (folded === 0) break
   }
   positions.needsUpdate = true
   geometry.computeVertexNormals()

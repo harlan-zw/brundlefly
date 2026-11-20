@@ -1,4 +1,4 @@
-import { copyFile, cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { copyFile, cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { zipSync } from 'fflate'
 import { skills } from '../shared/content.ts'
 import { defaultPreset, parts, palette } from '../layers/brand/shared/catalogue.ts'
@@ -12,6 +12,24 @@ await Promise.all(['github-banner-overhang-gross.png', 'github-social-preview.jp
 await cp(new URL('kit/', source), new URL('kit/', target), { recursive: true })
 const layer = new URL('../layers/brand/', import.meta.url)
 const layerArt = new URL('public/brand/', layer)
+// The mesh mascot comes from the figurine model. The site and the kit inspector serve it only when the file exists.
+// Removal first stops a copy from an earlier run outliving its source.
+const meshSource = new URL('../../assets/3d/brundlefly/brundlefly-web.glb', import.meta.url)
+const meshTarget = new URL('3d/brundlefly-web.glb', target)
+await Promise.all([target, layerArt].map(directory => rm(new URL('3d/', directory), { recursive: true, force: true })))
+const meshLimit = 4 * 1024 * 1024
+const meshSize = await stat(meshSource).then(file => file.size, (cause: NodeJS.ErrnoException) => {
+  if (cause.code !== 'ENOENT') throw cause
+  return undefined
+})
+if (meshSize === undefined) {
+  console.log('The mesh mascot file is absent. The mesh mode shows the relief rig.')
+}
+else {
+  if (meshSize > meshLimit) throw new Error(`The mesh mascot file is ${meshSize} bytes. The site limit is ${meshLimit} bytes.`)
+  await mkdir(new URL('3d/', target), { recursive: true })
+  await copyFile(meshSource, meshTarget)
+}
 await mkdir(layerArt, { recursive: true })
 await cp(target, layerArt, { recursive: true })
 
