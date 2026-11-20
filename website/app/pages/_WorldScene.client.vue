@@ -352,7 +352,7 @@ watch(canvas, async (element) => {
   // The close shot then stands on the side he faces, from the first frame.
   const standStill = () => {
     if (moving() || mascot._tag !== 'Mesh' || !meshPose) return
-    turn = settleTurn(turn, { ...stroll, speed: 0 }, { route: loop(), walkSpeed: settings.value.walkSpeed * walkPace, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: 'free' })
+    turn = settleTurn(turn, { ...stroll, speed: 0 }, { walkSpeed: settings.value.walkSpeed * walkPace, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: 'free' })
   }
   standStill()
   mascotMotion.value = walks ? 'posed' : mascot._tag === 'Mesh' && mascot.motion._tag === 'Clip' ? 'clip' : 'sway'
@@ -527,13 +527,13 @@ watch(canvas, async (element) => {
     const attentionNow = journey ? 'free' as const : talking ? 'talking' as const : hovered.value ? 'noticed' as const : 'free' as const
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
       pauses: journey ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
-      cadence: meshCadence })
+      cadence: meshCadence, facing: meshPose ? turn.heading : undefined })
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
-      const facing = { route, walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow }
+      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow }
       // With motion off he has no steps to turn with, so he stands where the turn would end.
       turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
     }
-    const pose = faceMotion ? strollPose(stroll, walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
+    const pose = faceMotion ? strollPose(stroll) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
     // The relief rig leans a little toward its travel. The mesh's turn already faces it.
     figure.rotation.y = meshPose ? 0 : stroll.heading

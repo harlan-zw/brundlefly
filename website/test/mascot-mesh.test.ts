@@ -556,7 +556,10 @@ test('through the walk one foot always rests at its floor height and neither foo
       else if (height - rest[index]! > 0.05) freeTurn = Math.max(freeTurn, tilt)
     })
   }
-  assert.ok(freeTurn > 0.05, `A foot clear of the floor keeps its own turn, not ${freeTurn} with a lift of ${lifted}.`)
+  // A foot in the air tips its toes down as it leaves the floor and up before it lands.
+  assert.ok(freeTurn > 0.05, `A foot clear of the floor must tip, not ${freeTurn} with a lift of ${lifted}.`)
+  // The tip is never more than the lift allows: the claws reach a quarter of his height from the ankle, and none goes under the floor.
+  assert.ok(Math.sin(freeTurn) * 2.5 * 0.26 < lifted, `A tip of ${freeTurn} puts a claw under the floor at a lift of ${lifted}.`)
   // One walk cycle covers the ground both feet travel under him. With these legs that is well under his height.
   assert.ok(mascot.strideLength! > 0.2 && mascot.strideLength! < 2, `The stride must be a plausible length, not ${mascot.strideLength}.`)
 })

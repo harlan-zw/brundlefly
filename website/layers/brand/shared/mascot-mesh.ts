@@ -5,7 +5,7 @@ import type { EyeFocus, Look } from './eye-gaze.ts'
 import { createEyeMaterial } from './eye-material.ts'
 import { referenceEyes as reliefEyes, referenceFace } from './face.ts'
 import { createReferenceEyes } from './mascot-eyes.ts'
-import { cycleReach, footCycle, hipDrop, landingReach, solveLeg, swingLift, swingShare, swingStep } from './mascot-legs.ts'
+import { cycleReach, cycleToMidStance, footCycle, hipDrop, landingReach, solveLeg, swingLift, swingShare, swingStep, swingTravel } from './mascot-legs.ts'
 import type { EyeDressing, LidSkin } from './mascot-eyes.ts'
 import { addBodyDepth, bodyJointNames, poseBody } from './mascot-pose.ts'
 import type { BodyJointName, MascotPoseInput } from './mascot-pose.ts'
@@ -264,13 +264,19 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
    */
   const strideLength = legs ? legLength * 0.75 : undefined
   // Where each foot stands on the floor, in world units, and the way it points. `swing` is how far through its swing the foot was in the last frame.
-  const stand = [0, 1].map(() => ({ x: 0, z: 0, yaw: 0, swing: 0, lift: 0 }))
+  // `aim` is where a foot in the air will land. He chooses it in the first half of the foot's travel and then keeps it, as a walker commits to a step.
+  const stand = [0, 1].map(() => ({ x: 0, z: 0, yaw: 0, swing: 0, lift: 0, aim: { x: 0, z: 0, yaw: 0 } }))
   let stoodAt: number | undefined
+  // His turn and his walk cycle in the last frame that held the feet. Their rates say how he will be turned when a foot in the air lands.
+  const last = { yaw: 0, phase: 0 }
   // A foot this far from its place under him did not get there by walking: the host moved him. Then both feet take their places again.
   const leash = legLength * 0.9
   const scratch = { scale: new Vector3(), forward: new Vector3(), home: [new Vector3(), new Vector3()], hip: new Vector3(), target: new Vector3(), pole: new Vector3(),
-    thigh: new Vector3(), shin: new Vector3(), hinge: new Vector3(), basis: new Matrix4(), turn: new Quaternion(), level: new Quaternion(), turnedWorld: new Quaternion(), slide: new Vector3() }
+    axis: new Vector3(), thigh: new Vector3(), shin: new Vector3(), hinge: new Vector3(), basis: new Matrix4(), turn: new Quaternion(), level: new Quaternion(), turnedWorld: new Quaternion(), tip: new Quaternion(), slide: new Vector3() }
   const unit = (value: number) => Math.min(1, Math.max(0, value))
+  // The furthest his foot reaches from its ankle along the floor: about a quarter of his height, at the tips of his claws.
+  const footReach = height * 0.26
+  const across = new Vector3(1, 0, 0)
   /**
    * Places both feet and solves each leg to its foot. It runs after the pose code has turned the body.
    * With `stance` in the input, a foot on the floor holds its place in the world, and a foot in the air swings to where his travel will need it.
@@ -287,8 +293,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     legs!.forEach((leg, index) => turned.localToWorld(home[index]!.copy(leg.home)))
     // A slow walk still lifts each foot clear of the floor. Steps in place fade as a walk takes over.
     const steps = unit(input.stepInPlace ?? 0) * (1 - gait)
-    const lifts = Math.max(unit(gait / 0.25), steps)
-    const liftHeight = height * (0.026 + 0.018 * gait) * scale
+    const lifts = Math.max(unit(gait / 0.25), unit(steps / 0.25))
+    const liftHeight = height * (0.036 + 0.024 * gait) * scale
     const reach = strideLength! * scale * (2 - swingShare) / 2 * gait
     const [strideX, strideZ] = input.stance ?? [forward.x * reach, forward.z * reach]
     const elapsed = stoodAt === undefined ? Number.NaN : input.time - stoodAt
@@ -299,6 +305,11 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       if (!(away <= leash * scale) || !Number.isFinite(foot.yaw)) held = false
     }
     stoodAt = input.stance !== undefined ? input.time : undefined
+    // A foot lands turned as his body will be when it is over that foot. So a turn twists each leg half as far, first one way and then the other.
+    const tempo = held && elapsed > 0 ? (phase - last.phase) / elapsed : 0
+    const turnRate = held && elapsed > 0 ? Math.atan2(Math.sin(bodyYaw - last.yaw), Math.cos(bodyYaw - last.yaw)) / elapsed : 0
+    if (!held || elapsed > 0) Object.assign(last, { yaw: bodyYaw, phase })
+    root.getWorldPosition(scratch.axis)
     stand.forEach((foot, index) => {
       const cycle = footCycle(phase, index)
       const inAir = cycle._tag === 'Swing' && lifts > 0
@@ -308,10 +319,17 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       }
       else if (inAir && elapsed > 0) {
         const step = swingStep(foot.swing, cycle.progress)
-        const lead = landingReach(cycle.progress)
-        foot.x += (home[index]!.x + strideX * lead - foot.x) * step
-        foot.z += (home[index]!.z + strideZ * lead - foot.z) * step
-        foot.yaw += Math.atan2(Math.sin(bodyYaw - foot.yaw), Math.cos(bodyYaw - foot.yaw)) * step
+        if (foot.swing === 0 || swingTravel(cycle.progress) < 0.5) {
+          const lead = landingReach(cycle.progress)
+          const turnLead = tempo > 1e-3 ? Math.min(0.5, Math.max(-0.5, turnRate * cycleToMidStance(cycle.progress) * Math.PI * 2 / tempo)) : 0
+          const [fromAxisX, fromAxisZ] = [home[index]!.x - scratch.axis.x, home[index]!.z - scratch.axis.z]
+          const [cos, sin] = [Math.cos(turnLead), Math.sin(turnLead)]
+          Object.assign(foot.aim, { x: scratch.axis.x + fromAxisX * cos + fromAxisZ * sin + strideX * lead,
+            z: scratch.axis.z - fromAxisX * sin + fromAxisZ * cos + strideZ * lead, yaw: bodyYaw + turnLead })
+        }
+        foot.x += (foot.aim.x - foot.x) * step
+        foot.z += (foot.aim.z - foot.z) * step
+        foot.yaw += Math.atan2(Math.sin(foot.aim.yaw - foot.yaw), Math.cos(foot.aim.yaw - foot.yaw)) * step
       }
       foot.swing = inAir ? cycle.progress : 0
       foot.lift = inAir ? lifts * liftHeight * swingLift(cycle.progress) : 0
@@ -347,11 +365,14 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       hinge.crossVectors(thigh, shin).normalize()
       leg.hip.quaternion.setFromRotationMatrix(basis.makeBasis(thigh, hinge, scratch.slide.crossVectors(thigh, hinge))).multiply(leg.unbend)
       leg.knee.quaternion.setFromUnitVectors(leg.shin, shin.applyQuaternion(turn.copy(leg.hip.quaternion).invert()))
-      // A foot on the floor lies level and keeps the way it pointed when it landed. A foot in the air keeps its own turn.
+      // A foot on the floor lies level and keeps the way it pointed when it landed.
+      // A foot in the air tips its toes down as it leaves and up before it lands. His feet are long and splayed,
+      // so the tip is only as much as the lift allows: no claw goes under the floor.
+      const tip = Math.asin(Math.min(1, foot.lift / (footReach * scale))) * 0.8 * Math.cos(Math.PI * foot.swing)
       leg.hip.updateMatrixWorld(true)
       leg.knee.getWorldQuaternion(turn).invert()
-      level.setFromAxisAngle(vertical, foot.yaw - bodyYaw).multiply(turned.getWorldQuaternion(scratch.turnedWorld))
-      leg.foot.quaternion.slerp(turn.multiply(level), unit(1 - foot.lift / (plantedBand * scale)))
+      level.setFromAxisAngle(vertical, foot.yaw - bodyYaw).multiply(turned.getWorldQuaternion(scratch.turnedWorld)).multiply(scratch.tip.setFromAxisAngle(across, tip))
+      leg.foot.quaternion.copy(turn.multiply(level))
     })
   }
   const turns = Math.abs(stanceYaw) > 1e-3

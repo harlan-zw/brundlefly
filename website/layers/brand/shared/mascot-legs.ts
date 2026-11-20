@@ -53,12 +53,19 @@ export const landingReach = (progress: number) => 0.5 + (1 - clamp(progress, 0, 
 
 /**
  * The share of the way to its target that a foot in the air moves in one frame, as its swing goes from `from` to `to`.
- * Repeated every frame, it brings the foot onto the target as the swing ends, whatever the target did on the way.
+ * Repeated every frame, it brings the foot onto the target as its travel ends, whatever the target did on the way.
+ * After that the foot comes down where it is, and the target no longer moves it.
  */
 export function swingStep(from: number, to: number) {
   const done = swingTravel(from)
-  return done >= 1 ? 1 : clamp((swingTravel(to) - done) / (1 - done), 0, 1)
+  return done >= 1 ? 0 : clamp((swingTravel(to) - done) / (1 - done), 0, 1)
 }
+
+/**
+ * The share of a walk cycle from this moment of a swing to the middle of the stance that follows it.
+ * His body is over the foot then. So a foot aims for where his body will be, and how it will be turned, at that moment.
+ */
+export const cycleToMidStance = (progress: number) => ((1 - clamp(progress, 0, 1)) * swingShare + (2 - swingShare) / 2) / 2
 
 /** `stretched` is true when the foot could not reach its target. `foot` is then the nearest place it can reach. */
 export type LegSolve = { knee: Point3, foot: Point3, stretched: boolean }

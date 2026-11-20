@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { cycleReach, footCycle, hipDrop, landingReach, solveLeg, swingLift, swingShare, swingStep, swingTravel } from '../layers/brand/shared/mascot-legs.ts'
+import { cycleReach, cycleToMidStance, footCycle, hipDrop, landingReach, solveLeg, swingLift, swingShare, swingStep, swingTravel } from '../layers/brand/shared/mascot-legs.ts'
 import type { Point3 } from '../layers/brand/shared/mascot-legs.ts'
 
 const distance = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
@@ -44,22 +44,29 @@ test('through one cycle a foot falls behind while it carries him, swings ahead, 
   assert.ok(swingLift(0.13) > 0.1 && swingLift(0) === 0 && swingLift(0.5) === 1)
 })
 
-test('a foot in the air lands on its target, though the target moves all through the swing', () => {
+test('a foot in the air reaches its target as its travel ends, though the target moves, and then comes down where it is', () => {
   const random = sequence(11)
   for (const frames of [7, 24, 60]) {
-    let place = -3, target = 2, progress = 0
+    let place = -3, target = 2, progress = 0, landed: number | undefined, aimed = target
     for (let frame = 1; frame <= frames; frame++) {
       // The target wanders, as his body does when he turns or slows in the middle of a step.
       target += (random() - 0.5) * 0.4
       const next = frame / frames
       place += (target - place) * swingStep(progress, next)
+      // The frame that ends the travel puts the foot on the target as it is then.
+      if (landed === undefined && swingTravel(next) === 1) { landed = place; aimed = target }
       progress = next
     }
-    assert.ok(Math.abs(place - target) < 1e-9, `After ${frames} frames the foot is ${Math.abs(place - target)} from its target.`)
+    assert.ok(landed !== undefined && Math.abs(landed - aimed) < 1e-9, `After ${frames} frames the foot is ${Math.abs((landed ?? place) - aimed)} from its target.`)
+    assert.equal(place, landed, 'A foot that has ended its travel must not move while it comes down.')
   }
   // It does not travel while it is still on the floor, and a cycle that runs backward moves nothing.
   assert.equal(swingStep(0, 0.1), 0)
   assert.equal(swingStep(0.6, 0.4), 0)
+  assert.equal(swingStep(0.9, 0.95), 0)
+  // From the start of a swing to the middle of the next stance is the whole swing and half the stance, as a share of the cycle.
+  assert.ok(Math.abs(cycleToMidStance(0) - (swingShare + (2 - swingShare) / 2) / 2) < 1e-12)
+  assert.ok(Math.abs(cycleToMidStance(1) - (2 - swingShare) / 4) < 1e-12)
   // The aim leads by the ground still to cover: half a stance once the foot lands.
   assert.equal(landingReach(1), 0.5)
   assert.ok(Math.abs(landingReach(0) - (0.5 + swingShare / (2 - swingShare))) < 1e-12)
