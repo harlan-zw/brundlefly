@@ -225,6 +225,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     home: Vector3
     /** The furthest the leg straightens, as a share of its full length. A file may stand on straighter legs than the site would give it. */
     limit: number
+    /** The share of that reach over which his hips begin to sink. A leg that stands near its limit at rest has none, so his rest pose stays as the file has it. */
+    slack: number
   }
   function findLegs(): Leg[] | undefined {
     if (!bodyJoints || !stanceNode) return undefined
@@ -251,8 +253,10 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       const bent = new Vector3().crossVectors(thigh, shin)
       const hinge = bent.length() > 1e-3 ? bent.normalize() : new Vector3().crossVectors(thigh, new Vector3(0, 0, 1)).normalize()
       const unbend = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(thigh, hinge, new Vector3().crossVectors(thigh, hinge))).invert()
+      const stood = hipPlace.distanceTo(anklePlace) / (thighLength + shinLength)
+      const limit = Math.min(0.9995, Math.max(0.97, stood))
       return { hip, knee, foot, thigh, shin, thighLength, shinLength, unbend, pole, home: turned.worldToLocal(anklePlace.clone()),
-        limit: Math.min(0.9995, Math.max(0.97, hipPlace.distanceTo(anklePlace) / (thighLength + shinLength))) }
+        limit, slack: Math.min(0.06, Math.max(0, 1 - (stood + 0.02) / limit)) }
     })
     return legs[0] && legs[1] ? [legs[0], legs[1]] : undefined
   }
@@ -268,7 +272,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   const stand = [0, 1].map(() => ({ x: 0, z: 0, yaw: 0, swing: 0, lift: 0, aim: { x: 0, z: 0, yaw: 0 } }))
   let stoodAt: number | undefined
   // His turn and his walk cycle in the last frame that held the feet. Their rates say how he will be turned when a foot in the air lands.
-  const last = { yaw: 0, phase: 0 }
+  // `sag` is how far his hips have come down for a foot's reach, in the mascot's own units, and `rise` is how fast they come up again.
+  const last = { yaw: 0, phase: 0, sag: 0, rise: 0 }
   // A foot this far from its place under him did not get there by walking: the host moved him. Then both feet take their places again.
   const leash = legLength * 0.9
   const scratch = { scale: new Vector3(), forward: new Vector3(), home: [new Vector3(), new Vector3()], hip: new Vector3(), target: new Vector3(), pole: new Vector3(),
@@ -294,7 +299,7 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     // A slow walk still lifts each foot clear of the floor. Steps in place fade as a walk takes over.
     const steps = unit(input.stepInPlace ?? 0) * (1 - gait)
     const lifts = Math.max(unit(gait / 0.25), unit(steps / 0.25))
-    const liftHeight = height * (0.036 + 0.024 * gait) * scale
+    const liftHeight = height * (0.03 + 0.02 * gait) * scale
     const reach = strideLength! * scale * (2 - swingShare) / 2 * gait
     const [strideX, strideZ] = input.stance ?? [forward.x * reach, forward.z * reach]
     const elapsed = stoodAt === undefined ? Number.NaN : input.time - stoodAt
@@ -335,7 +340,9 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       foot.lift = inAir ? lifts * liftHeight * swingLift(cycle.progress) : 0
     })
     // His weight goes over the foot that carries him, and his body rises as the legs pass each other.
-    const sway = -Math.cos(phase) * 0.14 * Math.max(unit(gait / 0.25) * (0.5 + 0.5 * gait), steps) / scale / 2
+    // The sway is still at the moment both feet stand, so a walk that begins or ends there does not jolt him sideways.
+    const over = Math.cos(phase)
+    const sway = -over * Math.abs(over) * 0.16 * Math.max(unit(gait / 0.25) * (0.5 + 0.5 * gait), steps) / scale / 2
     pivot.position.x += (home[1]!.x - home[0]!.x) * sway
     pivot.position.z += (home[1]!.z - home[0]!.z) * sway
     pivot.position.y = height * (0.012 * gait + 0.005 * steps) * Math.cos(phase) ** 2
@@ -346,9 +353,13 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       leg.hip.getWorldPosition(scratch.hip)
       scratch.target.set(foot.x, root.localToWorld(footPoint.set(0, footRest[index]!, 0)).y + foot.lift, foot.z)
       const planted = unit(1 - foot.lift / (plantedBand * scale))
-      drop = Math.max(drop, planted * hipDrop(scratch.hip, scratch.target, (leg.thighLength + leg.shinLength) * scale * leg.limit))
+      drop = Math.max(drop, planted * hipDrop(scratch.hip, scratch.target, (leg.thighLength + leg.shinLength) * scale * leg.limit, leg.slack))
     })
-    pivot.position.y -= Math.min(drop, legLength * scale * 0.3) / scale
+    // They come down at once, because a leg cannot stretch. They come up again from a slow start, so a foot that lifts does not jolt him.
+    const sag = Math.min(drop, legLength * scale * 0.3) / scale
+    last.rise = held && sag < last.sag ? Math.min(height * 0.08, last.rise + height * 0.5 * elapsed) : 0
+    last.sag = held ? Math.max(sag, last.sag - last.rise * elapsed) : sag
+    pivot.position.y -= last.sag
     legs!.forEach((leg, index) => {
       const foot = stand[index]!
       const { hip, target, pole, thigh, shin, hinge, basis, turn, level } = scratch

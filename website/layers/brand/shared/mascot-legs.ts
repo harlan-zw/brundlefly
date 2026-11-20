@@ -97,9 +97,18 @@ export function solveLeg(hip: Point3, target: Point3, thigh: number, shin: numbe
   }
 }
 
-/** How far the hips must come down for a leg of length `reach` to hold a foot on the floor. Zero when the foot is within reach. */
-export function hipDrop(hip: Point3, foot: Point3, reach: number) {
+/**
+ * How far the hips must come down for a leg of length `reach` to hold a foot on the floor. Zero when the foot is within reach.
+ * With `ease`, the hips begin to sink that share of the reach before the leg is at its limit, slowly at first.
+ * So the drop has no sudden start. It is never less than the limit needs.
+ */
+export function hipDrop(hip: Point3, foot: Point3, reach: number, ease = 0) {
   const flat = Math.hypot(foot.x - hip.x, foot.z - hip.z)
   const above = hip.y - foot.y
-  return Math.max(0, above - Math.sqrt(Math.max(0, reach * reach - flat * flat)))
+  const within = (length: number) => Math.sqrt(Math.max(0, length * length - flat * flat))
+  const needed = Math.max(0, above - within(reach))
+  // The same drop for a leg a little shorter. It begins sooner, by `gap`, and it leads the needed drop by `gap` from then on.
+  const early = Math.max(0, above - within(reach * (1 - ease)))
+  const gap = within(reach) - within(reach * (1 - ease))
+  return gap > 1e-9 && early < gap * 2 ? Math.max(needed, early * early / (gap * 4)) : needed
 }

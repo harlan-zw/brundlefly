@@ -111,4 +111,19 @@ test('the hips come down just far enough for a foot on the floor to be within re
   const drop = hipDrop(hip, foot, 0.9)
   assert.ok(drop > 0.2 && drop < 1)
   assert.ok(Math.abs(distance({ ...hip, y: hip.y - drop }, foot) - 0.9) < 1e-9, 'After the drop the foot must be exactly within reach.')
+  // With an ease the hips begin to sink before the limit, never sink less than the limit needs, and never jump.
+  let before = 0, steepest = 0, began: number | undefined
+  for (let step = 0; step <= 400; step++) {
+    const far = { x: step / 400 * 0.95, y: 0, z: 0 }
+    const [eased, needed] = [hipDrop(hip, far, 1.1, 0.06), hipDrop(hip, far, 1.1)]
+    assert.ok(eased >= needed - 1e-12, 'The eased drop must hold the foot within reach.')
+    if (eased > 0 && began === undefined) began = hipDrop(hip, far, 1.1 * 0.94)
+    steepest = Math.max(steepest, Math.abs(eased - before))
+    before = eased
+  }
+  assert.ok(began !== undefined && began < 1e-3 && hipDrop(hip, { x: 0.43, y: 0, z: 0 }, 1.1, 0.06) > 0 && hipDrop(hip, { x: 0.43, y: 0, z: 0 }, 1.1) === 0, 'The eased drop must begin before the limit.')
+  assert.ok(steepest < 0.02, `The eased drop jumped ${steepest} between two near places.`)
+  // Far within reach, and far beyond the ease, it is the needed drop.
+  assert.equal(hipDrop(hip, { x: 0.1, y: 0, z: 0 }, 1.1, 0.06), 0)
+  assert.ok(Math.abs(hipDrop(hip, { x: 0.9, y: 0, z: 0 }, 1.1, 0.06) - hipDrop(hip, { x: 0.9, y: 0, z: 0 }, 1.1)) < 1e-12)
 })

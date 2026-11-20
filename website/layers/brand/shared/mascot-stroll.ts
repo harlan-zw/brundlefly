@@ -169,7 +169,7 @@ export const startTurn = (heading: number): Turn => ({ heading, rate: 0, pace: 0
 
 // Radians he may turn in one step of a walk, and in one step in place. A turn is never faster than his feet allow:
 // a foot on the floor stays there, so each step can carry only so much of a turn before its leg twists.
-export const turnPerStep = { walking: 0.7, inPlace: 0.32 }
+export const turnPerStep = { walking: 0.85, inPlace: 0.32 }
 // Radians a second of the step cycle while he steps in place: about three quick foot lifts for a turn to the other side.
 // Short steps keep each foot's share of the turn small, so his body does not swing wide about it.
 export const stepRate = 12
