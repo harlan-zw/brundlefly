@@ -66,7 +66,7 @@ export const resolveConversationFocus = (face: Vector3, width: number, height: n
 }
 
 /**
- * The pixels the bottom dialog covers: its usual height, its gap from the edge, and the seam that rises over its top.
+ * The pixels the bottom dialog covers: its usual height, its gap from the edge, and a margin over its top edge.
  * Matches _SpeechDialog.vue. The side dialog of a short landscape screen covers no height.
  */
 export const dialogCover = (width: number, height: number) =>

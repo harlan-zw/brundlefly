@@ -661,8 +661,8 @@ canvas { display: block; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { .world-vignette::after { transition: none; } }
 /* A journey to another set darkens the whole picture. The scene sets how dark, frame by frame. */
 .world-dark { position: absolute; inset: 0; pointer-events: none; background: var(--color-night); }
-.world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, default; touch-action: none; }
-.world-interaction.mascot-hover { cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, pointer; }
+.world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: default; touch-action: none; }
+.world-interaction.mascot-hover { cursor: pointer; }
 .world-interaction:focus-visible { outline: 2px solid var(--color-cream); outline-offset: -8px; }
 .world-fallback { position: absolute; inset: 10% 0; margin: auto; height: 80%; width: 80%; object-fit: contain; image-rendering: pixelated; }
 .world-status { position: absolute; bottom: 1rem; left: 1rem; right: 1rem; text-align: center; font: 12px var(--font-mono); color: var(--color-wing); }

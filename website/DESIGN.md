@@ -72,6 +72,7 @@ Keep the dialog compact and readable. Separate visitor text and replies in readi
 Three reply choices and “Your text” sit in a two by two grid.
 “Your text” replaces the grid with the text field. “Back” returns to the grid.
 Choices read as numbered lines under a fading rule. A hovered line brightens over a rust band.
+The dialog's top edge is a drawn rust hairline with one small bead at its middle. The dialog loads no image.
 The AI notice opens as a tooltip from a “!” button beside the name.
 Frame his face clear of the dialog, so his mouth stays visible while he speaks.
 On short landscape screens, the dialog sits at the right and his face stays left of it.
@@ -98,7 +99,7 @@ Kit controls use 14px text and at least 44px targets.
 ## Accessibility and motion
 
 The mascot has a named keyboard target. Enter or Space opens the same dialog as a pointer click.
-Hover stops walking, tilts his head toward the visitor, and changes the cursor. Pointer position does not rotate the relief or distort his face.
+Hover stops walking, tilts his head toward the visitor, and changes the standard arrow cursor to the hand. Pointer position does not rotate the relief or distort his face.
 Keep visible cream focus outlines. Do not place artwork over text, inputs, or focus outlines.
 System reduced motion stops walking and idle deformation. Manual camera movement remains available.
 On touch screens, turning the phone looks around like a window. A held pose slowly becomes the new centre.

@@ -201,7 +201,7 @@ watch([() => open, dialog], async ([isOpen, element]) => {
   if (!visited.value) void receive('visit')
 }, { flush: 'post' })
 
-// New content changes the pocket height. Easing from the old height keeps the header and seam from jumping.
+// New content changes the pocket height. Easing from the old height keeps the header and the top edge from jumping.
 let resize: Animation | undefined
 watch([spoken, () => request.value._tag, failure, mode], async () => {
   const element = dialog.value
@@ -259,7 +259,6 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
 
 <template>
   <dialog ref="dialog" class="speech-pocket" aria-labelledby="speech-title" aria-describedby="speech-scope" @cancel.prevent="notice ? notice = false : emit('close')" @close="emit('close')">
-    <img class="speech-seam" src="/brand/kit/lair/tissue-seam.png" alt="" aria-hidden="true">
     <header>
       <div ref="noticeAnchor" class="speech-name">
         <h2 id="speech-title">Brundlefly</h2>
@@ -312,8 +311,9 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
 .speech-pocket:not([open]) { opacity: 0; transform: translateY(16px); pointer-events: none; }
 @starting-style { .speech-pocket[open] { opacity: 0; transform: translateY(16px); } }
 .speech-pocket::backdrop { background: #080b0812; }
-/* The seam crowns the pocket without reaching up over his face. */
-.speech-seam { position: absolute; width: 88%; height: auto; top: 0; left: 6%; translate: 0 -58%; image-rendering: pixelated; pointer-events: none; }
+/* A rust hairline runs along the top edge and fades toward both ends. One small bead sits at its middle. Both are drawn, so no image loads. */
+.speech-pocket::before { content: ''; position: absolute; top: -1px; left: 9%; right: 9%; height: 1px; pointer-events: none; background: linear-gradient(90deg, transparent, #aa604b8c 30%, #aa604b8c 70%, transparent); }
+.speech-pocket::after { content: ''; position: absolute; top: -3px; left: 50%; width: 5px; height: 5px; translate: -50% 0; rotate: 45deg; pointer-events: none; background: #10130f; border: 1px solid #aa604b; }
 header { display: flex; justify-content: space-between; align-items: center; column-gap: 12px; flex-shrink: 0; }
 .speech-name { position: relative; display: flex; align-items: center; min-width: 0; }
 h2 { margin: 0; font: 600 22px/1.1 var(--font-display, sans-serif); letter-spacing: .02em; }
