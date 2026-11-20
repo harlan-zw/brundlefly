@@ -49,7 +49,7 @@ const shownMascot = ref<MascotMode>()
 // How the visible mascot moves: the relief rig's pose code, the file's own clip, or a whole-body sway.
 const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
 // `shown` names the set that stands after a journey. `stayed` means the other set's artwork did not load.
-const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'] }>()
+const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
@@ -539,7 +539,8 @@ watch(canvas, async (element) => {
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
     // The relief rig leans a little toward its travel. The mesh's turn already faces it.
     figure.rotation.y = meshPose ? 0 : stroll.heading
-    if (environmentMotion.value) elapsed += delta
+    // The audio hears scene time twice a second, so the office tube buzzes when its light flickers.
+    if (environmentMotion.value) { elapsed += delta; if (Math.floor(elapsed * 2) !== Math.floor((elapsed - delta) * 2)) emit('time', elapsed) }
     world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
