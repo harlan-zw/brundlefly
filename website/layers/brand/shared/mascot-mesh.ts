@@ -546,6 +546,29 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       })
       if (legs) placeLegs(input, cycle, gait)
       else plantFeet()
+      if (input.reach) {
+        // The rear arm reaches the jar. Solve in joint space, including the claw's grip point.
+        root.updateWorldMatrix(true, true)
+        const side = ['left', 'right'].sort((a, b) => scene.getObjectByName(`${a}-shoulder`)!.getWorldPosition(new Vector3()).distanceTo(input.reach!.target) - scene.getObjectByName(`${b}-shoulder`)!.getWorldPosition(new Vector3()).distanceTo(input.reach!.target))[0]!
+        const tip = scene.getObjectByName(`${side}-finger-2`)
+        if (tip) {
+          const chain = ['hand', 'elbow', 'shoulder'].map(name => scene.getObjectByName(`${side}-${name}`)!)
+          const rest = chain.map(joint => joint.quaternion.clone())
+          const hand = chain[0]!
+          hand.rotation.y += input.reach.turn
+          for (let pass = 0; pass < 64; pass++) {
+            for (const joint of chain) {
+              root.updateWorldMatrix(true, true)
+              const origin = joint.getWorldPosition(new Vector3())
+              const inverse = joint.getWorldQuaternion(new Quaternion()).invert()
+              const from = tip.getWorldPosition(new Vector3()).sub(origin).applyQuaternion(inverse).normalize()
+              const to = input.reach.target.clone().sub(origin).applyQuaternion(inverse).normalize()
+              joint.quaternion.multiply(new Quaternion().setFromUnitVectors(from, to))
+            }
+          }
+          chain.forEach((joint, index) => joint.quaternion.slerpQuaternions(rest[index]!, joint.quaternion.clone(), input.reach!.weight))
+        }
+      }
       turnHead(look, input.mannerism?.turns.head)
       aimEyes(input.time, input.eyes ?? { _tag: 'Ahead' })
       // The relief rig's lids blink when the host supplied them. The file's own lid joints then stay at rest.

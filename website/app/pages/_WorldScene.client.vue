@@ -614,7 +614,7 @@ watch(canvas, async (element) => {
     figure.rotation.y = meshPose ? 0 : stroll.heading
     // The audio hears scene time twice a second, so the office tube buzzes when its light flickers.
     if (environmentMotion.value) { elapsed += delta; if (Math.floor(elapsed * 2) !== Math.floor((elapsed - delta) * 2)) emit('time', elapsed) }
-    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value, light })
+    let frameMannerism: ReturnType<typeof poseMannerisms> | undefined
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
     // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.
@@ -638,7 +638,7 @@ watch(canvas, async (element) => {
       const taps = habit?.mannerism._tag === 'TypeKeys' && !talking ? keyTaps(habit.age) : 0
       if (taps > workTaps) emit('action', 'KeyClick')
       workTaps = taps
-      const tending = habit?.mannerism._tag === 'TendJar' && !talking && habit.age > 1.2
+      const tending = habit?.mannerism._tag === 'TendJar' && !talking && habit.age > 2.6
       if (tending && !workTending) emit('action', 'JarBubbles')
       workTending = tending
       // Directional habits turn toward the nearer egg cluster. Screen right is +x.
@@ -648,11 +648,13 @@ watch(canvas, async (element) => {
       if (faceMotion && act.reach !== undefined) sided.push({ mannerism: { _tag: 'ReachSwitch' }, age: act.reach, side: switchSide })
       if (faceMotion && act.greet !== undefined) sided.push({ mannerism: { _tag: 'Greet' }, age: act.greet, side: switchSide })
       const mannerism = poseMannerisms(sided)
+      frameMannerism = mannerism
       // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
       const eyes = !faceMotion ? { _tag: 'Ahead' } as const
         : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
           : talking || (hovered.value && !journey) || act.watches ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
       const input = { time: faceElapsed, pressure: 0, pointer, transform: 'squeeze' as const, ...pose, eyes, mannerism,
+        reach: mannerism.jar && world.cues.jar ? { target: world.cues.jar(mannerism.jar.turn), ...mannerism.jar } : undefined,
         speaking: faceMotion ? speaking : 0,
         brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
           : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
@@ -660,6 +662,7 @@ watch(canvas, async (element) => {
       if (meshPose) meshPose({ ...input, stepInPlace: turn.steps, stepPhase: turn.phase }, watch, turn.heading)
       else if (mascot._tag === 'Relief') mascot.update(input)
     }
+    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value, light, mannerism: frameMannerism })
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
     if (mascot._tag === 'Mesh' && footShadows.length) {

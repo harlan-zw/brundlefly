@@ -98,7 +98,7 @@ export const officePlan: OfficePlan = {
   // At the two stations he turns to his work, so the viewer sees his shoulder and his hands on it. He stays there longest.
   stops: [
     { position: [-0.9, -0.95], pause: 7.5, habit: 'TypeKeys', facing: -2.35 },
-    { position: [0.9, -0.95], pause: 6.5, habit: 'TendJar', facing: 2.3 },
+    { position: [1.95, -0.95], pause: 6.5, habit: 'TendJar', facing: 2.5 },
     { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
     { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
   ],

@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { Group, Mesh, SkinnedMesh, Texture, Vector2, Vector3 } from 'three'
+import { createMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
+import { createOffice } from '../layers/brand/shared/office.ts'
+import { defaultSceneSettings } from '../layers/brand/shared/scene-settings.ts'
+import { loadMascotModel } from './mascot-model.ts'
 import { officePlan } from '../layers/brand/shared/office-layout.ts'
-import { keyTaps, mannerismDuration, poseMannerisms } from '../layers/brand/shared/mannerism.ts'
+import { keyTaps, mannerismDuration, pauseMannerism, poseMannerisms } from '../layers/brand/shared/mannerism.ts'
 import { advanceTurn, settleTurn, startStroll, startTurn, workLimit } from '../layers/brand/shared/mascot-stroll.ts'
 import type { Stroll } from '../layers/brand/shared/mascot-stroll.ts'
 
@@ -60,4 +65,77 @@ test('the two stations have a work habit, a facing, and the longest stops of his
   const others = officePlan.stops.filter(stop => stop.facing === undefined)
   assert.ok(Math.min(...stations.map(stop => stop.pause)) > Math.max(...others.map(stop => stop.pause)))
   for (const stop of stations) assert.ok(mannerismDuration({ _tag: stop.habit }) < stop.pause)
+})
+
+test('the selected jar turns during contact and settles when the habit ends', async (t) => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document')
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: { createElement: () => ({ getContext: () => ({ fillRect() {}, clearRect() {} }) }) } })
+  t.after(() => { if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document') })
+  const model = await loadMascotModel(new URL('../../assets/3d/office/office.glb', import.meta.url))
+  const texture = new Texture()
+  const office = createOffice({ model: model.scene, lightMax: 1, atlas: texture, floor: texture, wall: texture, ceiling: texture, concrete: texture, light: texture })
+  const vertices = () => {
+    const points: string[] = []
+    office.root.updateMatrixWorld(true)
+    office.root.traverse(object => {
+      if (!(object instanceof Mesh)) return
+      const positions = object.geometry.getAttribute('position')
+      const indices = object.geometry.getIndex()!
+      for (let i = 0; i < indices.count; i++) {
+        const p = object.localToWorld(new Vector3().fromBufferAttribute(positions, indices.getX(i)))
+        if (p.x > 1 && p.x < 1.5 && p.y > -0.63 && p.y < 0 && p.z < -2.9) points.push(p.toArray().map(n => n.toFixed(4)).join(','))
+      }
+    })
+    return points.sort()
+  }
+  const result = createMeshMascot(await loadMascotModel(), 2.5)
+  assert.equal(result._tag, 'Ok')
+  if (result._tag !== 'Ok') return
+  const mascot = result.mascot
+  const station = officePlan.stops.find(stop => stop.habit === 'TendJar')!
+  const figure = new Group()
+  figure.scale.setScalar(1.25)
+  figure.position.set(station.position[0], officePlan.room.floorY, station.position[1])
+  figure.add(mascot.root)
+  let turn = startTurn(1.3)
+  let contacts = 0
+  for (let age = 0; age < station.pause; age += 1 / 30) {
+    const stroll: Stroll = { ...startStroll(station.position, 1), activity: { _tag: 'Pausing', age, duration: station.pause, remaining: station.pause - age, waypoint: 1 } }
+    turn = advanceTurn(turn, stroll, { ...turning, walkSpeed: 0.63, stand: station.facing, delta: 1 / 30 })
+    const habit = pauseMannerism(stroll, officePlan.stops.map(stop => stop.habit))!
+    const mannerism = poseMannerisms([{ ...habit, side: -1 }])
+    const reach = mannerism.jar ? { target: office.jarGrip(mannerism.jar.turn), ...mannerism.jar } : undefined
+    mascot.pose!({ time: age, pressure: 0, pointer: new Vector2(), transform: 'squeeze', mannerism, reach, stepInPlace: turn.steps, stepPhase: turn.phase }, undefined, turn.heading)
+    office.update({ time: 0, light: 1, settings: defaultSceneSettings, mannerism })
+    if (!reach || Math.abs(reach.turn) < 0.02) continue
+    contacts++
+    const grip = mascot.root.getObjectByName('right-finger-2')!.getWorldPosition(new Vector3())
+    assert.ok(grip.distanceTo(reach.target) < 0.04, 'the claw must follow the rotating jar during contact')
+    let skinGap = Infinity
+    figure.updateMatrixWorld(true)
+    mascot.root.traverse(object => {
+      if (!(object instanceof SkinnedMesh)) return
+      object.skeleton.update()
+      const positions = object.geometry.getAttribute('position')
+      for (let i = 0; i < positions.count; i++) {
+        const point = object.localToWorld(object.applyBoneTransform(i, new Vector3().fromBufferAttribute(positions, i)))
+        skinGap = Math.min(skinGap, point.distanceTo(reach.target))
+      }
+    })
+    assert.ok(skinGap < 0.06, 'the rendered claw skin must touch the jar, including while it turns')
+  }
+  assert.ok(contacts > 30, 'the turn must hold contact for more than one second')
+  mascot.dispose()
+  const update = (age?: number) => office.update({ time: 0, light: 1, settings: defaultSceneSettings,
+    mannerism: age === undefined ? undefined : poseMannerisms([{ mannerism: { _tag: 'TendJar' }, age, side: -1 }]) })
+  update()
+  const resting = vertices()
+  update(2.8)
+  const first = vertices()
+  assert.notDeepEqual(first, resting, 'the selected jar must rotate during contact')
+  update(3)
+  assert.notDeepEqual(vertices(), first, 'the jar must follow the changing claw turn')
+  update()
+  assert.deepEqual(vertices(), resting, 'the jar must return to rest after contact')
+  office.dispose()
 })
