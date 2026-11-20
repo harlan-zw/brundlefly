@@ -41,6 +41,8 @@ export function createReferenceEyes(anchors: readonly EyeAnchor[], { projection,
   const lidSkin = new MeshPhysicalMaterial({ map: skin, color: '#BAAA96', bumpMap: heightTexture, bumpScale: 0.004,
     roughness: 0.72, metalness: 0.02, clearcoat: 0.03 })
   const lidMaterials = [lidSkin]
+  // Lids in a model's own skin, each with the colour it follows.
+  const skinned: { material: MeshPhysicalMaterial, source: Color }[] = []
   const surfaces = [applyMascotSurface(lidSkin, 'skin')]
   const geometries: BufferGeometry[] = []
   const { lid } = referenceEyes
@@ -54,6 +56,7 @@ export function createReferenceEyes(anchors: readonly EyeAnchor[], { projection,
       lidMaterial = new MeshPhysicalMaterial({ color: modelSkin.colour, map: modelSkin.map ?? null, bumpMap: heightTexture, bumpScale: 0.004,
         roughness: 0.72, metalness: 0.02, clearcoat: 0.03 })
       lidMaterials.push(lidMaterial)
+      skinned.push({ material: lidMaterial, source: modelSkin.colour })
       surfaces.push(applyMascotSurface(lidMaterial, 'skin'))
     }
     const [rx, ry, rz] = referenceEyes.radii[index]!
@@ -117,6 +120,8 @@ export function createReferenceEyes(anchors: readonly EyeAnchor[], { projection,
     eye,
     shut,
     updateTime(time: number) { eye.updateTime(time); surfaces.forEach(surface => surface.update(time)) },
+    /** Gives each lid the colour its model skin has now. A host calls it after it shades the model again. */
+    matchSkin() { for (const { material, source } of skinned) material.color.copy(source) },
     /** Removes the built eyes and releases them. The caller's two textures stay. */
     dispose() {
       for (const { root } of built) root.removeFromParent()

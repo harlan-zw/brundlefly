@@ -8,7 +8,7 @@ import {
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
-import { loadMeshMascot, meshShading } from '@brundlefly/brand/shared/mascot-mesh'
+import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
 import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
@@ -20,7 +20,7 @@ import type { SceneFinish } from '@brundlefly/brand/shared/scene-finish'
 import { createFloorReflection } from '@brundlefly/brand/shared/floor-reflection'
 import type { FloorReflection } from '@brundlefly/brand/shared/floor-reflection'
 import { sceneSets } from '@brundlefly/brand/shared/scene-sets'
-import type { BuiltSet, SceneSet, SetArt, SetName } from '@brundlefly/brand/shared/scene-set'
+import type { BuiltSet, SceneSet, SetArt, SetMascot, SetName } from '@brundlefly/brand/shared/scene-set'
 import { advanceTravel, startTravel, travelShade } from '@brundlefly/brand/shared/set-travel'
 import type { Travel } from '@brundlefly/brand/shared/set-travel'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
@@ -36,6 +36,8 @@ const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking =
 // `set` is the place the page wants him in. The scene reports the set that stands, and travels when the two differ.
 const shownSet = ref<SetName>(set)
 const travelPhase = ref<Travel['_tag']>('Home')
+// The dark edge of the picture, as the set that stands asks for it.
+const vignette = ref<SetMascot['vignette']>(sceneSets[set].mascot.vignette)
 // How dark a journey makes the picture, from 0 to 1.
 const shade = ref(0)
 const requestedMascot = useRoute().query.mascot
@@ -190,7 +192,7 @@ watch(canvas, async (element) => {
     new TextureLoader().loadAsync('/brand/kit/lair/face-skin-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/head-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
-  ]), sceneSets[set].load(), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, meshShading) : undefined])
+  ]), sceneSets[set].load(), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, sceneSets[set].mascot.shading) : undefined])
   const [mascotResult, faceResult, projectionResult, bodyProjectionResult] = results
   if (mascotResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || setArt._tag === 'Err') {
     for (const result of results) {
@@ -301,9 +303,9 @@ watch(canvas, async (element) => {
   figure.position.set(standing.stage.layout.mascot[0], floorY, standing.stage.layout.mascot[1])
   scene.add(figure)
   const shadowGeometry = new PlaneGeometry(2.5, 1.8)
-  const shadowMaterial = new ShaderMaterial({ transparent: true, depthWrite: false,
+  const shadowMaterial = new ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uStrength: { value: 0 } },
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-    fragmentShader: 'varying vec2 vUv;void main(){float r=length((vUv-.5)*2.0);gl_FragColor=vec4(0.0,0.0,0.0,max(0.0,1.0-r*r)*.55);}',
+    fragmentShader: 'uniform float uStrength;varying vec2 vUv;void main(){float r=length((vUv-.5)*2.0);gl_FragColor=vec4(0.0,0.0,0.0,max(0.0,1.0-r*r)*uStrength);}',
   })
   const shadow = new Mesh(shadowGeometry, shadowMaterial)
   shadow.rotation.x = -Math.PI / 2
@@ -312,9 +314,9 @@ watch(canvas, async (element) => {
   // The mesh has real feet. A small dark patch under each one ties it to the floor, and fades as the foot lifts.
   const footShadowGeometry = new PlaneGeometry(0.66, 0.5)
   const footShadows = mascot._tag === 'Mesh' ? [0, 1].map(() => {
-    const patch = new Mesh(footShadowGeometry, new ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uStrength: { value: 0 } },
+    const patch = new Mesh(footShadowGeometry, new ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uStrength: { value: 0 }, uDark: { value: 0 } },
       vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-      fragmentShader: 'uniform float uStrength;varying vec2 vUv;void main(){float r=length((vUv-.5)*2.0);gl_FragColor=vec4(0.0,0.0,0.0,max(0.0,1.0-r*r)*.62*uStrength);}',
+      fragmentShader: 'uniform float uStrength;uniform float uDark;varying vec2 vUv;void main(){float r=length((vUv-.5)*2.0);gl_FragColor=vec4(0.0,0.0,0.0,max(0.0,1.0-r*r)*uDark*uStrength);}',
     }))
     patch.rotation.x = -Math.PI / 2
     patch.position.y = standing.stage.layout.floorLevel + 0.015
@@ -375,9 +377,20 @@ watch(canvas, async (element) => {
   // The mesh is a full body, so its conversation is staged: a head-and-shoulders shot, and two lights for his face that rise with the shot.
   // Both lights stay in the scene at zero, so opening the dialog compiles no new shader. The relief rig keeps its full-body shot and the lair's light.
   const staging = mascot._tag === 'Mesh' ? { eyeLine: mascot.eyeLine, rest: Math.abs(mascot.restHeading) || 0.5, face: new Vector3(), placed: false, side: 1 as 1 | -1, drift: 0,
-    key: new SpotLight('#F2DEB8', 0, 7, 0.34, 0.9, 2), rim: new PointLight('#6FB7C0', 0, 3.5, 2) } : undefined
+    key: new SpotLight('#FFFFFF', 0, 7, 0.34, 0.9, 2), rim: new PointLight('#FFFFFF', 0, 3.5, 2) } : undefined
   const lamps = staging ? [staging.key, staging.key.target, staging.rim] : []
   if (lamps.length) scene.add(...lamps)
+  // Each set lights him as it lights its own room. The scene applies the set's look each time a set rises: here, and after every journey.
+  // The mesh takes its shading from its own colours every time, so no tint stacks on another.
+  const present = ({ mascot: look }: SceneSet) => {
+    if (mascot._tag === 'Mesh') mascot.shade(look.shading)
+    shadowMaterial.uniforms.uStrength!.value = look.shadow.body
+    for (const patch of footShadows) patch.material.uniforms.uDark!.value = look.shadow.foot
+    staging?.key.color.set(look.key.colour)
+    staging?.rim.color.set(look.rim.colour)
+    vignette.value = look.vignette
+  }
+  present(standing.stage)
   // A journey to another set. He walks `way` during it: to the way out, then in from it.
   let travel: Travel = { _tag: 'Home' }
   let way: readonly (readonly [number, number])[] | undefined
@@ -408,6 +421,7 @@ watch(canvas, async (element) => {
         scene.add(...actors)
         dress(standing)
         if (lamps.length) scene.add(...lamps)
+        present(standing.stage)
         const level = standing.stage.layout.floorLevel
         shadow.position.y = level + 0.01
         for (const patch of footShadows) patch.position.y = level + 0.015
@@ -505,8 +519,9 @@ watch(canvas, async (element) => {
       staging.placed = true
       if (talking && faceMotion) staging.drift += delta
       // At rest the key holds a low level above his head. It falls off toward his feet, which gives his body its shape.
-      staging.key.intensity = 6 + blend * 18
-      staging.rim.intensity = blend * 4
+      const { key, rim } = standing.stage.mascot
+      staging.key.intensity = key.rest + blend * key.talk
+      staging.rim.intensity = rim.rest + blend * rim.talk
       // The key stands on the side his body faces. That follows his turn smoothly, so the light never jumps across him.
       const keySide = Math.max(-1, Math.min(1, turn.heading / staging.rest))
       staging.key.position.set(staging.face.x + keySide * 1.5, staging.face.y + 1.3, staging.face.z + 2.4)
@@ -635,7 +650,7 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-set="shownSet" :data-travel="travelPhase" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-set="shownSet" :data-vignette="vignette" :data-travel="travelPhase" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && travelPhase === 'Home' && shownMascot === 'mesh' }" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-dark" :style="{ opacity: shade }" aria-hidden="true" />
@@ -659,6 +674,9 @@ canvas { display: block; width: 100%; height: 100%; }
 .world-vignette-close::after { opacity: 1; }
 @media (orientation: landscape) and (max-height: 540px) { .world-vignette::after { background: radial-gradient(ellipse 46% 80% at 26% 44%, transparent 38%, rgb(8 11 8 / 0.5) 78%, rgb(8 11 8 / 0.82) 100%); } }
 @media (prefers-reduced-motion: reduce) { .world-vignette::after { transition: none; } }
+/* A lit room needs only a faint dark edge, at rest and in a talk. */
+.world-scene[data-vignette="Light"] .world-vignette { background: radial-gradient(ellipse 80% 76% at 50% 50%, transparent 60%, rgb(8 11 8 / 0.3) 100%); }
+.world-scene[data-vignette="Light"] .world-vignette::after { background: radial-gradient(ellipse 64% 68% at 50% 34%, transparent 46%, rgb(8 11 8 / 0.3) 100%); }
 /* A journey to another set darkens the whole picture. The scene sets how dark, frame by frame. */
 .world-dark { position: absolute; inset: 0; pointer-events: none; background: var(--color-night); }
 .world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: default; touch-action: none; }

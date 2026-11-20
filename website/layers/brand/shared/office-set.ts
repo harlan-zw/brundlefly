@@ -82,5 +82,8 @@ export const officeSet: SceneSet = {
   background: '#080B08',
   fog: { _tag: 'None' },
   effects: ['WetEnvironment'],
+  // White tubes light him from above: his skin is nearer its own colour than in the cave, and his shadows are clear on the bright floor.
+  mascot: { shading: { tint: [0.84, 0.8, 0.78], occlusion: 1.3, untinted: ['Brundlefly-wing'] }, key: { colour: '#E9F0E4', rest: 2.5, talk: 9 },
+    rim: { colour: '#9CC8C4', rest: 0, talk: 2 }, shadow: { body: 0.62, foot: 0.86 }, vignette: 'Light' },
   load: loadOffice,
 }

@@ -1,11 +1,12 @@
 import type { Object3D, Vector3 } from 'three'
 import type { MannerismTag } from './mannerism.ts'
+import type { MeshShading } from './mascot-mesh.ts'
 import type { SceneQuality } from './scene-quality.ts'
 import type { SceneSettings } from './scene-settings.ts'
 
 /**
  * A set is the place the mascot stands in. The scene owns the mascot, the camera, and the conversation. The set owns everything else.
- * The scene can change the set while it runs. The mascot is the same in every set, so a set lights him and never reshades him.
+ * The scene can change the set while it runs. The mascot is one model in every set. A set names how he looks in it, and the scene applies that each time it raises the set.
  */
 export type SetName = 'lair' | 'office'
 type Point = readonly [x: number, z: number]
@@ -42,6 +43,25 @@ export type SetEffect = 'Finish' | 'FloorMirror' | 'WetEnvironment'
 /** The world points his habits and dialogue beats look at. `eggs` holds one point or more, and he looks at the nearest. */
 export type SetCues = { light: Vector3, eggs: readonly Vector3[], ceiling: (from: Vector3) => Vector3 }
 
+/** A stage light of his: its colour, its level between talks, and the level a close shot adds. */
+export type StageLight = { colour: string, rest: number, talk: number }
+
+/**
+ * How a set shows the mascot. Each set lights him as it lights its own room, so he reads as a part of it.
+ * The scene applies this when the set rises: at the first build, and after every journey.
+ */
+export type SetMascot = {
+  /** The tint and the occlusion of the full-bodied model. */
+  shading: MeshShading
+  /** The key stands above his face, on the side he faces. The rim edges him on his far side. */
+  key: StageLight
+  rim: StageLight
+  /** How dark his shadows are, from 0 to 1: the patch under his body, and the patch under each planted foot. */
+  shadow: { body: number, foot: number }
+  /** The dark edge of the picture. A dark set holds the eye with it. A lit room needs little. */
+  vignette: 'Heavy' | 'Light'
+}
+
 /** `time` is scene time in seconds. It stands still under reduced motion, so a set that follows it stands still too. */
 export type SetInput = { time: number, pressure: number, settings: SceneSettings }
 
@@ -61,5 +81,6 @@ export type SceneSet = {
   background: string
   fog: SetFog
   effects: readonly SetEffect[]
+  mascot: SetMascot
   load: () => Promise<SetArt>
 }

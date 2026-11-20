@@ -139,19 +139,20 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
   const hand = art.model.getObjectByName('second-hand')
   const beacon = art.model.getObjectByName('beacon')
 
-  // His lights. The sky light fills him as the tubes fill the room, and one light from above shapes him.
-  const sky = new HemisphereLight(new Color('#F2EEDC'), new Color('#777648'), 1)
-  const sun = new DirectionalLight(new Color('#FFF4DC'), 1)
-  sun.position.set(-2.5, 6, 5)
-  sun.target.position.set(0, -1, -1)
+  // His lights. The room takes none of them. They light him as the baked tubes light the room: flat and cool, from above.
+  // The sky light is the tubes' fill, and its ground colour is the light that the lino throws back up.
+  const sky = new HemisphereLight(new Color('#E6EFE4'), new Color('#7C7A56'), 1)
+  const tubes = new DirectionalLight(new Color('#F1F6EC'), 1)
+  tubes.position.set(0.4, 6, 1.2)
+  tubes.target.position.set(0, -1, -0.6)
   // The failing tube lights him from above, so its flicker shows on him.
-  const lamp = new PointLight(new Color('#FFF1CF'), 1, 9, 1.6)
+  const lamp = new PointLight(new Color('#FFF6DF'), 1, 9, 1.6)
   lamp.position.set(plan.cues.ceiling[0], plan.cues.ceiling[1] - 0.25, plan.cues.ceiling[2])
   // Cold light leaks from the test chamber. It is the only strong teal in the room.
   const leak = new PointLight(new Color('#418B90'), 1, 8, 1.6)
   leak.position.set(plan.cues.light[0], plan.cues.light[1], plan.room.minZ - 1.2)
-  root.add(sky, sun, sun.target, lamp, leak)
-  const levels = { sky: 1.9, sun: 1.5, lamp: 9, leak: 16 }
+  root.add(sky, tubes, tubes.target, lamp, leak)
+  const levels = { sky: 1.15, tubes: 1.5, lamp: 7, leak: 9 }
 
   return {
     root,
@@ -160,7 +161,7 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
       const ambient = settings.ambient / defaultSceneSettings.ambient
       uniforms.uGain.value = art.lightMax * ambient
       sky.intensity = levels.sky * ambient
-      sun.intensity = levels.sun * settings.key / defaultSceneSettings.key
+      tubes.intensity = levels.tubes * settings.key / defaultSceneSettings.key
       const glow = tubeFlicker(time) * settings.inner / defaultSceneSettings.inner
       uniforms.uFlicker.value = glow
       lamp.intensity = levels.lamp * glow
