@@ -1,6 +1,6 @@
 import { persona } from './persona.generated.ts'
 import { skills } from '../shared/content.ts'
-import { beats, dialogueCopy, linkIds, moods, openingIndex, openingReply, ordinal, parseDialogueInput, parseDialogueReply } from '../shared/conversation.ts'
+import { beats, dialogueCopy, linkIds, moods, ordinal, parseDialogueInput, parseDialogueReply } from '../shared/conversation.ts'
 import type { ConversationReply, DialogueInput, Result } from '../shared/conversation.ts'
 
 export const MODEL = 'openai/gpt-6-luna'
@@ -47,8 +47,11 @@ const visit = async (request: Request, env: Env, now: number) => {
   ])
   const visitor = await env.DIALOGUE_DB.prepare('SELECT ordinal FROM visitors WHERE day = ? AND session = ?').bind(day, session).first<{ ordinal: number }>()
   if (!visitor) return failure(429, dialogueCopy.limit)
+  // A return visit is a visitor row for this session from an earlier day. The server stores no conversations.
+  const earlier = await env.DIALOGUE_DB.prepare('SELECT 1 AS seen FROM visitors WHERE session = ? AND day < ? LIMIT 1').bind(session, day).first<{ seen: number }>()
   const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : ''
-  return json({ greeting: openingReply(visitor.ordinal), opening: openingIndex(visitor.ordinal) }, 200, { 'Set-Cookie': `${COOKIE}=${session}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=86400${secure}` })
+  // The browser renders the greeting from these two facts, because some openings depend on facts that never leave it.
+  return json({ ordinal: visitor.ordinal, returning: earlier !== null }, 200, { 'Set-Cookie': `${COOKIE}=${session}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=86400${secure}` })
 }
 
 // Live turns allowed in one UTC day: in total, for one session, and for one network address.

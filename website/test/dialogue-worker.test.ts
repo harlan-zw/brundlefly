@@ -15,14 +15,19 @@ test('visitor assignment is atomic, preserves a session, and enforces quota befo
     const schema = await readFile(new URL('../worker/schema.sql', import.meta.url), 'utf8')
     await env.DIALOGUE_DB.batch(schema.split(';').filter(value => value.trim()).map(value => env.DIALOGUE_DB.prepare(value)))
     const replies = await Promise.all(Array.from({ length: 8 }, () => handleApi(new Request('https://example.test/api/visit'), env)))
-    const greetings = await Promise.all(replies.map(response => response.clone().json() as Promise<{ greeting: { text: string } }>))
-    assert.equal(new Set(greetings.map(value => value.greeting.text)).size, 8)
+    const greetings = await Promise.all(replies.map(response => response.clone().json() as Promise<{ ordinal: number, returning: boolean }>))
+    assert.deepEqual(greetings.map(value => value.ordinal).sort((a, b) => a - b), [1, 2, 3, 4, 5, 6, 7, 8])
+    assert.ok(greetings.every(value => !value.returning), 'A first visit is never a return.')
     const cookie = replies[0]!.headers.get('set-cookie')!.split(';')[0]!
     const repeated = await handleApi(new Request('https://example.test/api/visit', { headers: { Cookie: cookie } }), env)
     assert.deepEqual(await repeated.json(), greetings[0])
     assert.match(repeated.headers.get('set-cookie')!, /HttpOnly; SameSite=Strict; Max-Age=86400; Secure/)
     const session = cookie.split('=')[1]!
     const day = new Date().toISOString().slice(0, 10)
+    // A visitor row from an earlier day makes this session a return visit. Its count for today stays.
+    await env.DIALOGUE_DB.prepare('INSERT INTO visitors VALUES (?, ?, ?)').bind(new Date(Date.now() - 86400_000).toISOString().slice(0, 10), session, 1).run()
+    const back = await handleApi(new Request('https://example.test/api/visit', { headers: { Cookie: cookie } }), env)
+    assert.deepEqual(await back.json(), { ...greetings[0], returning: true })
     await env.DIALOGUE_DB.batch(Array.from({ length: 40 }, (_, index) => env.DIALOGUE_DB.prepare('INSERT INTO turns VALUES (?, ?, ?, ?, ?)').bind(`turn-${index}`, day, session, 'fixture', Date.now() - 60000)))
     const limited = await handleApi(new Request('https://example.test/api/dialogue', { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Are you all right?', history: [] }) }), env)
     assert.equal(limited.status, 429)

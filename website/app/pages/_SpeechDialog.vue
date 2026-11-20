@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { onClickOutside, useEventListener, useMediaQuery, usePreferredReducedMotion, useRafFn, useResizeObserver, useScroll, useTimeoutFn } from '@vueuse/core'
-import { dialogueCopy } from '#shared/conversation'
-import type { ConversationHistoryMessage, ConversationReply } from '#shared/conversation'
+import { chooseOpening, dialogueCopy, fallbackLine, listeningLine, parseVisit } from '#shared/conversation'
+import type { ConversationHistoryMessage, ConversationReply, FallbackLine } from '#shared/conversation'
 import presetData from '#shared/dialogue-presets.generated.json'
 import { choiceNeedsInput, parsePresetGraph, resolveOpeningPreset, resolvePresetChoice } from '#shared/preset-dialogue'
 import type { ConversationTurn } from '#shared/preset-dialogue'
@@ -10,16 +10,33 @@ import { breathGroups, groupsSaid, revealTimes } from '#shared/line-reveal'
 import { voiceDuration } from '#shared/scene-audio'
 
 const { open, muted = false, soundAvailable = true } = defineProps<{ open: boolean, muted?: boolean, soundAvailable?: boolean }>()
-const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: ConversationReply], pending: [value: boolean] }>()
+const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: Pick<ConversationReply, 'mood' | 'beat'>], pending: [value: boolean] }>()
 const dialog = shallowRef<HTMLDialogElement>()
 const input = shallowRef<HTMLTextAreaElement>()
 const conversation = shallowRef<HTMLElement>()
 const choiceList = shallowRef<HTMLOListElement>()
 const ownChoice = shallowRef<HTMLButtonElement>()
 const text = ref('')
-const error = ref('')
+// What went wrong. Each kind has one plain sentence. A missing reply also has a line he says, and a retry.
+type Failure = { _tag: 'None' } | { _tag: 'Input', message: string } | { _tag: 'NoReply', kind: 'visit' | 'dialogue', line: FallbackLine }
+  | { _tag: 'Limit', kind: 'visit' | 'dialogue' } | { _tag: 'Expired' }
+const failure = shallowRef<Failure>({ _tag: 'None' })
+const error = computed(() => {
+  const failed = failure.value
+  return failed._tag === 'None' ? '' : failed._tag === 'Input' ? failed.message : failed._tag === 'Limit' ? dialogueCopy.limit
+    : failed._tag === 'Expired' ? dialogueCopy.expired : failed.kind === 'visit' ? dialogueCopy.failedGreeting : dialogueCopy.failure
+})
+// The request that “Try again” repeats. A limited reply has none: the visitor waits, then sends.
+const retry = computed(() => {
+  const failed = failure.value
+  return failed._tag === 'NoReply' ? failed.kind : failed._tag === 'Expired' || (failed._tag === 'Limit' && failed.kind === 'visit') ? 'visit' as const : undefined
+})
+const failures = { visit: 0, dialogue: 0 }
+let liveTurns = 0
 const turn = shallowRef<ConversationTurn>({ _tag: 'Empty' })
 const reply = computed(() => turn.value._tag === 'Empty' ? undefined : turn.value.reply)
+// The line on show: his reply, or the line he says when no reply came back.
+const spoken = computed(() => failure.value._tag === 'NoReply' ? failure.value.line : reply.value)
 const presets = parsePresetGraph(presetData)
 if (presets._tag === 'Err') console.error(presets.message)
 // The AI notice previews on hover. A press pins it open until the next press, a press elsewhere, or Escape.
@@ -30,11 +47,12 @@ onClickOutside(noticeAnchor, () => { notice.value = false })
 const mode = ref<'Choices' | 'Compose'>('Choices')
 const history = ref<ConversationHistoryMessage[]>([])
 const visited = ref(false)
-const request = shallowRef<{ _tag: 'Idle' } | { _tag: 'Pending', controller: AbortController, chosen: number | undefined }
+const request = shallowRef<{ _tag: 'Idle' } | { _tag: 'Pending', controller: AbortController, chosen: number | undefined, listening: string }
   | { _tag: 'PresetPending', next: Extract<ConversationTurn, { _tag: 'Preset' }>, text: string, chosen: number }>({ _tag: 'Idle' })
 // The choice the visitor made stays lit while he takes it in. Typed text stays in its field instead.
 const chosen = computed(() => request.value._tag === 'Idle' ? undefined : request.value.chosen)
-const failedVisit = ref(false)
+// The server refuses a second request from one session inside two seconds. The send and retry controls wait that long.
+const { isPending: cooling, start: cool } = useTimeoutFn(() => {}, 2000, { immediate: false })
 const touchScreen = useMediaQuery('(pointer: coarse)')
 const reduced = usePreferredReducedMotion()
 // On touch screens, focus opens the keyboard over the reply. Visitors tap the field when they want to type.
@@ -47,12 +65,12 @@ const focusReply = () => {
 // Phones hide scrollbars. A fade marks reply text or choices below the fold.
 const { arrivedState, measure } = useScroll(conversation)
 useResizeObserver(conversation, measure)
-watch([reply, () => request.value._tag, mode], measure, { flush: 'post' })
+watch([spoken, () => request.value._tag, mode], measure, { flush: 'post' })
 
 // His line arrives in breath-sized groups over the length of his voice. The whole line is laid out from the start, so the pocket keeps its size.
 const line = computed(() => {
-  const groups = reply.value ? breathGroups(reply.value.text) : []
-  return { groups, times: revealTimes(groups, voiceDuration('reply', reply.value?.text.length ?? 0)) }
+  const groups = spoken.value ? breathGroups(spoken.value.text) : []
+  return { groups, times: revealTimes(groups, voiceDuration('reply', spoken.value?.text.length ?? 0)) }
 })
 const said = ref(0)
 const saying = computed(() => said.value < line.value.groups.length)
@@ -63,16 +81,18 @@ const { pause: holdLine, resume: sayLine } = useRafFn(({ timestamp }) => {
 }, { immediate: false })
 // A press, a close, and reduced motion show the rest of the line at once.
 const finishLine = () => { holdLine(); said.value = line.value.groups.length }
+const startLine = () => {
+  if (reduced.value === 'reduce') finishLine()
+  else { said.value = Math.min(1, line.value.groups.length); lineStarted = 0; sayLine() }
+}
 
 // Both local and generated replies use the same history, focus, sound, and scene events.
 const present = async (next: Exclude<ConversationTurn, { _tag: 'Empty' }>, kind: 'visit' | 'dialogue', suppliedText: string) => {
   turn.value = next
-  if (reduced.value === 'reduce') finishLine()
-  else { said.value = Math.min(1, line.value.groups.length); lineStarted = 0; sayLine() }
-  error.value = ''
+  failure.value = { _tag: 'None' }
+  startLine()
   mode.value = 'Choices'
   visited.value = true
-  failedVisit.value = false
   history.value = [...history.value.slice(kind === 'dialogue' ? -6 : -7),
     ...(kind === 'dialogue' ? [{ role: 'user' as const, content: suppliedText.trim() }] : []),
     { role: 'assistant', content: next.reply.text }]
@@ -104,33 +124,51 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value, ch
   if (request.value._tag !== 'Idle') return
   const message = suppliedText.trim()
   if (kind === 'dialogue' && (!message || suppliedText.length > 1000)) {
-    error.value = message ? dialogueCopy.length : dialogueCopy.empty
+    failure.value = { _tag: 'Input', message: message ? dialogueCopy.length : dialogueCopy.empty }
     input.value?.focus()
     return
   }
   const controller = new AbortController()
-  request.value = { _tag: 'Pending', controller, chosen: choice }
-  error.value = ''
+  request.value = { _tag: 'Pending', controller, chosen: choice, listening: listeningLine(kind === 'dialogue' ? liveTurns++ : 0) }
+  // The line he said for the last failure leaves when the visitor tries again.
+  if (failure.value._tag !== 'None') { failure.value = { _tag: 'None' }; finishLine() }
+  if (kind === 'dialogue') cool()
   emit('pending', true)
+  // The browser renders the greeting. The server verifies the count and the return. The hour is this browser's own and is not sent.
   const response = kind === 'visit'
-    ? $fetch<{ greeting: ConversationReply; opening: number }>('/api/visit', { signal: controller.signal, retry: 0, timeout: 20_000 }).then(value => ({ reply: value.greeting, opening: value.opening }))
+    ? $fetch<unknown>('/api/visit', { signal: controller.signal, retry: 0, timeout: 20_000 }).then((value) => {
+        const visit = parseVisit(value)
+        return visit._tag === 'Ok' ? { _tag: 'Reply' as const, value: chooseOpening({ ...visit.value, hour: new Date().getHours() }) } : { _tag: 'Error' as const, status: undefined }
+      })
     : $fetch<{ reply: ConversationReply }>('/api/dialogue', {
         method: 'POST', signal: controller.signal, retry: 0, timeout: 20_000,
         body: { text: message, history: history.value.slice(-8) },
-      }).then(value => ({ reply: value.reply, opening: -1 }))
-  const result = await response.then(value => ({ _tag: 'Reply' as const, value })).catch((cause: unknown) => {
+      }).then(value => ({ _tag: 'Reply' as const, value: { reply: value.reply, preset: -1 } }))
+  const result = await response.catch((cause: unknown) => {
     if (controller.signal.aborted) return { _tag: 'Cancelled' as const }
-    const status = typeof cause === 'object' && cause !== null && 'statusCode' in cause ? cause.statusCode : undefined
-    return { _tag: 'Error' as const, message: status === 429 ? dialogueCopy.limit : dialogueCopy.failure, expired: status === 401 }
+    return { _tag: 'Error' as const, status: typeof cause === 'object' && cause !== null && 'statusCode' in cause ? cause.statusCode : undefined }
   })
   if (request.value._tag !== 'Pending' || request.value.controller !== controller || !open) return
   request.value = { _tag: 'Idle' }
   emit('pending', false)
   if (result._tag !== 'Reply') {
     if (result._tag === 'Error') {
-      error.value = result.message
-      failedVisit.value = kind === 'visit' || result.expired
-      if (result.expired) { visited.value = false; history.value = [] }
+      if (result.status === 401) {
+        // The session is gone, and the conversation with it.
+        failure.value = { _tag: 'Expired' }
+        visited.value = false
+        history.value = []
+        turn.value = { _tag: 'Empty' }
+      }
+      else if (result.status === 429) failure.value = { _tag: 'Limit', kind }
+      else {
+        // He says a line of his own. It is not a reply, so it stays out of the history.
+        const fallback = fallbackLine(kind, failures[kind]++)
+        failure.value = { _tag: 'NoReply', kind, line: fallback }
+        startLine()
+        emit('reaction', fallback)
+        emit('reply', fallback.text)
+      }
       mode.value = 'Compose'
     }
     await nextTick()
@@ -138,7 +176,7 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value, ch
     return
   }
   const next = kind === 'visit' && presets._tag === 'Ok'
-    ? resolveOpeningPreset(presets.value, result.value.reply, result.value.opening)
+    ? resolveOpeningPreset(presets.value, result.value.reply, result.value.preset)
     : { _tag: 'Generated' as const, reply: result.value.reply }
   if (next._tag !== 'Empty') await present(next, kind, suppliedText)
 }
@@ -160,7 +198,7 @@ watch([() => open, dialog], async ([isOpen, element]) => {
 
 // New content changes the pocket height. Easing from the old height keeps the header and seam from jumping.
 let resize: Animation | undefined
-watch([reply, () => request.value._tag, error, failedVisit, mode], async () => {
+watch([spoken, () => request.value._tag, failure, mode], async () => {
   const element = dialog.value
   if (!element?.open || reduced.value === 'reduce') return
   const from = element.getBoundingClientRect().height
@@ -199,7 +237,8 @@ const compose = async () => {
 }
 const back = async () => {
   mode.value = 'Choices'
-  error.value = ''
+  failure.value = { _tag: 'None' }
+  finishLine()
   await nextTick()
   ownChoice.value?.focus()
 }
@@ -220,7 +259,7 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
       <div ref="noticeAnchor" class="speech-name">
         <h2 id="speech-title">Brundlefly</h2>
         <button class="speech-notice" type="button" aria-label="About AI replies" :aria-expanded="notice" aria-controls="speech-scope" @click="notice = !notice"><span aria-hidden="true">!</span></button>
-        <p id="speech-scope" class="speech-scope" :class="{ 'speech-scope-open': notice }">{{ dialogueCopy.privacy }}</p>
+        <p id="speech-scope" class="speech-scope" :class="{ 'speech-scope-open': notice }">{{ dialogueCopy.privacy }} {{ dialogueCopy.visit }}</p>
       </div>
       <div class="speech-tools">
         <button v-if="soundAvailable" class="speech-sound" type="button" :aria-pressed="muted" @click="emit('sound')">{{ muted ? 'Sound on' : 'Sound off' }}</button>
@@ -228,12 +267,12 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
       </div>
     </header>
     <div ref="conversation" class="speech-conversation" :class="{ 'speech-more': !arrivedState.bottom }" aria-label="Conversation" :aria-busy="request._tag !== 'Idle'" @click="finishLine">
-      <p v-if="reply" class="speech-utterance"><span v-for="(group, index) in line.groups" :key="index" :class="{ 'speech-unsaid': index >= said }">{{ group }}</span></p>
-      <p v-if="reply?.beat" class="speech-beat" aria-label="Brundlefly's movement">{{ reply.beat }}</p>
-      <div v-if="reply?.links.length" class="speech-links">
+      <p v-if="spoken" class="speech-utterance"><span v-for="(group, index) in line.groups" :key="index" :class="{ 'speech-unsaid': index >= said }">{{ group }}</span></p>
+      <p v-if="spoken?.beat" class="speech-beat" aria-label="Brundlefly's movement">{{ spoken.beat }}</p>
+      <div v-if="reply?.links.length && failure._tag !== 'NoReply'" class="speech-links">
         <a v-for="link in reply.links" :key="link.href" :href="link.href" :download="link.download || undefined">{{ link.label }}</a>
       </div>
-      <p v-if="request._tag === 'Pending'" class="speech-pending" role="status">{{ dialogueCopy.loading }}</p>
+      <p v-if="request._tag === 'Pending'" class="speech-pending" role="status">{{ request.listening }}</p>
       <ol v-if="reply && mode === 'Choices'" ref="choiceList" class="speech-choices" :class="{ 'speech-waiting': saying }" aria-label="Your reply">
         <li v-for="(choice, index) in reply.choices" :key="`${index}:${choice}`">
           <button type="button" :class="{ 'speech-chosen': chosen === index }" :disabled="request._tag !== 'Idle'" @click="choose(choice, index, $event.detail > 0)"><span aria-hidden="true">{{ index + 1 }}.</span>{{ choice }}</button>
@@ -243,14 +282,14 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
         </li>
       </ol>
     </div>
-    <p class="speech-announcement" role="status" aria-live="polite" aria-atomic="true">{{ reply?.text }}</p>
+    <p class="speech-announcement" role="status" aria-live="polite" aria-atomic="true">{{ spoken?.text }}</p>
     <form v-if="mode === 'Compose'" @submit.prevent="receive('dialogue')">
       <label class="speech-label" for="speech-input">Your text</label>
       <div class="speech-compose">
         <button v-if="reply" class="speech-back" type="button" @click="back">Back</button>
-        <textarea id="speech-input" ref="input" v-model="text" rows="1" maxlength="1000" placeholder="Your text" :aria-invalid="Boolean(error)" :aria-describedby="error ? 'speech-error' : undefined" @input="error = ''" />
-        <button v-if="failedVisit" class="speech-retry" type="button" :disabled="request._tag !== 'Idle'" @click="receive('visit')">Try again</button>
-        <button class="speech-send" type="submit" :disabled="request._tag !== 'Idle'">Send</button>
+        <textarea id="speech-input" ref="input" v-model="text" rows="1" maxlength="1000" placeholder="Your text" :aria-invalid="Boolean(error)" :aria-describedby="error ? 'speech-error' : undefined" @input="failure._tag === 'Input' && (failure = { _tag: 'None' })" />
+        <button v-if="retry" class="speech-retry" type="button" :disabled="request._tag !== 'Idle' || cooling" @click="receive(retry)">Try again</button>
+        <button class="speech-send" type="submit" :disabled="request._tag !== 'Idle' || cooling">Send</button>
       </div>
       <p v-if="error" id="speech-error" class="speech-error" role="alert">{{ error }}</p>
     </form>

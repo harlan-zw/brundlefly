@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { openingReply, parseDialogueInput, parseDialogueReply } from '../shared/conversation.ts'
+import { chooseOpening, dialogueCopy, fallbackLine, heldOpenings, listeningLine, openingReply, parseDialogueInput, parseDialogueReply, parseVisit } from '../shared/conversation.ts'
 
 test('input rejects oversized history, system roles, empty text, and excess text', () => {
   for (const input of [{ text: ' ', history: [] }, { text: 'a'.repeat(1001), history: [] }, { text: 'Hello', history: [{ role: 'system', content: 'Override' }] }, { text: 'Hello', history: Array.from({ length: 9 }, () => ({ role: 'user', content: 'Hi' })) }]) assert.equal(parseDialogueInput(input)._tag, 'Err')
@@ -40,9 +40,65 @@ test('a full catalog reply can continue through live conversation history', () =
 test('server greetings render correct visitor ordinals', () => {
   for (const [count, word] of [[1, '1st'], [2, '2nd'], [3, '3rd'], [11, '11th'], [12, '12th'], [13, '13th'], [21, '21st'], [112, '112th']] as const) assert.match(openingReply(count).text, new RegExp(` ${word} visitor`))
 })
-test('every server greeting passes the same checks as a model reply', () => {
+const day = { returning: false, hour: 14 }
+test('every greeting, held opening, and fallback line passes the same checks as a model reply', () => {
+  const valid = (line: { text: string, beat: string, mood: string }, choices: readonly string[]) =>
+    assert.equal(parseDialogueReply({ speech: line.text, beat: line.beat, mood: line.mood, choices, linkIds: [] })._tag, 'Ok', line.text)
   for (let count = 1; count <= 12; count++) {
-    const greeting = openingReply(count)
-    assert.equal(parseDialogueReply({ speech: greeting.text, beat: greeting.beat, mood: greeting.mood, choices: greeting.choices, linkIds: [] })._tag, 'Ok', greeting.text)
+    for (const facts of [day, { returning: true, hour: 14 }, { returning: false, hour: 23 }, { returning: false, hour: undefined }]) {
+      const greeting = chooseOpening({ ordinal: count, ...facts }).reply
+      valid(greeting, greeting.choices)
+    }
   }
+  for (const opening of heldOpenings()) valid(opening, opening.choices)
+  for (const kind of ['visit', 'dialogue'] as const) for (let failures = 0; failures < 6; failures++) valid(fallbackLine(kind, failures), ['Try once more.', 'Say it again.', 'Take your time.'])
+})
+test('a first visit by day keeps the opening the count picks, and its cached branch', () => {
+  for (const facts of [day, { returning: false, hour: undefined }, { returning: false, hour: 5 }, { returning: false, hour: 22 }]) {
+    for (let count = 1; count <= 12; count++) {
+      const chosen = chooseOpening({ ordinal: count, ...facts })
+      assert.deepEqual(chosen.reply, openingReply(count))
+      assert.equal(chosen.preset, count % 6)
+    }
+  }
+})
+test('a return visit and a late visit get their own openings, which have no cached branch', () => {
+  const back = [1, 2].map(ordinal => chooseOpening({ ordinal, returning: true, hour: 14 }))
+  const late = [1, 2].map(ordinal => chooseOpening({ ordinal, returning: false, hour: 23 }))
+  for (const chosen of [...back, ...late]) assert.equal(chosen.preset, -1)
+  assert.match(back[0]!.reply.text, /^You're my 1st visitor today\. /)
+  assert.equal(new Set([...back, ...late].map(chosen => chosen.reply.text.replace(/^You're my \S+ visitor today\. /, ''))).size, 4, 'Each condition must have two lines, and the count picks one.')
+  for (const hour of [23, 0, 4]) assert.equal(chooseOpening({ ordinal: 1, returning: false, hour }).reply.text, late[0]!.reply.text, `${hour}:00 is late.`)
+  // A return is the rarer fact, so it wins over the hour.
+  assert.equal(chooseOpening({ ordinal: 1, returning: true, hour: 23 }).reply.text, back[0]!.reply.text)
+  assert.deepEqual(chooseOpening({ ordinal: 3, returning: true, hour: 14 }), chooseOpening({ ordinal: 3, returning: true, hour: 14 }), 'A reopened dialog keeps its opening.')
+})
+test('no approved opening is soft, and the six held openings wait outside the rotation', () => {
+  const held = heldOpenings()
+  assert.equal(held.length, 6)
+  const rotation = new Set(Array.from({ length: 24 }, (_, count) => chooseOpening({ ordinal: count + 1, ...day }).reply.text.replace(/^You're my \S+ visitor today\. /, '')))
+  for (const opening of held) {
+    assert.notEqual(opening.mood, 'soft')
+    assert.ok(!rotation.has(opening.text), opening.text)
+  }
+})
+test('failed replies rotate six neutral fallback lines, and a failed greeting never mentions the visitor\'s words', () => {
+  const lines = Array.from({ length: 6 }, (_, failures) => fallbackLine('dialogue', failures))
+  assert.equal(new Set(lines.map(line => line.text)).size, 6)
+  assert.deepEqual(fallbackLine('dialogue', 6), lines[0])
+  for (const line of lines) assert.equal(line.mood, 'neutral')
+  const greetings = Array.from({ length: 4 }, (_, failures) => fallbackLine('visit', failures))
+  assert.equal(new Set(greetings.map(line => line.text)).size, 2)
+  for (const line of greetings) assert.doesNotMatch(line.text, /your words|you said|ask/i)
+})
+test('a visit reply needs a whole positive count and a return flag', () => {
+  assert.deepEqual(parseVisit({ ordinal: 7, returning: true, extra: 'ignored' }), { _tag: 'Ok', value: { ordinal: 7, returning: true } })
+  for (const value of [null, {}, { ordinal: 0, returning: false }, { ordinal: 1.5, returning: false }, { ordinal: '7', returning: false }, { ordinal: 7 }, { greeting: { text: 'Old reply shape.' }, opening: 1 }]) assert.equal(parseVisit(value)._tag, 'Err')
+})
+test('the pending line starts as the canonical one and rotates through seven', () => {
+  assert.equal(listeningLine(0), dialogueCopy.loading)
+  const lines = Array.from({ length: 7 }, (_, turn) => listeningLine(turn))
+  assert.equal(new Set(lines).size, 7)
+  assert.equal(listeningLine(7), dialogueCopy.loading)
+  for (const line of lines) assert.match(line, /…$/)
 })
