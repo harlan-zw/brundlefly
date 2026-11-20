@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { checkOfficePlan, meshBody, officePlan } from '../layers/brand/shared/office-layout.ts'
+import { checkOfficePlan, checkWalkedPath, meshBody, officePlan } from '../layers/brand/shared/office-layout.ts'
 import type { OfficePlan, OfficeProp, PlanRules } from '../layers/brand/shared/office-layout.ts'
+import { frame, meshCadence, meshWalk, startWalk, stepWalk, walkSets } from './walk-sim.ts'
+import type { Point, Walk } from './walk-sim.ts'
 
 // The cameras of the scene at its default zoom, and the close shot on both sides.
 const rules: PlanRules = { body: meshBody, legClearance: 0.3, stopClearance: 0.4, readable: ['monitor', 'whiteboard'], viewpoints: [
@@ -88,4 +90,62 @@ test('his way to the door must be clear from the start point and from every stop
   // The door's own point keeps clear of the door, the jars, and the vending machine.
   const tight = checkOfficePlan({ ...officePlan, exit: [3.6, -1.6] }, rules).filter(problem => problem._tag === 'ExitBlocked').map(problem => problem.prop)
   assert.ok(tight.includes('jar-shelf') && tight.includes('door'))
+})
+
+/**
+ * Every place he walks in the office: two laps of his loop, his way in from the door, and his way out to the door from every half second of a lap.
+ * A journey can begin at any moment, and he turns to the door in a curve, so the straight walks from the stops do not bound it.
+ */
+function walkedPath() {
+  const { start, exit, route, pauses } = walkSets.office
+  const cadence = meshCadence(0.71)
+  const path: Point[] = []
+  const journey = { route: [exit], pauses: [600], walkSpeed: meshWalk.speed * meshWalk.journey, cadence }
+  const leave = (from: Walk) => {
+    let walk: Walk = { ...from, stroll: { ...from.stroll, destination: 0, activity: { _tag: 'Walking' } } }
+    for (let elapsed = 0; elapsed < 12 && walk.stroll.activity._tag === 'Walking'; elapsed += frame) {
+      walk = stepWalk(walk, journey)
+      path.push(walk.stroll.position)
+    }
+    assert.equal(walk.stroll.activity._tag, 'Pausing', 'Every journey must reach the door.')
+  }
+  let walk = startWalk(start)
+  let laps = 0, sinceJourney = 0, wasPausing = false
+  while (laps < 2) {
+    walk = stepWalk(walk, { route, pauses, cadence })
+    path.push(walk.stroll.position)
+    sinceJourney += frame
+    if (sinceJourney >= 0.5) { sinceJourney = 0; leave(walk) }
+    const pausing = walk.stroll.activity._tag === 'Pausing'
+    if (pausing && !wasPausing && walk.stroll.activity._tag === 'Pausing' && walk.stroll.activity.waypoint === route.length - 1) laps++
+    wasPausing = pausing
+  }
+  // He comes in from the door at the speed of a journey.
+  let arriving = startWalk(exit)
+  for (let elapsed = 0; elapsed < 12 && arriving.stroll.activity._tag === 'Walking'; elapsed += frame) {
+    arriving = stepWalk(arriving, { route: [start], pauses: [600], walkSpeed: meshWalk.speed * meshWalk.journey, cadence })
+    path.push(arriving.stroll.position)
+  }
+  return path
+}
+
+test('the path he really walks, with its curves and every journey to the door, keeps clear of every prop', () => {
+  const path = walkedPath()
+  assert.ok(path.length > 5000, 'The path must hold his laps and his journeys.')
+  assert.deepEqual(checkWalkedPath(officePlan, rules, path), [])
+  // His curves stay close to the straight legs: he never swings wide of the room he was given.
+  for (const [x, z] of path) assert.ok(x > -1.3 && x < 3.2 && z > -1.25 && z < 1, `He walked to ${x.toFixed(2)}, ${z.toFixed(2)}.`)
+})
+
+test('a prop beside a curve of his path is reported with the point that comes nearest it', () => {
+  // A crate behind the first stop, clear of the straight legs by the leg clearance and a hair.
+  const crowded = withProp(crate('crate', -0.9, -0.95 - meshBody.reach - 0.3 - 0.3 - 0.005))
+  assert.ok(!checkOfficePlan(crowded, rules).some(problem => problem._tag === 'RouteBlocked'))
+  const path: Point[] = [[-0.9, -0.95], [-0.5, -0.97], [0, -0.95]]
+  const problems = checkWalkedPath(crowded, rules, path)
+  assert.equal(problems.length, 1)
+  const blocked = problems[0]!
+  assert.ok(blocked._tag === 'PathBlocked' && blocked.prop === 'crate' && blocked.at[0] === -0.5 && blocked.clearance < 0.3 && blocked.clearance > 0.25)
+  // A path of the straight legs only is clear of it.
+  assert.deepEqual(checkWalkedPath(crowded, rules, [[-0.9, -0.95], [0.9, -0.95]]), [])
 })

@@ -103,6 +103,8 @@ export type PlanProblem =
   | { _tag: 'StopCrowded', prop: string, stop: number, clearance: number }
   /** `from` is the stop he leaves from, or the start point. */
   | { _tag: 'ExitBlocked', prop: string, from: number | 'start', clearance: number }
+  /** `at` is the point of his walked path that comes nearest the prop. */
+  | { _tag: 'PathBlocked', prop: string, at: Point, clearance: number }
   | { _tag: 'SightlineBlocked', prop: string, stop: number, viewpoint: string }
   | { _tag: 'Unreadable', prop: string, viewpoint: string, reason: 'faces-away' | 'missing' | { hiddenBy: string } }
 
@@ -147,6 +149,26 @@ function walkDistance(box: Bounds, from: Point, to: Point) {
   // The nearest pair of points has an end of the walk, or a corner of the footprint.
   const corners: Point[] = [[box.min[0], box.min[2]], [box.min[0], box.max[2]], [box.max[0], box.min[2]], [box.max[0], box.max[2]]]
   return Math.min(footprintDistance(box, from), footprintDistance(box, to), ...corners.map(([x, z]) => footprintDistance(box, nearest(x, z))))
+}
+
+/**
+ * Judges the path he really walks. He leaves a stop in a curve and turns to the way out in a curve, so his path is not the straight legs
+ * that `checkOfficePlan` judges. `path` holds points along it, close together. Each must keep the leg clearance from every prop he could touch.
+ * A prop is reported once, with the point that comes nearest it.
+ */
+export function checkWalkedPath(plan: OfficePlan, rules: PlanRules, path: readonly Point[]): PlanProblem[] {
+  const problems: PlanProblem[] = []
+  for (const prop of plan.props) {
+    const box = bounds(prop)
+    if (box.min[1] >= plan.room.floorY + rules.body.height) continue
+    let nearest: { at: Point, clearance: number } | undefined
+    for (const at of path) {
+      const clearance = footprintDistance(box, at) - rules.body.reach
+      if (!nearest || clearance < nearest.clearance) nearest = { at, clearance }
+    }
+    if (nearest && nearest.clearance < rules.legClearance - slack) problems.push({ _tag: 'PathBlocked', prop: prop.id, ...nearest })
+  }
+  return problems
 }
 
 const normals: Record<Facing, Place> = { '+x': [1, 0, 0], '-x': [-1, 0, 0], '+z': [0, 0, 1], '-z': [0, 0, -1] }
