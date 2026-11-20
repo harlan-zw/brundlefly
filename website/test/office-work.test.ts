@@ -4,6 +4,7 @@ import { officePlan } from '../layers/brand/shared/office-layout.ts'
 import { keyTaps, mannerismDuration, markerStrokes, poseMannerisms, roundHabits } from '../layers/brand/shared/mannerism.ts'
 import { advanceTurn, settleTurn, startStroll, startTurn, workLimit } from '../layers/brand/shared/mascot-stroll.ts'
 import type { Stroll } from '../layers/brand/shared/mascot-stroll.ts'
+import { headCounterTurn, neckLimit } from '../layers/brand/shared/mascot-mesh.ts'
 
 const turning = { walkSpeed: 1, rest: 0.5, limit: 1.3, attention: 'free' as const }
 const standingAt = (waypoint: number): Stroll => ({ ...startStroll([0, 0], waypoint), activity: { _tag: 'Pausing', remaining: 5, duration: 6, waypoint, age: 1 } })
@@ -84,4 +85,24 @@ test('he writes four lines on the board, and lifts the writing arm higher than f
   assert.equal(board['left-shoulder'], undefined)
   const desk = officePlan.stops.find(stop => stop.alternate === 'WriteBoard')
   assert.ok(desk && desk.facing !== undefined && mannerismDuration({ _tag: 'WriteBoard' }) < desk.pause)
+})
+
+test('his head stays on the viewer up to the neck limit, and goes with his body when he turns to his work', () => {
+  // Inside the walking limit the head undoes the whole turn, as before.
+  for (const heading of [-1.3, -0.6, 0, 0.5, 1.3]) assert.ok(Math.abs(headCounterTurn(heading, 0) - heading) < 1e-9)
+  // At a station the neck does not twist: the head keeps only a small turn back to the viewer.
+  for (const heading of [2.3, -2.35, 2.5]) {
+    const counter = headCounterTurn(heading, 0)
+    assert.ok(Math.abs(counter) <= 0.25 && Math.sign(counter) === Math.sign(heading), `the neck twists ${counter} at ${heading}`)
+  }
+  // No heading asks more of the neck than its limit, and the turn has no jump.
+  let last = headCounterTurn(-3, 0)
+  for (let heading = -3; heading <= 3; heading += 0.01) {
+    const counter = headCounterTurn(heading, 0)
+    assert.ok(Math.abs(counter) <= neckLimit + 1e-9)
+    assert.ok(Math.abs(counter - last) < 0.03, `the head jumps ${counter - last} at ${heading}`)
+    last = counter
+  }
+  // While he walks the head keeps half of the turn.
+  assert.ok(Math.abs(headCounterTurn(1, 1) - 0.5) < 1e-9)
 })

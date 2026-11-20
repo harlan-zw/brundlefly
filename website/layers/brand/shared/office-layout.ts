@@ -25,7 +25,11 @@ type PropShape =
 export type OfficeProp = PropShape & { id: string, position: Place, size: Place, facing: Facing, rests: 'floor' | 'wall' | 'ceiling' | { on: string } }
 /** `facing` turns him to his work at the stop, as a turn about the vertical: zero faces the viewer, a positive turn is to screen right. */
 /** `alternate` is a second habit for the stop. He performs it on every second visit. */
-export type OfficeStop = { position: Point, pause: number, habit: MannerismTag, facing?: number, alternate?: MannerismTag }
+/**
+ * `works` names the furniture he works at from the stop, by id. He stands at it within reach of his arms, which pass over it.
+ * The checks then keep only his trunk and his legs clear of that furniture and of what stands on it.
+ */
+export type OfficeStop = { position: Point, pause: number, habit: MannerismTag, facing?: number, alternate?: MannerismTag, works?: readonly string[] }
 export type OfficePlan = {
   room: { minX: number, maxX: number, minZ: number, maxZ: number, floorY: number, ceilingY: number }
   props: readonly OfficeProp[]
@@ -99,8 +103,8 @@ export const officePlan: OfficePlan = {
   // At the two stations he turns to his work, so the viewer sees his shoulder and his hands on it. He stays there longest.
   stops: [
     // The whiteboard hangs above the desk. On every second round he writes on it and leaves the keys.
-    { position: [-0.9, -0.95], pause: 7.5, habit: 'TypeKeys', facing: -2.35, alternate: 'WriteBoard' },
-    { position: [0.9, -0.95], pause: 6.5, habit: 'TendJar', facing: 2.3 },
+    { position: [-0.9, -1.5], pause: 7.5, habit: 'TypeKeys', facing: -2.35, alternate: 'WriteBoard', works: ['desk'] },
+    { position: [0.9, -1.5], pause: 6.5, habit: 'TendJar', facing: 2.3, works: ['jar-shelf'] },
     { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
     { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
   ],
@@ -113,11 +117,11 @@ export const officePlan: OfficePlan = {
 
 /**
  * His body for the checks. `reach` is the furthest any part of him gets from his own vertical axis, so a disc of that radius holds him at every turn.
- * `width` and `height` are his box as the camera sees him.
+ * `width` and `height` are his box as the camera sees him. `torso` is the furthest his trunk and his legs get from that axis: his long arms reach past it.
  */
-export type PlanBody = { reach: number, width: number, height: number }
+export type PlanBody = { reach: number, width: number, height: number, torso: number }
 /** Measured on the mesh mascot at the scene's scale, in his rest pose. */
-export const meshBody: PlanBody = { reach: 1.65, width: 2.55, height: 3.15 }
+export const meshBody: PlanBody = { reach: 1.65, width: 2.55, height: 3.15, torso: 1 }
 
 /** A camera that stands still, or the conversation close shot, which stands in front of him on the side he faces. */
 export type PlanViewpoint = { _tag: 'Fixed', name: string, position: Place } | { _tag: 'CloseShot', name: string, side: 1 | -1 }
@@ -148,6 +152,15 @@ const bounds = ({ position, size }: Pick<OfficeProp, 'position' | 'size'>): Boun
   max: [position[0] + size[0] / 2, position[1] + size[1] / 2, position[2] + size[2] / 2],
 })
 const slack = 1e-6
+
+/**
+ * How much room he needs from a prop. Furniture he works at, and what stands on it, needs only his trunk's room: his arms pass over it.
+ * Every other prop needs the room of his whole reach.
+ */
+function roomNeeded(plan: OfficePlan, body: PlanBody): (prop: OfficeProp) => number {
+  const worked = new Set(plan.stops.flatMap(stop => stop.works ?? []))
+  return prop => worked.has(prop.id) || (typeof prop.rests === 'object' && worked.has(prop.rests.on)) ? body.torso : body.reach
+}
 
 /** How far a floor point is from a prop's footprint. Zero inside it. */
 const footprintDistance = (box: Bounds, [x, z]: Point) =>
@@ -192,12 +205,13 @@ function walkDistance(box: Bounds, from: Point, to: Point) {
  */
 export function checkWalkedPath(plan: OfficePlan, rules: PlanRules, path: readonly Point[]): PlanProblem[] {
   const problems: PlanProblem[] = []
+  const room = roomNeeded(plan, rules.body)
   for (const prop of plan.props) {
     const box = bounds(prop)
     if (box.min[1] >= plan.room.floorY + rules.body.height) continue
     let nearest: { at: Point, clearance: number } | undefined
     for (const at of path) {
-      const clearance = footprintDistance(box, at) - rules.body.reach
+      const clearance = footprintDistance(box, at) - room(prop)
       if (!nearest || clearance < nearest.clearance) nearest = { at, clearance }
     }
     if (nearest && nearest.clearance < rules.legClearance - slack) problems.push({ _tag: 'PathBlocked', prop: prop.id, ...nearest })
@@ -237,17 +251,18 @@ export function checkOfficePlan(plan: OfficePlan, rules: PlanRules): PlanProblem
   }
   // Only a prop that reaches down to his height can touch him.
   const obstacles = boxes.filter(({ box }) => box.min[1] < room.floorY + rules.body.height)
+  const needed = roomNeeded(plan, rules.body)
   for (const { prop, box } of obstacles) {
     for (const [index, stop] of stops.entries()) {
       const next = stops[(index + 1) % stops.length]!
-      const leg = walkDistance(box, stop.position, next.position) - rules.body.reach
+      const leg = walkDistance(box, stop.position, next.position) - needed(prop)
       if (leg < rules.legClearance - slack) problems.push({ _tag: 'RouteBlocked', prop: prop.id, leg: index, clearance: leg })
-      const stand = footprintDistance(box, stop.position) - rules.body.reach
+      const stand = footprintDistance(box, stop.position) - needed(prop)
       if (stand < rules.stopClearance - slack) problems.push({ _tag: 'StopCrowded', prop: prop.id, stop: index, clearance: stand })
     }
     // A journey can begin anywhere on his loop. Every stop and the start are its ends, so their straight walks to the door bound the rest.
     for (const [from, place] of [['start', plan.start] as const, ...stops.map((stop, index) => [index, stop.position] as const)]) {
-      const way = walkDistance(box, place, plan.exit) - rules.body.reach
+      const way = walkDistance(box, place, plan.exit) - needed(prop)
       if (way < rules.legClearance - slack) problems.push({ _tag: 'ExitBlocked', prop: prop.id, from, clearance: way })
     }
   }
