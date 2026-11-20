@@ -172,6 +172,9 @@ Never supply an invented sentence or personal fact as a visitor choice.
 The fourth choice is “Your text”. It opens the text field. “Back” returns to the choices.
 The dialog has one travel action below the choices. In the office it is “Follow him to the cave”. In the cave it is “Follow him to the office”.
 The travel action changes the place only. It sends no text and takes no reply.
+A visitor who opens the dialog in the office gets an office greeting. The owner approved six. They live in `docs/brand/mascot-dialogue.md`.
+Their beats and choices are strings the cave greetings already use. A new choice line for the office needs approval.
+Each live turn tells him which set the conversation is in, the cave or the office. That is where the talk happens, not a fact about the visitor, so the AI note does not list it.
 Scene fallback text: “Static scene. WebGL is unavailable.” and “The scene could not load.”
 Conversation sound actions use “Sound off” and “Sound on”. They mute or enable local synthesized sound.
 
