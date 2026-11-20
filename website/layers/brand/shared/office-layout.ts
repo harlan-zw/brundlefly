@@ -106,8 +106,8 @@ export const officePlan: OfficePlan = {
   // At the two stations he turns to his work, so the viewer sees his shoulder and his hands on it. He stays there longest.
   stops: [
     // The whiteboard hangs above the desk. On every second round he writes on it and leaves the keys.
-    { position: [-0.9, -1.5], pause: 7.5, habit: 'TypeKeys', facing: -2.35, alternate: 'WriteBoard', works: ['desk'] },
-    { position: [0.9, -1.5], pause: 6.5, habit: 'TendJar', facing: 2.3, works: ['jar-shelf'] },
+    { position: [-1.25, -1.5], pause: 7.5, habit: 'TypeKeys', facing: -2.5, alternate: 'WriteBoard', works: ['desk'] },
+    { position: [1.4, -1.5], pause: 6.5, habit: 'TendJar', facing: 2.3, works: ['jar-shelf'] },
     { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
     { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
   ],
