@@ -261,7 +261,8 @@ The build extracts this system prompt into a server-only module. No provider key
 User-supplied text reaches Cloudflare and OpenAI. The dialogue states this before submission.
 Gateway conversation logging and caching are disabled. Replies have a 768-token budget and a 15-second deadline.
 History stays in browser memory. The server accepts at most eight messages and 1,000 characters of new input.
-An atomic D1 reservation caps generation at 40 requests per session, 60 per daily IP hash, and 1,000 per UTC day.
+An atomic D1 reservation caps generation at 40 requests per session, 400 per daily IP hash, and 1,000 per UTC day.
+Guests at one venue share its address, so the IP limit leaves room for a full room. The daily total bounds the cost of a day.
 Two seconds separate requests from the same session. Failed generations consume quota too.
 Gateway rate limiting caps requests at 30 per minute. There is no automatic provider fallback or retry.
 Turnstile can follow if observed abuse justifies an extra interaction.
