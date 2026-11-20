@@ -160,17 +160,39 @@ Runtime GLSL remains in the layer source. The relief does not supply a full scul
 
 A set is the place the mascot stands in. The scene owns the mascot, the camera, and the conversation, and a set owns everything else.
 shared/scene-set.ts names what a set gives the scene: its layout, its cue targets, its fog, its background, and the optional effects it asks for.
-The lair is the set at `/`. The office is the set at `/office`. The mascot, his shading, and the dialog are the same in both.
+The lair is the set at `/`. The office is the set at `/office`. The mascot and the dialog are the same in both.
+Each set names how it shows him: the tint and occlusion of the mesh, his two stage lights, the strength of his shadows, and the dark edge of the picture.
+The scene applies that look each time a set rises. The mesh takes each shading from its own colours, so a journey never stacks one tint on another.
 The stage lives in app.vue, above the pages. Each page file is only an address, so a change of address keeps one scene and one conversation.
 
-The office is a late-1990s low-poly research office, built from flat boxes in shared/office.ts.
+The office is a late-1990s low-poly research office. Blender builds it: every prop, the room, the test chamber behind the window, and the corridor behind the door.
 Its floor plan is data in shared/office-layout.ts. `checkOfficePlan` proves his walk, his way to the door, and the camera sightlines against that plan.
-The office follows the pixel treatment: 128 px texture tiles with nearest-neighbour filtering, hard edges, and no smoothing.
-It draws no fog, no finishing pass, and no floor mirror. Each surface is one draw call, and four lights cast no shadows.
+The office follows the pixel treatment: its textures are 256 px for each surface, with nearest-neighbour filtering and a palette of 16 to 32 colours.
+The textures look photographed and worn. Four tiles repeat across the room, and one atlas holds every prop texture.
+The light is baked. A light map holds the light of the floor, the walls, and the ceiling, and every other vertex holds its own light.
+The room takes no light at run time, so its lights are free to light him alone: flat and cool, from above.
+Light is smooth, so the light map keeps smooth filtering. The pixel treatment applies to the textures.
+It draws no fog, no finishing pass, and no floor mirror. Each surface is one draw call.
+
+### Rebuild the office model
+
+The model is assets/3d/office/office.glb. The light map is assets/brand/office/office-light.webp.
+assets/3d/office/build_office_props.py builds both in Blender 5.3, which runs as a Flatpak.
+
+1. Change the floor plan in shared/office-layout.ts, a mark region in shared/office-marks.ts, or a prop in the build script.
+2. Run `pnpm office:build` in website/. It writes assets/3d/office/plan.json from the plan, then runs Blender. The bake takes about 20 seconds.
+3. Run `pnpm test`. The plan checks must pass.
+4. Restart `pnpm dev`. The brand sync script copies the office files, and it stops if they take more than 1 MB.
+
+assets/3d/office/atlas.json says where each prop texture lies on the atlas. If a cell moves, rebuild the model.
+assets/prompts/office-textures.json records the prompt of every texture.
+The office files stay out of the brand layer download, which has a size limit.
 The specimen jars stand in for the eggs, the test chamber window for the light, and the failing ceiling tube for the ceiling.
 The office shows no readable text. The whiteboard, the door sign, the mug label, the clock face, and the keys are regions of one drawn sheet in shared/office-marks.ts.
 Approved text can replace the drawing in a region later. Confirm the text with the owner first.
 The failing tube follows scene time and never flashes more than three times a second. Reduced motion holds it lit.
+Its light is baked apart from the steady light, so the pool under it dims with the tube.
+The warning light of the test chamber and the second hand of the clock follow scene time too.
 
 ## Travel between sets
 

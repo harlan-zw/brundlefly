@@ -38,7 +38,8 @@ Use crisp square pixel clusters and hard edges.
 Use nearest-neighbor resizing for raster exports.
 The tissue of the 3D lair on the homepage is the one exception. It uses smooth filtering and a smooth painting of the flesh tile, because hard pixels show as a grid on a lit surface behind the mesh mascot.
 The mascot artwork, raster exports, and the brand kit keep the pixel treatment.
-The office set at `/office` keeps it too. Its texture tiles are 128 px pixel art, drawn with nearest-neighbour filtering.
+The office set at `/office` keeps it too. Its textures are 256 px for each surface, with a small palette and nearest-neighbour filtering.
+They look photographed and worn, as game textures of the late 1990s did. Its baked light is smooth.
 Simplify details for small applications.
 Keep the silhouette and eye sockets clear before adding fine wrinkles.
 

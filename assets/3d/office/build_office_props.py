@@ -42,6 +42,8 @@ CONTRAST = 1.25
 # The light map: pixels across, and pixels for one world unit.
 LM_SIZE = 256
 LUXELS = 8
+# The corridor behind the door is a view, and no room he can enter. With False the door stands shut and the corridor is left out.
+CORRIDOR = True
 # The model file stores a position as whole steps of this size.
 GRID = 1 / 1024
 
@@ -560,8 +562,13 @@ def build_jar(prop, index):
     lump = m @ frame((0, low + 0.03, 0), index * 1.3)
     flesh = Cell('organic')
     tint = [WHITE, INK['cream'] * 1.4, WHITE * 0.8, INK['cream'] * 1.3, INK['rust'] * 2.2][index % 5]
-    shape = [(0.05, 0), (0.1 + 0.02 * (index % 2), 0.06), (0.085, 0.15 + 0.02 * (index % 3)), (0.03, 0.24)]
-    lathe('atlas', lump, (0, 0, 0), shape, 6, flesh, tint, caps='t', depth=0.75)
+    # The lump is a soft, lopsided shape: each ring has its own width, its own lean, and its own squash.
+    shape = [(0.04, 0.0), (0.085 + 0.02 * (index % 2), 0.045), (0.105, 0.1), (0.09 + 0.015 * (index % 3), 0.16), (0.06, 0.21), (0.025, 0.245)]
+    rings = [ring((0.012 * math.sin(level * 2.3 + index), 0, 0.01 * math.cos(level * 3.1 + index)), radius_at, 8, height, radius_at * (0.72 + 0.1 * math.sin(level * 1.7 + index)))
+             for level, (radius_at, height) in enumerate(shape)]
+    for below, above in zip(rings, rings[1:]):
+        loft('atlas', lump, below, above, flesh, tint)
+    cap('atlas', lump, rings[-1], flesh, tint)
 
 
 def build_window(prop):
@@ -651,7 +658,7 @@ def build_door(prop):
     box('atlas', m, (0, h / 2 + 0.03, (wall + 0.06 + far) / 2), (w + 0.28, 0.22, wall + 0.06 - far), steel, frame_tint, skip='+y')
     box('atlas', m, (0, low + 0.012, (wall + far) / 2), (w - 0.16, 0.024, 0.34), steel, paint('wing', 0.9), skip='-y')
     # The leaf hangs on the far jamb and stands ajar into the room.
-    swing = m @ frame((-w / 2 + 0.08, 0, wall - 0.1), -math.radians(12))
+    swing = m @ frame((-w / 2 + 0.08, 0, wall - 0.1), -math.radians(12 if CORRIDOR else 0))
     leaf_w, leaf_h = w - 0.18, h - 0.1
     art = Cell('door')
     box('atlas', swing, (leaf_w / 2, -0.03, 0), (leaf_w, leaf_h, 0.07), art, step=1.0, skins={name: steel for name in ('+x', '-x', '+y', '-y')},
@@ -690,12 +697,21 @@ def build_vending(prop):
     def piece(s0, t0, s1, t1, z, **look):
         quad('atlas', m, [(left + (right - left) * s0, bottom + (top - bottom) * t0, z), (left + (right - left) * s1, bottom + (top - bottom) * t0, z),
                           (left + (right - left) * s1, bottom + (top - bottom) * t1, z), (left + (right - left) * s0, bottom + (top - bottom) * t1, z)], art, rect=(s0, t0, s1, t1), **look)
-    window = (0.03, 0.15, 0.73, 0.97)
+    window = (0.03, 0.22, 0.735, 0.98)
     piece(0, 0, 1, window[1], front, step=0.8)
     piece(0, window[3], 1, 1, front)
     piece(0, window[1], window[0], window[3], front)
     piece(window[2], window[1], 1, window[3], front, step=0.8)
     piece(*window, front - 0.01, kind='glow', value=WHITE * 1.05)
+    # The buttons and the coin plate stand proud. Each shows its own piece of the picture, so the two agree.
+    def proud(s, t, across, up, depth):
+        rect = (s - across / 2, t - up / 2, s + across / 2, t + up / 2)
+        box('atlas', m, (left + (right - left) * s, bottom + (top - bottom) * t, front + depth / 2), ((right - left) * across, (top - bottom) * up, depth), steel, body * 0.9,
+            skip='-z', skins={'+z': Cell('vending', part=rect)}, tints={'+z': WHITE})
+    for row in range(5):
+        for column in (0.83, 0.93):
+            proud(column, 0.689 - row * 0.05, 0.075, 0.037, 0.022)
+    proud(0.885, 0.875, 0.16, 0.1, 0.03)
     box('atlas', m, (0, low + 0.2, front + 0.02), (w - 0.1, 0.04, 0.04), steel, body * 0.8)
 
 
@@ -922,7 +938,7 @@ def build_chamber():
     NODE_ORIGINS['beacon'] = origin
     lamp = frame(origin)
     red = np.array([1.0, 0.1, 0.06])
-    lathe('atlas', lamp, (0, 0, 0), [(0.09, -0.08), (0.09, 0.06), (0.05, 0.1)], 8, PLAIN, caps='t', kind='glow', value=red * 2.6, node='beacon')
+    lathe('atlas', lamp, (0, 0, 0), [(0.09, -0.08), (0.09, 0.06), (0.05, 0.1)], 8, PLAIN, caps='t', kind='glow', value=red * 1.3, node='beacon')
     # Two beams of red light turn with it. They fade toward their far end.
     for side in (0.7, 0.7 + math.pi):
         beam = lamp @ frame(yaw=side)
@@ -1008,7 +1024,8 @@ def build_props():
             raise ValueError(f'The plan has a prop this script cannot build: {tag}')
     build_trim()
     build_chamber()
-    build_corridor()
+    if CORRIDOR:
+        build_corridor()
 
 
 # ---------------------------------------------------------------- the bake
@@ -1109,7 +1126,8 @@ def add_lights():
         steady.append(add_light('porthole', 'POINT', (x, 1.7, pod_z + 0.95), 12, (0.3, 1.0, 0.9), size=0.08))
     steady.append(add_light('beacon', 'POINT', NODE_ORIGINS['beacon'] + np.array([0, 0.14, 0]), 26, (1.0, 0.08, 0.04), size=0.05))
     # The corridor's lamp. Its light falls through the door that stands ajar.
-    steady.append(add_light('corridor', 'POINT', (ROOM['maxX'] + 2.55, 1.2, -4.9), 400, (1.0, 0.86, 0.62), size=0.12))
+    if CORRIDOR:
+        steady.append(add_light('corridor', 'POINT', (ROOM['maxX'] + 2.55, 1.2, -4.9), 400, (1.0, 0.86, 0.62), size=0.12))
     # The small lights of the room: the screen, the vending machine's window, the desk lamp, and the lamp over the door.
     for prop in find('Monitor'):
         x, y, z = prop['position']
