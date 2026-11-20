@@ -9,7 +9,7 @@ import {
 } from 'three'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
-import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
+import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { resolveSceneQuality } from '@brundlefly/brand/shared/scene-quality'
@@ -344,7 +344,7 @@ watch(canvas, async (element) => {
   const walks = mascot._tag === 'Relief' || meshPose !== undefined
   // The mesh is a full body, so it walks a route that keeps it clear of the set's furniture.
   const loop = () => meshPose ? standing.stage.layout.meshWalk : standing.stage.layout.walk
-  // His legs cycle once for each stride of ground he covers, so a planted foot does not slide. The relief rig keeps its own cadence.
+  // His legs cycle once for each stride of ground he covers, whichever way he faces. The relief rig keeps its own cadence.
   const stride = mascot._tag === 'Mesh' ? mascot.strideLength : undefined
   const meshCadence = stride ? Math.PI * 2 / (stride * figure.scale.x) : undefined
   // A full body reads as heavy at about one walk cycle in 1.6 seconds. That needs more speed than the relief rig's short cycle.
@@ -354,7 +354,7 @@ watch(canvas, async (element) => {
   // The close shot then stands on the side he faces, from the first frame.
   const standStill = () => {
     if (moving() || mascot._tag !== 'Mesh' || !meshPose) return
-    turn = settleTurn(turn, { ...stroll, speed: 0 }, { route: loop(), walkSpeed: settings.value.walkSpeed * walkPace, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: 'free' })
+    turn = settleTurn(turn, { ...stroll, speed: 0 }, { walkSpeed: settings.value.walkSpeed * walkPace, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: 'free' })
   }
   standStill()
   mascotMotion.value = walks ? 'posed' : mascot._tag === 'Mesh' && mascot.motion._tag === 'Clip' ? 'clip' : 'sway'
@@ -539,18 +539,16 @@ watch(canvas, async (element) => {
     // A mesh without the relief rig's joints stands where the relief rig starts.
     // He walks a journey faster than his loop: he has somewhere to be.
     const walkSpeed = settings.value.walkSpeed * walkPace * (journey ? 1.7 : 1)
-    // Only the part of his travel that lies along his facing moves his legs. He cannot turn his back, so some legs of the route are partly sideways.
-    const along = meshPose ? Math.max(0.35, Math.cos(travelYaw(stroll, route) - turn.heading)) : 1
     const attentionNow = journey ? 'free' as const : talking ? 'talking' as const : hovered.value ? 'noticed' as const : 'free' as const
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
       pauses: journey ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
-      cadence: meshCadence ? meshCadence * along : undefined })
+      cadence: meshCadence, facing: meshPose ? turn.heading : undefined })
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
-      const facing = { route, walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow }
+      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow }
       // With motion off he has no steps to turn with, so he stands where the turn would end.
       turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
     }
-    const pose = faceMotion ? strollPose(stroll, walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
+    const pose = faceMotion ? strollPose(stroll) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
     // The relief rig leans a little toward its travel. The mesh's turn already faces it.
     figure.rotation.y = meshPose ? 0 : stroll.heading

@@ -556,7 +556,10 @@ test('through the walk one foot always rests at its floor height and neither foo
       else if (height - rest[index]! > 0.05) freeTurn = Math.max(freeTurn, tilt)
     })
   }
-  assert.ok(freeTurn > 0.05, `A foot clear of the floor keeps its own turn, not ${freeTurn} with a lift of ${lifted}.`)
+  // A foot in the air tips its toes down as it leaves the floor and up before it lands.
+  assert.ok(freeTurn > 0.05, `A foot clear of the floor must tip, not ${freeTurn} with a lift of ${lifted}.`)
+  // The tip is never more than the lift allows: the claws reach a quarter of his height from the ankle, and none goes under the floor.
+  assert.ok(Math.sin(freeTurn) * 2.5 * 0.26 < lifted, `A tip of ${freeTurn} puts a claw under the floor at a lift of ${lifted}.`)
   // One walk cycle covers the ground both feet travel under him. With these legs that is well under his height.
   assert.ok(mascot.strideLength! > 0.2 && mascot.strideLength! < 2, `The stride must be a plausible length, not ${mascot.strideLength}.`)
 })
@@ -577,13 +580,33 @@ function leggedModel() {
   return model
 }
 
+const footNames = ['left-foot', 'right-foot'] as const
+const legNames = [['left-hip', 'left-knee', 'left-foot'], ['right-hip', 'right-knee', 'right-foot']] as const
+/** The model stands in a host group, as the scene's figure holds it. World places are then not the mascot's own. */
+function hostedModel() {
+  const model = leggedModel()
+  const mascot = ok(createMeshMascot({ scene: model.scene, animations: [] }, 2.5))
+  const figure = new Group()
+  figure.scale.setScalar(1.25)
+  figure.add(mascot.root)
+  const world = (name: string) => model.joint(name).getWorldPosition(new Vector3())
+  /** How far each leg is straightened, and how far its knee stands in front of the line from hip to ankle. */
+  const legs = () => legNames.map(([hip, knee, foot]) => {
+    const [h, k, f] = [world(hip), world(knee), world(foot)]
+    const forward = new Vector3(0, 0, 1).transformDirection(model.node.matrixWorld)
+    const line = f.clone().sub(h)
+    const off = k.clone().sub(h).addScaledVector(line, -k.clone().sub(h).dot(line) / line.lengthSq())
+    return { reach: h.distanceTo(f) / (h.distanceTo(k) + k.distanceTo(f)), knee: off.dot(forward) / (h.distanceTo(k) + k.distanceTo(f)) }
+  })
+  return { ...model, mascot, figure, world, legs, feet: () => footNames.map(world) }
+}
+
 test('he turns in place on lifted feet, and the foot he stands on stays where it is', () => {
-  const { scene, joint } = leggedModel()
-  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
-  const names = ['left-foot', 'right-foot'] as const
-  const places = () => names.map(name => mascot.root.worldToLocal(joint(name).getWorldPosition(new Vector3())))
-  mascot.pose!(standing, undefined, 0.5)
-  const rest = places()
+  const { mascot, feet } = hostedModel()
+  // The host says how much ground he covers: none. So his feet hold their places on the floor.
+  const still = { ...standing, stance: [0, 0] as const }
+  mascot.pose!(still, undefined, 0.5)
+  const rest = feet()
   // A figure on a turntable drags each foot along an arc: its distance from the axis, times the turn.
   const turntable = rest.reduce((sum, foot) => sum + Math.hypot(foot.x, foot.z), 0) * 1
   // He turns one radian, to the other side, at the pace of his steps in place: 1.2 radians and 12 radians of step cycle a second.
@@ -593,26 +616,119 @@ test('he turns in place on lifted feet, and the foot he stands on stays where it
   const frames = 50
   for (let step = 1; step <= frames; step++) {
     const time = step / 60
-    mascot.pose!({ ...standing, time, stepInPlace: 1, stepPhase: time * 12 }, undefined, 0.5 - step / frames)
-    const now = places()
-    const heights = now.map((foot, index) => foot.y - rest[index]!.y)
-    heights.forEach((height, index) => { lifted[index] = Math.max(lifted[index]!, height) })
-    // The foot that carries him is the lower one, in this frame and in the frame before.
-    const support = heights[1]! < heights[0]! ? 1 : 0
-    const carried = before[support]!.y - rest[support]!.y < 1e-6 && heights[support]! < 1e-6
-    if (carried) slid += Math.hypot(now[support]!.x - before[support]!.x, now[support]!.z - before[support]!.z)
+    mascot.pose!({ ...still, time, stepInPlace: 1, stepPhase: Math.PI / 2 + time * 12 }, undefined, 0.5 - step / frames)
+    const now = feet()
+    now.forEach((foot, index) => {
+      lifted[index] = Math.max(lifted[index]!, foot.y - rest[index]!.y)
+      // A foot on the floor in this frame and in the frame before carried him between them.
+      if (foot.y - rest[index]!.y < 1e-6 && before[index]!.y - rest[index]!.y < 1e-6) slid += Math.hypot(foot.x - before[index]!.x, foot.z - before[index]!.z)
+    })
     before = now
   }
-  assert.ok(lifted[0]! > 0.02 && lifted[1]! > 0.02, `Each foot must leave the floor in turn, not ${lifted}.`)
-  assert.ok(slid < turntable * 0.2, `The foot he stands on slid ${slid.toFixed(3)} of a turntable's ${turntable.toFixed(3)}.`)
-  // The turn moved his place a little. A walk brings him back onto his route.
-  for (let step = 1; step <= 120; step++) mascot.pose!({ ...standing, time: frames / 60 + step / 60, gait: 1, walkPhase: step * 0.1 }, undefined, -0.5)
-  mascot.pose!({ ...standing, time: 4 }, undefined, -0.5)
-  const fresh = leggedModel()
-  const reference = ok(createMeshMascot({ scene: fresh.scene, animations: [] }, 2.5))
-  reference.pose!({ ...standing, time: 4 }, undefined, -0.5)
-  const [walked, expected] = [mascot, reference].map((value, index) => value.root.worldToLocal((index ? fresh.joint : joint)('pelvis').getWorldPosition(new Vector3())))
-  assert.ok(Math.hypot(walked!.x - expected!.x, walked!.z - expected!.z) < 0.01, 'After a walk he must stand on his route again.')
+  assert.ok(lifted[0]! > 0.05 && lifted[1]! > 0.05, `Each foot must leave the floor in turn, not ${lifted}.`)
+  assert.ok(slid < turntable * 0.002, `The feet he stood on slid ${slid.toFixed(4)} of a turntable's ${turntable.toFixed(3)}.`)
+  // The steps brought each foot round with him: both stand near their places under his turned body.
+  mascot.pose!({ ...still, time: 2, stepPhase: Math.PI / 2 + 12 }, undefined, -0.5)
+  const turned = feet()
+  const fresh = hostedModel()
+  fresh.mascot.pose!(standing, undefined, -0.5)
+  fresh.feet().forEach((home, index) => assert.ok(Math.hypot(turned[index]!.x - home.x, turned[index]!.z - home.z) < 0.35, 'A foot was left behind by the turn.'))
+})
+
+test('while he walks through the world, the foot that carries him does not move and his knees stay bent forward', () => {
+  const { mascot, figure, feet, legs } = hostedModel()
+  mascot.pose!(standing)
+  const rest = feet()
+  // He walks to screen right and toward the viewer, turned a little away from his travel, at one walk cycle for each stride.
+  const speed = 0.63, travel = 0.9, heading = 1.2
+  const cadence = Math.PI * 2 / (mascot.strideLength! * 1.25)
+  const stance = [Math.sin(travel) * 1.2 * Math.PI / cadence, Math.cos(travel) * 1.2 * Math.PI / cadence] as const
+  // The first frame turns him to his heading, and his feet take their places under him.
+  mascot.pose!({ ...standing, gait: 1, walkPhase: Math.PI / 2, stance }, undefined, heading)
+  let before = feet(), slid = 0, carried = 0, lifted = 0, straightest = 0, backward = Infinity
+  for (let frame = 1; frame <= 600; frame++) {
+    const time = frame / 60
+    figure.position.set(Math.sin(travel) * speed * time, 0, Math.cos(travel) * speed * time)
+    mascot.pose!({ ...standing, time, gait: 1, walkPhase: Math.PI / 2 + speed * time * cadence, stance }, undefined, heading)
+    const now = feet()
+    now.forEach((foot, index) => {
+      lifted = Math.max(lifted, foot.y - rest[index]!.y)
+      assert.ok(foot.y - rest[index]!.y > -1e-6, 'A foot went below the floor.')
+      if (foot.y - rest[index]!.y < 0.02 && before[index]!.y - rest[index]!.y < 0.02) { slid = Math.max(slid, Math.hypot(foot.x - before[index]!.x, foot.z - before[index]!.z)); carried++ }
+    })
+    assert.ok(now.some((foot, index) => foot.y - rest[index]!.y < 1e-6), 'One foot must stand on the floor in every frame.')
+    for (const leg of legs()) { straightest = Math.max(straightest, leg.reach); backward = Math.min(backward, leg.knee) }
+    before = now
+  }
+  assert.ok(carried > 600, 'The walk must include frames with a foot on the floor.')
+  // In one frame his body covers a hundredth of a unit. A foot on the floor moves less than a tenth of that.
+  assert.ok(slid < 0.001, `A foot on the floor moved ${slid.toFixed(5)} in one frame.`)
+  assert.ok(lifted > 0.08, 'Each step must lift a foot clear of the floor.')
+  assert.ok(straightest < 0.975, `A leg straightened to ${straightest.toFixed(3)} of its length.`)
+  assert.ok(backward > 0.02, `A knee came within ${backward.toFixed(3)} of bending backward.`)
+  // His body went six units. Both feet went with it.
+  feet().forEach(foot => assert.ok(Math.hypot(foot.x - figure.position.x, foot.z - figure.position.z) < 1.2))
+})
+
+test('his feet take their places again when the host moves him, when time jumps, and when the pose has no stance', () => {
+  const pose = (model: ReturnType<typeof hostedModel>, input: Partial<Parameters<NonNullable<typeof model.mascot.pose>>[0]>, heading = 0.5) => {
+    model.mascot.pose!({ ...standing, ...input }, undefined, heading)
+    return bodyJointNames.map(name => model.joint(name).quaternion.toArray().map(value => Number(value.toFixed(9))))
+  }
+  /** A walk and a turn in place, so both feet stand away from their places under him. */
+  const walked = () => {
+    const model = hostedModel()
+    for (let frame = 1; frame <= 90; frame++) pose(model, { time: frame / 60, gait: 1, walkPhase: frame * 0.1, stance: [0.3, 0.2] }, 0.5 - frame / 150)
+    return model
+  }
+  // A pose with no stance depends on its input alone, whatever came before.
+  const fresh = hostedModel()
+  assert.deepEqual(pose(walked(), { time: 3 }), pose(fresh, { time: 3 }))
+  assert.deepEqual(pose(walked(), { time: 3, gait: 1, walkPhase: 2 }), pose(hostedModel(), { time: 3, gait: 1, walkPhase: 2 }))
+  // Time that stands still holds the feet. Time that runs backward, or jumps far ahead, begins again.
+  for (const time of [0.2, 40]) assert.deepEqual(pose(walked(), { time, stance: [0, 0] }), pose(hostedModel(), { time, stance: [0, 0] }))
+  const held = walked()
+  const before = held.feet()
+  pose(held, { time: 1.5, gait: 1, walkPhase: 9, stance: [0.3, 0.2] }, -0.1)
+  held.feet().forEach((foot, index) => assert.ok(foot.distanceTo(before[index]!) < 1e-9, 'A second pose in the same moment must not move a foot.'))
+  // The host moves him across the room in one frame, as on a change of set. His feet stand under him there.
+  const moved = walked()
+  moved.figure.position.set(7, 0, -3)
+  pose(moved, { time: 1.52, stance: [0, 0] }, -0.1)
+  const reference = hostedModel()
+  reference.figure.position.set(7, 0, -3)
+  pose(reference, { time: 1.52, stance: [0, 0] }, -0.1)
+  moved.feet().forEach((foot, index) => assert.ok(foot.distanceTo(reference.feet()[index]!) < 1e-9, 'A foot stayed behind when the host moved him.'))
+  // The host moves him while a foot is late in its swing, past the moment it chose where to land. That foot still comes down under him.
+  const late = walked()
+  late.figure.position.set(-4, 0, 2)
+  for (let frame = 0; frame <= 12; frame++) {
+    pose(late, { time: 1.52 + frame / 60, gait: 1, walkPhase: Math.PI + 0.9 + frame * 0.07, stance: [0.3, 0.2] }, -0.1)
+    late.feet().forEach(foot => assert.ok(Math.hypot(foot.x + 4, foot.z - 2) < 1.3, `A foot went ${Math.hypot(foot.x + 4, foot.z - 2).toFixed(2)} units from him in frame ${frame}.`))
+  }
+  // A heading that jumps to the other side, as when motion goes off, leaves no leg twisted: the pose then has no stance.
+  assert.deepEqual(pose(walked(), { time: 1.5 }, -0.5), pose(hostedModel(), { time: 1.5 }, -0.5))
+})
+
+test('with no stance he walks on the spot: each foot strides fore and aft under him', () => {
+  const { mascot, feet } = hostedModel()
+  mascot.pose!(standing)
+  const rest = feet()
+  // The inspector's walk clip: time stands at zero, and only the phase moves.
+  const range = [[Infinity, -Infinity], [Infinity, -Infinity]]
+  let together = 0
+  for (let step = 0; step < 64; step++) {
+    mascot.pose!({ ...standing, gait: 1, walkPhase: step / 64 * Math.PI * 2 })
+    const now = feet()
+    // Fore and aft is along his facing: half a radian to screen right of the viewer.
+    const along = now.map((foot, index) => (foot.x - rest[index]!.x) * Math.sin(0.5) + (foot.z - rest[index]!.z) * Math.cos(0.5))
+    along.forEach((value, index) => { range[index] = [Math.min(range[index]![0]!, value), Math.max(range[index]![1]!, value)] })
+    together += along[0]! * along[1]!
+  }
+  for (const [back, front] of range) assert.ok(front > 0.2 && back < -0.2, `A foot must stride ahead of its place and behind it, not from ${back} to ${front}.`)
+  assert.ok(together < 0, 'The feet must stride in opposite directions.')
+  mascot.pose!(standing)
+  feet().forEach((foot, index) => assert.ok(foot.distanceTo(rest[index]!) < 1e-9, 'Standing must clear the stride.'))
 })
 
 test('a pose without steps in place is the pose it was', () => {
@@ -698,12 +814,15 @@ test('through a long stand he stays where he is, though the foot that carries hi
   const { scene, joint } = leggedModel()
   const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
   const pelvis = () => mascot.root.worldToLocal(joint('pelvis').getWorldPosition(new Vector3()))
-  mascot.pose!(standing, undefined, 0.5)
+  mascot.pose!({ ...standing, stance: [0, 0] }, undefined, 0.5)
   const start = pelvis()
+  const feet = () => footNames.map(name => joint(name).getWorldPosition(new Vector3()))
+  const stood = feet()
   let furthest = 0
-  // Two minutes of standing, as in a long talk. His weight shifts from leg to leg the whole time.
+  // Two minutes of standing, as in a long talk. His weight shifts from leg to leg the whole time, and his feet stay where they are.
   for (let frame = 1; frame <= 7200; frame++) {
-    mascot.pose!({ ...standing, time: frame / 60 }, undefined, 0.5)
+    mascot.pose!({ ...standing, time: frame / 60, stance: [0, 0] }, undefined, 0.5)
+    if (frame % 600 === 0) feet().forEach((foot, index) => assert.ok(foot.distanceTo(stood[index]!) < 1e-9, 'A foot moved while he stood.'))
     const now = pelvis()
     furthest = Math.max(furthest, Math.hypot(now.x - start.x, now.z - start.z))
   }
