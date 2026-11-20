@@ -36,10 +36,8 @@ export function createOfficeWriting(plan: OfficePlan) {
       marker.visible = false
       if (!input || input.age < 0 || input.age >= 6.2) return
       const { age, writer, side } = input
-      // The typing stop is too far from the board. Step beside the desk, then return before walking on.
+      // Grip follows the arm's envelope. Travel belongs to the walk and foot-placement code.
       const weight = Math.min(1, age / 0.7, (6.2 - age) / 0.8)
-      writer.position.x += 0.75 * weight
-      writer.position.z -= 2.7 * weight
       const prefix = side === -1 ? 'right' : 'left'
       const hand = writer.getObjectByName(`${prefix}-hand`)
       const elbow = writer.getObjectByName(`${prefix}-elbow`)

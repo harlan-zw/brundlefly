@@ -7,6 +7,67 @@ import { defaultSceneSettings } from '../layers/brand/shared/scene-settings.ts'
 import { createMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
 import { poseMannerisms, markerStrokes } from '../layers/brand/shared/mannerism.ts'
 import { loadMascotModel } from './mascot-model.ts'
+import { createOfficeWriting } from '../layers/brand/shared/office-writing.ts'
+import { officePlan } from '../layers/brand/shared/office-layout.ts'
+import { advanceTurn, startStroll, startTurn, strollPose } from '../layers/brand/shared/mascot-stroll.ts'
+import type { Stroll } from '../layers/brand/shared/mascot-stroll.ts'
+import { advanceOfficeVisit } from '../layers/brand/shared/office-visit.ts'
+import type { WritingVisit } from '../layers/brand/shared/office-visit.ts'
+
+test('a full writing visit holds planted feet in world space and lifts steps on both trips', async () => {
+  const result = createMeshMascot(await loadMascotModel())
+  assert.equal(result._tag, 'Ok')
+  if (result._tag !== 'Ok') return
+  const mascot = result.mascot
+  const writer = new Group()
+  writer.scale.setScalar(1.25)
+  writer.add(mascot.root)
+  const office = createOfficeWriting(officePlan)
+  const home = officePlan.stops[0]!.position
+  let stroll: Stroll = { ...startStroll(home, 1), activity: { _tag: 'Pausing', waypoint: 0, duration: 7.5, remaining: 7.2, age: 0.3 } }
+  let visit: WritingVisit | undefined
+  let turn = startTurn(-2.35)
+  const previous: { place: Vector3, planted: number, slide: number }[] = []
+  const lifted = { Approach: [false, false], Return: [false, false] }
+  let largestSlide = 0
+  let finished = false
+  let strokes = 0
+  try {
+    for (let frame = 0; frame < 60 * 40; frame++) {
+      const next = advanceOfficeVisit(stroll, visit, { delta: 1 / 60, route: officePlan.stops.map(stop => stop.position),
+        pauses: officePlan.stops.map(stop => stop.pause), walkSpeed: defaultSceneSettings.walkSpeed * 1.5,
+        attention: 'free', cadence: Math.PI * 2 / (mascot.strideLength! * writer.scale.x), facing: turn.heading, writes: true })
+      stroll = next.stroll
+      visit = next.visit
+      turn = advanceTurn(turn, stroll, { delta: 1 / 60, walkSpeed: defaultSceneSettings.walkSpeed * 1.5, rest: 0.5, limit: 1.3, attention: 'free', stand: -2.35 })
+      const age = next.writingAge
+      writer.position.set(stroll.position[0], -2.2, stroll.position[1])
+      mascot.pose!({ time: frame / 60, pressure: 0, pointer: new Vector2(), transform: 'squeeze', ...strollPose(stroll),
+        stepInPlace: turn.steps, stepPhase: turn.phase,
+        mannerism: poseMannerisms(age === undefined ? [] : [{ mannerism: { _tag: 'WriteBoard' }, age, side: -1 }]) }, undefined, turn.heading)
+      office.update(age === undefined ? undefined : { age, writer, side: -1 })
+      if (age !== undefined) {
+        assert.ok(Math.hypot(writer.position.x - home[0] - 0.75, writer.position.z - home[1] + 2.7) < 0.15, 'Writing starts only at the board')
+        strokes = Math.max(strokes, markerStrokes(age))
+      }
+      mascot.footContacts((place, planted, index) => {
+        const before = previous[index]
+        const slide = planted > 0.99 && before && before.planted > 0.99
+          ? before.slide + Math.hypot(place.x - before.place.x, place.z - before.place.z) : 0
+        largestSlide = Math.max(largestSlide, slide)
+        if (planted < 0.1 && visit && visit.stage._tag !== 'Writing') lifted[visit.stage._tag][index] = true
+        previous[index] = { place: place.clone(), planted, slide }
+      })
+      if (!visit) { finished = true; break }
+    }
+    assert.ok(largestSlide < 0.04, `A planted foot slid ${largestSlide.toFixed(3)} world units`)
+    assert.ok(lifted.Approach.every(Boolean), 'Both feet must lift during the approach')
+    assert.ok(lifted.Return.every(Boolean), 'Both feet must lift during the return')
+    assert.equal(strokes, 4, 'The full writing visit must finish all four strokes')
+    assert.ok(finished && Math.hypot(stroll.position[0] - home[0], stroll.position[1] - home[1]) < 0.15, 'The visit must return to the round')
+  }
+  finally { office.dispose(); mascot.dispose() }
+})
 
 test('each of four marker squeaks leaves fresh board ink while the hand holds a marker', async () => {
   const pixels = new Map<string, string>()
@@ -30,7 +91,7 @@ test('each of four marker squeaks leaves fresh board ink while the hand holds a 
   writer.scale.setScalar(1.25)
   writer.add(result.mascot.root)
   const update = (age: number) => {
-    writer.position.set(-0.9, -2.2, -0.95)
+    writer.position.set(-0.15, -2.2, -3.65)
     result.mascot.pose!({ time: age, pressure: 0, pointer: new Vector2(), transform: 'squeeze', mannerism: poseMannerisms([{ mannerism: { _tag: 'WriteBoard' }, age, side: -1 }]) }, undefined, -2.35)
     office.update({ time: age, light: 1, settings: defaultSceneSettings, writing: { age, writer, side: -1 } })
   }
