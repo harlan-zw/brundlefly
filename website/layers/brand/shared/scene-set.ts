@@ -28,6 +28,8 @@ export type SetLayout = {
   walkPauses: readonly number[]
   /** What he does at each walk point. */
   walkHabits: readonly MannerismTag[]
+  /** The way he faces at each walk point, as a turn about the vertical. A point without one keeps his three-quarter turn to the viewer. */
+  walkFacings?: readonly (number | undefined)[]
   camera: { desktop: Place, portrait: Place, target: Place }
   /** A set whose lamps are off when a visitor loads it names its entrance. */
   entrance?: SetEntrance

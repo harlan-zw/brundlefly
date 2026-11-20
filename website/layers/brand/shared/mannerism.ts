@@ -2,7 +2,7 @@ import type { Stroll } from './mascot-stroll.ts'
 
 /** Habits he performs on his own or as a dialogue beat. Human habits first, then fly habits. */
 export type MannerismTag = 'CheckPalm' | 'HeadTilt' | 'JawCatch' | 'LeanIn' | 'AirWriting' | 'GlanceEggs'
-  | 'WingTwitch' | 'WingBuzz' | 'RubHands' | 'WipeEye' | 'ListenCeiling' | 'LookToLight' | 'Still' | 'ReachSwitch' | 'Greet'
+  | 'WingTwitch' | 'WingBuzz' | 'RubHands' | 'WipeEye' | 'ListenCeiling' | 'LookToLight' | 'Still' | 'ReachSwitch' | 'Greet' | 'TypeKeys' | 'TendJar'
 export type Mannerism = { _tag: 'None' } | { _tag: MannerismTag }
 /** `age` counts seconds since the mannerism began. `weight` fades a whole layer in or out. `side` mirrors a directional turn. */
 export type MannerismLayer = { mannerism: Mannerism, age: number, weight?: number, side?: 1 | -1 }
@@ -70,6 +70,26 @@ const shapes: Record<MannerismTag, Shape> = {
       [shoulder]: [-0.8 * e, 0, 0.92 * e * side], [elbow]: [-0.5 * e, 0, 0], [hand]: [-0.3 * e, 0, 0],
       head: [0.05 * e, 0.75 * e * side, 0], chest: [0.08 * e, 0.1 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
   } },
+  // He stands turned to his desk. Both long arms come forward to the keys, the claws tap in turn, and his head drops to the screen.
+  // He stops twice to read what he wrote. `keyTaps` gives the moments of his taps, so the sound can follow them.
+  TypeKeys: { duration: 6.4, attack: 0.6, release: 0.7, motion: (e, age) => {
+    const typing = typingShare(age)
+    const tap = (offset: number) => Math.max(0, Math.sin(age * keyTapRate * Math.PI + offset)) * typing
+    return { calm: e * 0.4, turns: {
+      'left-shoulder': [-0.62 * e, 0, -0.1 * e], 'right-shoulder': [-0.62 * e, 0, 0.1 * e],
+      'left-elbow': [(-0.7 - tap(0) * 0.12) * e, 0, 0], 'right-elbow': [(-0.7 - tap(Math.PI) * 0.12) * e, 0, 0],
+      'left-hand': [(0.1 + tap(0) * 0.4) * e, 0, 0], 'right-hand': [(0.1 + tap(Math.PI) * 0.4) * e, 0, 0],
+      'left-small-elbow': [0, 0, tap(1.3) * 0.2 * e], 'right-small-elbow': [0, 0, -tap(2.6) * 0.2 * e],
+      head: [(0.2 - (1 - typing) * 0.26) * e, Math.sin(age * 0.9) * 0.06 * e, 0], chest: [0.16 * e, 0, 0] } }
+  } },
+  // He stands turned to the jars. The long arm nearer them lifts to one, turns it a little each way, and his head tips to look inside. `side` is the side the jars are on.
+  TendJar: { duration: 5.4, attack: 0.7, release: 0.8, motion: (e, age, side) => {
+    const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
+    const turn = Math.sin(age * 1.7)
+    return { cue: 'Eggs', calm: e * 0.5, turns: {
+      [shoulder]: [-0.95 * e, 0, 0.18 * e * side], [elbow]: [-0.42 * e, 0, 0], [hand]: [-0.1 * e, turn * 0.35 * e, 0],
+      head: [0.12 * e, 0.16 * e * side, (0.14 + turn * 0.08) * e * side], chest: [0.12 * e, 0.06 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
+  } },
   // A small hello: his head tips, and the long claw on `side` lifts beside his face and opens twice. The wings give one short buzz.
   Greet: { duration: 1.7, attack: 0.3, release: 0.5, motion: (e, age, side) => {
     const [shoulder, elbow, hand] = side === 1 ? ['right-shoulder', 'right-elbow', 'right-hand'] as const : ['left-shoulder', 'left-elbow', 'left-hand'] as const
@@ -77,6 +97,18 @@ const shapes: Record<MannerismTag, Shape> = {
       [shoulder]: [0, 0, 0.5 * e * side], [elbow]: [-1.3 * e, 0, -0.8 * e * side], [hand]: [0, 0, (0.25 + Math.sin(age * 7.5) * 0.3) * e * side],
       head: [0.05 * e, 0, 0.2 * e * side], chest: [-0.04 * e, 0, 0.03 * e * side] } satisfies Partial<Record<MannerismJoint, Turn>> }
   } },
+}
+
+/** His taps in a second while he types. */
+export const keyTapRate = 7
+// He types in three bursts and reads between them.
+const typingBursts: readonly (readonly [from: number, to: number])[] = [[0.7, 2.3], [2.9, 4.2], [4.7, 5.7]]
+const typingShare = (age: number) => typingBursts.reduce((share, [from, to]) => Math.max(share, clamp01(Math.min(age - from, to - age) / 0.15)), 0)
+/** How many keys he has struck by `age` seconds of the typing habit. The scene plays a click each time the count rises. */
+export function keyTaps(age: number) {
+  let taps = 0
+  for (const [from, to] of typingBursts) taps += Math.floor(Math.max(0, Math.min(age, to) - from) * keyTapRate)
+  return taps
 }
 
 const smooth = (value: number) => value * value * (3 - 2 * value)

@@ -169,6 +169,7 @@ export type Turn = { heading: number, rate: number, pace: number, steps: number,
 /**
  * `rest` is the artwork's three-quarter turn, in radians. `limit` is the furthest he turns from the viewer.
  * `stand` is a heading he holds while he stands, in place of the three-quarter turn: a stop that has him face a thing gives it.
+ * It may pass `limit`, up to `workLimit`: at his desk he shows the viewer his shoulder.
  */
 export type TurnInput = { delta: number, walkSpeed: number, rest: number, limit: number, attention: StrollAttention, stand?: number }
 
@@ -176,6 +177,8 @@ export const startTurn = (heading: number): Turn => ({ heading, rate: 0, pace: 0
 
 // Radians he may turn in one step of a walk, and in one step in place. A turn is never faster than his feet allow:
 // a foot on the floor stays there, so each step can carry only so much of a turn before its leg twists.
+/** The furthest he turns from the viewer at a stop that has him face his work. His head and one shoulder still show. */
+export const workLimit = 2.5
 export const turnPerStep = { walking: 0.85, inPlace: 0.32 }
 // Radians a second of the step cycle while he steps in place: about three quick foot lifts for a turn to the other side.
 // Short steps keep each foot's share of the turn small, so his body does not swing wide about it.
@@ -193,7 +196,7 @@ function turnTarget(turn: Turn, state: Stroll, { walkSpeed, rest, limit, stand }
   // and the last steps of his walk end the turn.
   const share = clamp((stride - 0.5) / 0.4, 0, 1)
   const moving = share * share * (3 - 2 * share)
-  const standing = stand === undefined ? side * rest : clamp(stand, -limit, limit)
+  const standing = stand === undefined ? side * rest : clamp(stand, -workLimit, workLimit)
   return { side, stride, heading: standing + (facing - standing) * moving }
 }
 
@@ -224,7 +227,9 @@ export function advanceTurn(turn: Turn, state: Stroll, input: TurnInput): Turn {
   const most = (turnPerStep.walking * pace + turnPerStep.inPlace * stepRate * steps) / Math.PI
   const wish = clamp(error * 5, -most, most)
   const rate = clamp(clamp(wish, turn.rate - turnEase * delta, turn.rate + turnEase * delta), -most, most)
-  return { heading: clamp(turn.heading + rate * delta, -input.limit, input.limit), rate, pace: pace > 1e-3 ? pace : 0, steps: stepping || steps > 1e-3 ? steps : 0, phase, side: target.side }
+  // A stop at his work turns him past the walking limit. He comes back inside it on his feet, so the bound never snaps him round.
+  const bound = Math.max(input.limit, Math.abs(turn.heading), input.stand === undefined ? 0 : Math.min(workLimit, Math.abs(input.stand)))
+  return { heading: clamp(turn.heading + rate * delta, -bound, bound), rate, pace: pace > 1e-3 ? pace : 0, steps: stepping || steps > 1e-3 ? steps : 0, phase, side: target.side }
 }
 
 /** With motion off he stands at once where the turn would end, with both feet down. */
