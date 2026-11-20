@@ -2,6 +2,8 @@
 export const sceneLayout = {
   opening: { position: [0, 0.6, -2.9], scale: [0.98, 1.06, 1.15] },
   mascot: [0.65, -0.8],
+  // The mouth of the tunnel. He walks into its dark throat when he leaves for another place, and out of it when he comes back.
+  exit: [0.15, -2.4],
   walk: [[1.35, 0.8], [-1.25, 0.6], [-0.75, -0.65], [0.9, -0.7]],
   // The mesh mascot is a full body, about 2.5 units wide and 2 deep, so the relief rig's route takes it into the egg sacs.
   // Each stop of this route keeps its rest shape at least 0.3 units from every sac, for both facings.

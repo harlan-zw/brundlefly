@@ -447,7 +447,7 @@ The earlier sprite relief remains a useful visual reference for the body.
 | assets/source/face-skin-diffuse.png | Generated skin texture master |
 | assets/brand/kit/lair/face-skin-diffuse.png | Skull side and back texture |
 | assets/source/cursor-claw.png | Generated cursor master |
-| assets/brand/kit/lair/cursor-claw.png | 48-pixel scene cursor, hotspot 4,3 |
+| assets/brand/kit/lair/cursor-claw.png | 48-pixel claw cursor, hotspot 4,3. The site's scenes use the standard arrow and hand, and no longer load it. |
 | assets/prompts/head-sculpt-direction.json | Head board generation provenance |
 | assets/prompts/head-projection.json | Frontal cutout generation provenance |
 | assets/prompts/face-skin-diffuse.json | Skin generation provenance |

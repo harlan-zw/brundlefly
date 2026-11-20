@@ -10,6 +10,8 @@ await Promise.all(['github-banner-overhang-gross.png', 'github-social-preview.jp
   copyFile(new URL(name, source), new URL(name, target)),
 ))
 await cp(new URL('kit/', source), new URL('kit/', target), { recursive: true })
+// The office set's texture tiles. They are small on purpose: pixel art, drawn with hard pixels.
+await cp(new URL('office/', source), new URL('office/', target), { recursive: true })
 const layer = new URL('../layers/brand/', import.meta.url)
 const layerArt = new URL('public/brand/', layer)
 // The mesh mascot comes from the figurine model. The site and the kit inspector serve it only when the file exists.

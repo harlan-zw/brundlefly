@@ -66,6 +66,24 @@ export const resolveConversationFocus = (face: Vector3, width: number, height: n
 }
 
 /**
+ * The pixels the bottom dialog covers: its usual height, its gap from the edge, and a margin over its top edge.
+ * Matches _SpeechDialog.vue. The side dialog of a short landscape screen covers no height.
+ */
+export const dialogCover = (width: number, height: number) =>
+  width > height && height <= 540 ? 0 : width <= 600 ? Math.min(300, height * 0.52) + 26 : Math.min(270, height * 0.46) + 36
+
+/**
+ * How far the wide view turns, in radians, to bring the scene into the area the open dialog leaves free.
+ * The middle of the view then lies in the middle of that area. A journey with the dialog open uses it, so he stays in sight while he walks.
+ * The bottom dialog needs a look down. The side dialog of a short landscape screen needs a look to the right.
+ */
+export const resolveDialogClearance = (width: number, height: number, fieldOfView: number): TiltOffset => {
+  const half = Math.tan(fieldOfView * Math.PI / 360)
+  const side = width > height && height <= 540 ? (Math.min(400, width / 2) + 12) / width : 0
+  return { yaw: Math.atan(side * half * width / height), pitch: Math.atan(dialogCover(width, height) / height * half) }
+}
+
+/**
  * A head-and-shoulders shot for a full-bodied mascot. The camera stands a little to the side he faces, so he looks out of the frame at the visitor.
  * It drifts slowly with `drift`, in seconds. Zero gives the still shot.
  * `eyes` is the point between his eyes. His head reaches about half a unit above it and his mouthparts about half a unit below.
@@ -76,9 +94,7 @@ export const resolveConversationCloseUp = (eyes: Vector3, width: number, height:
   const landscape = width > height && height <= 540
   const portrait = aspect < 0.8
   const half = Math.tan(fieldOfView * Math.PI / 360)
-  // The pixels the bottom dialog covers: its usual height, its gap from the edge, and the seam that rises over its top.
-  // Matches _SpeechDialog.vue. The side dialog of a short landscape screen covers no height.
-  const cover = landscape ? 0 : width <= 600 ? Math.min(300, height * 0.52) + 26 : Math.min(270, height * 0.46) + 36
+  const cover = dialogCover(width, height)
   // His head is one unit tall. It must fit the free band with room to spare, so a short window moves the camera back.
   const fit = height / (2 * half * (height - cover) * 0.9)
   // A narrow screen needs more distance to hold his head between its edges.

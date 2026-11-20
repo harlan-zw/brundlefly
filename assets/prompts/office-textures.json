@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "mode": "codex exec (Codex CLI 0.169.0), built-in imagegen",
+  "date": "2026-11-20",
+  "shared": "Use your built-in image generation tool to make 8 square texture tiles for a low-poly 3D science office in the style of a late-1990s PC game. Generate each tile as its own image. Save each one as a PNG in the current directory with the exact file name given. Then reply with one line per file: the file name and the path you saved.\n\nShared style for every tile: flat, straight-on, edge-to-edge material swatch for a 3D game texture. Chunky hand-made pixel art, as if drawn at 64 by 64 pixels and scaled up with hard square pixels. Limited palette of about 16 colours, visible dithering, no smooth gradients, no anti-aliasing, no photo detail. No perspective, no scene, no objects standing on it, no border, no vignette, no cast shadows, no strong baked lighting. Seamless tiling edges. Absolutely no text, letters, numbers, logos, symbols, or signs. Muted, slightly grimy palette built from: rust #AA604B, bruised mauve #69404B, dark chitin gray-green #343C3B, olive #777648, pale gray-green #A4B5A0, cream #E8D4A6, near-black #080B08, with a little teal #418B90 only where named.",
+  "processing": "Each 1254 px result was resized to 128 px with nearest-neighbour sampling and saved as a PNG with a 32 colour palette.",
+  "assets": [
+    {
+      "file": "assets/brand/office/office-floor.png",
+      "prompt": "worn vinyl floor tiles, a 2 by 2 grid of square tiles in the swatch, pale gray-green and olive checker with dark seams, scuffs and a few stains.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-wall.png",
+      "prompt": "painted concrete wall panel. Upper two thirds cream gone dingy, a thin dark rust stripe, lower third olive wainscot. Vertical panel seam at the left and right edges, a few rivets.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-ceiling.png",
+      "prompt": "one drop-ceiling acoustic tile, pale gray-green with small dark pinholes, dark metal grid line along the edges.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-desk.png",
+      "prompt": "desk laminate, warm rust-brown wood grain running left to right, drawn in 4 or 5 flat colours.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-metal.png",
+      "prompt": "painted sheet metal of a filing cabinet, dark chitin gray-green, one horizontal panel seam across the middle, small chips and scratches, a few rivets.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-screen.png",
+      "prompt": "the screen of an old CRT monitor showing a science readout, near-black background, teal #418B90 and cream phosphor: a jagged line graph in the upper half, a row of vertical bars in the lower half, a few short horizontal dashes in place of text. Faint scanlines. No readable characters of any kind.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-hazard.png",
+      "prompt": "diagonal hazard stripes at 45 degrees, cream-yellow #E8D4A6 and near-black, 4 stripe pairs across the swatch, worn and chipped paint.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-door.png",
+      "prompt": "a heavy steel facility door seen straight on, filling the whole tall swatch edge to edge: bruised mauve-gray painted metal, a recessed upper panel and lower panel, a small dark window slit in the upper panel, a blank cream sign plate with nothing on it, a rust kick plate along the bottom, a handle on the right side.",
+      "transparent": false
+    }
+  ]
+}

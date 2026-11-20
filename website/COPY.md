@@ -170,6 +170,8 @@ If the Skill catalog changes, replies with Skill links use live generation until
 Choices that require the visitor's own writing or personal details open “Your text”.
 Never supply an invented sentence or personal fact as a visitor choice.
 The fourth choice is “Your text”. It opens the text field. “Back” returns to the choices.
+The dialog has one travel action below the choices. In the office it is “Follow him to the cave”. In the cave it is “Follow him to the office”.
+The travel action changes the place only. It sends no text and takes no reply.
 Scene fallback text: “Static scene. WebGL is unavailable.” and “The scene could not load.”
 Conversation sound actions use “Sound off” and “Sound on”. They mute or enable local synthesized sound.
 

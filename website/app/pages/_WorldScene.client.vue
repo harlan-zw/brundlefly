@@ -4,10 +4,9 @@ import { useDeviceOrientation, useDocumentVisibility, useElementSize, useEventLi
 import { useRoute } from '#app'
 import {
   ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
-  NoColorSpace, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SpotLight, SRGBColorSpace, TextureLoader,
+  PerspectiveCamera, PlaneGeometry, PointLight, Quaternion, Raycaster, Scene, ShaderMaterial, SpotLight, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
-import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { loadMeshMascot, meshShading } from '@brundlefly/brand/shared/mascot-mesh'
 import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
@@ -17,18 +16,28 @@ import { resolveSceneQuality } from '@brundlefly/brand/shared/scene-quality'
 import { resolveMascotMode } from '@brundlefly/brand/shared/mascot-mode'
 import type { MascotMode } from '@brundlefly/brand/shared/mascot-mode'
 import { createSceneFinish } from '@brundlefly/brand/shared/scene-finish'
+import type { SceneFinish } from '@brundlefly/brand/shared/scene-finish'
 import { createFloorReflection } from '@brundlefly/brand/shared/floor-reflection'
-import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
+import type { FloorReflection } from '@brundlefly/brand/shared/floor-reflection'
+import { sceneSets } from '@brundlefly/brand/shared/scene-sets'
+import type { BuiltSet, SceneSet, SetArt, SetName } from '@brundlefly/brand/shared/scene-set'
+import { advanceTravel, startTravel, travelShade } from '@brundlefly/brand/shared/set-travel'
+import type { Travel } from '@brundlefly/brand/shared/set-travel'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
-import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
+import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveDialogClearance, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ConversationMood } from '#shared/conversation'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
-const { paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
+const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
+// `set` is the place the page wants him in. The scene reports the set that stands, and travels when the two differ.
+const shownSet = ref<SetName>(set)
+const travelPhase = ref<Travel['_tag']>('Home')
+// How dark a journey makes the picture, from 0 to 1.
+const shade = ref(0)
 const requestedMascot = useRoute().query.mascot
 const mascotMode = resolveMascotMode(requestedMascot)
 const spriteMascot = mascotMode === 'sprite'
@@ -39,7 +48,8 @@ const shownQuality = ref<string>()
 const shownMascot = ref<MascotMode>()
 // How the visible mascot moves: the relief rig's pose code, the file's own clip, or a whole-body sway.
 const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
-const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix] }>()
+// `shown` names the set that stands after a journey. `stayed` means the other set's artwork did not load.
+const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
@@ -156,6 +166,14 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
 watch([animate, width, height], () => refresh?.())
 watch(settings, () => refresh?.(), { deep: true })
 watch(() => [speaking, mood, thinking, reaction], () => refresh?.())
+// A scene without WebGL shows one still picture for every set, so it changes place at once.
+const changeStill = () => {
+  if (status.value._tag !== 'Fallback' || shownSet.value === set) return
+  shownSet.value = set
+  emit('shown', set, 'arrived')
+}
+watch(status, changeStill)
+watch(() => set, () => { changeStill(); refresh?.() })
 watch([() => paused, visibility], () => {
   if (paused || visibility.value !== 'visible') { cameraKeys.clear(); endView(); hovered.value = false }
   refresh?.()
@@ -167,53 +185,35 @@ watch(canvas, async (element) => {
   const context = element.getContext('webgl2', { alpha: false, antialias: true })
   if (!context) { status.value = { _tag: 'Fallback', reason: 'context' }; return }
   // A missing or broken model file is an error value. The relief rig then takes its place.
-  const [results, meshResult] = await Promise.all([Promise.allSettled([
-    // The tunnel's tissue is a smooth painting of the kit's pixel-art flesh tile, with every fold in the same place.
-    new TextureLoader().loadAsync('/brand/kit/lair/tunnel-diffuse.webp'),
+  const [results, setArt, meshResult] = await Promise.all([Promise.allSettled([
     new TextureLoader().loadAsync('/brand/character.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/goo-diffuse.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/chitin-diffuse.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/floor-diffuse.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/egg-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/face-skin-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/head-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/room-diffuse.webp'),
-    new TextureLoader().loadAsync('/brand/kit/lair/room-height.webp'),
-  ]), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, meshShading) : undefined])
-  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult, roomResult, roomHeightResult] = results
-  if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
-    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || roomResult.status === 'rejected' || roomHeightResult.status === 'rejected') {
+  ]), sceneSets[set].load(), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, meshShading) : undefined])
+  const [mascotResult, faceResult, projectionResult, bodyProjectionResult] = results
+  if (mascotResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || setArt._tag === 'Err') {
     for (const result of results) {
       if (result.status === 'fulfilled') result.value.dispose()
       else console.error('Brundlefly world artwork failed to load.', result.reason)
     }
+    if (setArt._tag === 'Ok') setArt.release()
+    else for (const reason of setArt.reasons) console.error('Brundlefly world artwork failed to load.', reason)
     if (meshResult?._tag === 'Ok') meshResult.mascot.dispose()
     status.value = { _tag: 'Fallback', reason: 'art' }
     return
   }
-  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture, roomHeightTexture] = [
-    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value, roomResult.value, roomHeightResult.value,
-  ]
-  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture, roomHeightTexture]
-  if (!alive) { loadedTextures.forEach(value => value.dispose()); if (meshResult?._tag === 'Ok') meshResult.mascot.dispose(); return }
+  const [mascotTexture, faceTexture, projectionTexture, bodyProjectionTexture] = [mascotResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value]
+  const loadedTextures = [mascotTexture, faceTexture, projectionTexture, bodyProjectionTexture]
+  if (!alive) { loadedTextures.forEach(value => value.dispose()); setArt.release(); if (meshResult?._tag === 'Ok') meshResult.mascot.dispose(); return }
   loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
-  roomHeightTexture.colorSpace = NoColorSpace
-  for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture]) {
-    tiled.wrapS = tiled.wrapT = MirroredRepeatWrapping
-  }
-  chitinTexture.repeat.set(2, 2)
-  floorTexture.repeat.set(5, 8)
-  roomTexture.wrapS = roomTexture.wrapT = RepeatWrapping
-  roomHeightTexture.wrapS = roomHeightTexture.wrapT = RepeatWrapping
-  roomTexture.magFilter = LinearFilter
-  roomHeightTexture.magFilter = LinearFilter
+  faceTexture.wrapS = faceTexture.wrapT = MirroredRepeatWrapping
   mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.wrapS = projectionTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.magFilter = LinearFilter
   bodyProjectionTexture.wrapS = bodyProjectionTexture.wrapT = ClampToEdgeWrapping
   bodyProjectionTexture.magFilter = LinearFilter
-  // The relief mascot is pixel artwork, so it keeps hard pixels. The tissue of the lair is a surface in a lit room: hard pixels show there as a grid.
+  // The relief mascot is pixel artwork, so it keeps hard pixels.
   mascotTexture.magFilter = NearestFilter
   const image = mascotTexture.image as HTMLImageElement
   const raster = document.createElement('canvas')
@@ -241,31 +241,52 @@ watch(canvas, async (element) => {
   shownMascot.value = mascot._tag === 'Mesh' ? 'mesh' : mascotMode === 'sprite' ? 'sprite' : 'relief'
   // The mesh gets the relief rig's eyes, from the same head artwork and face skin.
   if (mascot._tag === 'Mesh') mascot.dressEyes({ projection: headProjection, skin: faceTexture })
-  const roomHeightImage = roomHeightTexture.image as HTMLImageElement
-  const roomHeightRaster = document.createElement('canvas')
-  roomHeightRaster.width = roomHeightImage.width
-  roomHeightRaster.height = roomHeightImage.height
-  const roomHeightPainter = roomHeightRaster.getContext('2d')!
-  roomHeightPainter.drawImage(roomHeightImage, 0, 0)
   const quality = resolveSceneQuality({ requested: requestedQuality, coarsePointer: touchScreen.value, cores: navigator.hardwareConcurrency,
     memory: (navigator as Navigator & { deviceMemory?: number }).deviceMemory, shortSide: Math.min(window.innerWidth, window.innerHeight) })
   shownQuality.value = quality.tier
-  const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture, room: roomTexture,
-    roomHeight: { texture: roomHeightTexture, raster: roomHeightPainter.getImageData(0, 0, roomHeightRaster.width, roomHeightRaster.height) } }, quality)
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio))
-  // The floor and the walls run away from the camera at shallow angles. Without this they blur there.
   const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
-  for (const surface of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, roomTexture, roomHeightTexture]) surface.anisotropy = anisotropy
   const scene = new Scene()
-  scene.background = new Color('#080B08')
-  const environment = createWetEnvironment(renderer)
-  scene.environment = environment.texture
-  const fog = new FogExp2('#080B08', 0.028)
-  scene.fog = fog
-  scene.add(world.root)
+  const camera = new PerspectiveCamera(44, 1, 0.1, 50)
+  let renderWidth = 0
+  let renderHeight = 0
+  let mirror: FloorReflection | undefined
+  // The set that stands in the scene, with the effects it asked for. A journey strikes it and raises another.
+  type Standing = { stage: SceneSet, world: BuiltSet, environment: ReturnType<typeof createWetEnvironment> | undefined,
+    fog: { air: FogExp2, scale: number } | undefined, finish: SceneFinish | undefined, reflection: FloorReflection | undefined }
+  const raise = (stage: SceneSet, art: Extract<SetArt, { _tag: 'Ok' }>): Standing => {
+    const world = art.build({ quality, anisotropy })
+    scene.background = new Color(stage.background)
+    const environment = stage.effects.includes('WetEnvironment') ? createWetEnvironment(renderer) : undefined
+    scene.environment = environment?.texture ?? null
+    const fog = stage.fog._tag === 'Exponential' ? { air: new FogExp2(stage.fog.colour, 0.028), scale: stage.fog.scale } : undefined
+    scene.fog = fog?.air ?? null
+    scene.add(world.root)
+    return { stage, world, environment, fog, finish: undefined, reflection: undefined }
+  }
+  // The effects come after him in the scene, so every set draws in the same order: the set, him, the mirror, his lights.
+  const dress = (raised: Standing) => {
+    // The finishing pass draws the scene through its own target. A tier or a set without it draws straight to the canvas.
+    raised.finish = raised.stage.effects.includes('Finish') ? createSceneFinish(renderer, scene, camera, quality) : undefined
+    // The wet floor mirrors the room at the highest tier only: it draws the room a second time.
+    // The mirror draws through its own camera, and the renderer keeps a target for every camera that sees wet glass.
+    // So one mirror serves every visit to a set that wants it. A new mirror for each visit would leave a target behind each time.
+    if (raised.finish && quality.reflection && raised.stage.effects.includes('FloorMirror')) raised.reflection = mirror ??= createFloorReflection(768, 432)
+    if (raised.reflection) scene.add(raised.reflection.mesh)
+    if (renderWidth) raised.finish?.setSize(renderWidth, renderHeight)
+  }
+  const strike = (fallen: Standing) => {
+    scene.remove(fallen.world.root)
+    if (fallen.reflection) scene.remove(fallen.reflection.mesh)
+    fallen.world.dispose(); fallen.environment?.dispose(); fallen.finish?.dispose()
+    scene.environment = null
+    scene.fog = null
+  }
+  let standing = raise(sceneSets[set], setArt)
+  shownSet.value = standing.stage.name
   const figure = new Group()
   figure.scale.setScalar(1.25)
   figure.add(mascot.root)
@@ -276,8 +297,8 @@ watch(canvas, async (element) => {
     const indices = mascot.mesh.geometry.index!
     for (let index = 0; index < indices.count; index++) bottom = Math.min(bottom, positions.getY(indices.getX(index)))
   }
-  const floorY = -2.2 - bottom * 1.25
-  figure.position.set(sceneLayout.mascot[0], floorY, sceneLayout.mascot[1])
+  const floorY = standing.stage.layout.floorLevel - bottom * 1.25
+  figure.position.set(standing.stage.layout.mascot[0], floorY, standing.stage.layout.mascot[1])
   scene.add(figure)
   const shadowGeometry = new PlaneGeometry(2.5, 1.8)
   const shadowMaterial = new ShaderMaterial({ transparent: true, depthWrite: false,
@@ -286,7 +307,7 @@ watch(canvas, async (element) => {
   })
   const shadow = new Mesh(shadowGeometry, shadowMaterial)
   shadow.rotation.x = -Math.PI / 2
-  shadow.position.y = -2.19
+  shadow.position.y = standing.stage.layout.floorLevel + 0.01
   scene.add(shadow)
   // The mesh has real feet. A small dark patch under each one ties it to the floor, and fades as the foot lifts.
   const footShadowGeometry = new PlaneGeometry(0.66, 0.5)
@@ -296,22 +317,17 @@ watch(canvas, async (element) => {
       fragmentShader: 'uniform float uStrength;varying vec2 vUv;void main(){float r=length((vUv-.5)*2.0);gl_FragColor=vec4(0.0,0.0,0.0,max(0.0,1.0-r*r)*.62*uStrength);}',
     }))
     patch.rotation.x = -Math.PI / 2
-    patch.position.y = -2.185
+    patch.position.y = standing.stage.layout.floorLevel + 0.015
     scene.add(patch)
     return patch
   }) : []
-  const camera = new PerspectiveCamera(44, 1, 0.1, 50)
-  // The finishing pass draws the scene through its own target. A tier without it draws straight to the canvas.
-  const finish = createSceneFinish(renderer, scene, camera, quality)
-  // The wet floor mirrors the room at the highest tier only: it draws the room a second time.
-  const reflection = finish && quality.reflection ? createFloorReflection(768, 432) : undefined
-  if (reflection) scene.add(reflection.mesh)
+  dress(standing)
   const raycaster = new Raycaster()
   // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.
   hit = mascot._tag === 'Mesh'
     ? position => overMascot((position.x + 1) * renderWidth / 2, (1 - position.y) * renderHeight / 2)
     : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
-  let stroll = startStroll(sceneLayout.mascot, 0)
+  let stroll = startStroll(standing.stage.layout.mascot, 0)
   // The mesh's turn about the vertical. The relief rig is flat artwork and always faces screen right.
   // His feet carry every turn, so he never spins where he stands.
   let turn = startTurn(mascot._tag === 'Mesh' ? mascot.restHeading : 0)
@@ -324,13 +340,21 @@ watch(canvas, async (element) => {
   // A mesh with the relief rig's joints takes the relief rig's pose code. Any other mesh plays its own clip or sway.
   const meshPose = mascot._tag === 'Mesh' ? mascot.pose : undefined
   const walks = mascot._tag === 'Relief' || meshPose !== undefined
-  // The mesh is a full body, so it walks a route that keeps it clear of the egg sacs.
-  const route = meshPose ? sceneLayout.meshWalk : sceneLayout.walk
+  // The mesh is a full body, so it walks a route that keeps it clear of the set's furniture.
+  const loop = () => meshPose ? standing.stage.layout.meshWalk : standing.stage.layout.walk
   // His legs cycle once for each stride of ground he covers, so a planted foot does not slide. The relief rig keeps its own cadence.
   const stride = mascot._tag === 'Mesh' ? mascot.strideLength : undefined
   const meshCadence = stride ? Math.PI * 2 / (stride * figure.scale.x) : undefined
   // A full body reads as heavy at about one walk cycle in 1.6 seconds. That needs more speed than the relief rig's short cycle.
   const walkPace = meshPose ? 1.5 : 1
+  const moving = () => !settings.value.motionOff && reduced.value !== 'reduce'
+  // Without motion he has no steps to turn with and no later frame to turn in, so he takes his standing turn at once.
+  // The close shot then stands on the side he faces, from the first frame.
+  const standStill = () => {
+    if (moving() || mascot._tag !== 'Mesh' || !meshPose) return
+    turn = settleTurn(turn, { ...stroll, speed: 0 }, { route: loop(), walkSpeed: settings.value.walkSpeed * walkPace, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: 'free' })
+  }
+  standStill()
   mascotMotion.value = walks ? 'posed' : mascot._tag === 'Mesh' && mascot.motion._tag === 'Clip' ? 'clip' : 'sway'
   if (mascot._tag === 'Mesh' && mascot.poseGap) console.warn(`The Brundlefly mesh keeps its own motion. ${mascot.poseGap}`)
   let lastReaction = reaction
@@ -338,62 +362,135 @@ watch(canvas, async (element) => {
   // Only the relief rig has hand joints. The mesh performs no habit, so it never needs a hand cue.
   const leftHand = mascot.root.getObjectByName('left-hand') ?? figure
   const rightHand = mascot.root.getObjectByName('right-hand') ?? figure
-  const light = new Vector3(...sceneLayout.opening.position)
-  const eggClusters = sceneLayout.eggs.map(([x, z]) => new Vector3(x, -1.9, z))
-  // A habit's eye cue becomes a world point. Eggs resolve to the nearer cluster.
+  // A habit's eye cue becomes a world point. The set places the light, the ceiling, and the eggs. Eggs resolve to the nearer cluster.
   const cueTarget = (cue: EyeCue) => cue === 'Palm' ? rightHand.getWorldPosition(new Vector3())
     : cue === 'Claw' ? leftHand.getWorldPosition(new Vector3())
-      : cue === 'Light' ? light
-        : cue === 'Ceiling' ? figure.position.clone().add(new Vector3(0, 6, 0.5))
+      : cue === 'Light' ? standing.world.cues.light
+        : cue === 'Ceiling' ? standing.world.cues.ceiling(figure.position)
           : nearestEggs()
-  const nearestEggs = () => eggClusters.reduce((near, egg) => egg.distanceTo(figure.position) < near.distanceTo(figure.position) ? egg : near)
+  const nearestEggs = () => standing.world.cues.eggs.reduce((near, egg) => egg.distanceTo(figure.position) < near.distanceTo(figure.position) ? egg : near)
   let lastTime = 0
   let looping = false
-  let renderWidth = 0
-  let renderHeight = 0
   let focusProgress = paused ? 1 : 0
   // The mesh is a full body, so its conversation is staged: a head-and-shoulders shot, and two lights for his face that rise with the shot.
   // Both lights stay in the scene at zero, so opening the dialog compiles no new shader. The relief rig keeps its full-body shot and the lair's light.
   const staging = mascot._tag === 'Mesh' ? { eyeLine: mascot.eyeLine, rest: Math.abs(mascot.restHeading) || 0.5, face: new Vector3(), placed: false, side: 1 as 1 | -1, drift: 0,
     key: new SpotLight('#F2DEB8', 0, 7, 0.34, 0.9, 2), rim: new PointLight('#6FB7C0', 0, 3.5, 2) } : undefined
-  if (staging) scene.add(staging.key, staging.key.target, staging.rim)
+  const lamps = staging ? [staging.key, staging.key.target, staging.rim] : []
+  if (lamps.length) scene.add(...lamps)
+  // A journey to another set. He walks `way` during it: to the way out, then in from it.
+  let travel: Travel = { _tag: 'Home' }
+  let way: readonly (readonly [number, number])[] | undefined
+  let swapped = false
+  // The other set's artwork loads while he walks out, so the dark is short.
+  let incoming: { name: SetName, art: Promise<SetArt> } | undefined
+  const forget = (pending: typeof incoming) => { void pending?.art.then((art) => { if (art._tag === 'Ok') art.release() }) }
+  // How far the wide view has turned to keep him clear of the open dialog during a journey, from 0 to 1.
+  let lift = 0
+  /** The work in the dark: the set that the page wants now replaces the set that stands. A journey back to the same set changes nothing. */
+  async function changeSet() {
+    const name = set
+    let outcome: 'arrived' | 'stayed' = 'arrived'
+    if (name === standing.stage.name) forget(incoming)
+    else {
+      if (incoming?.name !== name) { forget(incoming); incoming = { name, art: sceneSets[name].load() } }
+      const art = await incoming.art
+      if (!alive) { if (art._tag === 'Ok') art.release(); return }
+      if (art._tag === 'Err') {
+        for (const reason of art.reasons) console.error('Brundlefly world artwork failed to load.', reason)
+        outcome = 'stayed'
+      }
+      else {
+        const actors = [figure, shadow, ...footShadows]
+        scene.remove(...actors, ...lamps)
+        strike(standing)
+        standing = raise(sceneSets[name], art)
+        scene.add(...actors)
+        dress(standing)
+        if (lamps.length) scene.add(...lamps)
+        const level = standing.stage.layout.floorLevel
+        shadow.position.y = level + 0.01
+        for (const patch of footShadows) patch.position.y = level + 0.015
+      }
+    }
+    incoming = undefined
+    // He comes in from the way out and walks to his start point. Without motion he stands at his start point at once.
+    const { mascot: start, exit } = standing.stage.layout
+    stroll = startStroll(moving() ? exit : start, 0)
+    way = moving() ? [start] : undefined
+    turn = startTurn(mascot._tag === 'Mesh' ? mascot.restHeading : 0)
+    standStill()
+    if (staging) staging.placed = false
+    cameraView = { ...defaultCameraView }
+    shownSet.value = standing.stage.name
+    emit('shown', standing.stage.name, outcome)
+    swapped = true
+    refresh?.()
+  }
   const basePosition = new Vector3()
   const baseTarget = new Vector3()
   let tiltRest: Quaternion | undefined
   const tilt = { yaw: 0, pitch: 0 }
+  // A journey needs frames to its end, even without motion: its dark hold is counted in frames.
   const needsFrames = () => visibility.value === 'visible' && (animate.value || (!paused && cameraKeys.size > 0)
-    || (paused && !settings.value.motionOff && reduced.value !== 'reduce')
+    || (paused && moving()) || travel._tag !== 'Home' || set !== standing.stage.name
     || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001)
   function render(delta: number) {
     renderer.toneMappingExposure = settings.value.exposure
     scene.environmentIntensity = settings.value.reflections
     const aspect = renderWidth / renderHeight
-    const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(sceneLayout.camera.desktop, sceneLayout.camera.portrait, aspect)
-    const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
-    focusProgress = advanceConversationFocus(focusProgress, paused, delta, reduced.value === 'reduce')
+    const faceMotion = moving()
+    // The page wants another set: a journey begins. He leaves his loop and walks straight to the way out.
+    if (travel._tag === 'Home' && set !== standing.stage.name) {
+      travel = startTravel(travel)
+      swapped = false
+      incoming = { name: set, art: sceneSets[set].load() }
+      way = [standing.stage.layout.exit]
+      stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } }
+    }
+    const phase = travel._tag
+    travel = advanceTravel(travel, { delta, still: !faceMotion, swapped, settled: stroll.activity._tag === 'Pausing' })
+    if (travel._tag === 'Dark' && phase !== 'Dark') void changeSet()
+    // At home again he takes up his loop from where he stands.
+    if (travel._tag === 'Home' && phase !== 'Home') { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
+    if (travelPhase.value !== travel._tag) travelPhase.value = travel._tag
+    const dark = travelShade(travel, !faceMotion)
+    if (shade.value !== dark) shade.value = dark
+    const journey = travel._tag !== 'Home'
+    // The conversation holds him and the close shot only while he is at home. On a journey the dialog stays open and the view goes wide.
+    const talking = paused && !journey
+    const layout = standing.stage.layout
+    const { fog, world, finish, reflection } = standing
+    const route = way ?? loop()
+    const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(layout.camera.desktop, layout.camera.portrait, aspect)
+    focusProgress = advanceConversationFocus(focusProgress, talking, delta, reduced.value === 'reduce')
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
-    // Thicker air during a staged talk pushes the lair back behind him.
-    fog.density = settings.value.fog * fogScale * (staging ? 1 + blend * 0.7 : 1)
+    // Thicker air during a staged talk pushes the set back behind him.
+    if (fog) fog.air.density = settings.value.fog * fog.scale * fogScale * (staging ? 1 + blend * 0.7 : 1)
     if (camera.fov !== fieldOfView) { camera.fov = fieldOfView; camera.updateProjectionMatrix() }
-    if (!paused) cameraView = moveCameraView(cameraView, cameraKeys, delta)
+    if (!talking) cameraView = moveCameraView(cameraView, cameraKeys, delta)
     const { alpha, beta, gamma } = orientation
     // Tilt is manual look, but it follows body movement. Reduced motion and the dialog turn it off.
     const tiltPoseNow = alpha.value !== null && beta.value !== null && gamma.value !== null && touchScreen.value
-      && tiltAccess.value._tag === 'Granted' && !paused && !settings.value.motionOff && reduced.value !== 'reduce'
+      && tiltAccess.value._tag === 'Granted' && !talking && !settings.value.motionOff && reduced.value !== 'reduce'
       ? tiltPose({ alpha: alpha.value, beta: beta.value, gamma: gamma.value }, screenAngle.value ?? 0) : undefined
     tiltRest = tiltPoseNow ? followTiltRest(tiltRest, tiltPoseNow, delta) : undefined
     const tiltTarget = tiltPoseNow && tiltRest ? resolveTiltView(tiltPoseNow, tiltRest) : { yaw: 0, pitch: 0 }
     const tiltEase = reduced.value === 'reduce' ? 1 : Math.min(1, delta * 8)
     tilt.yaw += (tiltTarget.yaw - tilt.yaw) * tiltEase
     tilt.pitch += (tiltTarget.pitch - tilt.pitch) * tiltEase
-    const view = resolveCameraView(tiltCameraView(cameraView, tilt), framing, sceneLayout.camera.target, settings.value.zoom)
+    // The open dialog covers part of the picture. On a journey the wide view turns a little, so he walks in the area the dialog leaves free.
+    lift = faceMotion ? lift + (Number(paused && journey) - lift) * Math.min(1, delta * 4) : Number(paused && journey)
+    const clear = resolveDialogClearance(renderWidth, renderHeight, fieldOfView)
+    const lifted = { ...cameraView, yaw: cameraView.yaw + lift * clear.yaw, pitch: cameraView.pitch + lift * clear.pitch }
+    const view = resolveCameraView(tiltCameraView(lifted, tilt), framing, layout.camera.target, settings.value.zoom)
     basePosition.set(...view.position)
     baseTarget.set(...view.target)
     // Frame his face clear of the dialog, so his mouth stays visible while he speaks.
     const face = mascot._tag === 'Mesh' ? mascot.facePoint(new Vector3()) : figure.localToWorld(new Vector3(0.23, 0.8, 0))
     if (staging) {
       // Between talks the shot takes the side he faces and starts from rest. During a talk it keeps that side, so the camera never crosses him.
-      const resting = !paused && focusProgress === 0
+      const resting = !talking && focusProgress === 0
       if (resting) { staging.side = turn.side; staging.drift = 0 }
       // His head turns to the camera, and the camera frames his head. A slow follow keeps that loop calm and leaves his head free to act in the frame.
       // A still frame has no later frame to catch up in, so it takes his face as it is.
@@ -406,7 +503,7 @@ watch(canvas, async (element) => {
         if (reach > 0.1) staging.face.lerp(eyes, (1 - 0.1 / reach) * (1 - Math.exp(-delta / 0.5)))
       }
       staging.placed = true
-      if (paused && faceMotion) staging.drift += delta
+      if (talking && faceMotion) staging.drift += delta
       // At rest the key holds a low level above his head. It falls off toward his feet, which gives his body its shape.
       staging.key.intensity = 6 + blend * 18
       staging.rim.intensity = blend * 4
@@ -425,12 +522,13 @@ watch(canvas, async (element) => {
     camera.updateMatrixWorld()
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
     // A mesh without the relief rig's joints stands where the relief rig starts.
-    const walkSpeed = settings.value.walkSpeed * walkPace
+    // He walks a journey faster than his loop: he has somewhere to be.
+    const walkSpeed = settings.value.walkSpeed * walkPace * (journey ? 1.7 : 1)
     // Only the part of his travel that lies along his facing moves his legs. He cannot turn his back, so some legs of the route are partly sideways.
     const along = meshPose ? Math.max(0.35, Math.cos(travelYaw(stroll, route) - turn.heading)) : 1
-    const attentionNow = paused ? 'talking' as const : hovered.value ? 'noticed' as const : 'free' as const
+    const attentionNow = journey ? 'free' as const : talking ? 'talking' as const : hovered.value ? 'noticed' as const : 'free' as const
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
-      pauses: sceneLayout.walkPauses, walkSpeed, attention: attentionNow,
+      pauses: journey ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
       cadence: meshCadence ? meshCadence * along : undefined })
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
       const facing = { route, walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow }
@@ -442,23 +540,24 @@ watch(canvas, async (element) => {
     // The relief rig leans a little toward its travel. The mesh's turn already faces it.
     figure.rotation.y = meshPose ? 0 : stroll.heading
     if (environmentMotion.value) elapsed += delta
-    world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
+    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
     // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.
     // Reduced motion and Motion off keep the pose.
     const ease = Math.min(1, delta * 4)
-    attention.weight = faceMotion ? attention.weight + (Number(paused || hovered.value) - attention.weight) * ease : 0
-    attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused ? 0.07 : 0) - attention.tilt) * ease : 0
+    attention.weight = faceMotion ? attention.weight + (Number(talking || (hovered.value && !journey)) - attention.weight) * ease : 0
+    attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused && !journey ? 0.07 : 0) - attention.tilt) * ease : 0
     const look = { target: camera.position, weight: attention.weight, tilt: attention.tilt }
     if (mascot._tag === 'Mesh' && !meshPose) mascot.update(faceElapsed, look)
     else {
       // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
       const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
-      const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
+      // He performs no habit on a journey: its one stop is the way out.
+      const habit = faceMotion && !journey ? pauseMannerism(stroll, layout.walkHabits) : undefined
       // A habit turns his head away: to the ceiling, to a palm, to the eggs. In a conversation he faces the visitor.
       // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
-      habitWeight = faceMotion ? habitWeight + ((paused ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
+      habitWeight = faceMotion ? habitWeight + ((talking ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
       if (habit) layers.push({ ...habit, weight: habitWeight })
       // Directional habits turn toward the nearer egg cluster. Screen right is +x.
       const side = nearestEggs().x >= figure.position.x ? 1 : -1
@@ -466,7 +565,7 @@ watch(canvas, async (element) => {
       // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
       const eyes = !faceMotion ? { _tag: 'Ahead' } as const
         : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
-          : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
+          : talking || (hovered.value && !journey) ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
       const input = { time: faceElapsed, pressure: 0, pointer, transform: 'squeeze' as const, ...pose, eyes, mannerism,
         speaking: faceMotion ? speaking : 0,
         brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
@@ -504,7 +603,7 @@ watch(canvas, async (element) => {
     if (w !== renderWidth || h !== renderHeight) {
       renderWidth = w; renderHeight = h
       renderer.setSize(w, h, false)
-      finish?.setSize(w, h)
+      standing.finish?.setSize(w, h)
       camera.aspect = w / h
       camera.updateProjectionMatrix()
     }
@@ -524,9 +623,10 @@ watch(canvas, async (element) => {
     cameraKeys.clear()
     endView()
     renderer.setAnimationLoop(null)
-    world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
-    staging?.key.dispose(); staging?.rim.dispose(); finish?.dispose(); reflection?.dispose()
-    shadowGeometry.dispose(); shadowMaterial.dispose(); environment.dispose(); renderer.dispose()
+    forget(incoming)
+    strike(standing); mirror?.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
+    staging?.key.dispose(); staging?.rim.dispose()
+    shadowGeometry.dispose(); shadowMaterial.dispose(); renderer.dispose()
     footShadowGeometry.dispose(); footShadows.forEach(patch => patch.material.dispose())
   }
   status.value = { _tag: 'Ready' }
@@ -535,9 +635,10 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-set="shownSet" :data-travel="travelPhase" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
-    <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && shownMascot === 'mesh' }" aria-hidden="true" />
+    <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && travelPhase === 'Home' && shownMascot === 'mesh' }" aria-hidden="true" />
+    <div v-if="status._tag === 'Ready'" class="world-dark" :style="{ opacity: shade }" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
     <img v-if="status._tag === 'Fallback'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
     <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" :disabled="status._tag === 'Loading'" aria-label="Talk to Brundlefly" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
@@ -558,8 +659,10 @@ canvas { display: block; width: 100%; height: 100%; }
 .world-vignette-close::after { opacity: 1; }
 @media (orientation: landscape) and (max-height: 540px) { .world-vignette::after { background: radial-gradient(ellipse 46% 80% at 26% 44%, transparent 38%, rgb(8 11 8 / 0.5) 78%, rgb(8 11 8 / 0.82) 100%); } }
 @media (prefers-reduced-motion: reduce) { .world-vignette::after { transition: none; } }
-.world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, default; touch-action: none; }
-.world-interaction.mascot-hover { cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, pointer; }
+/* A journey to another set darkens the whole picture. The scene sets how dark, frame by frame. */
+.world-dark { position: absolute; inset: 0; pointer-events: none; background: var(--color-night); }
+.world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: default; touch-action: none; }
+.world-interaction.mascot-hover { cursor: pointer; }
 .world-interaction:focus-visible { outline: 2px solid var(--color-cream); outline-offset: -8px; }
 .world-fallback { position: absolute; inset: 10% 0; margin: auto; height: 80%; width: 80%; object-fit: contain; image-rendering: pixelated; }
 .world-status { position: absolute; bottom: 1rem; left: 1rem; right: 1rem; text-align: center; font: 12px var(--font-mono); color: var(--color-wing); }

@@ -8,9 +8,14 @@ import { choiceNeedsInput, parsePresetGraph, resolveOpeningPreset, resolvePreset
 import type { ConversationTurn } from '#shared/preset-dialogue'
 import { breathGroups, groupsSaid, revealTimes } from '#shared/line-reveal'
 import { voiceDuration } from '#shared/scene-audio'
+import { travelAction } from '#shared/travel'
+import type { SetName } from '@brundlefly/brand/shared/scene-set'
 
-const { open, muted = false, soundAvailable = true } = defineProps<{ open: boolean, muted?: boolean, soundAvailable?: boolean }>()
-const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: Pick<ConversationReply, 'mood' | 'beat'>], pending: [value: boolean] }>()
+const { open, place, travelling = false, muted = false, soundAvailable = true } = defineProps<{ open: boolean, place: SetName, travelling?: boolean, muted?: boolean, soundAvailable?: boolean }>()
+const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: Pick<ConversationReply, 'mood' | 'beat'>], pending: [value: boolean], travel: [to: SetName] }>()
+// The app's own action: it takes him to the other place. It is no reply, so it sends nothing and leaves the conversation as it is.
+// During a journey the action waits. It keeps the keyboard focus, so it is marked as unavailable and not disabled.
+const journey = computed(() => travelAction(place))
 const dialog = shallowRef<HTMLDialogElement>()
 const input = shallowRef<HTMLTextAreaElement>()
 const conversation = shallowRef<HTMLElement>()
@@ -196,7 +201,7 @@ watch([() => open, dialog], async ([isOpen, element]) => {
   if (!visited.value) void receive('visit')
 }, { flush: 'post' })
 
-// New content changes the pocket height. Easing from the old height keeps the header and seam from jumping.
+// New content changes the pocket height. Easing from the old height keeps the header and the top edge from jumping.
 let resize: Animation | undefined
 watch([spoken, () => request.value._tag, failure, mode], async () => {
   const element = dialog.value
@@ -254,7 +259,6 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
 
 <template>
   <dialog ref="dialog" class="speech-pocket" aria-labelledby="speech-title" aria-describedby="speech-scope" @cancel.prevent="notice ? notice = false : emit('close')" @close="emit('close')">
-    <img class="speech-seam" src="/brand/kit/lair/tissue-seam.png" alt="" aria-hidden="true">
     <header>
       <div ref="noticeAnchor" class="speech-name">
         <h2 id="speech-title">Brundlefly</h2>
@@ -282,6 +286,7 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
         </li>
       </ol>
     </div>
+    <button class="speech-travel" type="button" :aria-disabled="travelling" @click="travelling || emit('travel', journey.to)">{{ journey.label }}</button>
     <p class="speech-announcement" role="status" aria-live="polite" aria-atomic="true">{{ spoken?.text }}</p>
     <form v-if="mode === 'Compose'" @submit.prevent="receive('dialogue')">
       <label class="speech-label" for="speech-input">Your text</label>
@@ -306,8 +311,9 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
 .speech-pocket:not([open]) { opacity: 0; transform: translateY(16px); pointer-events: none; }
 @starting-style { .speech-pocket[open] { opacity: 0; transform: translateY(16px); } }
 .speech-pocket::backdrop { background: #080b0812; }
-/* The seam crowns the pocket without reaching up over his face. */
-.speech-seam { position: absolute; width: 88%; height: auto; top: 0; left: 6%; translate: 0 -58%; image-rendering: pixelated; pointer-events: none; }
+/* A rust hairline runs along the top edge and fades toward both ends. One small bead sits at its middle. Both are drawn, so no image loads. */
+.speech-pocket::before { content: ''; position: absolute; top: -1px; left: 9%; right: 9%; height: 1px; pointer-events: none; background: linear-gradient(90deg, transparent, #aa604b8c 30%, #aa604b8c 70%, transparent); }
+.speech-pocket::after { content: ''; position: absolute; top: -3px; left: 50%; width: 5px; height: 5px; translate: -50% 0; rotate: 45deg; pointer-events: none; background: #10130f; border: 1px solid #aa604b; }
 header { display: flex; justify-content: space-between; align-items: center; column-gap: 12px; flex-shrink: 0; }
 .speech-name { position: relative; display: flex; align-items: center; min-width: 0; }
 h2 { margin: 0; font: 600 22px/1.1 var(--font-display, sans-serif); letter-spacing: .02em; }
@@ -359,6 +365,11 @@ button:disabled { cursor: wait; opacity: .5; }
 .speech-choices button.speech-chosen:disabled { opacity: 1; cursor: default; color: #e8d4a6; background: linear-gradient(90deg, #aa604b40, #aa604b0d 70%, transparent); }
 /* Italics set the free text choice apart from his suggestions, like an action line. */
 .speech-choices .speech-own { color: #a4b5a0; font-style: italic; }
+/* The travel action stands apart from his suggestions: one quiet line under its own rule, in every state of the dialog. */
+.speech-travel { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin: -4px 0 -6px; padding: 6px 10px; border: 0; border-radius: 2px; color: #a4b5a0; background: transparent; font-size: 14px; text-align: left; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; transition: color .15s ease-out; }
+.speech-travel:hover:not([aria-disabled='true']), .speech-travel:focus-visible { color: #e8d4a6; text-decoration-color: currentColor; }
+.speech-travel[aria-disabled='true'] { opacity: .5; cursor: wait; }
+.speech-travel:focus-visible { outline: 1px solid #e8d4a680; outline-offset: -1px; }
 form { flex-shrink: 0; position: relative; z-index: 1; }
 /* The accessible name stays "Your text". A chat composer needs no visible caption. */
 .speech-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
