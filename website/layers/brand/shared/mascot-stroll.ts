@@ -49,8 +49,10 @@ const restPhase = Math.PI / 2
  * when a visitor stops him. `arrive` is how near a stop counts as there. `steer` is how fast his course turns, in radians a second,
  * and `reverse` is the turn of his course, in radians, that he will not walk as a curve.
  * `slowest` is the slowest his cycle runs while he moves, as a share of its rate at a full walk: slower travel takes shorter steps, not slower ones.
+ * The walk speed is a setting that can fall to zero while he walks. So his brake is sized for the speed he has, and for `least` at the least,
+ * and the step that ends a walk comes down at `landing` radians of the cycle a second at the least.
  */
-export const strollPace = { brake: 0.5, reach: 2.2, halt: 3, arrive: 0.02, steer: 2.6, reverse: 1.3, slowest: 0.85 }
+export const strollPace = { brake: 0.5, reach: 2.2, halt: 3, arrive: 0.02, steer: 2.6, reverse: 1.3, slowest: 0.85, least: 0.1, landing: 2.5 }
 
 export const startStroll = (position: Point, destination: number): Stroll => ({
   position, destination, speed: 0, thrust: 0, course: 0, gait: 0, phase: restPhase, rest: restPhase, tempo: 0, heading: 0,
@@ -115,12 +117,12 @@ export function advanceStroll(state: Stroll, { delta, route, pauses, walkSpeed, 
   // His speed follows the cruise through a thrust that itself changes smoothly.
   // A stop is timed to his feet: he loses the last of his speed as the foot in the air comes down, so he does not stand and then step.
   const landing = state.tempo > 0 ? Math.max(0.1, (state.rest - state.phase) / state.tempo) : 0.1
-  const push = cruise === 0 ? -Math.min(walkSpeed * strollPace.halt, state.speed / landing)
-    : clamp((cruise - state.speed) * 8, -walkSpeed * strollPace.halt, walkSpeed * strollPace.reach)
+  const brake = Math.max(walkSpeed, state.speed, strollPace.least) * strollPace.halt
+  const push = cruise === 0 ? -Math.min(brake, state.speed / landing) : clamp((cruise - state.speed) * 8, -brake, walkSpeed * strollPace.reach)
   const thrust = follow(state.thrust, push, 16, delta)
   let speed = Math.max(0, state.speed + thrust * delta)
   // Below a hundredth of his walk he is standing. The last of the brake then ends.
-  if (cruise === 0 && speed < walkSpeed * 0.01) speed = 0
+  if (cruise === 0 && speed < Math.max(walkSpeed, strollPace.least) * 0.01) speed = 0
   // Once he has arrived, the last of his speed still moves him. A route of one stop would otherwise hold him dead on it.
   const step = walking ? Math.min(distance, speed * delta) : speed * delta
   const position: Point = step > 0 ? [state.position[0] + Math.sin(course) * step, state.position[1] + Math.cos(course) * step] : state.position
@@ -139,7 +141,8 @@ export function advanceStroll(state: Stroll, { delta, route, pauses, walkSpeed, 
   const full = walkSpeed * cadence
   // On his way to a stand he ends the step he is in and begins no other. The last of his speed then moves him over both feet.
   const stopping = cruise === 0 || arrived
-  const tempo = (stopping ? state.phase < state.rest : speed > 0) ? Math.max(speed * cadence, full * strollPace.slowest) : 0
+  const tempo = stopping ? (state.phase < state.rest ? Math.max(speed * cadence, full * strollPace.slowest, strollPace.landing) : 0)
+    : speed > 0 ? Math.max(speed * cadence, full * strollPace.slowest) : 0
   let phase = state.phase + tempo * delta, rest = state.rest
   if (stopping) phase = Math.min(rest, phase)
   // He will stop at the next stand of his feet.

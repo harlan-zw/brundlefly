@@ -288,3 +288,24 @@ test('with motion off he stands where the turn would end, with both feet down', 
   assert.deepEqual({ heading: stood.heading, rate: stood.rate, steps: stood.steps, side: stood.side }, { heading: -0.5, rate: 0, steps: 0, side: -1 })
   assert.ok(Math.abs(Math.sin(stood.phase)) < 1e-9, 'A step in place must end with the foot on the floor.')
 })
+
+test('lowering the walk speed in the middle of a walk still brings him to a stand at his stop', () => {
+  // The scene's Walk speed slider goes down to zero, and a visitor can move it while he walks.
+  for (const lowered of [0, 0.075]) {
+    const walking = run(startStroll([0, 0], 0), 1.5)
+    assert.ok(walking.speed > 0.45)
+    let state = walking, seconds = 0
+    while (!(lowered === 0 ? settled(state) : state.activity._tag === 'Pausing' && settled(state)) && seconds < 60) {
+      state = advanceStroll(state, { delta: frame, route, pauses, walkSpeed: lowered, attention: 'free' })
+      seconds += frame
+    }
+    assert.ok(settled(state), `At a walk speed of ${lowered} he never stood with both feet down.`)
+    // With no speed to walk at, he ends his step and stands. With a little, he walks on slowly and stands at his stop.
+    if (lowered === 0) assert.ok(between(state.position, walking.position) < 0.3 && seconds < 1.5, `He went on for ${between(state.position, walking.position).toFixed(2)} units and ${seconds.toFixed(1)} s.`)
+    else assert.ok(between(state.position, route[0]) < 0.08, `He stood ${between(state.position, route[0]).toFixed(2)} units from his stop.`)
+    // He stays where he stands.
+    const stood = state.position
+    for (let elapsed = 0; elapsed < 1; elapsed += frame) state = advanceStroll(state, { delta: frame, route, pauses, walkSpeed: lowered, attention: 'free' })
+    assert.ok(between(state.position, stood) < (lowered === 0 ? 1e-9 : 0.08))
+  }
+})
