@@ -8,9 +8,14 @@ import { choiceNeedsInput, parsePresetGraph, resolveOpeningPreset, resolvePreset
 import type { ConversationTurn } from '#shared/preset-dialogue'
 import { breathGroups, groupsSaid, revealTimes } from '#shared/line-reveal'
 import { voiceDuration } from '#shared/scene-audio'
+import { travelAction } from '#shared/travel'
+import type { SetName } from '@brundlefly/brand/shared/scene-set'
 
-const { open, muted = false, soundAvailable = true } = defineProps<{ open: boolean, muted?: boolean, soundAvailable?: boolean }>()
-const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: Pick<ConversationReply, 'mood' | 'beat'>], pending: [value: boolean] }>()
+const { open, place, travelling = false, muted = false, soundAvailable = true } = defineProps<{ open: boolean, place: SetName, travelling?: boolean, muted?: boolean, soundAvailable?: boolean }>()
+const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: Pick<ConversationReply, 'mood' | 'beat'>], pending: [value: boolean], travel: [to: SetName] }>()
+// The app's own action: it takes him to the other place. It is no reply, so it sends nothing and leaves the conversation as it is.
+// During a journey the action waits. It keeps the keyboard focus, so it is marked as unavailable and not disabled.
+const journey = computed(() => travelAction(place))
 const dialog = shallowRef<HTMLDialogElement>()
 const input = shallowRef<HTMLTextAreaElement>()
 const conversation = shallowRef<HTMLElement>()
@@ -282,6 +287,7 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
         </li>
       </ol>
     </div>
+    <button class="speech-travel" type="button" :aria-disabled="travelling" @click="travelling || emit('travel', journey.to)">{{ journey.label }}</button>
     <p class="speech-announcement" role="status" aria-live="polite" aria-atomic="true">{{ spoken?.text }}</p>
     <form v-if="mode === 'Compose'" @submit.prevent="receive('dialogue')">
       <label class="speech-label" for="speech-input">Your text</label>
@@ -359,6 +365,11 @@ button:disabled { cursor: wait; opacity: .5; }
 .speech-choices button.speech-chosen:disabled { opacity: 1; cursor: default; color: #e8d4a6; background: linear-gradient(90deg, #aa604b40, #aa604b0d 70%, transparent); }
 /* Italics set the free text choice apart from his suggestions, like an action line. */
 .speech-choices .speech-own { color: #a4b5a0; font-style: italic; }
+/* The travel action stands apart from his suggestions: one quiet line under its own rule, in every state of the dialog. */
+.speech-travel { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin: -4px 0 -6px; padding: 6px 10px; border: 0; border-radius: 2px; color: #a4b5a0; background: transparent; font-size: 14px; text-align: left; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; transition: color .15s ease-out; }
+.speech-travel:hover:not([aria-disabled='true']), .speech-travel:focus-visible { color: #e8d4a6; text-decoration-color: currentColor; }
+.speech-travel[aria-disabled='true'] { opacity: .5; cursor: wait; }
+.speech-travel:focus-visible { outline: 1px solid #e8d4a680; outline-offset: -1px; }
 form { flex-shrink: 0; position: relative; z-index: 1; }
 /* The accessible name stays "Your text". A chat composer needs no visible caption. */
 .speech-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

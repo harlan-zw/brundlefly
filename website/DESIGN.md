@@ -155,6 +155,31 @@ Use modest mesh resolution, instanced perimeter plates, and soft ground shading.
 The mascot GLB carries skin weights, skeleton, canonical texture, and idle and walk clips.
 Runtime GLSL remains in the layer source. The relief does not supply a full sculpted back or side.
 
+## Sets
+
+A set is the place the mascot stands in. The scene owns the mascot, the camera, and the conversation, and a set owns everything else.
+shared/scene-set.ts names what a set gives the scene: its layout, its cue targets, its fog, its background, and the optional effects it asks for.
+The lair is the set at `/`. The office is the set at `/office`. The mascot, his shading, and the dialog are the same in both.
+The stage lives in app.vue, above the pages. Each page file is only an address, so a change of address keeps one scene and one conversation.
+
+The office is a late-1990s low-poly research office, built from flat boxes in shared/office.ts.
+Its floor plan is data in shared/office-layout.ts. `checkOfficePlan` proves his walk, his way to the door, and the camera sightlines against that plan.
+The office follows the pixel treatment: 128 px texture tiles with nearest-neighbour filtering, hard edges, and no smoothing.
+It draws no fog, no finishing pass, and no floor mirror. Each surface is one draw call, and four lights cast no shadows.
+The specimen jars stand in for the eggs, the test chamber window for the light, and the failing ceiling tube for the ceiling.
+The office shows no readable text. The whiteboard, the door sign, the mug label, the clock face, and the keys are regions of one drawn sheet in shared/office-marks.ts.
+Approved text can replace the drawing in a region later. Confirm the text with the owner first.
+The failing tube follows scene time and never flashes more than three times a second. Reduced motion holds it lit.
+
+## Travel between sets
+
+The dialog has one travel action that the app owns. It changes the place. It is no reply: it sends nothing and takes no chat turn.
+He leaves his loop and walks toward the way out: the door in the office, the throat of the tunnel in the lair.
+The picture fades to dark, the scene strikes the old set and raises the new one, and the picture returns as he walks in.
+The dialog stays open with its conversation. The view goes wide for the journey and lifts him clear of the dialog.
+The address follows the set after the change, and Back and Forward make the same journey.
+Reduced motion and Motion off replace the journey with a plain cut and a short dark hold.
+
 ## Hidden controls
 
 Keep scene controls hidden by default. L toggles the panel when the visitor is not typing.

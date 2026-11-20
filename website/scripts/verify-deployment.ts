@@ -5,12 +5,16 @@ import { setTimeout } from 'node:timers/promises'
 const origin = new URL(process.argv[2] ?? 'https://brundlefly.dev')
 const output = new URL('../.output/public/', import.meta.url)
 const digest = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')
-const pages = ['/', '/brand-kit/', '/brand-kit/mascot/']
+const pages = ['/', '/office/', '/brand-kit/', '/brand-kit/mascot/']
 const required = new Set<string>(pages)
 
 // Verify every texture and model, plus the scripts each exported page loads.
 for (const name of await readdir(new URL('brand/kit/lair/', output))) {
   if (/\.(png|webp|glb)$/.test(name)) required.add(`/brand/kit/lair/${name}`)
+}
+// The office set's texture tiles. Without one, the office shows the static fallback.
+for (const name of await readdir(new URL('brand/office/', output))) {
+  if (name.endsWith('.png')) required.add(`/brand/office/${name}`)
 }
 for (const path of pages) {
   const html = await readFile(new URL(`.${path}index.html`, output), 'utf8')

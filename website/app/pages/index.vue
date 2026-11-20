@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import MascotStage from './_MascotStage.vue'
+// The address of the cave. The stage in app.vue draws the set this address names.
 </script>
 
 <template>
-  <MascotStage set="lair" />
+  <div hidden />
 </template>
