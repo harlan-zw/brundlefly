@@ -1,0 +1,10 @@
+{
+  "note": "Oblique paintings of the head. Each was made over an orthographic render of the working mesh: a square of span_mm, centred at the height centre_z_mm on the vertical line through pivot_mm (X and Y). yaw_degrees turns the viewer from the front about that line; a positive angle puts the viewer toward +X, which is the figure's left.",
+  "pivot_mm": [0.0, -12.0],
+  "centre_z_mm": 58.0,
+  "span_mm": 36.0,
+  "views": [
+    { "image": "head-left.png", "yaw_degrees": 60 },
+    { "image": "head-right.png", "yaw_degrees": -60 }
+  ]
+}

@@ -4,18 +4,22 @@ import { useDeviceOrientation, useDocumentVisibility, useElementSize, useEventLi
 import { useRoute } from '#app'
 import {
   ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
-  NoColorSpace, PerspectiveCamera, PlaneGeometry, Quaternion, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
+  NoColorSpace, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SpotLight, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
-import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
+import { loadMeshMascot, meshShading } from '@brundlefly/brand/shared/mascot-mesh'
+import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
+import { resolveSceneQuality } from '@brundlefly/brand/shared/scene-quality'
+import { createSceneFinish } from '@brundlefly/brand/shared/scene-finish'
+import { createFloorReflection } from '@brundlefly/brand/shared/floor-reflection'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
-import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
+import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ConversationMood } from '#shared/conversation'
@@ -23,7 +27,17 @@ import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
 const { paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
-const spriteMascot = useRoute().query.mascot === 'sprite'
+type MascotMode = 'relief' | 'sprite' | 'mesh'
+const requestedMascot = useRoute().query.mascot
+const mascotMode: MascotMode = requestedMascot === 'sprite' || requestedMascot === 'mesh' ? requestedMascot : 'relief'
+const spriteMascot = mascotMode === 'sprite'
+// `?quality=low`, `medium`, or `high` overrides the tier that the device would get.
+const requestedQuality = useRoute().query.quality
+const shownQuality = ref<string>()
+// The scene reports the mascot it shows. A mesh that cannot load shows the relief rig.
+const shownMascot = ref<MascotMode>()
+// How the visible mascot moves: the relief rig's pose code, the file's own clip, or a whole-body sway.
+const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
 const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
@@ -65,6 +79,8 @@ let cleanup: (() => void) | undefined
 let refresh: (() => void) | undefined
 let hit: ((pointer: Vector2) => boolean) | undefined
 let bounds = { left: 0, right: 0, top: 0, bottom: 0 }
+/** The hover area in host pixels. The pointer cursor shows over it. */
+const overMascot = (x: number, y: number) => x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
 let cameraView = { ...defaultCameraView }
 const cameraKeys = new Set<CameraKey>()
 type Gesture = { _tag: 'Idle' } | { _tag: 'Armed' | 'Dragging'; id: number; startX: number; startY: number; x: number; y: number }
@@ -104,7 +120,7 @@ function move(event: PointerEvent) {
   }
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
-  hovered.value = x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
+  hovered.value = overMascot(x, y)
 }
 function select(event: MouseEvent) {
   askForTilt()
@@ -149,8 +165,10 @@ watch(canvas, async (element) => {
   if (!element) return
   const context = element.getContext('webgl2', { alpha: false, antialias: true })
   if (!context) { status.value = { _tag: 'Fallback', reason: 'context' }; return }
-  const results = await Promise.allSettled([
-    new TextureLoader().loadAsync('/brand/kit/modular/flesh-diffuse.png'),
+  // A missing or broken model file is an error value. The relief rig then takes its place.
+  const [results, meshResult] = await Promise.all([Promise.allSettled([
+    // The tunnel's tissue is a smooth painting of the kit's pixel-art flesh tile, with every fold in the same place.
+    new TextureLoader().loadAsync('/brand/kit/lair/tunnel-diffuse.webp'),
     new TextureLoader().loadAsync('/brand/character.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/goo-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/chitin-diffuse.png'),
@@ -161,7 +179,7 @@ watch(canvas, async (element) => {
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/room-diffuse.webp'),
     new TextureLoader().loadAsync('/brand/kit/lair/room-height.webp'),
-  ])
+  ]), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, meshShading) : undefined])
   const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult, roomResult, roomHeightResult] = results
   if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
     || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || roomResult.status === 'rejected' || roomHeightResult.status === 'rejected') {
@@ -169,6 +187,7 @@ watch(canvas, async (element) => {
       if (result.status === 'fulfilled') result.value.dispose()
       else console.error('Brundlefly world artwork failed to load.', result.reason)
     }
+    if (meshResult?._tag === 'Ok') meshResult.mascot.dispose()
     status.value = { _tag: 'Fallback', reason: 'art' }
     return
   }
@@ -176,7 +195,7 @@ watch(canvas, async (element) => {
     surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value, roomResult.value, roomHeightResult.value,
   ]
   const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture, roomHeightTexture]
-  if (!alive) { loadedTextures.forEach(value => value.dispose()); return }
+  if (!alive) { loadedTextures.forEach(value => value.dispose()); if (meshResult?._tag === 'Ok') meshResult.mascot.dispose(); return }
   loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
   roomHeightTexture.colorSpace = NoColorSpace
   for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture]) {
@@ -193,7 +212,8 @@ watch(canvas, async (element) => {
   projectionTexture.magFilter = LinearFilter
   bodyProjectionTexture.wrapS = bodyProjectionTexture.wrapT = ClampToEdgeWrapping
   bodyProjectionTexture.magFilter = LinearFilter
-  texture.magFilter = mascotTexture.magFilter = NearestFilter
+  // The relief mascot is pixel artwork, so it keeps hard pixels. The tissue of the lair is a surface in a lit room: hard pixels show there as a grid.
+  mascotTexture.magFilter = NearestFilter
   const image = mascotTexture.image as HTMLImageElement
   const raster = document.createElement('canvas')
   raster.width = 180
@@ -212,21 +232,32 @@ watch(canvas, async (element) => {
   bodyProjectionRaster.height = Math.round(180 * bodyProjectionImage.height / bodyProjectionImage.width)
   const bodyProjectionPainter = bodyProjectionRaster.getContext('2d')!
   bodyProjectionPainter.drawImage(bodyProjectionImage, 0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height)
-  const mascot = createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
-    spriteMascot ? undefined : { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) },
-    spriteMascot ? undefined : { texture: bodyProjectionTexture, raster: bodyProjectionPainter.getImageData(0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height) })
+  const headProjection = { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) }
+  if (meshResult?._tag === 'Err') console.warn(`The Brundlefly mesh could not load. The relief rig takes its place. ${meshResult.reason}`)
+  const mascot = meshResult?._tag === 'Ok' ? meshResult.mascot : { _tag: 'Relief' as const, ...createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
+    spriteMascot ? undefined : headProjection,
+    spriteMascot ? undefined : { texture: bodyProjectionTexture, raster: bodyProjectionPainter.getImageData(0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height) }) }
+  shownMascot.value = mascot._tag === 'Mesh' ? 'mesh' : mascotMode === 'sprite' ? 'sprite' : 'relief'
+  // The mesh gets the relief rig's eyes, from the same head artwork and face skin.
+  if (mascot._tag === 'Mesh') mascot.dressEyes({ projection: headProjection, skin: faceTexture })
   const roomHeightImage = roomHeightTexture.image as HTMLImageElement
   const roomHeightRaster = document.createElement('canvas')
   roomHeightRaster.width = roomHeightImage.width
   roomHeightRaster.height = roomHeightImage.height
   const roomHeightPainter = roomHeightRaster.getContext('2d')!
   roomHeightPainter.drawImage(roomHeightImage, 0, 0)
+  const quality = resolveSceneQuality({ requested: requestedQuality, coarsePointer: touchScreen.value, cores: navigator.hardwareConcurrency,
+    memory: (navigator as Navigator & { deviceMemory?: number }).deviceMemory, shortSide: Math.min(window.innerWidth, window.innerHeight) })
+  shownQuality.value = quality.tier
   const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture, room: roomTexture,
-    roomHeight: { texture: roomHeightTexture, raster: roomHeightPainter.getImageData(0, 0, roomHeightRaster.width, roomHeightRaster.height) } })
+    roomHeight: { texture: roomHeightTexture, raster: roomHeightPainter.getImageData(0, 0, roomHeightRaster.width, roomHeightRaster.height) } }, quality)
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio))
+  // The floor and the walls run away from the camera at shallow angles. Without this they blur there.
+  const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
+  for (const surface of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, roomTexture, roomHeightTexture]) surface.anisotropy = anisotropy
   const scene = new Scene()
   scene.background = new Color('#080B08')
   const environment = createWetEnvironment(renderer)
@@ -237,10 +268,13 @@ watch(canvas, async (element) => {
   const figure = new Group()
   figure.scale.setScalar(1.25)
   figure.add(mascot.root)
-  const positions = mascot.mesh.geometry.getAttribute('position')
-  const indices = mascot.mesh.geometry.index!
+  // The mesh stands on its own origin. The relief rig stands on its lowest drawn vertex.
   let bottom = 0
-  for (let index = 0; index < indices.count; index++) bottom = Math.min(bottom, positions.getY(indices.getX(index)))
+  if (mascot._tag === 'Relief') {
+    const positions = mascot.mesh.geometry.getAttribute('position')
+    const indices = mascot.mesh.geometry.index!
+    for (let index = 0; index < indices.count; index++) bottom = Math.min(bottom, positions.getY(indices.getX(index)))
+  }
   const floorY = -2.2 - bottom * 1.25
   figure.position.set(sceneLayout.mascot[0], floorY, sceneLayout.mascot[1])
   scene.add(figure)
@@ -253,16 +287,56 @@ watch(canvas, async (element) => {
   shadow.rotation.x = -Math.PI / 2
   shadow.position.y = -2.19
   scene.add(shadow)
+  // The mesh has real feet. A small dark patch under each one ties it to the floor, and fades as the foot lifts.
+  const footShadowGeometry = new PlaneGeometry(0.66, 0.5)
+  const footShadows = mascot._tag === 'Mesh' ? [0, 1].map(() => {
+    const patch = new Mesh(footShadowGeometry, new ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uStrength: { value: 0 } },
+      vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+      fragmentShader: 'uniform float uStrength;varying vec2 vUv;void main(){float r=length((vUv-.5)*2.0);gl_FragColor=vec4(0.0,0.0,0.0,max(0.0,1.0-r*r)*.62*uStrength);}',
+    }))
+    patch.rotation.x = -Math.PI / 2
+    patch.position.y = -2.185
+    scene.add(patch)
+    return patch
+  }) : []
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
+  // The finishing pass draws the scene through its own target. A tier without it draws straight to the canvas.
+  const finish = createSceneFinish(renderer, scene, camera, quality)
+  // The wet floor mirrors the room at the highest tier only: it draws the room a second time.
+  const reflection = finish && quality.reflection ? createFloorReflection(768, 432) : undefined
+  if (reflection) scene.add(reflection.mesh)
   const raycaster = new Raycaster()
-  hit = position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
+  // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.
+  hit = mascot._tag === 'Mesh'
+    ? position => overMascot((position.x + 1) * renderWidth / 2, (1 - position.y) * renderHeight / 2)
+    : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
   let stroll = startStroll(sceneLayout.mascot, 0)
+  // The mesh's turn about the vertical. The relief rig is flat artwork and always faces screen right.
+  // His feet carry every turn, so he never spins where he stands.
+  let turn = startTurn(mascot._tag === 'Mesh' ? mascot.restHeading : 0)
   let elapsed = 0
   let faceElapsed = 0
+  // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
+  const attention = { weight: 0, tilt: 0 }
+  // How much of a walk-pause habit shows. It falls to zero in a conversation and returns after it.
+  let habitWeight = 1
+  // A mesh with the relief rig's joints takes the relief rig's pose code. Any other mesh plays its own clip or sway.
+  const meshPose = mascot._tag === 'Mesh' ? mascot.pose : undefined
+  const walks = mascot._tag === 'Relief' || meshPose !== undefined
+  // The mesh is a full body, so it walks a route that keeps it clear of the egg sacs.
+  const route = meshPose ? sceneLayout.meshWalk : sceneLayout.walk
+  // His legs cycle once for each stride of ground he covers, so a planted foot does not slide. The relief rig keeps its own cadence.
+  const stride = mascot._tag === 'Mesh' ? mascot.strideLength : undefined
+  const meshCadence = stride ? Math.PI * 2 / (stride * figure.scale.x) : undefined
+  // A full body reads as heavy at about one walk cycle in 1.6 seconds. That needs more speed than the relief rig's short cycle.
+  const walkPace = meshPose ? 1.5 : 1
+  mascotMotion.value = walks ? 'posed' : mascot._tag === 'Mesh' && mascot.motion._tag === 'Clip' ? 'clip' : 'sway'
+  if (mascot._tag === 'Mesh' && mascot.poseGap) console.warn(`The Brundlefly mesh keeps its own motion. ${mascot.poseGap}`)
   let lastReaction = reaction
   let reactionStarted = 0
-  const leftHand = mascot.root.getObjectByName('left-hand')!
-  const rightHand = mascot.root.getObjectByName('right-hand')!
+  // Only the relief rig has hand joints. The mesh performs no habit, so it never needs a hand cue.
+  const leftHand = mascot.root.getObjectByName('left-hand') ?? figure
+  const rightHand = mascot.root.getObjectByName('right-hand') ?? figure
   const light = new Vector3(...sceneLayout.opening.position)
   const eggClusters = sceneLayout.eggs.map(([x, z]) => new Vector3(x, -1.9, z))
   // A habit's eye cue becomes a world point. Eggs resolve to the nearer cluster.
@@ -277,6 +351,11 @@ watch(canvas, async (element) => {
   let renderWidth = 0
   let renderHeight = 0
   let focusProgress = paused ? 1 : 0
+  // The mesh is a full body, so its conversation is staged: a head-and-shoulders shot, and two lights for his face that rise with the shot.
+  // Both lights stay in the scene at zero, so opening the dialog compiles no new shader. The relief rig keeps its full-body shot and the lair's light.
+  const staging = mascot._tag === 'Mesh' ? { eyeLine: mascot.eyeLine, rest: Math.abs(mascot.restHeading) || 0.5, face: new Vector3(), placed: false, side: 1 as 1 | -1, drift: 0,
+    key: new SpotLight('#F2DEB8', 0, 7, 0.34, 0.9, 2), rim: new PointLight('#6FB7C0', 0, 3.5, 2) } : undefined
+  if (staging) scene.add(staging.key, staging.key.target, staging.rim)
   const basePosition = new Vector3()
   const baseTarget = new Vector3()
   let tiltRest: Quaternion | undefined
@@ -289,7 +368,11 @@ watch(canvas, async (element) => {
     scene.environmentIntensity = settings.value.reflections
     const aspect = renderWidth / renderHeight
     const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(sceneLayout.camera.desktop, sceneLayout.camera.portrait, aspect)
-    fog.density = settings.value.fog * fogScale
+    const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
+    focusProgress = advanceConversationFocus(focusProgress, paused, delta, reduced.value === 'reduce')
+    const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
+    // Thicker air during a staged talk pushes the lair back behind him.
+    fog.density = settings.value.fog * fogScale * (staging ? 1 + blend * 0.7 : 1)
     if (camera.fov !== fieldOfView) { camera.fov = fieldOfView; camera.updateProjectionMatrix() }
     if (!paused) cameraView = moveCameraView(cameraView, cameraKeys, delta)
     const { alpha, beta, gamma } = orientation
@@ -305,47 +388,114 @@ watch(canvas, async (element) => {
     const view = resolveCameraView(tiltCameraView(cameraView, tilt), framing, sceneLayout.camera.target, settings.value.zoom)
     basePosition.set(...view.position)
     baseTarget.set(...view.target)
-    focusProgress = advanceConversationFocus(focusProgress, paused, delta, reduced.value === 'reduce')
-    const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
     // Frame his face clear of the dialog, so his mouth stays visible while he speaks.
-    const focus = resolveConversationFocus(figure.localToWorld(new Vector3(0.23, 0.8, 0)), renderWidth, renderHeight, camera.fov)
+    const face = mascot._tag === 'Mesh' ? mascot.facePoint(new Vector3()) : figure.localToWorld(new Vector3(0.23, 0.8, 0))
+    if (staging) {
+      // Between talks the shot takes the side he faces and starts from rest. During a talk it keeps that side, so the camera never crosses him.
+      const resting = !paused && focusProgress === 0
+      if (resting) { staging.side = turn.side; staging.drift = 0 }
+      // His head turns to the camera, and the camera frames his head. A slow follow keeps that loop calm and leaves his head free to act in the frame.
+      // A still frame has no later frame to catch up in, so it takes his face as it is.
+      const eyes = staging.eyeLine(new Vector3())
+      if (resting || !faceMotion || !staging.placed) staging.face.copy(eyes)
+      else {
+        // His head moves as he acts, and it bobs as he stops from a walk. The frame holds still for a small move
+        // and follows only the part of a larger one. A frame that chased every move swung for seconds after the shot landed.
+        const reach = staging.face.distanceTo(eyes)
+        if (reach > 0.1) staging.face.lerp(eyes, (1 - 0.1 / reach) * (1 - Math.exp(-delta / 0.5)))
+      }
+      staging.placed = true
+      if (paused && faceMotion) staging.drift += delta
+      // At rest the key holds a low level above his head. It falls off toward his feet, which gives his body its shape.
+      staging.key.intensity = 6 + blend * 18
+      staging.rim.intensity = blend * 4
+      // The key stands on the side his body faces. That follows his turn smoothly, so the light never jumps across him.
+      const keySide = Math.max(-1, Math.min(1, turn.heading / staging.rest))
+      staging.key.position.set(staging.face.x + keySide * 1.5, staging.face.y + 1.3, staging.face.z + 2.4)
+      staging.key.target.position.copy(staging.face)
+      // The rim sits low and wide on his far side. It edges his jaw and shoulder, and stays far from the pale wing above them.
+      staging.rim.position.set(staging.face.x - staging.side * 1.9, staging.face.y, staging.face.z - 0.9)
+    }
+    const focus = staging ? resolveConversationCloseUp(staging.face, renderWidth, renderHeight, camera.fov, staging.side, staging.drift)
+      : resolveConversationFocus(face, renderWidth, renderHeight, camera.fov)
     const shot = blendCameraShot({ position: basePosition, target: baseTarget }, focus, blend)
     camera.position.copy(shot.position)
     camera.quaternion.copy(shot.quaternion)
     camera.updateMatrixWorld()
-    const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
-    if (faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route: sceneLayout.walk,
-      pauses: sceneLayout.walkPauses, walkSpeed: settings.value.walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free' })
-    const pose = faceMotion ? strollPose(stroll, settings.value.walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
+    // A mesh without the relief rig's joints stands where the relief rig starts.
+    const walkSpeed = settings.value.walkSpeed * walkPace
+    // Only the part of his travel that lies along his facing moves his legs. He cannot turn his back, so some legs of the route are partly sideways.
+    const along = meshPose ? Math.max(0.35, Math.cos(travelYaw(stroll, route) - turn.heading)) : 1
+    const attentionNow = paused ? 'talking' as const : hovered.value ? 'noticed' as const : 'free' as const
+    if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
+      pauses: sceneLayout.walkPauses, walkSpeed, attention: attentionNow,
+      cadence: meshCadence ? meshCadence * along : undefined })
+    if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
+      const facing = { route, walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow }
+      // With motion off he has no steps to turn with, so he stands where the turn would end.
+      turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
+    }
+    const pose = faceMotion ? strollPose(stroll, walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
-    figure.rotation.y = stroll.heading
+    // The relief rig leans a little toward its travel. The mesh's turn already faces it.
+    figure.rotation.y = meshPose ? 0 : stroll.heading
     if (environmentMotion.value) elapsed += delta
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
-    // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
-    const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
-    const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
-    if (habit) layers.push(habit)
-    // Directional habits turn toward the nearer egg cluster. Screen right is +x.
-    const side = nearestEggs().x >= figure.position.x ? 1 : -1
-    const mannerism = poseMannerisms(layers.map(layer => ({ ...layer, side })))
-    // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
-    const eyes = !faceMotion ? { _tag: 'Ahead' } as const
-      : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
-        : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
-    mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose, eyes, mannerism,
-      speaking: faceMotion ? speaking : 0,
-      brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
-        : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
-      squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 })
+    // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.
+    // Reduced motion and Motion off keep the pose.
+    const ease = Math.min(1, delta * 4)
+    attention.weight = faceMotion ? attention.weight + (Number(paused || hovered.value) - attention.weight) * ease : 0
+    attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused ? 0.07 : 0) - attention.tilt) * ease : 0
+    const look = { target: camera.position, weight: attention.weight, tilt: attention.tilt }
+    if (mascot._tag === 'Mesh' && !meshPose) mascot.update(faceElapsed, look)
+    else {
+      // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
+      const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
+      const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
+      // A habit turns his head away: to the ceiling, to a palm, to the eggs. In a conversation he faces the visitor.
+      // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
+      habitWeight = faceMotion ? habitWeight + ((paused ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
+      if (habit) layers.push({ ...habit, weight: habitWeight })
+      // Directional habits turn toward the nearer egg cluster. Screen right is +x.
+      const side = nearestEggs().x >= figure.position.x ? 1 : -1
+      const mannerism = poseMannerisms(layers.map(layer => ({ ...layer, side })))
+      // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
+      const eyes = !faceMotion ? { _tag: 'Ahead' } as const
+        : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
+          : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
+      const input = { time: faceElapsed, pressure: 0, pointer, transform: 'squeeze' as const, ...pose, eyes, mannerism,
+        speaking: faceMotion ? speaking : 0,
+        brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
+          : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
+        squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 }
+      if (meshPose) meshPose({ ...input, stepInPlace: turn.steps, stepPhase: turn.phase }, look, turn.heading)
+      else if (mascot._tag === 'Relief') mascot.update(input)
+    }
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
-    const corners = [new Vector3(-1.1, -1.25, 0), new Vector3(1.1, 1.3, 0)].map(value => figure.localToWorld(value).project(camera))
+    if (mascot._tag === 'Mesh' && footShadows.length) {
+      // The large shadow lies between his feet. A turn on his feet moves him off his route point, and the shadow goes with him.
+      shadow.position.x = shadow.position.z = 0
+      mascot.footContacts((place, planted, index) => {
+        const patch = footShadows[index]!
+        patch.position.x = place.x
+        patch.position.z = place.z
+        patch.material.uniforms.uStrength!.value = planted
+        shadow.position.x += place.x / 2
+        shadow.position.z += place.z / 2
+      })
+    }
+    const reach = mascot._tag === 'Mesh' ? [new Vector3(mascot.extent.left, 0, 0), new Vector3(mascot.extent.right, mascot.extent.height, 0)]
+      : [new Vector3(-1.1, -1.25, 0), new Vector3(1.1, 1.3, 0)]
+    const corners = reach.map(value => figure.localToWorld(value).project(camera))
     bounds = { left: (corners[0]!.x + 1) * renderWidth / 2, right: (corners[1]!.x + 1) * renderWidth / 2,
       top: (1 - corners[1]!.y) * renderHeight / 2, bottom: (1 - corners[0]!.y) * renderHeight / 2 }
-    renderer.render(scene, camera)
+    reflection?.update(settings.value.wetness)
+    if (finish) finish.render({ time: elapsed, focus: blend, focusDistance: camera.position.distanceTo(staging ? staging.face : face) })
+    else renderer.render(scene, camera)
   }
   refresh = () => {
     const w = Math.max(1, width.value)
@@ -353,6 +503,7 @@ watch(canvas, async (element) => {
     if (w !== renderWidth || h !== renderHeight) {
       renderWidth = w; renderHeight = h
       renderer.setSize(w, h, false)
+      finish?.setSize(w, h)
       camera.aspect = w / h
       camera.updateProjectionMatrix()
     }
@@ -373,7 +524,9 @@ watch(canvas, async (element) => {
     endView()
     renderer.setAnimationLoop(null)
     world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
+    staging?.key.dispose(); staging?.rim.dispose(); finish?.dispose(); reflection?.dispose()
     shadowGeometry.dispose(); shadowMaterial.dispose(); environment.dispose(); renderer.dispose()
+    footShadowGeometry.dispose(); footShadows.forEach(patch => patch.material.dispose())
   }
   status.value = { _tag: 'Ready' }
   refresh()
@@ -381,9 +534,9 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-renderer="status._tag" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
-    <div v-if="status._tag === 'Ready'" class="world-vignette" aria-hidden="true" />
+    <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && shownMascot === 'mesh' }" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
     <img v-if="status._tag === 'Fallback'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
     <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" :disabled="status._tag === 'Loading'" aria-label="Talk to Brundlefly" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
@@ -398,6 +551,12 @@ canvas { display: block; width: 100%; height: 100%; }
 /* Dark edges hold the eye on the opening and the mascot. */
 .world-vignette { position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(ellipse 72% 68% at 50% 52%, transparent 52%, rgb(8 11 8 / 0.55) 82%, rgb(8 11 8 / 0.88) 100%); }
+/* A staged talk darkens the lair around his head. The dark ring rises with the camera. */
+.world-vignette::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity .65s ease-in-out;
+  background: radial-gradient(ellipse 58% 62% at 50% 32%, transparent 38%, rgb(8 11 8 / 0.5) 78%, rgb(8 11 8 / 0.82) 100%); }
+.world-vignette-close::after { opacity: 1; }
+@media (orientation: landscape) and (max-height: 540px) { .world-vignette::after { background: radial-gradient(ellipse 46% 80% at 26% 44%, transparent 38%, rgb(8 11 8 / 0.5) 78%, rgb(8 11 8 / 0.82) 100%); } }
+@media (prefers-reduced-motion: reduce) { .world-vignette::after { transition: none; } }
 .world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, default; touch-action: none; }
 .world-interaction.mascot-hover { cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, pointer; }
 .world-interaction:focus-visible { outline: 2px solid var(--color-cream); outline-offset: -8px; }

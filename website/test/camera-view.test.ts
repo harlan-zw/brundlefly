@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { PerspectiveCamera, Quaternion, Vector3 } from 'three'
-import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '../layers/brand/shared/camera-view.ts'
+import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '../layers/brand/shared/camera-view.ts'
 
 test('mouse look permits a full turn and limits pitch before the view flips', () => {
   const view = rotateCameraView(defaultCameraView, Math.PI * 2 / 0.0028, 10000)
@@ -144,6 +144,66 @@ test('a talking face moves left of the side dialog on short landscape screens', 
     assert.ok(Math.abs(face.x - free / 2) < free * 0.08, `${width}x${height}: face at ${face.x}, free area ${free}`)
     assert.ok(face.y > height * 0.3 && face.y < height * 0.55, `${width}x${height}: face at ${face.y}`)
   }
+})
+
+const closeFace = (width: number, height: number, side: 1 | -1, drift = 0) => {
+  const face = new Vector3(0.9, -0.4, -0.7)
+  const { fieldOfView } = resolveResponsiveCameraFraming([0, 0.75, 10.4], [0, 1.1, 15.2], width / height)
+  const shot = resolveConversationCloseUp(face, width, height, fieldOfView, side, drift)
+  const camera = new PerspectiveCamera(fieldOfView, width / height, 0.1, 50)
+  camera.position.copy(shot.position)
+  camera.lookAt(shot.target)
+  camera.updateMatrixWorld()
+  const [point, crown, mouth] = [0, 0.5, -0.5].map(rise => face.clone().add(new Vector3(0, rise, 0)).project(camera))
+  const row = (y: number) => (1 - y) / 2 * height
+  return { x: (point!.x + 1) / 2 * width, y: row(point!.y), top: row(crown!.y), bottom: row(mouth!.y), shot, face }
+}
+
+test('the head-and-shoulders shot keeps his eyes, and the half unit of head above and below them, in the area the dialog leaves free', () => {
+  for (const side of [1, -1] as const) {
+    // Drift 7.5 s is the widest swing of the camera's angle.
+    for (const drift of [0, 7.5]) {
+      for (const [width, height] of [[1280, 800], [1440, 900], [1280, 600], [720, 560], [375, 812], [360, 640]] as const) {
+        const face = closeFace(width, height, side, drift)
+        assert.ok(Math.abs(face.x - width / 2) < 1, `${width}x${height}: face must stay centred`)
+        // The dialog is about 270 pixels tall, or 300 on a phone, and never more than 46% or 52% of the height.
+        // It stands 20 or 10 pixels off the bottom edge, and its seam rises 16 pixels. His head and mouthparts must clear all of it.
+        const free = height - 16 - (width <= 600 ? 10 + Math.min(300, height * 0.52) : 20 + Math.min(270, height * 0.46))
+        assert.ok(face.top > 0 && face.bottom < free, `${width}x${height}: head from ${face.top} to ${face.bottom}, free to ${free}`)
+      }
+      for (const [width, height] of [[667, 375], [844, 390], [1280, 500]] as const) {
+        const face = closeFace(width, height, side, drift)
+        const free = width - Math.min(400, width / 2) - 12
+        assert.ok(Math.abs(face.x - free / 2) < free * 0.08, `${width}x${height}: face at ${face.x}, free area ${free}`)
+        assert.ok(face.y > height * 0.3 && face.y < height * 0.55, `${width}x${height}: face at ${face.y}`)
+      }
+    }
+  }
+})
+
+test('the head-and-shoulders shot stands near him, in front, on the side he faces', () => {
+  for (const side of [1, -1] as const) {
+    const { shot, face } = closeFace(1280, 800, side)
+    const wide = resolveConversationFocus(face, 1280, 800, 44)
+    assert.ok(shot.position.distanceTo(face) < wide.position.distanceTo(face) * 0.7, 'The close shot must stand well inside the full-body shot.')
+    assert.equal(Math.sign(shot.position.x - face.x), side)
+    assert.ok(shot.position.z > face.z + 2, 'The camera must stay in front of him.')
+    // His head turns 0.6 rad at most. From a 0.5 rad stance the camera must stay inside that reach.
+    const bearing = Math.atan2(shot.position.x - face.x, shot.position.z - face.z)
+    assert.ok(Math.abs(side * 0.5 - bearing) < 0.6, `The camera stands ${bearing} rad to the side.`)
+  }
+})
+
+test('the head-and-shoulders shot drifts slowly and stays near its first frame', () => {
+  const still = closeFace(1280, 800, 1).shot
+  let farthest = 0
+  for (let time = 0; time < 120; time += 0.5) {
+    const now = closeFace(1280, 800, 1, time).shot
+    const next = closeFace(1280, 800, 1, time + 1 / 60).shot
+    farthest = Math.max(farthest, now.position.distanceTo(still.position))
+    assert.ok(next.position.distanceTo(now.position) < 0.0006, `The camera moves too fast at ${time} s.`)
+  }
+  assert.ok(farthest > 0.05 && farthest < 0.2, `The camera drifts ${farthest} units.`)
 })
 
 test('the conversation close-up settles and holds still while the dialog stays open', () => {

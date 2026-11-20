@@ -1,7 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-const texture = ref<'mapped' | 'sprite'>('mapped')
+const texture = ref<'mapped' | 'sprite' | 'mesh'>('mapped')
+// The stage reports what it shows. A mesh that cannot load shows the relief rig, which keeps every control.
+const shown = ref<'relief' | 'sprite' | 'mesh'>('relief')
+const rigged = ref(true)
+// A mesh without the relief rig's joints cannot take a pose from the expression controls.
+const posable = ref(true)
+function loadShown(mascot: 'relief' | 'sprite' | 'mesh', hasSkeleton: boolean, takesPose: boolean) {
+  shown.value = mascot
+  rigged.value = hasSkeleton
+  posable.value = takesPose
+  // A model without a skeleton has no bones to show.
+  if (!hasSkeleton) bones.value = false
+}
 const clip = ref<'Manual' | 'Idle' | 'Walk' | 'Speaking'>('Manual')
 const playing = ref(false)
 const speed = ref(1)
@@ -16,6 +28,11 @@ const brow = ref(0)
 const squint = ref(0)
 function selectClip() { playing.value = false; time.value = 0 }
 function manual() { clip.value = 'Manual'; playing.value = false; time.value = 0 }
+function loadClips(available: Record<string, number>) {
+  durations.value = available
+  // The mesh has only an idle motion. A clip it lacks returns the control to Manual.
+  if (clip.value !== 'Manual' && !(clip.value in available)) manual()
+}
 </script>
 
 <template>
@@ -25,24 +42,24 @@ function manual() { clip.value = 'Manual'; playing.value = false; time.value = 0
       <section class="inspector-stage" aria-label="Brundlefly">
         <LazyBrandOrganism :key="texture" v-model:clip-time="time" mascot inspector exportable :interactive="false" motion-off
           :texture-mode="texture" :clip="clip" :playing="playing" :playback-speed="speed" :bones="bones" :wireframe="wireframe"
-          :speaking="speech" :blink="blink" :brow="brow" :squint="squint" @clips="durations = $event" />
+          :speaking="speech" :blink="blink" :brow="brow" :squint="squint" @clips="loadClips" @shown="loadShown" />
         <p>Drag to orbit. Scroll to zoom.</p>
       </section>
       <aside class="inspector-controls">
         <label for="inspector-texture">Texture</label>
-        <select id="inspector-texture" v-model="texture" @change="selectClip"><option value="mapped">Mapped</option><option value="sprite">Sprite</option></select>
-        <div class="toggles"><label><input v-model="bones" type="checkbox"> Bones</label><label><input v-model="wireframe" type="checkbox"> Wireframe</label></div>
+        <select id="inspector-texture" v-model="texture" @change="selectClip"><option value="mapped">Mapped</option><option value="sprite">Sprite</option><option value="mesh">Mesh</option></select>
+        <div class="toggles"><label><input v-model="bones" :disabled="!rigged" type="checkbox"> Bones</label><label><input v-model="wireframe" type="checkbox"> Wireframe</label></div>
         <label for="inspector-clip">Clip</label>
-        <select id="inspector-clip" v-model="clip" @change="selectClip"><option>Manual</option><option>Idle</option><option>Walk</option><option>Speaking</option></select>
+        <select id="inspector-clip" v-model="clip" @change="selectClip"><option>Manual</option><option :disabled="!('Idle' in durations)">Idle</option><option :disabled="!('Walk' in durations)">Walk</option><option :disabled="!('Speaking' in durations)">Speaking</option></select>
         <UButton :disabled="clip === 'Manual'" variant="outline" :aria-pressed="playing" @click="playing = !playing">{{ playing ? 'Pause' : 'Play' }}</UButton>
         <label for="inspector-speed">Speed <output>{{ speed.toFixed(2) }}</output></label>
         <input id="inspector-speed" v-model.number="speed" type="range" min="0.25" max="2" step="0.25">
         <label for="inspector-time">Time <output>{{ time.toFixed(2) }} / {{ duration.toFixed(2) }}</output></label>
         <input id="inspector-time" v-model.number="time" :disabled="clip === 'Manual'" type="range" min="0" :max="duration" step="0.01" @pointerdown="playing = false" @keydown="playing = false">
-        <label for="inspector-speech">Speech <output>{{ speech.toFixed(2) }}</output></label><input id="inspector-speech" v-model.number="speech" type="range" min="0" max="1" step="0.05" @input="manual">
-        <label for="inspector-blink">Blink <output>{{ blink.toFixed(2) }}</output></label><input id="inspector-blink" v-model.number="blink" type="range" min="0" max="1" step="0.05" @input="manual">
-        <label for="inspector-brow">Brow <output>{{ brow.toFixed(2) }}</output></label><input id="inspector-brow" v-model.number="brow" type="range" min="0" max="1" step="0.05" @input="manual">
-        <label for="inspector-squint">Squint <output>{{ squint.toFixed(2) }}</output></label><input id="inspector-squint" v-model.number="squint" type="range" min="0" max="1" step="0.05" @input="manual">
+        <label for="inspector-speech">Speech <output>{{ speech.toFixed(2) }}</output></label><input id="inspector-speech" v-model.number="speech" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
+        <label for="inspector-blink">Blink <output>{{ blink.toFixed(2) }}</output></label><input id="inspector-blink" v-model.number="blink" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
+        <label for="inspector-brow">Brow <output>{{ brow.toFixed(2) }}</output></label><input id="inspector-brow" v-model.number="brow" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
+        <label for="inspector-squint">Squint <output>{{ squint.toFixed(2) }}</output></label><input id="inspector-squint" v-model.number="squint" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
       </aside>
     </div>
   </main>
