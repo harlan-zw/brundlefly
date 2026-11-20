@@ -121,7 +121,8 @@ export function advanceStroll(state: Stroll, { delta, route, pauses, walkSpeed, 
   let speed = Math.max(0, state.speed + thrust * delta)
   // Below a hundredth of his walk he is standing. The last of the brake then ends.
   if (cruise === 0 && speed < walkSpeed * 0.01) speed = 0
-  const step = Math.min(distance, speed * delta)
+  // Once he has arrived, the last of his speed still moves him. A route of one stop would otherwise hold him dead on it.
+  const step = walking ? Math.min(distance, speed * delta) : speed * delta
   const position: Point = step > 0 ? [state.position[0] + Math.sin(course) * step, state.position[1] + Math.cos(course) * step] : state.position
   let destination = state.destination
   // He has arrived once the last of his speed will carry him onto the stop while his foot comes down.

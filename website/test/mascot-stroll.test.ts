@@ -164,12 +164,19 @@ test('from any stand and any facing he reaches the stop, on a path close to the 
 test('on a journey he comes in from the way out and stands at his start point before the journey ends', () => {
   for (const [name, set] of Object.entries(walkSets)) {
     let walk = startWalk(set.exit)
-    let seconds = 0
+    let seconds = 0, covered = 0, sharpest = 0
     while (!(walk.stroll.activity._tag === 'Pausing' && settled(walk.stroll)) && seconds < 20) {
-      walk = stepWalk(walk, { route: [set.start], pauses: [600], walkSpeed: meshWalk.speed * meshWalk.journey, cadence: meshCadence(0.71) })
+      const next = stepWalk(walk, { route: [set.start], pauses: [600], walkSpeed: meshWalk.speed * meshWalk.journey, cadence: meshCadence(0.71) })
+      // The ground he really covers in each frame, as a speed. A route of one stop must not hold him dead on the stop.
+      const now = between(next.stroll.position, walk.stroll.position) / frame
+      sharpest = Math.max(sharpest, Math.abs(now - covered))
+      covered = now
+      walk = next
       seconds += frame
     }
     assert.ok(seconds < travelTimes.arrive, `In the ${name} he took ${seconds.toFixed(2)} s to reach his start point. The journey ends after ${travelTimes.arrive}.`)
+    assert.ok(between(walk.stroll.position, set.start) < 0.08, `In the ${name} he stood ${between(walk.stroll.position, set.start).toFixed(3)} from his start point.`)
+    assert.ok(sharpest < meshWalk.speed * meshWalk.journey * strollPace.halt * frame + 1e-9, `In the ${name} one frame changed the ground he covers by ${sharpest.toFixed(3)} units a second.`)
   }
 })
 
@@ -181,11 +188,14 @@ test('a journey that begins in the middle of a walk turns him to the way out wit
       for (let elapsed = 0; elapsed < after; elapsed += frame) walk = stepWalk(walk, { route: set.route, pauses: set.pauses, cadence })
       // The scene sends him to the way out by a new route with one stop, and he walks it faster.
       walk = { ...walk, stroll: { ...walk.stroll, destination: 0, activity: { _tag: 'Walking' } } }
-      let seconds = 0, sharpest = 0
-      while (walk.stroll.activity._tag === 'Walking' && seconds < 12) {
+      let seconds = 0, sharpest = 0, covered = 0
+      while (!(walk.stroll.activity._tag === 'Pausing' && settled(walk.stroll)) && seconds < 12) {
         const next: Walk = stepWalk(walk, { route: [set.exit], pauses: [600], walkSpeed: meshWalk.speed * meshWalk.journey, cadence })
         if (walk.stroll.speed > 0 && next.stroll.speed > 0) sharpest = Math.max(sharpest, Math.abs(Math.atan2(Math.sin(next.stroll.course - walk.stroll.course), Math.cos(next.stroll.course - walk.stroll.course))))
         assert.ok(Math.abs(next.stroll.speed - walk.stroll.speed) < 0.06, 'His speed jumped as the journey began.')
+        const now = between(next.stroll.position, walk.stroll.position) / frame
+        if (seconds > 0) assert.ok(Math.abs(now - covered) < 0.06, `The ground he covers jumped by ${Math.abs(now - covered).toFixed(3)} units a second in one frame.`)
+        covered = now
         walk = next
         seconds += frame
       }
