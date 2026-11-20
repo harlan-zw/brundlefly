@@ -1,4 +1,5 @@
 import { skills } from './content.ts'
+import type { SetName } from '../layers/brand/shared/scene-set.ts'
 
 export type ConversationLink = { label: string; href: string; download?: true }
 export type ConversationMood = 'curious' | 'wary' | 'amused' | 'soft' | 'neutral'
@@ -6,7 +7,8 @@ export type ConversationReply = { text: string; beat: string; mood: Conversation
 export type ConversationHistoryMessage = { role: 'user' | 'assistant'; content: string }
 export type ConversationMessage = { _tag: 'User'; text: string } | { _tag: 'Reply'; reply: ConversationReply }
 export type Result<T> = { _tag: 'Ok'; value: T } | { _tag: 'Err'; message: string }
-export type DialogueInput = { text: string; history: ConversationHistoryMessage[] }
+/** `place` is the set the conversation is in. A visitor can travel in the middle of a talk, so each turn names it. */
+export type DialogueInput = { text: string; history: ConversationHistoryMessage[]; place: SetName }
 export const dialogueCopy = {
   privacy: 'AI replies use Cloudflare and OpenAI. Avoid sharing private details.',
   // The first sentence of the approved visit note in COPY.md. The rest joins it when the site first sends a browser fact.
@@ -39,7 +41,10 @@ export const parseDialogueInput = (value: unknown): Result<DialogueInput> => {
     if (!record(message) || (message.role !== 'user' && message.role !== 'assistant') || !plain(message.content, message.role === 'user' ? 1000 : MAX_REPLY_LENGTH)) return fail(dialogueCopy.failure)
     history.push({ role: message.role, content: message.content })
   }
-  return { _tag: 'Ok', value: { text, history } }
+  // A page loaded before the office existed sends no place. It can only be in the cave.
+  const place = value.place === undefined ? 'lair' : value.place
+  if (place !== 'lair' && place !== 'office') return fail(dialogueCopy.failure)
+  return { _tag: 'Ok', value: { text, history, place } }
 }
 
 export const parseDialogueReply = (value: unknown): Result<ConversationReply> => {
@@ -116,8 +121,29 @@ const held: Opening[] = [
 const seed = ({ line, ...opening }: Opening): ConversationReply => ({ text: line, ...opening, links: [] })
 export const heldOpenings = (): ConversationReply[] => held.map(seed)
 
+// The owner approved these lines for a visitor who opens the dialog in the office. They have no cached branch.
+// The approval covers the lines only. Each beat is one the scene can already perform, and each choice is one a cave greeting already offers.
+const officeOpenings: Opening[] = [
+  { line: 'I signed you in at the front desk. The pen works better in my small hands.', beat: 'His small hands rub together.', mood: 'amused',
+    choices: ['What is this place?', 'Tell me what you do.', 'I just came to look.'] },
+  { line: 'I still come in. Nobody asked for my badge back, and the eggs need someone on the day shift.', beat: 'He checks an empty palm.', mood: 'neutral',
+    choices: ['How are the eggs?', 'Tell me what you do.', 'Are you all right?'] },
+  { line: 'Mind the floor. I do the eggs first, then the paperwork. The paperwork is easier to keep warm.', beat: 'He glances at the eggs.', mood: 'amused',
+    choices: ["What's inside them?", 'What do you make here?', 'Should I be worried?'] },
+  { line: 'They moved my desk nearer the door after the experiment. I try not to read into it.', beat: 'He tilts his head.', mood: 'neutral',
+    choices: ['Are you all right?', 'What is this place?', 'Tell me what you do.'] },
+  { line: 'I was told to take leave. I took the eggs instead.', beat: 'One wing twitches.', mood: 'amused',
+    choices: ['How are the eggs?', 'Are you all right?', 'What do you make here?'] },
+]
+// This approved line says he has just put the lights on. It waits until the office can start dark, or it would contradict what the visitor saw.
+const officeHeld: Opening[] = [
+  { line: 'The lights were off because I see better without them now. I put them on for you.', beat: 'He looks toward the light.', mood: 'neutral',
+    choices: ['What is this place?', 'Are you all right?', 'I just came to look.'] },
+]
+export const heldOfficeOpenings = (): ConversationReply[] => officeHeld.map(seed)
+
 /** What the site knows about a visit. The server verifies the count and the return. The hour is the browser's own and never leaves it. */
-export type VisitFacts = { ordinal: number; returning: boolean; hour: number | undefined }
+export type VisitFacts = { ordinal: number; returning: boolean; hour: number | undefined; place: SetName }
 /** Reads the server's visit reply. The count and the return are the two facts the server verifies. */
 export const parseVisit = (value: unknown): Result<Pick<VisitFacts, 'ordinal' | 'returning'>> =>
   record(value) && typeof value.ordinal === 'number' && Number.isInteger(value.ordinal) && value.ordinal > 0 && typeof value.returning === 'boolean'
@@ -129,8 +155,9 @@ const late = (hour: number | undefined) => hour !== undefined && (hour >= 23 || 
  * The count picks between a condition's lines, so a reopened dialog keeps its opening.
  * `preset` is the cached branch of the opening, or -1 when its choices get live replies.
  */
-export const chooseOpening = ({ ordinal: count, returning, hour }: VisitFacts): { reply: ConversationReply; preset: number } => {
-  const conditional = returning ? returnOpenings : late(hour) ? lateOpenings : undefined
+export const chooseOpening = ({ ordinal: count, returning, hour, place }: VisitFacts): { reply: ConversationReply; preset: number } => {
+  // The office has its own greetings. The return and late lines speak of the cave, so they stay there.
+  const conditional = place === 'office' ? officeOpenings : returning ? returnOpenings : late(hour) ? lateOpenings : undefined
   if (!conditional) return { reply: openingReply(count), preset: openingIndex(count) }
   const opening = seed(conditional[count % conditional.length]!)
   return { reply: { ...opening, text: `You're my ${ordinal(count)} visitor today. ${opening.text}` }, preset: -1 }
