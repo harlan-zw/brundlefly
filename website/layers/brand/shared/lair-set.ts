@@ -1,5 +1,6 @@
 import { LinearFilter, MirroredRepeatWrapping, NoColorSpace, RepeatWrapping, SRGBColorSpace, TextureLoader, Vector3 } from 'three'
 import type { Texture } from 'three'
+import { meshShading } from './mascot-mesh'
 import { sceneLayout } from './scene-layout'
 import type { SceneSet, SetArt } from './scene-set'
 import { createWorld } from './world'
@@ -63,5 +64,7 @@ export const lairSet: SceneSet = {
   background: '#080B08',
   fog: { _tag: 'Exponential', colour: '#080B08', scale: 1 },
   effects: ['Finish', 'FloorMirror', 'WetEnvironment'],
+  // A warm key in a dark cave, a cold rim in a talk, soft shadows on the wet floor, and dark edges that hold the eye on him.
+  mascot: { shading: meshShading, key: { colour: '#F2DEB8', rest: 6, talk: 18 }, rim: { colour: '#6FB7C0', rest: 0, talk: 4 }, shadow: { body: 0.55, foot: 0.62 }, vignette: 'Heavy' },
   load: loadLair,
 }

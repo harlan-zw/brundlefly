@@ -653,6 +653,29 @@ test('a host can shade a model\'s skin once: darker and redder, with more of its
   close(untouched.aoMapIntensity, 1)
 })
 
+test('a second shading replaces the first, and the built lids follow the skin beside the eye', () => {
+  const { scene, eyes, joint } = eyedModel()
+  const skin = new MeshStandardMaterial({ color: '#C8642D', name: 'Brundlefly-lid', aoMap: new Texture() })
+  eyes[0]!.material = skin
+  const own = skin.color.clone()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5, meshShading))
+  mascot.dressEyes(eyeDressing())
+  const lid = (joint('head').getObjectByName('reference-upper-lid-0')!.children[0] as Mesh).material as MeshStandardMaterial
+  const shaded = (tint: readonly [number, number, number]) => own.clone().multiply(new Color(...tint)).toArray()
+  assert.deepEqual(lid.color.toArray(), shaded(meshShading.tint))
+  // An office under white tubes: nearer the model's own colour, with less of its occlusion.
+  const office = { tint: [0.9, 0.86, 0.84], occlusion: 1.1, untinted: ['Brundlefly-wing'] } as const
+  mascot.shade(office)
+  assert.deepEqual(skin.color.toArray(), shaded(office.tint))
+  assert.deepEqual(lid.color.toArray(), shaded(office.tint))
+  close(skin.aoMapIntensity, office.occlusion)
+  // Back in the lair he is exactly as he was: the tints do not stack.
+  mascot.shade(meshShading)
+  assert.deepEqual(skin.color.toArray(), shaded(meshShading.tint))
+  assert.deepEqual(lid.color.toArray(), shaded(meshShading.tint))
+  close(skin.aoMapIntensity, meshShading.occlusion)
+})
+
 test('he reports each foot\'s place and how firmly it stands, for a contact shadow', () => {
   const { scene } = leggedModel()
   const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
