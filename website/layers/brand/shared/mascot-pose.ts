@@ -1,5 +1,5 @@
 import { Vector2 } from 'three'
-import type { Euler } from 'three'
+import type { Euler, Vector3 } from 'three'
 import type { Transform } from './organism'
 import { wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus } from './eye-gaze.ts'
@@ -17,6 +17,7 @@ export type BodyJointName = typeof bodyJointNames[number]
 /** `gait` blends the walk cycle from standing (0) to a full stride (1). `gaze` turns only the head. `eyes` aims the pupils. `mannerism` layers a habit on top. */
 export type MascotPoseInput = {
   time: number, pressure: number, pointer: Vector2, transform: Transform
+  reach?: { target: Vector3, weight: number, turn: number }
   gait?: number, walkPhase?: number, gaze?: { yaw: number, tilt: number }
   /** Steps in place, for a full body that turns where it stands: how far each foot lifts, from 0 to 1, and the cycle of those steps. */
   stepInPlace?: number, stepPhase?: number
