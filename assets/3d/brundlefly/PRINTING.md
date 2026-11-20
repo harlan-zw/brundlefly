@@ -282,14 +282,15 @@ The scripts are Python where Blender, trimesh, or scipy make it necessary. The c
 
 ## Jar variant
 
-The jar variant is a second print model. It has no base. The figure hangs slack, as a specimen in a jar of fluid.
+The jar variant is a second print model. It has no base. The figure hangs in fluid, as a specimen in a jar.
 The files of the jar variant are not in this folder. Build them with the steps below.
 
 - The stance is `source/stance-float.json`. `stance_float.ts` makes that file, and the file repeats the inputs.
-- The head hangs forward and to one side. One long arm hangs, and the other drifts out and forward.
-- The small arms hang in front of the belly. The wings droop, each by a different amount. One leg is ahead of the other.
-- The two soles are flat and level, so the print starts on two feet and the figure stands on the floor of the jar.
-- With flat soles the figure reads as settled on the floor of the jar, and not as afloat.
+- The legs hang with the knees a little bent and the toes down. One leg is ahead of the other.
+- The head hangs forward and to one side. The two long arms drift out and forward, each by a different amount.
+- The small arms hang loose in front of the belly. The wings droop, each by a different amount.
+- No foot is level, so the figure does not stand. It hangs on a line, or it prints on the stand below.
+- An earlier jar stance stood on two flat soles. It is in the git history, at commit `cf6415b`.
 
 Build with this separate Bash block. Set `D` to the same absolute path as in the "Rebuild" section.
 
@@ -302,60 +303,92 @@ OUT=$(mktemp -d "$HOME/scratch/brundlefly-jar-build.XXXXXX")
 V="$D/source/views"
 VIEWS=(--front-image "$V/front.png" --back-image "$V/back.png" --right-image "$V/side-right.png" --left-image "$V/side-left.png")
 node "$D/stance_float.ts"
-flatpak run org.blender.Blender -b --factory-startup --python-exit-code 1 --python "$D/build_from_mesh.py" -- --source "$D/source/hunyuan3d-multiview-shape.glb" --out "$OUT" "${VIEWS[@]}" --stance "$D/source/stance-float.json" --no-base
+flatpak run org.blender.Blender -b --factory-startup --python-exit-code 1 --python "$D/build_from_mesh.py" -- --source "$D/source/hunyuan3d-multiview-shape.glb" --out "$OUT" "${VIEWS[@]}" --stance "$D/source/stance-float.json" --no-base --print-stand
 flatpak run org.blender.Blender -b --factory-startup --python-exit-code 1 --python "$D/export_model.py" -- --blend "$OUT/brundlefly-work.blend" --out "$OUT" --tris 200000 --glb-tris 120000 --name brundlefly-jar
-node "$D/validate.ts" --dir "$OUT" --name brundlefly-jar
+node "$D/validate.ts" --dir "$OUT" --name brundlefly-jar --heights 86.28,107.85
 )
 ```
 
-The export writes `brundlefly-jar-80mm.stl`, `brundlefly-jar-100mm.stl`, `brundlefly-jar.blend`, and `brundlefly-jar-preview.glb`.
-The check writes `brundlefly-jar-validation-report.json`. Keep `$OUT` outside this folder.
+- The export writes `brundlefly-jar-80mm.stl`, `brundlefly-jar-100mm.stl`, `brundlefly-jar.blend`, and `brundlefly-jar-preview.glb`.
+- The check writes `brundlefly-jar-validation-report.json`. The files stay in the build folder under `~/scratch`.
+- `--heights` is the height of each file with its stand. `build-stats.json` gives the two values under `figure`.
+- For the figure with no stand, leave out `--print-stand` and `--heights`, and use another `--name`.
+- A resin printer, or a person who places the supports by hand, uses the figure with no stand.
 
 What `--no-base` does:
 
-- The bed is a level plane 0.7 mm above the lowest point of the feet, at 80 mm. The print starts on that plane.
-- A bare foot meets that plane on a few toes only. So each foot gets a sole, as a flat pad under it.
-- A sole is the outline of its foot from above, with the gaps between the toes closed.
-- A rim of 1.4 mm goes around that outline, at 80 mm. The rim is for balance, because the mass of the figure is high.
-- A sole is 1.6 mm thick at 80 mm.
-- Only the feet may reach the bed. The build stops if another part hangs that low.
-- Height runs from the soles to the highest point. So each part is 12 percent larger than on the model with the base.
+- The build adds no base. The export scales the figure alone to 80 mm and to 100 mm, from the lowest toe to the highest point.
+- The hanging figure is longer than the standing one. So each part is about 6 percent smaller than on the model with the base.
+- Thin parts grow by 4 percent more in this build, so they keep 1.6 mm at 80 mm.
 
-Measured values:
+What `--print-stand` does:
+
+- It adds a round plate on the bed and five posts from the plate up to the figure. The stand and the figure are one shell.
+- The stand gives the print a wide first layer, and it holds the figure upright while the print grows.
+- The slicer adds its own supports for the hands, the mouthparts, and the wings.
+- The plate lies under the centre of mass. It is wide enough for 24 degrees of tilt.
+- Two posts go under the toes of each foot, at least 6 mm apart at 100 mm.
+- A heel is hidden from below when the toes point down, so no post goes under a heel.
+- One post goes under the pelvis, between the legs at the back.
+- Each post narrows to a short neck where it meets the body. Cut each neck with flush cutters, or twist the post off.
+- After the cut, a mark of about 1 mm stays on four toes and under the pelvis.
+- These steps are untested on a printed part.
+- At 80 mm, two of the toes that carry a neck are thinner than 1.6 mm. Cut those necks. Do not twist them.
+- The centre of mass is about 2 mm in front of the five posts. The supports of the slicer under the head and the hands must hold that lean.
+- The post under the pelvis is 61.6 mm tall and 2.5 mm across at 100 mm. It can sway on a filament printer.
+
+The stand, measured on the two files:
+
+| | 100 mm figure | 80 mm figure |
+| --- | --- | --- |
+| Height of the print with the stand | 107.85 mm | 86.28 mm |
+| Plate | 71.7 mm across, 1.2 mm thick | 57.4 mm across, 0.96 mm thick |
+| Lowest toe above the plate | 6.9 mm | 5.5 mm |
+| Post | 2.48 mm across | 1.99 mm across |
+| Neck | 1.16 mm to 1.17 mm across, 1.0 mm long | 0.93 mm across, 0.8 mm long |
+| Posts under the toes | 7.0 mm to 13.1 mm tall | 5.6 mm to 10.5 mm tall |
+| Post under the pelvis | 61.6 mm tall | 49.3 mm tall |
+| Centre of mass inside the edge of the plate | 35.4 mm | 28.4 mm |
+| Tip angle of the solid print | 27 degrees | 27 degrees |
+
+Measured values of the files:
 
 | File | Width (X) | Depth (Y) | Height (Z) | Volume | Triangles |
 | --- | --- | --- | --- | --- | --- |
-| `brundlefly-jar-80mm.stl` | 80.31 | 58.88 | 80.00 | 27.45 cm³ | 199,998 |
-| `brundlefly-jar-100mm.stl` | 100.39 | 73.60 | 100.00 | 53.61 cm³ | 199,998 |
+| `brundlefly-jar-80mm.stl`, with the stand | 71.39 | 57.36 | 86.28 | 18.92 cm³ | 200,000 |
+| `brundlefly-jar-100mm.stl`, with the stand | 89.23 | 71.70 | 107.85 | 36.95 cm³ | 200,000 |
+| The 80 mm figure with no stand | 71.39 | 49.75 | 80.00 | 16.20 cm³ | 200,000 |
+| The 100 mm figure with no stand | 89.23 | 62.18 | 100.00 | 31.64 cm³ | 200,000 |
 
-- Both files: one shell, zero non-manifold edges, zero self-intersecting face pairs.
-- Stability: the centre of mass is 12.3 mm inside the edge of the two soles at 80 mm.
-- The solid model tips at about 13 degrees. That is half of the tip angle of the model with the base.
-- Supports at 80 mm: 31.6 cm³ for 15.0 cm³ of model, with a 45 degree threshold. Mid-air start points: 43.
-- Supports at 100 mm: 54.0 cm³ for 26.8 cm³ of model. Mid-air start points: 45.
-- The voxel check reports 10 mm³ under 1.5 mm at 80 mm, and 7 mm³ at 100 mm.
-- Those thin spots are the edge of the smaller wing and stubs on the back.
-- The pose makes no gap under 1 mm between two parts. The smallest such gap is 1.15 mm, between the head and one shoulder.
-- The gaps under 1 mm are those of the sculpt, as on the model with the base.
-- They lie between the toes, between the fingers, and at the roots of the mouthparts.
+- All four files: one shell, zero non-manifold edges, zero self-intersecting face pairs.
+- Supports with a 45 degree threshold, with the stand: 31.1 cm³ at 80 mm and 51.7 cm³ at 100 mm.
+- Supports with no stand: 28.0 cm³ at 80 mm and 47.3 cm³ at 100 mm.
+- The voxel check reports 20 mm³ under 1.5 mm on the 80 mm figure, and 8 mm³ on the 100 mm figure.
+- Those thin spots are toe tips, the edge of the smaller wing, and stubs on the back. Each spot is 2.7 mm³ or smaller.
+- The plate and the necks of the stand are thinner than 1.5 mm by design. The check counts them on the files with the stand.
+- The values at 100 mm come from the same checks, run once on each 100 mm file.
+
+Gaps between parts, from one-off measurements:
+
+- At 100 mm, the pose makes no gap under 1 mm between two parts. The smallest gap is 1.04 mm, in the fold between the head and one shoulder.
+- At 80 mm that fold is 0.83 mm wide at its narrowest. One fold at an ankle is 0.98 mm wide.
+- The build fills each slot that the pose made narrower than 1.2 mm on the print. A fold narrows to nothing at its end.
 - The pose brings the root of the smaller wing against the shoulder beside it. The build makes them one piece there.
-- The small arms hang 4.1 mm and 4.7 mm clear of the legs.
+- The small arms are 3.3 mm and 5.8 mm clear of the legs at 80 mm. The wings are 4.9 mm or more clear of the head.
+- The gaps of the sculpt stay, as on the model with the base: between the toes, between the fingers, and at the roots of the mouthparts.
 
-One-off measurements, at 80 mm, that are not in the report:
+Other one-off measurements, at 80 mm:
 
-- Each sole meets the bed over 330 mm² and 289 mm², in a slice 0.05 mm above the bed.
-- Each leg is 2.95 mm and 3.18 mm at its thinnest, between the foot and the knee.
-- Each long arm is 3.6 mm or more at its elbow and at its wrist. Each small arm is 2.7 mm or more.
-- The values at 100 mm come from the same checks, run once on the 100 mm file.
+- Each leg is 2.49 mm and 2.69 mm at its thinnest, between the foot and the knee.
+- Each long arm is 3.1 mm or more at its elbow and at its wrist. Each small arm is 2.3 mm or more.
 
 To hold the figure in the jar with clear line:
 
 - By the sliced filament volume, a print with 15 percent infill is lighter than water. So it floats.
 - That is a calculation and not a test.
-- To hold the figure down, tie the line around one ankle, above the sole.
-- The leg is 3 mm thick there, and the foot stops the loop.
+- To hold the figure down, tie the line around one ankle. The leg is 2.5 mm thick there, and the foot stops the loop.
 - To hang a solid print from above, pass the line under one long arm at the shoulder.
-- The arm is 6.5 mm thick there.
+- The arm is 5.4 mm thick there.
 - Do not tie a line to a wing or to a finger.
 
 ## Quote request
