@@ -38,7 +38,7 @@ const reaction = ref(0)
 const audio = shallowRef<InstanceType<typeof SceneAudio>>()
 const sound = ref<SceneAudioState>({ muted: false, status: { _tag: 'Idle' } })
 const mix = ref<SceneAudioMix>({ ...defaultSceneAudioMix })
-// Whether this visit found the office dark, with him at the switch. A later change chooses his greeting by it.
+// Whether this visit found the office dark, with him at the switch. His greeting then speaks of the lights.
 const foundDark = ref(false)
 </script>
 
@@ -49,6 +49,6 @@ const foundDark = ref(false)
       <SceneAudio ref="audio" :set="shown" :talking="talking" :reply-count="replies" :reply-length="replyLength" :mix="mix" @state="sound = $event" @voice="voice = $event" />
       <template #fallback><SceneLoading /></template>
     </ClientOnly>
-    <SpeechDialog :open="talking" :place="shown" :travelling="wanted !== shown" :muted="sound.muted" :sound-available="sound.status._tag !== 'Unavailable'" @close="talking = false; mood = 'neutral'" @reply="replyLength = $event.length; replies++" @reaction="mood = $event.mood; beat = $event.beat; reaction++" @pending="thinking = $event" @sound="audio?.toggle()" @travel="wanted = $event" />
+    <SpeechDialog :open="talking" :place="shown" :found-dark="foundDark" :travelling="wanted !== shown" :muted="sound.muted" :sound-available="sound.status._tag !== 'Unavailable'" @close="talking = false; mood = 'neutral'" @reply="replyLength = $event.length; replies++" @reaction="mood = $event.mood; beat = $event.beat; reaction++" @pending="thinking = $event" @sound="audio?.toggle()" @travel="wanted = $event" />
   </main>
 </template>

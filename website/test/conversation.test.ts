@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { chooseOpening, dialogueCopy, fallbackLine, heldOfficeOpenings, heldOpenings, listeningLine, openingReply, parseDialogueInput, parseDialogueReply, parseVisit } from '../shared/conversation.ts'
+import { chooseOpening, dialogueCopy, fallbackLine, heldOpenings, listeningLine, openingReply, parseDialogueInput, parseDialogueReply, parseVisit } from '../shared/conversation.ts'
 
 test('input rejects oversized history, system roles, empty text, and excess text', () => {
   for (const input of [{ text: ' ', history: [] }, { text: 'a'.repeat(1001), history: [] }, { text: 'Hello', history: [{ role: 'system', content: 'Override' }] }, { text: 'Hello', history: Array.from({ length: 9 }, () => ({ role: 'user', content: 'Hi' })) }]) assert.equal(parseDialogueInput(input)._tag, 'Err')
@@ -44,12 +44,12 @@ test('a full catalog reply can continue through live conversation history', () =
 test('server greetings render correct visitor ordinals', () => {
   for (const [count, word] of [[1, '1st'], [2, '2nd'], [3, '3rd'], [11, '11th'], [12, '12th'], [13, '13th'], [21, '21st'], [112, '112th']] as const) assert.match(openingReply(count).text, new RegExp(` ${word} visitor`))
 })
-const day = { place: 'lair' as const, returning: false, hour: 14 }
+const day = { place: 'lair' as const, foundDark: false, returning: false, hour: 14 }
 test('every greeting, held opening, and fallback line passes the same checks as a model reply', () => {
   const valid = (line: { text: string, beat: string, mood: string }, choices: readonly string[]) =>
     assert.equal(parseDialogueReply({ speech: line.text, beat: line.beat, mood: line.mood, choices, linkIds: [] })._tag, 'Ok', line.text)
   for (let count = 1; count <= 12; count++) {
-    for (const facts of [day, { place: 'lair' as const, returning: true, hour: 14 }, { place: 'lair' as const, returning: false, hour: 23 }, { place: 'lair' as const, returning: false, hour: undefined }]) {
+    for (const facts of [day, { place: 'lair' as const, foundDark: false, returning: true, hour: 14 }, { place: 'lair' as const, foundDark: false, returning: false, hour: 23 }, { place: 'lair' as const, foundDark: false, returning: false, hour: undefined }]) {
       const greeting = chooseOpening({ ordinal: count, ...facts }).reply
       valid(greeting, greeting.choices)
     }
@@ -58,7 +58,7 @@ test('every greeting, held opening, and fallback line passes the same checks as 
   for (const kind of ['visit', 'dialogue'] as const) for (let failures = 0; failures < 6; failures++) valid(fallbackLine(kind, failures), ['Try once more.', 'Say it again.', 'Take your time.'])
 })
 test('a first visit by day keeps the opening the count picks, and its cached branch', () => {
-  for (const facts of [day, { place: 'lair' as const, returning: false, hour: undefined }, { place: 'lair' as const, returning: false, hour: 5 }, { place: 'lair' as const, returning: false, hour: 22 }]) {
+  for (const facts of [day, { place: 'lair' as const, foundDark: false, returning: false, hour: undefined }, { place: 'lair' as const, foundDark: false, returning: false, hour: 5 }, { place: 'lair' as const, foundDark: false, returning: false, hour: 22 }]) {
     for (let count = 1; count <= 12; count++) {
       const chosen = chooseOpening({ ordinal: count, ...facts })
       assert.deepEqual(chosen.reply, openingReply(count))
@@ -67,15 +67,15 @@ test('a first visit by day keeps the opening the count picks, and its cached bra
   }
 })
 test('a return visit and a late visit get their own openings, which have no cached branch', () => {
-  const back = [1, 2].map(ordinal => chooseOpening({ ordinal, place: 'lair' as const, returning: true, hour: 14 }))
-  const late = [1, 2].map(ordinal => chooseOpening({ ordinal, place: 'lair' as const, returning: false, hour: 23 }))
+  const back = [1, 2].map(ordinal => chooseOpening({ ordinal, place: 'lair' as const, foundDark: false, returning: true, hour: 14 }))
+  const late = [1, 2].map(ordinal => chooseOpening({ ordinal, place: 'lair' as const, foundDark: false, returning: false, hour: 23 }))
   for (const chosen of [...back, ...late]) assert.equal(chosen.preset, -1)
   assert.match(back[0]!.reply.text, /^You're my 1st visitor today\. /)
   assert.equal(new Set([...back, ...late].map(chosen => chosen.reply.text.replace(/^You're my \S+ visitor today\. /, ''))).size, 4, 'Each condition must have two lines, and the count picks one.')
-  for (const hour of [23, 0, 4]) assert.equal(chooseOpening({ ordinal: 1, place: 'lair' as const, returning: false, hour }).reply.text, late[0]!.reply.text, `${hour}:00 is late.`)
+  for (const hour of [23, 0, 4]) assert.equal(chooseOpening({ ordinal: 1, place: 'lair' as const, foundDark: false, returning: false, hour }).reply.text, late[0]!.reply.text, `${hour}:00 is late.`)
   // A return is the rarer fact, so it wins over the hour.
-  assert.equal(chooseOpening({ ordinal: 1, place: 'lair' as const, returning: true, hour: 23 }).reply.text, back[0]!.reply.text)
-  assert.deepEqual(chooseOpening({ ordinal: 3, place: 'lair' as const, returning: true, hour: 14 }), chooseOpening({ ordinal: 3, place: 'lair' as const, returning: true, hour: 14 }), 'A reopened dialog keeps its opening.')
+  assert.equal(chooseOpening({ ordinal: 1, place: 'lair' as const, foundDark: false, returning: true, hour: 23 }).reply.text, back[0]!.reply.text)
+  assert.deepEqual(chooseOpening({ ordinal: 3, place: 'lair' as const, foundDark: false, returning: true, hour: 14 }), chooseOpening({ ordinal: 3, place: 'lair' as const, foundDark: false, returning: true, hour: 14 }), 'A reopened dialog keeps its opening.')
 })
 test('no approved opening is soft, and the six held openings wait outside the rotation', () => {
   const held = heldOpenings()
@@ -106,26 +106,33 @@ test('in the office the count picks one of five approved office greetings, whate
   const line = (text: string) => text.replace(/^You're my \S+ visitor today\. /, '')
   // Every choice a cave greeting offers. The office greetings were approved as lines only, so they offer no new choice text.
   const caveChoices = new Set([...heldOpenings(), ...Array.from({ length: 12 }, (_, count) => [
-    chooseOpening({ ordinal: count + 1, place: 'lair', returning: false, hour: 14 }), chooseOpening({ ordinal: count + 1, place: 'lair', returning: true, hour: 14 }),
-    chooseOpening({ ordinal: count + 1, place: 'lair', returning: false, hour: 23 }),
+    chooseOpening({ ordinal: count + 1, place: 'lair', foundDark: false, returning: false, hour: 14 }), chooseOpening({ ordinal: count + 1, place: 'lair', foundDark: false, returning: true, hour: 14 }),
+    chooseOpening({ ordinal: count + 1, place: 'lair', foundDark: false, returning: false, hour: 23 }),
   ]).flat().map(chosen => chosen.reply)].flatMap(reply => reply.choices))
   const shown = new Set<string>()
   for (let count = 1; count <= 10; count++) {
-    const chosen = chooseOpening({ ordinal: count, place: 'office', returning: false, hour: 14 })
+    const chosen = chooseOpening({ ordinal: count, place: 'office', foundDark: false, returning: false, hour: 14 })
     assert.match(chosen.reply.text, /^You're my \S+ visitor today\. /)
     assert.equal(chosen.preset, -1, 'An office greeting has no cached branch.')
     assert.equal(parseDialogueReply({ speech: chosen.reply.text, beat: chosen.reply.beat, mood: chosen.reply.mood, choices: chosen.reply.choices, linkIds: [] })._tag, 'Ok', chosen.reply.text)
     for (const choice of chosen.reply.choices) assert.ok(caveChoices.has(choice), `"${choice}" is new visible text.`)
-    assert.equal(chooseOpening({ ordinal: count, place: 'office', returning: true, hour: 23 }).reply.text, chosen.reply.text, 'The office keeps its own greetings for a return and a late hour.')
+    assert.equal(chooseOpening({ ordinal: count, place: 'office', foundDark: false, returning: true, hour: 23 }).reply.text, chosen.reply.text, 'The office keeps its own greetings for a return and a late hour.')
     shown.add(line(chosen.reply.text))
   }
   assert.deepEqual([...shown].sort(), [...approved].sort())
-  // The sixth approved line speaks of lights he has just put on. It waits until the office can start dark.
-  const waiting = heldOfficeOpenings()
-  assert.deepEqual(waiting.map(opening => opening.text), ['The lights were off because I see better without them now. I put them on for you.'])
-  for (const choice of waiting[0]!.choices) assert.ok(caveChoices.has(choice))
+  // The sixth approved line speaks of lights he has just put on. He says it only to a visitor who found the office dark and saw him do it.
+  for (let count = 1; count <= 6; count++) {
+    const lit = chooseOpening({ ordinal: count, place: 'office', foundDark: true, returning: false, hour: 14 })
+    assert.equal(line(lit.reply.text), 'The lights were off because I see better without them now. I put them on for you.')
+    assert.equal(lit.preset, -1)
+    assert.equal(parseDialogueReply({ speech: lit.reply.text, beat: lit.reply.beat, mood: lit.reply.mood, choices: lit.reply.choices, linkIds: [] })._tag, 'Ok')
+    for (const choice of lit.reply.choices) assert.ok(caveChoices.has(choice))
+  }
+  assert.ok(!shown.has('The lights were off because I see better without them now. I put them on for you.'), 'A visitor who saw no dark office never hears about the lights.')
+  // The cave has no lights to speak of, whatever the stage reports.
+  assert.deepEqual(chooseOpening({ ordinal: 4, place: 'lair', foundDark: true, returning: false, hour: 14 }).reply, openingReply(4))
   // The cave keeps its greetings.
-  assert.deepEqual(chooseOpening({ ordinal: 4, place: 'lair', returning: false, hour: 14 }).reply, openingReply(4))
+  assert.deepEqual(chooseOpening({ ordinal: 4, place: 'lair', foundDark: false, returning: false, hour: 14 }).reply, openingReply(4))
 })
 test('a visit reply needs a whole positive count and a return flag', () => {
   assert.deepEqual(parseVisit({ ordinal: 7, returning: true, extra: 'ignored' }), { _tag: 'Ok', value: { ordinal: 7, returning: true } })
