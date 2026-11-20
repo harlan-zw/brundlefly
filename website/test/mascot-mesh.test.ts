@@ -1,0 +1,168 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import { AnimationClip, Bone, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, Vector3, VectorKeyframeTrack } from 'three'
+import { createMeshMascot, loadMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
+
+/** A model in millimetres under a scaled root, like a Blender export. Its feet are off the origin. */
+function millimetreModel() {
+  const scene = new Group()
+  const node = new Group()
+  node.scale.setScalar(0.001)
+  const body = new Mesh(new BoxGeometry(60, 80, 40), new MeshStandardMaterial())
+  body.name = 'body'
+  body.position.set(5, 52, 0)
+  node.add(body)
+  scene.add(node)
+  return { scene, node, body }
+}
+function ok(result: ReturnType<typeof createMeshMascot>) {
+  assert.equal(result._tag, 'Ok')
+  return (result as Extract<typeof result, { _tag: 'Ok' }>).mascot
+}
+const close = (actual: number, expected: number, message?: string) => assert.ok(Math.abs(actual - expected) < 1e-6, message ?? `${actual} is not ${expected}`)
+
+test('a model in any unit stands on the floor at the requested height and keeps its own origin', () => {
+  const { scene } = millimetreModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  mascot.root.updateMatrixWorld(true)
+  const bounds = new Box3().setFromObject(mascot.root, true)
+  close(bounds.min.y, 0)
+  close(bounds.max.y, 2.5)
+  // The body sits 5 mm right of the file origin. The fit keeps that offset at the new scale.
+  close((bounds.min.x + bounds.max.x) / 2, 5 * 2.5 / 80)
+  close(mascot.extent.left, bounds.min.x)
+  close(mascot.extent.right, bounds.max.x)
+})
+
+test('a figurine base leaves the scene and does not change the fit', () => {
+  const { scene, node } = millimetreModel()
+  const base = new Mesh(new BoxGeometry(120, 6, 120), new MeshStandardMaterial())
+  base.name = 'Brundlefly-base'
+  base.position.y = 9
+  node.add(base)
+  let released = false
+  base.geometry.addEventListener('dispose', () => { released = true })
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  mascot.root.updateMatrixWorld(true)
+  const bounds = new Box3().setFromObject(mascot.root, true)
+  close(bounds.min.y, 0)
+  close(bounds.max.y, 2.5)
+  assert.equal(mascot.root.getObjectByName('Brundlefly-base'), undefined)
+  assert.ok(released, 'The removed base must release its geometry.')
+})
+
+test('a file without clips sways about its feet and rests at time zero', () => {
+  const { scene, node, body } = millimetreModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  assert.deepEqual(mascot.motion, { _tag: 'Sway' })
+  const head = () => { mascot.root.updateMatrixWorld(true); return body.localToWorld(new Vector3(0, 40, 0)) }
+  // The floor point under the file origin: the body's lowest face is 12 mm above that origin.
+  const feet = () => { mascot.root.updateMatrixWorld(true); return node.localToWorld(new Vector3(0, 12, 0)) }
+  mascot.update(0)
+  const rest = head()
+  mascot.update(3)
+  assert.ok(head().distanceTo(rest) > 0.005, 'The head must move during the sway.')
+  assert.ok(feet().length() < 1e-9, 'The floor point under his origin must not move.')
+  mascot.update(0)
+  assert.ok(head().distanceTo(rest) < 1e-9, 'Time zero must restore the authored pose.')
+  // One idle loop returns the whole pose to its start, so a looping inspector does not snap.
+  mascot.update(mascot.idleDuration)
+  assert.ok(head().distanceTo(rest) < 1e-9, 'One idle loop must end on the authored pose.')
+  assert.equal(mascot.skinned, false)
+})
+
+test('a file with clips plays its idle clip instead of the sway', () => {
+  const { scene, body } = millimetreModel()
+  const track = (to: number) => new VectorKeyframeTrack('body.position', [0, 2], [5, 52, 0, 5, 52, to])
+  const animations = [new AnimationClip('Brundlefly-walk', 2, [track(90)]), new AnimationClip('Brundlefly-idle', 2, [track(30)])]
+  const mascot = ok(createMeshMascot({ scene, animations }, 2.5))
+  assert.deepEqual(mascot.motion, { _tag: 'Clip', name: 'Brundlefly-idle' })
+  assert.equal(mascot.idleDuration, 2)
+  mascot.update(1)
+  close(body.position.z, 15)
+  assert.equal(mascot.root.children[0]!.rotation.y, 0, 'An animated model must not also sway.')
+})
+
+test('the face point follows an authored anchor and falls back to the upper front of the body', () => {
+  const authored = millimetreModel()
+  const anchor = new Object3D()
+  anchor.name = 'anchor-face'
+  anchor.position.set(5, 80, 20)
+  authored.node.add(anchor)
+  const withAnchor = ok(createMeshMascot({ scene: authored.scene, animations: [] }, 2.5))
+  const scale = 2.5 / 80
+  const point = withAnchor.facePoint(new Vector3())
+  close(point.x, 5 * scale)
+  close(point.y, (80 - 12) * scale)
+  close(point.z, 20 * scale)
+  const estimated = ok(createMeshMascot({ scene: millimetreModel().scene, animations: [] }, 2.5)).facePoint(new Vector3())
+  close(estimated.x, 5 * scale)
+  close(estimated.y, 2.5 * 0.8)
+  close(estimated.z, 20 * scale)
+})
+
+test('a file without geometry is an error value, and disposal releases the model', () => {
+  const empty = createMeshMascot({ scene: new Group(), animations: [] })
+  assert.equal(empty._tag, 'Err')
+  const { scene, body } = millimetreModel()
+  const released: string[] = []
+  body.geometry.addEventListener('dispose', () => released.push('geometry'))
+  ;(body.material as MeshStandardMaterial).addEventListener('dispose', () => released.push('material'))
+  ok(createMeshMascot({ scene, animations: [] })).dispose()
+  assert.deepEqual(released.sort(), ['geometry', 'material'])
+})
+
+test('a model file that cannot load is an error value with its cause', async () => {
+  const result = await loadMeshMascot('http://127.0.0.1:9/absent.glb')
+  assert.equal(result._tag, 'Err')
+  assert.ok(result._tag === 'Err' && result.reason.length > 0)
+})
+
+/** A model with a `head` joint that looks along +Z at rest, as the rig contract requires. */
+function headedModel() {
+  const model = millimetreModel()
+  const head = new Bone()
+  head.name = 'head'
+  head.position.set(5, 80, 0)
+  model.node.add(head)
+  const facing = () => { model.scene.parent?.parent?.parent?.updateMatrixWorld(true); return new Vector3(0, 0, 1).transformDirection(head.matrixWorld) }
+  return { ...model, head, facing }
+}
+
+test('the head joint turns toward a watched point within its limits and returns to the clip pose', () => {
+  const { scene, head, facing } = headedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  mascot.update(0)
+  close(facing().z, 1)
+  // The watched point is up and far to screen right, beyond both limits.
+  const target = mascot.facePoint(new Vector3()).add(new Vector3(40, 40, 10))
+  mascot.update(0, { target, weight: 1, tilt: 0 })
+  const turned = facing()
+  assert.ok(turned.x > 0.4 && turned.y > 0.2, 'The head must turn toward screen right and up.')
+  close(Math.atan2(turned.x, turned.z), 0.6)
+  close(Math.asin(turned.y), 0.35)
+  // The same look on later frames holds the pose. It must not add to itself.
+  for (let frame = 0; frame < 5; frame++) mascot.update(0, { target, weight: 1, tilt: 0 })
+  assert.ok(facing().distanceTo(turned) < 1e-9, 'A held look must not accumulate.')
+  mascot.update(0, { target, weight: 0.5, tilt: 0 })
+  const half = facing()
+  assert.ok(half.x > 0.05 && half.x < turned.x, 'Half weight must turn the head part of the way.')
+  mascot.update(0)
+  close(facing().z, 1)
+  assert.ok(head.quaternion.angleTo(new Quaternion()) < 1e-9)
+})
+
+test('a head turn layers over a clip that holds the head still, and a model without a head ignores the look', () => {
+  const { scene, head, facing } = headedModel()
+  const nod = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.2)
+  const clip = new AnimationClip('Brundlefly-idle', 2, [new QuaternionKeyframeTrack('head.quaternion', [0, 2], [...nod.toArray(), ...nod.toArray()])])
+  const mascot = ok(createMeshMascot({ scene, animations: [clip] }, 2.5))
+  const target = mascot.facePoint(new Vector3()).add(new Vector3(0, 0, 10))
+  // The clip value never changes, so the mixer writes it once. Every later frame must still start from that clip pose.
+  for (const time of [0.5, 0.6, 0.7]) mascot.update(time, { target, weight: 1, tilt: 0 })
+  assert.ok(Math.abs(facing().y) < 0.05, 'The head must face the point ahead, not keep the nod.')
+  for (const time of [0.8, 0.9]) mascot.update(time)
+  assert.ok(head.quaternion.angleTo(nod) < 1e-6, 'Without a look the head must return to the clip pose.')
+  const plain = ok(createMeshMascot({ scene: millimetreModel().scene, animations: [] }, 2.5))
+  assert.doesNotThrow(() => plain.update(1, { target, weight: 1, tilt: 0.07 }))
+})

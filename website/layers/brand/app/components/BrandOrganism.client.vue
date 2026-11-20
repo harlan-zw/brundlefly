@@ -8,6 +8,7 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createOrganismModel } from '../../shared/organism'
 import { createMascotModel } from '../../shared/mascot'
+import { loadMeshMascot, reliefStandingHeight } from '../../shared/mascot-mesh'
 import type { Presentation, Transform } from '../../shared/organism'
 
 const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform = 'squeeze', presentation = 'specimen', interactive = true, motionOff = false, exportable = false, mascot = false, framing = 'center', distance, speaking = 0, blink, brow, squint, inspector = false, bones = false, wireframe = false, clip = 'Manual', playing = false, playbackSpeed = 1, textureMode = 'mapped' } = defineProps<{
@@ -19,10 +20,14 @@ const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform 
   speaking?: number, blink?: number, brow?: number, squint?: number
   inspector?: boolean, bones?: boolean, wireframe?: boolean
   clip?: 'Manual' | 'Idle' | 'Walk' | 'Speaking'
-  playing?: boolean, playbackSpeed?: number, textureMode?: 'mapped' | 'sprite'
+  playing?: boolean, playbackSpeed?: number, textureMode?: 'mapped' | 'sprite' | 'mesh'
 }>()
 const clipTime = defineModel<number>('clipTime', { default: 0 })
-const emit = defineEmits<{ clips: [durations: Record<string, number>] }>()
+type ShownMascot = 'relief' | 'sprite' | 'mesh'
+const emit = defineEmits<{ clips: [durations: Record<string, number>], shown: [mascot: ShownMascot, rigged: boolean] }>()
+// The component reports the mascot it shows. A mesh that cannot load shows the relief rig.
+const shownMascot = ref<ShownMascot>()
+const meshUnavailable = ref(false)
 type SceneStatus = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'texture' }
 const status = ref<SceneStatus>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
@@ -99,7 +104,7 @@ watch(canvas, async (element) => {
   const model = createOrganismModel(texture, presentation, mascot ? 0.58 : 1)
   model.root.visible = !mascot
   scene.add(model.root)
-  const [mascotTexture, faceTexture, projectionTexture, bodyProjectionTexture] = mascot ? await Promise.all([
+  const [mascotTexture, faceTexture, projectionTexture, bodyProjectionTexture, meshResult] = mascot ? await Promise.all([
     new TextureLoader().loadAsync('/brand/character.png').catch((error: unknown) => {
     console.warn('Brundlefly mascot texture load failed.', error)
     return undefined // The chamber remains usable when its optional mascot artwork fails.
@@ -116,7 +121,8 @@ watch(canvas, async (element) => {
       console.warn('Brundlefly body projection load failed. Using the canonical artwork.', error)
       return undefined
     }),
-  ]) : [undefined, undefined, undefined, undefined]
+    textureMode === 'mesh' ? loadMeshMascot() : undefined,
+  ]) : [undefined, undefined, undefined, undefined, undefined]
   if (projectionTexture) {
     projectionTexture.colorSpace = SRGBColorSpace
     projectionTexture.wrapS = projectionTexture.wrapT = ClampToEdgeWrapping
@@ -131,8 +137,13 @@ watch(canvas, async (element) => {
     bodyProjectionTexture.wrapS = bodyProjectionTexture.wrapT = ClampToEdgeWrapping
     bodyProjectionTexture.magFilter = LinearFilter
   }
-  if (!alive) { mascotTexture?.dispose(); faceTexture?.dispose(); projectionTexture?.dispose(); bodyProjectionTexture?.dispose(); model.dispose(); texture.dispose(); renderer.dispose(); return }
-  const mascotModel = mascotTexture ? (() => {
+  const meshMascot = meshResult?._tag === 'Ok' ? meshResult.mascot : undefined
+  if (!alive) { meshMascot?.dispose(); mascotTexture?.dispose(); faceTexture?.dispose(); projectionTexture?.dispose(); bodyProjectionTexture?.dispose(); model.dispose(); texture.dispose(); renderer.dispose(); return }
+  if (meshResult?._tag === 'Err') {
+    console.warn(`The Brundlefly mesh could not load. The relief rig takes its place. ${meshResult.reason}`)
+    meshUnavailable.value = true
+  }
+  const reliefMascot = !meshMascot && mascotTexture ? (() => {
     mascotTexture.colorSpace = SRGBColorSpace
     mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
     mascotTexture.magFilter = NearestFilter
@@ -163,12 +174,17 @@ watch(canvas, async (element) => {
     return createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture ?? texture,
       textureMode === 'sprite' ? undefined : projection, textureMode === 'sprite' ? undefined : bodyProjection)
   })() : undefined
-  if (mascotModel) {
+  const mascotRoot = (meshMascot ?? reliefMascot)?.root
+  // The relief rig is centred on its origin. The mesh stands on its origin, so it moves down by half its height.
+  if (meshMascot) meshMascot.root.position.y = -reliefStandingHeight / 2
+  if (mascotRoot) {
     const figure = new Group()
     figure.position.set(0.3, -0.12, -2)
     figure.scale.setScalar(1.75)
-    figure.add(mascotModel.root)
+    figure.add(mascotRoot)
     scene.add(figure)
+    shownMascot.value = meshMascot ? 'mesh' : textureMode === 'sprite' ? 'sprite' : 'relief'
+    emit('shown', shownMascot.value, meshMascot ? meshMascot.skinned : true)
   }
   const orbit = inspector ? new OrbitControls(camera, element) : undefined
   if (orbit) {
@@ -180,15 +196,17 @@ watch(canvas, async (element) => {
     orbit.addEventListener('change', () => refresh?.())
     orbit.update()
   }
-  const helper = inspector && mascotModel ? new SkeletonHelper(mascotModel.root) : undefined
+  const helper = inspector && mascotRoot ? new SkeletonHelper(mascotRoot) : undefined
   if (helper) {
     for (const material of Array.isArray(helper.material) ? helper.material : [helper.material]) material.depthTest = false
     helper.renderOrder = 20
     scene.add(helper)
   }
-  const mixer = inspector && mascotModel ? new AnimationMixer(mascotModel.root) : undefined
-  const clips = mixer && mascotModel ? { Idle: mascotModel.idleAnimation(), Walk: mascotModel.walkAnimation(), Speaking: mascotModel.speakingAnimation() } : undefined
+  const mixer = inspector && reliefMascot ? new AnimationMixer(reliefMascot.root) : undefined
+  const clips = mixer && reliefMascot ? { Idle: reliefMascot.idleAnimation(), Walk: reliefMascot.walkAnimation(), Speaking: reliefMascot.speakingAnimation() } : undefined
   if (clips) emit('clips', Object.fromEntries(Object.entries(clips).map(([name, animation]) => [name, animation.duration])))
+  // The mesh has one motion: its idle clip or its sway.
+  else if (inspector && meshMascot) emit('clips', { Idle: meshMascot.idleDuration })
   let activeClip = ''
   let currentPressure = 0
   let elapsed = 0
@@ -210,23 +228,29 @@ watch(canvas, async (element) => {
     }
     model.update({ time: elapsed, pressure: currentPressure, wetness, pointer, transform,
       opening: opening + (presentation === 'lair' ? Math.min(elapsed / 2, 1) * 0.15 + approach * 0.12 : 0) })
-    if (mixer && clips && clip !== 'Manual') {
+    if (meshMascot) {
+      // Every clip except Idle shows the mesh at rest. Outside the inspector the idle motion always runs.
+      const idle = !inspector || clip === 'Idle'
+      if (inspector && idle && delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % meshMascot.idleDuration
+      meshMascot.update(!idle ? 0 : inspector ? clipTime.value : elapsed)
+    }
+    else if (mixer && clips && clip !== 'Manual') {
       if (activeClip !== clip) {
         mixer.stopAllAction()
         mixer.clipAction(clips[clip]).reset().play()
         activeClip = clip
       }
       if (delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % clips[clip].duration
-      mascotModel?.updateMaterials(clipTime.value)
+      reliefMascot?.updateMaterials(clipTime.value)
       mixer.setTime(clipTime.value)
     }
     else {
       if (mixer && activeClip) { mixer.stopAllAction(); activeClip = '' }
-      mascotModel?.update({ time: inspector ? 0 : elapsed, pressure: currentPressure, pointer, transform, speaking, blink, brow, squint,
+      reliefMascot?.update({ time: inspector ? 0 : elapsed, pressure: currentPressure, pointer, transform, speaking, blink, brow, squint,
         eyes: inspector ? undefined : { _tag: 'Wander' } })
     }
     if (helper) helper.visible = bones
-    if (inspector) mascotModel?.root.traverse(object => {
+    if (inspector) mascotRoot?.traverse(object => {
       if (!(object instanceof Mesh)) return
       for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
         if ('wireframe' in material) material.wireframe = wireframe
@@ -263,9 +287,10 @@ watch(canvas, async (element) => {
     orbit?.dispose()
     helper?.dispose()
     mixer?.stopAllAction()
-    if (mascotModel) mixer?.uncacheRoot(mascotModel.root)
+    if (reliefMascot) mixer?.uncacheRoot(reliefMascot.root)
     model.dispose()
-    mascotModel?.dispose()
+    meshMascot?.dispose()
+    reliefMascot?.dispose()
     mascotTexture?.dispose()
     faceTexture?.dispose()
     projectionTexture?.dispose()
@@ -278,7 +303,7 @@ watch(canvas, async (element) => {
     // Ambient pages never export. Load the GLB writer only for an explicit download.
     const { GLTFExporter } = await import('three/addons/exporters/GLTFExporter.js')
     // GLB stores the rest mesh and PBR texture. Runtime shader deformation stays in the layer source.
-    const rest = mascotModel ? mascotModel.root : model.root.clone(true)
+    const rest = reliefMascot ? reliefMascot.root : model.root.clone(true)
     const flesh = new MeshStandardMaterial({ map: texture, roughness: 0.35, metalness: 0.1 })
     const chitin = new MeshStandardMaterial({ map: texture, color: '#343C3B', roughness: 0.2, metalness: 0.25 })
     rest.traverse(object => {
@@ -286,13 +311,13 @@ watch(canvas, async (element) => {
         object.material = object.material.uniforms.uChitin?.value ? chitin : flesh
       }
     })
-    const animations = mascotModel ? [mascotModel.idleAnimation(), mascotModel.walkAnimation(), mascotModel.speakingAnimation()] : []
+    const animations = reliefMascot ? [reliefMascot.idleAnimation(), reliefMascot.walkAnimation(), reliefMascot.speakingAnimation()] : []
     const data = await new GLTFExporter().parseAsync(rest, { binary: true, animations }).finally(() => { flesh.dispose(); chitin.dispose(); refresh?.() })
     if (!(data instanceof ArrayBuffer)) throw new Error('GLB export did not return a binary model.')
     const url = URL.createObjectURL(new Blob([data], { type: 'model/gltf-binary' }))
     const link = document.createElement('a')
     link.href = url
-    link.download = mascotModel ? 'brundlefly-rig.glb' : `brundlefly-${presentation === 'lair' ? 'lair' : 'aperture'}.glb`
+    link.download = reliefMascot ? 'brundlefly-rig.glb' : `brundlefly-${presentation === 'lair' ? 'lair' : 'aperture'}.glb`
     link.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
@@ -310,15 +335,15 @@ function exportModel() {
 
 <template>
   <div>
-    <div ref="host" class="brand-organism" :data-renderer="status._tag" :data-presentation="presentation" :data-transform="transform">
+    <div ref="host" class="brand-organism" :data-renderer="status._tag" :data-mascot="shownMascot" :data-presentation="presentation" :data-transform="transform">
       <img v-if="status._tag !== 'Ready'" class="brand-organism-fallback" :src="mascot ? '/brand/character.png' : '/brand/kit/aperture.png'" alt="" :width="mascot ? 1199 : 1254" :height="mascot ? 1312 : 1254">
       <canvas ref="canvas" :style="{ opacity: status._tag === 'Ready' ? 1 : 0 }" aria-hidden="true" />
       <button v-if="status._tag === 'Ready' && interactive && !inspector" class="brand-organism-control" type="button" aria-label="Press to deform"
         @pointermove="move" @pointerdown="grab" @pointercancel="release" @lostpointercapture="release"
         @keydown.space.prevent="pressed = true" @keyup.space.prevent="release" @keydown.enter.prevent="pressed = true" @keyup.enter.prevent="release" @blur="release" />
-      <span class="brand-organism-status" role="status">{{ status._tag === 'Ready' ? '3D material' : status._tag === 'Loading' ? '3D loading.' : status.reason === 'texture' ? 'Static material. The texture could not load.' : 'Static material. WebGL is unavailable.' }}</span>
+      <span class="brand-organism-status" role="status">{{ status._tag === 'Ready' ? meshUnavailable ? 'Mapped texture. The mesh could not load.' : '3D material' : status._tag === 'Loading' ? '3D loading.' : status.reason === 'texture' ? 'Static material. The texture could not load.' : 'Static material. WebGL is unavailable.' }}</span>
     </div>
-    <UButton v-if="exportable && status._tag === 'Ready'" variant="outline" @click="exportModel">Download GLB</UButton>
+    <UButton v-if="exportable && status._tag === 'Ready' && shownMascot !== 'mesh'" variant="outline" @click="exportModel">Download GLB</UButton>
     <p v-if="exportError" role="alert">{{ exportError }}</p>
   </div>
 </template>

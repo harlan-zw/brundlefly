@@ -67,3 +67,4 @@ The mascot remains a volumetric relief. Full side and back anatomy need addition
 
 Use the consumer inspector props to orbit the model, show bones, view wireframe, and play exported clips.
 The standalone kit provides /mascot/ with mapped or sprite textures and manual face controls.
+Its Mesh option loads /brand/3d/brundlefly-web.glb. The portable ZIP does not contain that file, so a consumer without it sees the relief rig.

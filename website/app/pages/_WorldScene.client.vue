@@ -9,6 +9,7 @@ import {
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
+import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
 import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
@@ -23,7 +24,12 @@ import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
 const { paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
-const spriteMascot = useRoute().query.mascot === 'sprite'
+type MascotMode = 'relief' | 'sprite' | 'mesh'
+const requestedMascot = useRoute().query.mascot
+const mascotMode: MascotMode = requestedMascot === 'sprite' || requestedMascot === 'mesh' ? requestedMascot : 'relief'
+const spriteMascot = mascotMode === 'sprite'
+// The scene reports the mascot it shows. A mesh that cannot load shows the relief rig.
+const shownMascot = ref<MascotMode>()
 const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
@@ -65,6 +71,8 @@ let cleanup: (() => void) | undefined
 let refresh: (() => void) | undefined
 let hit: ((pointer: Vector2) => boolean) | undefined
 let bounds = { left: 0, right: 0, top: 0, bottom: 0 }
+/** The hover area in host pixels. The pointer cursor shows over it. */
+const overMascot = (x: number, y: number) => x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
 let cameraView = { ...defaultCameraView }
 const cameraKeys = new Set<CameraKey>()
 type Gesture = { _tag: 'Idle' } | { _tag: 'Armed' | 'Dragging'; id: number; startX: number; startY: number; x: number; y: number }
@@ -104,7 +112,7 @@ function move(event: PointerEvent) {
   }
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
-  hovered.value = x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
+  hovered.value = overMascot(x, y)
 }
 function select(event: MouseEvent) {
   askForTilt()
@@ -149,7 +157,8 @@ watch(canvas, async (element) => {
   if (!element) return
   const context = element.getContext('webgl2', { alpha: false, antialias: true })
   if (!context) { status.value = { _tag: 'Fallback', reason: 'context' }; return }
-  const results = await Promise.allSettled([
+  // A missing or broken model file is an error value. The relief rig then takes its place.
+  const [results, meshResult] = await Promise.all([Promise.allSettled([
     new TextureLoader().loadAsync('/brand/kit/modular/flesh-diffuse.png'),
     new TextureLoader().loadAsync('/brand/character.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/goo-diffuse.png'),
@@ -161,7 +170,7 @@ watch(canvas, async (element) => {
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/room-diffuse.webp'),
     new TextureLoader().loadAsync('/brand/kit/lair/room-height.webp'),
-  ])
+  ]), mascotMode === 'mesh' ? loadMeshMascot() : undefined])
   const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult, roomResult, roomHeightResult] = results
   if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
     || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || roomResult.status === 'rejected' || roomHeightResult.status === 'rejected') {
@@ -169,6 +178,7 @@ watch(canvas, async (element) => {
       if (result.status === 'fulfilled') result.value.dispose()
       else console.error('Brundlefly world artwork failed to load.', result.reason)
     }
+    if (meshResult?._tag === 'Ok') meshResult.mascot.dispose()
     status.value = { _tag: 'Fallback', reason: 'art' }
     return
   }
@@ -176,7 +186,7 @@ watch(canvas, async (element) => {
     surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value, roomResult.value, roomHeightResult.value,
   ]
   const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture, roomHeightTexture]
-  if (!alive) { loadedTextures.forEach(value => value.dispose()); return }
+  if (!alive) { loadedTextures.forEach(value => value.dispose()); if (meshResult?._tag === 'Ok') meshResult.mascot.dispose(); return }
   loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
   roomHeightTexture.colorSpace = NoColorSpace
   for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture]) {
@@ -212,9 +222,11 @@ watch(canvas, async (element) => {
   bodyProjectionRaster.height = Math.round(180 * bodyProjectionImage.height / bodyProjectionImage.width)
   const bodyProjectionPainter = bodyProjectionRaster.getContext('2d')!
   bodyProjectionPainter.drawImage(bodyProjectionImage, 0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height)
-  const mascot = createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
+  if (meshResult?._tag === 'Err') console.warn(`The Brundlefly mesh could not load. The relief rig takes its place. ${meshResult.reason}`)
+  const mascot = meshResult?._tag === 'Ok' ? meshResult.mascot : { _tag: 'Relief' as const, ...createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
     spriteMascot ? undefined : { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) },
-    spriteMascot ? undefined : { texture: bodyProjectionTexture, raster: bodyProjectionPainter.getImageData(0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height) })
+    spriteMascot ? undefined : { texture: bodyProjectionTexture, raster: bodyProjectionPainter.getImageData(0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height) }) }
+  shownMascot.value = mascot._tag === 'Mesh' ? 'mesh' : mascotMode === 'sprite' ? 'sprite' : 'relief'
   const roomHeightImage = roomHeightTexture.image as HTMLImageElement
   const roomHeightRaster = document.createElement('canvas')
   roomHeightRaster.width = roomHeightImage.width
@@ -237,10 +249,13 @@ watch(canvas, async (element) => {
   const figure = new Group()
   figure.scale.setScalar(1.25)
   figure.add(mascot.root)
-  const positions = mascot.mesh.geometry.getAttribute('position')
-  const indices = mascot.mesh.geometry.index!
+  // The mesh stands on its own origin. The relief rig stands on its lowest drawn vertex.
   let bottom = 0
-  for (let index = 0; index < indices.count; index++) bottom = Math.min(bottom, positions.getY(indices.getX(index)))
+  if (mascot._tag === 'Relief') {
+    const positions = mascot.mesh.geometry.getAttribute('position')
+    const indices = mascot.mesh.geometry.index!
+    for (let index = 0; index < indices.count; index++) bottom = Math.min(bottom, positions.getY(indices.getX(index)))
+  }
   const floorY = -2.2 - bottom * 1.25
   figure.position.set(sceneLayout.mascot[0], floorY, sceneLayout.mascot[1])
   scene.add(figure)
@@ -255,14 +270,20 @@ watch(canvas, async (element) => {
   scene.add(shadow)
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
   const raycaster = new Raycaster()
-  hit = position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
+  // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.
+  hit = mascot._tag === 'Mesh'
+    ? position => overMascot((position.x + 1) * renderWidth / 2, (1 - position.y) * renderHeight / 2)
+    : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
   let stroll = startStroll(sceneLayout.mascot, 0)
   let elapsed = 0
   let faceElapsed = 0
+  // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
+  const attention = { weight: 0, tilt: 0 }
   let lastReaction = reaction
   let reactionStarted = 0
-  const leftHand = mascot.root.getObjectByName('left-hand')!
-  const rightHand = mascot.root.getObjectByName('right-hand')!
+  // Only the relief rig has hand joints. The mesh performs no habit, so it never needs a hand cue.
+  const leftHand = mascot.root.getObjectByName('left-hand') ?? figure
+  const rightHand = mascot.root.getObjectByName('right-hand') ?? figure
   const light = new Vector3(...sceneLayout.opening.position)
   const eggClusters = sceneLayout.eggs.map(([x, z]) => new Vector3(x, -1.9, z))
   // A habit's eye cue becomes a world point. Eggs resolve to the nearer cluster.
@@ -308,14 +329,16 @@ watch(canvas, async (element) => {
     focusProgress = advanceConversationFocus(focusProgress, paused, delta, reduced.value === 'reduce')
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
     // Frame his face clear of the dialog, so his mouth stays visible while he speaks.
-    const focus = resolveConversationFocus(figure.localToWorld(new Vector3(0.23, 0.8, 0)), renderWidth, renderHeight, camera.fov)
+    const face = mascot._tag === 'Mesh' ? mascot.facePoint(new Vector3()) : figure.localToWorld(new Vector3(0.23, 0.8, 0))
+    const focus = resolveConversationFocus(face, renderWidth, renderHeight, camera.fov)
     const shot = blendCameraShot({ position: basePosition, target: baseTarget }, focus, blend)
     camera.position.copy(shot.position)
     camera.quaternion.copy(shot.quaternion)
     camera.updateMatrixWorld()
     const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
-    if (faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route: sceneLayout.walk,
+    // A mesh without a walk cycle stands where the relief rig starts.
+    if (mascot._tag === 'Relief' && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route: sceneLayout.walk,
       pauses: sceneLayout.walkPauses, walkSpeed: settings.value.walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free' })
     const pose = faceMotion ? strollPose(stroll, settings.value.walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
@@ -324,25 +347,37 @@ watch(canvas, async (element) => {
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
-    // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
-    const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
-    const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
-    if (habit) layers.push(habit)
-    // Directional habits turn toward the nearer egg cluster. Screen right is +x.
-    const side = nearestEggs().x >= figure.position.x ? 1 : -1
-    const mannerism = poseMannerisms(layers.map(layer => ({ ...layer, side })))
-    // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
-    const eyes = !faceMotion ? { _tag: 'Ahead' } as const
-      : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
-        : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
-    mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose, eyes, mannerism,
-      speaking: faceMotion ? speaking : 0,
-      brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
-        : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
-      squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 })
+    if (mascot._tag === 'Mesh') {
+      // A hovering visitor or the dialog draws his head to the camera. A hover alone adds a curious tilt, as on the relief rig.
+      // Reduced motion and Motion off keep the clip pose.
+      const ease = Math.min(1, delta * 4)
+      attention.weight = faceMotion ? attention.weight + (Number(paused || hovered.value) - attention.weight) * ease : 0
+      attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused ? 0.07 : 0) - attention.tilt) * ease : 0
+      mascot.update(faceElapsed, { target: camera.position, weight: attention.weight, tilt: attention.tilt })
+    }
+    else {
+      // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
+      const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
+      const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
+      if (habit) layers.push(habit)
+      // Directional habits turn toward the nearer egg cluster. Screen right is +x.
+      const side = nearestEggs().x >= figure.position.x ? 1 : -1
+      const mannerism = poseMannerisms(layers.map(layer => ({ ...layer, side })))
+      // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
+      const eyes = !faceMotion ? { _tag: 'Ahead' } as const
+        : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
+          : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
+      mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose, eyes, mannerism,
+        speaking: faceMotion ? speaking : 0,
+        brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
+          : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
+        squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 })
+    }
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
-    const corners = [new Vector3(-1.1, -1.25, 0), new Vector3(1.1, 1.3, 0)].map(value => figure.localToWorld(value).project(camera))
+    const reach = mascot._tag === 'Mesh' ? [new Vector3(mascot.extent.left, 0, 0), new Vector3(mascot.extent.right, mascot.extent.height, 0)]
+      : [new Vector3(-1.1, -1.25, 0), new Vector3(1.1, 1.3, 0)]
+    const corners = reach.map(value => figure.localToWorld(value).project(camera))
     bounds = { left: (corners[0]!.x + 1) * renderWidth / 2, right: (corners[1]!.x + 1) * renderWidth / 2,
       top: (1 - corners[1]!.y) * renderHeight / 2, bottom: (1 - corners[0]!.y) * renderHeight / 2 }
     renderer.render(scene, camera)
@@ -381,7 +416,7 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-renderer="status._tag" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-vignette" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
