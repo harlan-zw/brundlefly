@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
-import { onClickOutside, useEventListener, useMediaQuery, usePreferredReducedMotion, useResizeObserver, useScroll, useTimeoutFn } from '@vueuse/core'
+import { onClickOutside, useEventListener, useMediaQuery, usePreferredReducedMotion, useRafFn, useResizeObserver, useScroll, useTimeoutFn } from '@vueuse/core'
 import { dialogueCopy } from '#shared/conversation'
 import type { ConversationHistoryMessage, ConversationReply } from '#shared/conversation'
 import presetData from '#shared/dialogue-presets.generated.json'
 import { choiceNeedsInput, parsePresetGraph, resolveOpeningPreset, resolvePresetChoice } from '#shared/preset-dialogue'
 import type { ConversationTurn } from '#shared/preset-dialogue'
+import { breathGroups, groupsSaid, revealTimes } from '#shared/line-reveal'
+import { voiceDuration } from '#shared/scene-audio'
 
 const { open, muted = false, soundAvailable = true } = defineProps<{ open: boolean, muted?: boolean, soundAvailable?: boolean }>()
 const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: ConversationReply], pending: [value: boolean] }>()
@@ -28,7 +30,10 @@ onClickOutside(noticeAnchor, () => { notice.value = false })
 const mode = ref<'Choices' | 'Compose'>('Choices')
 const history = ref<ConversationHistoryMessage[]>([])
 const visited = ref(false)
-const request = shallowRef<{ _tag: 'Idle' } | { _tag: 'Pending', controller: AbortController } | { _tag: 'PresetPending', next: Extract<ConversationTurn, { _tag: 'Preset' }>, text: string }>({ _tag: 'Idle' })
+const request = shallowRef<{ _tag: 'Idle' } | { _tag: 'Pending', controller: AbortController, chosen: number | undefined }
+  | { _tag: 'PresetPending', next: Extract<ConversationTurn, { _tag: 'Preset' }>, text: string, chosen: number }>({ _tag: 'Idle' })
+// The choice the visitor made stays lit while he takes it in. Typed text stays in its field instead.
+const chosen = computed(() => request.value._tag === 'Idle' ? undefined : request.value.chosen)
 const failedVisit = ref(false)
 const touchScreen = useMediaQuery('(pointer: coarse)')
 const reduced = usePreferredReducedMotion()
@@ -44,9 +49,26 @@ const { arrivedState, measure } = useScroll(conversation)
 useResizeObserver(conversation, measure)
 watch([reply, () => request.value._tag, mode], measure, { flush: 'post' })
 
+// His line arrives in breath-sized groups over the length of his voice. The whole line is laid out from the start, so the pocket keeps its size.
+const line = computed(() => {
+  const groups = reply.value ? breathGroups(reply.value.text) : []
+  return { groups, times: revealTimes(groups, voiceDuration('reply', reply.value?.text.length ?? 0)) }
+})
+const said = ref(0)
+const saying = computed(() => said.value < line.value.groups.length)
+let lineStarted = 0
+const { pause: holdLine, resume: sayLine } = useRafFn(({ timestamp }) => {
+  said.value = groupsSaid(line.value.times, (timestamp - (lineStarted ||= timestamp)) / 1000)
+  if (!saying.value) holdLine()
+}, { immediate: false })
+// A press, a close, and reduced motion show the rest of the line at once.
+const finishLine = () => { holdLine(); said.value = line.value.groups.length }
+
 // Both local and generated replies use the same history, focus, sound, and scene events.
 const present = async (next: Exclude<ConversationTurn, { _tag: 'Empty' }>, kind: 'visit' | 'dialogue', suppliedText: string) => {
   turn.value = next
+  if (reduced.value === 'reduce') finishLine()
+  else { said.value = Math.min(1, line.value.groups.length); lineStarted = 0; sayLine() }
   error.value = ''
   mode.value = 'Choices'
   visited.value = true
@@ -62,14 +84,14 @@ const present = async (next: Exclude<ConversationTurn, { _tag: 'Empty' }>, kind:
   focusReply()
 }
 
-// A brief breath gives cached replies his normal pacing. Closing cancels the queued reply.
+// A short hold shows the visitor the line they chose and gives cached replies his normal pacing. Closing cancels the queued reply.
 const { start: startPreset, stop: stopPreset } = useTimeoutFn(() => {
   const pending = request.value
   if (pending._tag !== 'PresetPending' || !open) return
   request.value = { _tag: 'Idle' }
   emit('pending', false)
   void present(pending.next, 'dialogue', pending.text)
-}, 200, { immediate: false })
+}, 600, { immediate: false })
 
 const cancel = () => {
   if (request.value._tag === 'Pending') request.value.controller.abort()
@@ -78,7 +100,7 @@ const cancel = () => {
   emit('pending', false)
 }
 
-const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value) => {
+const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value, choice?: number) => {
   if (request.value._tag !== 'Idle') return
   const message = suppliedText.trim()
   if (kind === 'dialogue' && (!message || suppliedText.length > 1000)) {
@@ -87,7 +109,7 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value) =>
     return
   }
   const controller = new AbortController()
-  request.value = { _tag: 'Pending', controller }
+  request.value = { _tag: 'Pending', controller, chosen: choice }
   error.value = ''
   emit('pending', true)
   const response = kind === 'visit'
@@ -124,6 +146,8 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value) =>
 watch([() => open, dialog], async ([isOpen, element]) => {
   if (!element) return
   if (!isOpen) {
+    // A line that he was still saying is whole when the dialog opens again.
+    finishLine()
     cancel()
     if (element.open) element.close()
     return
@@ -147,12 +171,16 @@ watch([reply, () => request.value._tag, error, failedVisit, mode], async () => {
   resize = element.animate({ height: [`${from}px`, `${to}px`] }, { duration: 200, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' })
 }, { flush: 'pre' })
 
-const choose = (choice: string, index: number) => {
+// A pointer press or a number key during his line shows the rest of it first. The next one answers.
+// Keyboard and screen reader activation always answers, because the reveal is only visual.
+const choose = (choice: string, index: number, pointer: boolean) => {
   if (request.value._tag !== 'Idle') return
+  if (pointer && saying.value) { finishLine(); return }
+  finishLine()
   if (turn.value._tag === 'Preset' && presets._tag === 'Ok') {
     const selected = resolvePresetChoice(presets.value, turn.value.id, index)
     if (selected._tag === 'Reply') {
-      request.value = { _tag: 'PresetPending', next: { _tag: 'Preset', id: selected.id, reply: selected.reply }, text: choice }
+      request.value = { _tag: 'PresetPending', next: { _tag: 'Preset', id: selected.id, reply: selected.reply }, text: choice, chosen: index }
       emit('pending', true)
       startPreset()
       return
@@ -161,7 +189,7 @@ const choose = (choice: string, index: number) => {
   }
   if (choiceNeedsInput(choice)) { void compose(); return }
   text.value = choice
-  void receive('dialogue', choice)
+  void receive('dialogue', choice, index)
 }
 // Visitors chose to type, so the field takes focus even on touch screens.
 const compose = async () => {
@@ -180,7 +208,7 @@ useEventListener('keydown', (event: KeyboardEvent) => {
   if (event.target instanceof HTMLElement && (event.target.isContentEditable || event.target.closest('input,textarea,select'))) return
   if (event.key === '4') { event.preventDefault(); void compose(); return }
   const choice = reply.value.choices[Number(event.key) - 1]
-  if (/^[123]$/.test(event.key) && choice) { event.preventDefault(); choose(choice, Number(event.key) - 1) }
+  if (/^[123]$/.test(event.key) && choice) { event.preventDefault(); choose(choice, Number(event.key) - 1, true) }
 })
 onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() })
 </script>
@@ -199,16 +227,16 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
         <button class="speech-close" type="button" aria-label="Close" @click="emit('close')">×</button>
       </div>
     </header>
-    <div ref="conversation" class="speech-conversation" :class="{ 'speech-more': !arrivedState.bottom }" aria-label="Conversation" :aria-busy="request._tag !== 'Idle'">
-      <p v-if="reply" class="speech-utterance">{{ reply.text }}</p>
+    <div ref="conversation" class="speech-conversation" :class="{ 'speech-more': !arrivedState.bottom }" aria-label="Conversation" :aria-busy="request._tag !== 'Idle'" @click="finishLine">
+      <p v-if="reply" class="speech-utterance"><span v-for="(group, index) in line.groups" :key="index" :class="{ 'speech-unsaid': index >= said }">{{ group }}</span></p>
       <p v-if="reply?.beat" class="speech-beat" aria-label="Brundlefly's movement">{{ reply.beat }}</p>
       <div v-if="reply?.links.length" class="speech-links">
         <a v-for="link in reply.links" :key="link.href" :href="link.href" :download="link.download || undefined">{{ link.label }}</a>
       </div>
       <p v-if="request._tag === 'Pending'" class="speech-pending" role="status">{{ dialogueCopy.loading }}</p>
-      <ol v-if="reply && mode === 'Choices'" ref="choiceList" class="speech-choices" aria-label="Your reply">
+      <ol v-if="reply && mode === 'Choices'" ref="choiceList" class="speech-choices" :class="{ 'speech-waiting': saying }" aria-label="Your reply">
         <li v-for="(choice, index) in reply.choices" :key="`${index}:${choice}`">
-          <button type="button" :disabled="request._tag !== 'Idle'" @click="choose(choice, index)"><span aria-hidden="true">{{ index + 1 }}.</span>{{ choice }}</button>
+          <button type="button" :class="{ 'speech-chosen': chosen === index }" :disabled="request._tag !== 'Idle'" @click="choose(choice, index, $event.detail > 0)"><span aria-hidden="true">{{ index + 1 }}.</span>{{ choice }}</button>
         </li>
         <li>
           <button ref="ownChoice" class="speech-own" type="button" :disabled="request._tag !== 'Idle'" @click="compose"><span aria-hidden="true">4.</span>Your text</button>
@@ -266,6 +294,9 @@ button:disabled { cursor: wait; opacity: .5; }
 .speech-conversation { display: flex; flex-direction: column; gap: 6px; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-color: #69404b #10130f; }
 .speech-more { mask-image: linear-gradient(#000 calc(100% - 32px), transparent); }
 .speech-utterance { margin: 0; font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+/* Words he has not said yet keep their place, so the pocket holds its size while the line arrives. */
+.speech-utterance span { transition: opacity .25s ease-out; }
+.speech-utterance .speech-unsaid { opacity: 0; transition: none; }
 .speech-beat { margin: -2px 0 0; color: #a4b5a0; font-size: 13px; font-style: italic; line-height: 1.4; }
 .speech-pending { margin: 0; color: #a4b5a0; font-size: 13px; }
 .speech-links { display: flex; flex-wrap: wrap; gap: 4px 18px; }
@@ -281,6 +312,12 @@ button:disabled { cursor: wait; opacity: .5; }
 .speech-choices button:hover:not(:disabled), .speech-choices button:focus-visible { color: #e8d4a6; background: linear-gradient(90deg, #aa604b40, #aa604b0d 70%, transparent); }
 .speech-choices button:focus-visible { outline: 1px solid #e8d4a680; outline-offset: -1px; }
 .speech-choices span { color: #aa604b; font: 600 1em/1 var(--font-display, sans-serif); font-variant-numeric: tabular-nums; }
+/* The choices wait, dimmed, until his line ends. */
+.speech-choices li { transition: opacity .2s ease-out; }
+.speech-waiting li { opacity: .5; }
+/* The visitor's chosen line stays lit while he takes it in. The other lines fall back. */
+.speech-choices button:disabled { opacity: .3; }
+.speech-choices button.speech-chosen:disabled { opacity: 1; cursor: default; color: #e8d4a6; background: linear-gradient(90deg, #aa604b40, #aa604b0d 70%, transparent); }
 /* Italics set the free text choice apart from his suggestions, like an action line. */
 .speech-choices .speech-own { color: #a4b5a0; font-style: italic; }
 form { flex-shrink: 0; position: relative; z-index: 1; }
