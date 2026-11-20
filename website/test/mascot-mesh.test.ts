@@ -301,6 +301,20 @@ function eyedModel() {
   }
   return { ...model, eyes, lids, authored }
 }
+test('the eye line sits between his eyes and follows his head, and a file without eyes gives the face point', () => {
+  const { scene, joint } = eyedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const head = joint('head')
+  const between = () => { head.updateWorldMatrix(true, false); return head.localToWorld(new Vector3(0, 1, 15)) }
+  assert.ok(mascot.eyeLine(new Vector3()).distanceTo(between()) < 1e-9)
+  const rest = mascot.eyeLine(new Vector3())
+  head.rotation.y = 0.4
+  assert.ok(mascot.eyeLine(new Vector3()).distanceTo(between()) < 1e-9)
+  assert.ok(mascot.eyeLine(new Vector3()).distanceTo(rest) > 1e-3, 'A turned head must move the eye line.')
+  const plain = ok(createMeshMascot({ scene: millimetreModel().scene, animations: [] }, 2.5))
+  assert.deepEqual(plain.eyeLine(new Vector3()).toArray(), plain.facePoint(new Vector3()).toArray())
+})
+
 /** What the wet-eye shader receives for an eyeball: the gaze as yaw and pitch in the head's frame, and the pupil radius. */
 function eyeUniforms(eye: Mesh) {
   const material = eye.material as MeshStandardMaterial

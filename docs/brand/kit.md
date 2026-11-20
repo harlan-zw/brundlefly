@@ -357,7 +357,10 @@ Any other file loops its Brundlefly-idle clip, or sways about its feet if it has
 The scene logs the joint that stopped the pose code, and reports the motion in its data-mascot-motion attribute: posed, clip, or sway.
 If the file has a joint named head, the head turns to the camera while a visitor hovers or the dialog is open. A hover also tilts it.
 A click anywhere in its hover area opens the dialog, because the model has gaps between its limbs.
-A node named Brundlefly-base is removed. An empty node named anchor-face sets the conversation close-up.
+A node named Brundlefly-base is removed.
+While the dialog is open, the camera takes a head-and-shoulders shot of the point between the two eye nodes, from the side he faces.
+A key light and a rim light rise with that shot, the fog thickens, and a dark ring closes around his head.
+A file without eye nodes uses an empty node named anchor-face for that point.
 If the file is absent or unreadable, the mesh mode shows the relief rig and logs a warning.
 The rig inspection page has the same model as its Mesh texture option.
 The scene element reports the visible mascot in its data-mascot attribute: relief, sprite, or mesh.

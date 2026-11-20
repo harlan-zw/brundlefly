@@ -4,7 +4,7 @@ import { useDeviceOrientation, useDocumentVisibility, useElementSize, useEventLi
 import { useRoute } from '#app'
 import {
   ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
-  NoColorSpace, PerspectiveCamera, PlaneGeometry, Quaternion, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SRGBColorSpace, TextureLoader,
+  NoColorSpace, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SpotLight, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
 import { createWorld } from '@brundlefly/brand/shared/world'
@@ -16,7 +16,7 @@ import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
-import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
+import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ConversationMood } from '#shared/conversation'
@@ -317,6 +317,11 @@ watch(canvas, async (element) => {
   let renderWidth = 0
   let renderHeight = 0
   let focusProgress = paused ? 1 : 0
+  // The mesh is a full body, so its conversation is staged: a head-and-shoulders shot, and two lights for his face that rise with the shot.
+  // Both lights stay in the scene at zero, so opening the dialog compiles no new shader. The relief rig keeps its full-body shot and the lair's light.
+  const staging = mascot._tag === 'Mesh' ? { eyeLine: mascot.eyeLine, face: new Vector3(), placed: false, side: 1 as 1 | -1, drift: 0,
+    key: new SpotLight('#F2DEB8', 0, 7, 0.34, 0.9, 2), rim: new PointLight('#6FB7C0', 0, 3.5, 2) } : undefined
+  if (staging) scene.add(staging.key, staging.key.target, staging.rim)
   const basePosition = new Vector3()
   const baseTarget = new Vector3()
   let tiltRest: Quaternion | undefined
@@ -329,7 +334,11 @@ watch(canvas, async (element) => {
     scene.environmentIntensity = settings.value.reflections
     const aspect = renderWidth / renderHeight
     const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(sceneLayout.camera.desktop, sceneLayout.camera.portrait, aspect)
-    fog.density = settings.value.fog * fogScale
+    const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
+    focusProgress = advanceConversationFocus(focusProgress, paused, delta, reduced.value === 'reduce')
+    const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
+    // Thicker air during a staged talk pushes the lair back behind him.
+    fog.density = settings.value.fog * fogScale * (staging ? 1 + blend * 0.7 : 1)
     if (camera.fov !== fieldOfView) { camera.fov = fieldOfView; camera.updateProjectionMatrix() }
     if (!paused) cameraView = moveCameraView(cameraView, cameraKeys, delta)
     const { alpha, beta, gamma } = orientation
@@ -345,16 +354,32 @@ watch(canvas, async (element) => {
     const view = resolveCameraView(tiltCameraView(cameraView, tilt), framing, sceneLayout.camera.target, settings.value.zoom)
     basePosition.set(...view.position)
     baseTarget.set(...view.target)
-    focusProgress = advanceConversationFocus(focusProgress, paused, delta, reduced.value === 'reduce')
-    const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
     // Frame his face clear of the dialog, so his mouth stays visible while he speaks.
     const face = mascot._tag === 'Mesh' ? mascot.facePoint(new Vector3()) : figure.localToWorld(new Vector3(0.23, 0.8, 0))
-    const focus = resolveConversationFocus(face, renderWidth, renderHeight, camera.fov)
+    if (staging) {
+      // Between talks the shot takes the side he faces and starts from rest. During a talk it keeps that side, so the camera never crosses him.
+      const resting = !paused && focusProgress === 0
+      if (resting) { staging.side = heading < 0 ? -1 : 1; staging.drift = 0 }
+      // His head turns to the camera, and the camera frames his head. A slow follow keeps that loop calm and leaves his head free to act in the frame.
+      // A still frame has no later frame to catch up in, so it takes his face as it is.
+      const eyes = staging.eyeLine(new Vector3())
+      if (resting || !faceMotion || !staging.placed) staging.face.copy(eyes)
+      else staging.face.lerp(eyes, 1 - Math.exp(-delta / 0.7))
+      staging.placed = true
+      if (paused && faceMotion) staging.drift += delta
+      staging.key.intensity = blend * 16
+      staging.rim.intensity = blend * 3
+      staging.key.position.set(staging.face.x + staging.side * 1.5, staging.face.y + 1.3, staging.face.z + 2.4)
+      staging.key.target.position.copy(staging.face)
+      // The rim sits low and wide on his far side. It edges his jaw and shoulder, and stays far from the pale wing above them.
+      staging.rim.position.set(staging.face.x - staging.side * 1.9, staging.face.y, staging.face.z - 0.9)
+    }
+    const focus = staging ? resolveConversationCloseUp(staging.face, renderWidth, renderHeight, camera.fov, staging.side, staging.drift)
+      : resolveConversationFocus(face, renderWidth, renderHeight, camera.fov)
     const shot = blendCameraShot({ position: basePosition, target: baseTarget }, focus, blend)
     camera.position.copy(shot.position)
     camera.quaternion.copy(shot.quaternion)
     camera.updateMatrixWorld()
-    const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
     // A mesh without the relief rig's joints stands where the relief rig starts.
     const walkSpeed = settings.value.walkSpeed * walkPace
@@ -434,6 +459,7 @@ watch(canvas, async (element) => {
     endView()
     renderer.setAnimationLoop(null)
     world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
+    staging?.key.dispose(); staging?.rim.dispose()
     shadowGeometry.dispose(); shadowMaterial.dispose(); environment.dispose(); renderer.dispose()
   }
   status.value = { _tag: 'Ready' }
@@ -444,7 +470,7 @@ watch(canvas, async (element) => {
 <template>
   <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
-    <div v-if="status._tag === 'Ready'" class="world-vignette" aria-hidden="true" />
+    <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && shownMascot === 'mesh' }" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
     <img v-if="status._tag === 'Fallback'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
     <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" :disabled="status._tag === 'Loading'" aria-label="Talk to Brundlefly" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
@@ -459,6 +485,12 @@ canvas { display: block; width: 100%; height: 100%; }
 /* Dark edges hold the eye on the opening and the mascot. */
 .world-vignette { position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(ellipse 72% 68% at 50% 52%, transparent 52%, rgb(8 11 8 / 0.55) 82%, rgb(8 11 8 / 0.88) 100%); }
+/* A staged talk darkens the lair around his head. The dark ring rises with the camera. */
+.world-vignette::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity .65s ease-in-out;
+  background: radial-gradient(ellipse 58% 62% at 50% 32%, transparent 38%, rgb(8 11 8 / 0.5) 78%, rgb(8 11 8 / 0.82) 100%); }
+.world-vignette-close::after { opacity: 1; }
+@media (orientation: landscape) and (max-height: 540px) { .world-vignette::after { background: radial-gradient(ellipse 46% 80% at 26% 44%, transparent 38%, rgb(8 11 8 / 0.5) 78%, rgb(8 11 8 / 0.82) 100%); } }
+@media (prefers-reduced-motion: reduce) { .world-vignette::after { transition: none; } }
 .world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, default; touch-action: none; }
 .world-interaction.mascot-hover { cursor: url('/brand/kit/lair/cursor-claw.png') 4 3, pointer; }
 .world-interaction:focus-visible { outline: 2px solid var(--color-cream); outline-offset: -8px; }
