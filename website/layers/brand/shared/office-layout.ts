@@ -23,7 +23,8 @@ type PropShape =
  * `rests` names what holds it: the floor, a wall, the ceiling, or the prop below it.
  */
 export type OfficeProp = PropShape & { id: string, position: Place, size: Place, facing: Facing, rests: 'floor' | 'wall' | 'ceiling' | { on: string } }
-export type OfficeStop = { position: Point, pause: number, habit: MannerismTag }
+/** `facing` turns him to his work at the stop, as a turn about the vertical: zero faces the viewer, a positive turn is to screen right. */
+export type OfficeStop = { position: Point, pause: number, habit: MannerismTag, facing?: number }
 export type OfficePlan = {
   room: { minX: number, maxX: number, minZ: number, maxZ: number, floorY: number, ceilingY: number }
   props: readonly OfficeProp[]
@@ -93,12 +94,13 @@ export const officePlan: OfficePlan = {
   ],
   start: [0.35, -0.4],
   exit: [3.1, -1],
-  // He crosses the room between the stations: the desk, the jars, the near left, and the flickering tube.
+  // He works a round: he types at the desk, tends the jars, reads his palm on the way back, and listens to the failing tube.
+  // At the two stations he turns to his work, so the viewer sees his shoulder and his hands on it. He stays there longest.
   stops: [
-    { position: [-0.9, -0.95], pause: 3.2, habit: 'AirWriting' },
-    { position: [0.9, -0.95], pause: 3.8, habit: 'GlanceEggs' },
-    { position: [-0.7, 0.4], pause: 2.8, habit: 'CheckPalm' },
-    { position: [0.7, 0.7], pause: 4.1, habit: 'ListenCeiling' },
+    { position: [-0.9, -0.95], pause: 7.5, habit: 'TypeKeys', facing: -2.35 },
+    { position: [0.9, -0.95], pause: 6.5, habit: 'TendJar', facing: 2.3 },
+    { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
+    { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
   ],
   cues: { jars: [2.17, -0.345, -3.75], light: [1.45, 0.95, -4.35], ceiling: [0.7, 2.28, 0.7] },
   // The plate hangs on the door's wall, on the side nearer the viewer.

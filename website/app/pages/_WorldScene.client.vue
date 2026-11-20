@@ -26,7 +26,7 @@ import { advanceEntrance, entranceAct, entranceLight, startEntrance } from '@bru
 import type { Entrance } from '@brundlefly/brand/shared/office-entrance'
 import { advanceTravel, startTravel, travelShade } from '@brundlefly/brand/shared/set-travel'
 import type { Travel } from '@brundlefly/brand/shared/set-travel'
-import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
+import { beatMannerism, keyTaps, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
 import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveDialogClearance, resolveFollowYaw, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
@@ -349,6 +349,11 @@ watch(canvas, async (element) => {
   const attention = { weight: 0, tilt: 0 }
   // How much of a walk-pause habit shows. It falls to zero in a conversation and returns after it.
   let habitWeight = 1
+  let workTaps = 0
+  let workTending = false
+  // The way he faces at the stop he stands at, when the set gives one and nothing else has his attention.
+  const workFacing = (attention: 'free' | 'noticed' | 'talking') => attention === 'free' && stroll.activity._tag === 'Pausing'
+    ? standing.stage.layout.walkFacings?.[stroll.activity.waypoint % standing.stage.layout.walkPauses.length] : undefined
   // A mesh with the relief rig's joints takes the relief rig's pose code. Any other mesh plays its own clip or sway.
   const meshPose = mascot._tag === 'Mesh' ? mascot.pose : undefined
   const walks = mascot._tag === 'Relief' || meshPose !== undefined
@@ -598,8 +603,8 @@ watch(canvas, async (element) => {
       pauses: journey || act.held ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
       cadence: meshCadence, facing: meshPose ? turn.heading : undefined })
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
-      // At the switch he faces it. After the strike he turns back to the visitor on his feet.
-      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing : undefined }
+      // At a station of his round he faces his work, until a visitor has his attention. At the switch he faces it. After the strike he turns back to the visitor on his feet.
+      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing : workFacing(attentionNow) }
       // With motion off he has no steps to turn with, so he stands where the turn would end.
       turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
     }
@@ -629,6 +634,13 @@ watch(canvas, async (element) => {
       // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
       habitWeight = faceMotion ? habitWeight + ((talking ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
       if (habit) layers.push({ ...habit, weight: habitWeight })
+      // His work makes its own sound: a click for each key, and the jar bubbles once as he turns it.
+      const taps = habit?.mannerism._tag === 'TypeKeys' && !talking ? keyTaps(habit.age) : 0
+      if (taps > workTaps) emit('action', 'KeyClick')
+      workTaps = taps
+      const tending = habit?.mannerism._tag === 'TendJar' && !talking && habit.age > 1.2
+      if (tending && !workTending) emit('action', 'JarBubbles')
+      workTending = tending
       // Directional habits turn toward the nearer egg cluster. Screen right is +x.
       const side = nearestEggs().x >= figure.position.x ? 1 : -1
       const sided: MannerismLayer[] = layers.map(layer => ({ ...layer, side }))
