@@ -2,8 +2,9 @@
 //
 //   node stance_float.ts
 //
-// The figure hangs slack, as a specimen in fluid, and stands on two flat soles.
-// The inputs are FLOAT_POSE below. The output file repeats them, so the file alone says how it was made.
+// The figure hangs in fluid: the legs hang with the toes down, the arms drift, the head droops.
+// No foot is on a floor, so every bone takes its turn from FLOAT_POSE below and no leg is solved.
+// The output file repeats the inputs, so the file alone says how it was made.
 // Axes are the site's: +X to the figure's left side, +Y up, +Z the way the body faces. Units are millimetres and degrees.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -13,21 +14,18 @@ export type Quat = [number, number, number, number]   // x, y, z, w
 /** One turn about a fixed axis of the site, in degrees. */
 export type Turn = ['x' | 'y' | 'z', number]
 
-export interface LegInput {
-  /** Where the ankle goes, from its place in the straight stand: across and forward. The height does not change. */
-  ankle: [number, number]
-  /** The way the knee points, from the hip: across and forward. */
-  knee: [number, number]
-  /** The turn of the foot about the vertical. The sole stays flat. */
-  footYaw: number
+export interface BoneInput {
+  /** `parent`: the turns come on top of the turn of the parent bone. `straight`: on top of the straight stand, whatever the parent does. */
+  from: 'parent' | 'straight'
+  /** Applied in order. */
+  turns: Turn[]
 }
 
 export interface PoseInput {
   /** The pelvis moves this far from the straight stand: across, up, forward. */
   pelvisOffset: Vec
-  /** Turns of a bone, applied in order. A bone that is not listed keeps the turn of its parent. */
-  turns: Record<string, { from: 'parent' | 'straight', turns: Turn[] }>
-  legs: { left: LegInput, right: LegInput }
+  /** A bone that is not listed keeps the turn of its parent. */
+  turns: Record<string, BoneInput>
 }
 
 export interface Stance {
@@ -40,13 +38,10 @@ export interface Stance {
 const add = (a: Vec, b: Vec): Vec => [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
 const sub = (a: Vec, b: Vec): Vec => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 const scale = (a: Vec, k: number): Vec => [a[0] * k, a[1] * k, a[2] * k]
-const dot = (a: Vec, b: Vec) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 const cross = (a: Vec, b: Vec): Vec => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
-const length = (a: Vec) => Math.sqrt(dot(a, a))
-const unit = (a: Vec): Vec => scale(a, 1 / length(a))
 
 const IDENTITY: Quat = [0, 0, 0, 1]
-const multiply = (a: Quat, b: Quat): Quat => [
+export const multiply = (a: Quat, b: Quat): Quat => [
   a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
   a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
   a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
@@ -58,22 +53,12 @@ export const rotate = (q: Quat, v: Vec): Vec => {
   const t = scale(cross(u, v), 2)
   return add(add(v, scale(t, q[3])), cross(u, t))
 }
+const AXES: Record<Turn[0], Vec> = { x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1] }
 const aboutAxis = (axis: Vec, degrees: number): Quat => {
   const half = degrees * Math.PI / 360
-  const [x, y, z] = scale(unit(axis), Math.sin(half))
+  const [x, y, z] = scale(axis, Math.sin(half))
   return [x, y, z, Math.cos(half)]
 }
-/** The shortest turn that takes one direction onto another. It adds no twist. */
-const between = (from: Vec, to: Vec): Quat => {
-  const a = unit(from), b = unit(to)
-  const w = 1 + dot(a, b)
-  if (w < 1e-9)
-    return aboutAxis(Math.abs(a[0]) < 0.9 ? cross(a, [1, 0, 0]) : cross(a, [0, 1, 0]), 180)
-  const [x, y, z] = cross(a, b)
-  const n = Math.sqrt(x * x + y * y + z * z + w * w)
-  return [x / n, y / n, z / n, w / n]
-}
-const AXES: Record<Turn[0], Vec> = { x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1] }
 const turned = (turns: Turn[]): Quat => turns.reduce<Quat>((q, [axis, degrees]) => multiply(aboutAxis(AXES[axis], degrees), q), IDENTITY)
 
 /** Each bone: its joint, its parent joint, and the joint at its far end. Parents come first. */
@@ -88,48 +73,22 @@ export function boneList(): [string, string | undefined, string][] {
   return bones
 }
 
-/**
- * Solve a stance. `straight` holds each joint of the straight stand in the axes of the site.
- * Each leg reaches from its hip to its ankle with two bones. Each foot keeps its height and turns about the vertical only.
- */
+/** Solve a stance. `straight` holds each joint of the straight stand in the axes of the site. */
 export function solveStance(straight: Record<string, Vec>, pose: PoseInput): Stance {
+  const bones = boneList()
+  const known = new Set(bones.map(([joint]) => joint))
+  for (const name of Object.keys(pose.turns)) {
+    if (!known.has(name))
+      throw new Error(`The pose turns "${name}", and the skeleton has no such bone.`)
+  }
   const world: Record<string, Quat> = {}
   const posed: Record<string, Vec> = { pelvis: add(straight.pelvis!, pose.pelvisOffset) }
-  const bones = boneList()
   for (const [joint, parent] of bones) {
-    if (parent && !posed[joint])
+    if (parent)
       posed[joint] = add(posed[parent]!, rotate(world[parent]!, sub(straight[joint]!, straight[parent]!)))
     const carried = parent ? world[parent]! : IDENTITY
-    const side = joint.split('-')[0] as 'left' | 'right'
-    if (joint.endsWith('-hip')) {
-      const leg = pose.legs[side]
-      const knee = `${side}-knee`, foot = `${side}-foot`
-      const hip = posed[joint]!
-      const thigh = length(sub(straight[knee]!, straight[joint]!)), shin = length(sub(straight[foot]!, straight[knee]!))
-      const ankle: Vec = [straight[foot]![0] + leg.ankle[0], straight[foot]![1], straight[foot]![2] + leg.ankle[1]]
-      const reach = length(sub(ankle, hip))
-      if (reach > (thigh + shin) * 0.995)
-        throw new Error(`The ${side} ankle is ${reach.toFixed(2)} mm from its hip, and the leg is ${(thigh + shin).toFixed(2)} mm long. Lower the pelvis or move the ankle.`)
-      const toAnkle = unit(sub(ankle, hip))
-      const along = (thigh * thigh - shin * shin + reach * reach) / (2 * reach)
-      const out = Math.sqrt(Math.max(thigh * thigh - along * along, 0))
-      const hint: Vec = [leg.knee[0], 0, leg.knee[1]]
-      const bend = unit(sub(hint, scale(toAnkle, dot(hint, toAnkle))))
-      const kneePoint = add(add(hip, scale(toAnkle, along)), scale(bend, out))
-      const thighWas = rotate(carried, sub(straight[knee]!, straight[joint]!))
-      world[joint] = multiply(between(thighWas, sub(kneePoint, hip)), carried)
-      posed[knee] = kneePoint
-      const shinWas = rotate(world[joint]!, sub(straight[foot]!, straight[knee]!))
-      world[knee] = multiply(between(shinWas, sub(add(hip, scale(toAnkle, reach)), kneePoint)), world[joint]!)
-    }
-    else if (joint.endsWith('-knee')) { /* solved with the hip */ }
-    else if (joint.endsWith('-foot')) {
-      world[joint] = aboutAxis(AXES.y, pose.legs[side].footYaw)
-    }
-    else {
-      const own = pose.turns[joint]
-      world[joint] = own ? multiply(turned(own.turns), own.from === 'parent' ? carried : IDENTITY) : carried
-    }
+    const own = pose.turns[joint]
+    world[joint] = own ? multiply(turned(own.turns), own.from === 'parent' ? carried : IDENTITY) : carried
   }
   for (const [joint, , end] of bones)
     posed[end] ??= add(posed[joint]!, rotate(world[joint]!, sub(straight[end]!, straight[joint]!)))
@@ -141,20 +100,23 @@ export function solveStance(straight: Record<string, Vec>, pose: PoseInput): Sta
   return { rotations, pelvis_offset_mm: pose.pelvisOffset, joints_mm: Object.fromEntries(Object.entries(posed).map(([name, p]) => [name, p.map(round) as Vec])) }
 }
 
-// The float pose. A turn about x bends a part forward when it is positive. A turn about z rolls it: positive lifts the
-// figure's left side. A turn about y turns it about the vertical: positive turns the front toward the figure's left.
+// The float pose.
+// A turn about x pitches a part: positive bends a part that points up or forward toward the front and the floor.
+// It swings a part that hangs down toward the back. A turn about z rolls: positive lifts the figure's left side.
+// A turn about y turns about the vertical: positive turns the front toward the figure's left.
+// "left" bones are on screen left, which is the figure's right side (-X).
 export const FLOAT_POSE: PoseInput = {
-  pelvisOffset: [0, 1.2, -1],
+  pelvisOffset: [0, 0, 0],
   turns: {
     'pelvis': { from: 'straight', turns: [['x', -10], ['z', 5]] },
     'chest': { from: 'parent', turns: [['x', 3], ['z', -8], ['y', 6]] },
     'head': { from: 'parent', turns: [['x', 14], ['z', 22], ['y', -15]] },
-    'left-shoulder': { from: 'parent', turns: [['z', -4], ['x', -4]] },
-    'left-elbow': { from: 'straight', turns: [['x', -12], ['z', 4]] },
-    'left-hand': { from: 'straight', turns: [] },
-    'right-shoulder': { from: 'parent', turns: [['z', 22], ['x', 4]] },
-    'right-elbow': { from: 'straight', turns: [['x', -36], ['z', 10]] },
-    'right-hand': { from: 'straight', turns: [['x', -10]] },
+    'left-shoulder': { from: 'parent', turns: [['z', -14], ['x', -8]] },
+    'left-elbow': { from: 'straight', turns: [['x', -30], ['z', -8]] },
+    'left-hand': { from: 'straight', turns: [['x', -18]] },
+    'right-shoulder': { from: 'parent', turns: [['z', 22], ['x', -4]] },
+    'right-elbow': { from: 'straight', turns: [['x', -40], ['z', 12]] },
+    'right-hand': { from: 'straight', turns: [['x', -20]] },
     'left-small-elbow': { from: 'straight', turns: [['x', -10]] },
     'left-small-hand': { from: 'straight', turns: [['x', 40]] },
     'right-small-elbow': { from: 'straight', turns: [['x', -5]] },
@@ -163,14 +125,16 @@ export const FLOAT_POSE: PoseInput = {
     'left-wing-tip': { from: 'parent', turns: [['x', -12]] },
     'right-wing': { from: 'parent', turns: [['x', -45], ['z', 20]] },
     'right-wing-tip': { from: 'parent', turns: [['x', -12]] },
-  },
-  legs: {
-    left: { ankle: [4, 5], knee: [-0.6, 1], footYaw: 12 },
-    right: { ankle: [-3, -5], knee: [0.6, 1], footYaw: -12 },
+    'left-hip': { from: 'straight', turns: [['x', 8], ['z', 12]] },
+    'left-knee': { from: 'straight', turns: [['x', -18], ['z', 8]] },
+    'left-foot': { from: 'straight', turns: [['x', 55], ['z', 6]] },
+    'right-hip': { from: 'straight', turns: [['x', 18], ['z', -12]] },
+    'right-knee': { from: 'straight', turns: [['x', -8], ['z', -8]] },
+    'right-foot': { from: 'straight', turns: [['x', 42], ['z', -6]] },
   },
 }
 
-const NOTE = 'Stance of the jar variant of the print model: the figure hangs slack, as a specimen in fluid, and stands on two flat soles with no base. '
+const NOTE = 'Stance of the jar variant of the print model: the figure hangs in fluid. The legs hang with the toes down, the long arms drift, the head droops, and no foot is on a floor. '
   + 'Build it with build_from_mesh.py --stance source/stance-float.json --no-base. The format is that of stance.json: each rotation is a joint\'s local quaternion [x, y, z, w] '
   + 'from the straight stand of rig-joints.json, in the body\'s axes: +X to the figure\'s left side, +Y up, +Z the way the body faces. '
   + 'stance_float.ts made this file from the values under inputs. Change them there and run it again. The website model does not use this file.'
