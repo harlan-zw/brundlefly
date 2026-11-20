@@ -24,7 +24,12 @@ type PropShape =
  */
 export type OfficeProp = PropShape & { id: string, position: Place, size: Place, facing: Facing, rests: 'floor' | 'wall' | 'ceiling' | { on: string } }
 /** `facing` turns him to his work at the stop, as a turn about the vertical: zero faces the viewer, a positive turn is to screen right. */
-export type OfficeStop = { position: Point, pause: number, habit: MannerismTag, facing?: number }
+/** `alternate` is a second habit for the stop. He performs it on every second visit. */
+/**
+ * `works` names the furniture he works at from the stop, by id. He stands at it within reach of his arms, which pass over it.
+ * The checks then keep only his trunk and his legs clear of that furniture and of what stands on it.
+ */
+export type OfficeStop = { position: Point, pause: number, habit: MannerismTag, facing?: number, alternate?: MannerismTag, works?: readonly string[] }
 export type OfficePlan = {
   room: { minX: number, maxX: number, minZ: number, maxZ: number, floorY: number, ceilingY: number }
   props: readonly OfficeProp[]
@@ -34,6 +39,8 @@ export type OfficePlan = {
   exit: Point
   /** The loop he walks, in order. */
   stops: readonly OfficeStop[]
+  /** The clear aisle to the board, and the stance within marker reach. Return through the same aisle. */
+  writing: { via: readonly Point[], stance: Point }
   /** What his habits look at: the jars for the eggs, the test chamber for the light, the flickering tube for the ceiling. */
   cues: { jars: Place, light: Place, ceiling: Place }
   /** The middle of the wall plate beside the door. It switches the tubes. The build script puts the plate there. */
@@ -52,15 +59,15 @@ export const officePlan: OfficePlan = {
   room: { minX: -5.5, maxX: 5.5, minZ: -4.5, maxZ: 14.5, floorY: -2.2, ceilingY: 2.4 },
   props: [
     // The office station, on the left of the back wall.
-    { _tag: 'Desk', id: 'desk', position: [-2.075, -1.575, -3.75], size: [3.05, 1.25, 1.5], facing: '+z', rests: 'floor' },
-    { _tag: 'Monitor', id: 'monitor', position: [-1.6, -0.55, -3.76], size: [0.8, 0.8, 0.8], facing: '+z', rests: { on: 'desk' } },
-    { _tag: 'Keyboard', id: 'keyboard', position: [-1.57, -0.91, -3.2], size: [0.83, 0.08, 0.32], facing: '+z', rests: { on: 'desk' } },
-    { _tag: 'Mug', id: 'mug', position: [-0.81, -0.825, -3.28], size: [0.25, 0.25, 0.25], facing: '+z', rests: { on: 'desk' } },
+    { _tag: 'Desk', id: 'desk', position: [-2.625, -1.575, -3.75], size: [1.95, 1.25, 1.5], facing: '+z', rests: 'floor' },
+    { _tag: 'Monitor', id: 'monitor', position: [-2.4, -0.55, -3.76], size: [0.8, 0.8, 0.8], facing: '+z', rests: { on: 'desk' } },
+    { _tag: 'Keyboard', id: 'keyboard', position: [-2.37, -0.91, -3.2], size: [0.83, 0.08, 0.32], facing: '+z', rests: { on: 'desk' } },
+    { _tag: 'Mug', id: 'mug', position: [-1.78, -0.825, -3.28], size: [0.25, 0.25, 0.25], facing: '+z', rests: { on: 'desk' } },
     { _tag: 'Chair', id: 'chair', position: [-4.25, -1.47, -2.7], size: [1, 1.46, 1.2], facing: '-z', rests: 'floor' },
     { _tag: 'Whiteboard', id: 'whiteboard', position: [-1.9, 0.78, -4.4], size: [3, 1.7, 0.1], facing: '+z', rests: 'wall' },
     { _tag: 'DeskLamp', id: 'desk-lamp', position: [-3.2, -0.65, -4.05], size: [0.4, 0.6, 0.5], facing: '+z', rests: { on: 'desk' } },
-    { _tag: 'Papers', id: 'papers', position: [-2.75, -0.92, -3.45], size: [0.6, 0.06, 0.45], facing: '+z', rests: { on: 'desk' } },
-    { _tag: 'WasteBin', id: 'waste-bin', position: [-0.2, -1.95, -3.7], size: [0.4, 0.5, 0.4], facing: '+z', rests: 'floor' },
+    { _tag: 'Papers', id: 'papers', position: [-3.25, -0.92, -3.45], size: [0.6, 0.06, 0.45], facing: '+z', rests: { on: 'desk' } },
+    { _tag: 'WasteBin', id: 'waste-bin', position: [-1.1, -1.95, -4.2], size: [0.4, 0.5, 0.4], facing: '+z', rests: 'floor' },
     // The corner behind the chair: an extinguisher and a control box on the back wall, and a pinboard on the side wall.
     { _tag: 'FireExtinguisher', id: 'fire-extinguisher', position: [-4.55, -0.75, -4.36], size: [0.3, 0.8, 0.28], facing: '+z', rests: 'wall' },
     { _tag: 'WallPanel', id: 'wall-panel', position: [-4.55, 0.6, -4.42], size: [0.7, 0.7, 0.16], facing: '+z', rests: 'wall' },
@@ -68,8 +75,8 @@ export const officePlan: OfficePlan = {
     // A wall chart of a fly hangs between the two stations.
     { _tag: 'Chart', id: 'chart', position: [-0.08, 0.85, -4.48], size: [0.56, 1.12, 0.04], facing: '+z', rests: 'wall' },
     // The science station, on the right of the back wall.
-    { _tag: 'JarShelf', id: 'jar-shelf', position: [2.27, -1.41, -3.765], size: [3.68, 1.58, 1.47], facing: '+z', rests: 'floor' },
-    jar('jar-1', 1.25, 'specimen'), jar('jar-2', 1.71, 'specimen'), jar('jar-3', 2.17, 'empty'), jar('jar-4', 2.7, 'specimen'), jar('jar-5', 3.4, 'specimen'),
+    { _tag: 'JarShelf', id: 'jar-shelf', position: [3, -1.41, -3.765], size: [2.2, 1.58, 1.47], facing: '+z', rests: 'floor' },
+    jar('jar-1', 2.1, 'specimen'), jar('jar-2', 2.5, 'specimen'), jar('jar-3', 2.9, 'empty'), jar('jar-4', 3.3, 'specimen'), jar('jar-5', 3.7, 'specimen'),
     { _tag: 'ChamberWindow', id: 'chamber-window', position: [2.28, 0.95, -4.4], size: [4.1, 1.9, 0.1], facing: '+z', rests: 'wall' },
     { _tag: 'WallClock', id: 'wall-clock', position: [-0.07, 1.87, -4.4], size: [0.48, 0.48, 0.1], facing: '+z', rests: 'wall' },
     // Lockers fill the corner between the window and the door.
@@ -94,15 +101,17 @@ export const officePlan: OfficePlan = {
   ],
   start: [0.35, -0.4],
   exit: [3.1, -1],
+  writing: { via: [[0.15, -1.2]], stance: [-0.15, -3.65] },
   // He works a round: he types at the desk, tends the jars, reads his palm on the way back, and listens to the failing tube.
   // At the two stations he turns to his work, so the viewer sees his shoulder and his hands on it. He stays there longest.
   stops: [
-    { position: [-0.9, -0.95], pause: 7.5, habit: 'TypeKeys', facing: -2.35 },
-    { position: [1.95, -0.95], pause: 6.5, habit: 'TendJar', facing: 2.5 },
+    // The whiteboard hangs above the desk. On every second round he writes on it and leaves the keys.
+    { position: [-1.25, -1.5], pause: 7.5, habit: 'TypeKeys', facing: -2.5, alternate: 'WriteBoard', works: ['desk'] },
+    { position: [1.4, -1.5], pause: 6.5, habit: 'TendJar', facing: 2.3, works: ['jar-shelf'] },
     { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
     { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
   ],
-  cues: { jars: [2.17, -0.345, -3.75], light: [1.45, 0.95, -4.35], ceiling: [0.7, 2.28, 0.7] },
+  cues: { jars: [2.9, -0.345, -3.75], light: [1.45, 0.95, -4.35], ceiling: [0.7, 2.28, 0.7] },
   // The plate hangs on the door's wall, on the side nearer the viewer.
   lightSwitch: [5.47, -0.7, -0.4],
   // He starts in front of the test chamber window, so its light edges him. The switch is a short walk to his left.
@@ -111,11 +120,11 @@ export const officePlan: OfficePlan = {
 
 /**
  * His body for the checks. `reach` is the furthest any part of him gets from his own vertical axis, so a disc of that radius holds him at every turn.
- * `width` and `height` are his box as the camera sees him.
+ * `width` and `height` are his box as the camera sees him. `torso` is the furthest his trunk and his legs get from that axis: his long arms reach past it.
  */
-export type PlanBody = { reach: number, width: number, height: number }
+export type PlanBody = { reach: number, width: number, height: number, torso: number }
 /** Measured on the mesh mascot at the scene's scale, in his rest pose. */
-export const meshBody: PlanBody = { reach: 1.65, width: 2.55, height: 3.15 }
+export const meshBody: PlanBody = { reach: 1.65, width: 2.55, height: 3.15, torso: 1 }
 
 /** A camera that stands still, or the conversation close shot, which stands in front of him on the side he faces. */
 export type PlanViewpoint = { _tag: 'Fixed', name: string, position: Place } | { _tag: 'CloseShot', name: string, side: 1 | -1 }
@@ -146,6 +155,15 @@ const bounds = ({ position, size }: Pick<OfficeProp, 'position' | 'size'>): Boun
   max: [position[0] + size[0] / 2, position[1] + size[1] / 2, position[2] + size[2] / 2],
 })
 const slack = 1e-6
+
+/**
+ * How much room he needs from a prop. Furniture he works at, and what stands on it, needs only his trunk's room: his arms pass over it.
+ * Every other prop needs the room of his whole reach.
+ */
+function roomNeeded(plan: OfficePlan, body: PlanBody): (prop: OfficeProp) => number {
+  const worked = new Set(plan.stops.flatMap(stop => stop.works ?? []))
+  return prop => worked.has(prop.id) || (typeof prop.rests === 'object' && worked.has(prop.rests.on)) ? body.torso : body.reach
+}
 
 /** How far a floor point is from a prop's footprint. Zero inside it. */
 const footprintDistance = (box: Bounds, [x, z]: Point) =>
@@ -190,12 +208,13 @@ function walkDistance(box: Bounds, from: Point, to: Point) {
  */
 export function checkWalkedPath(plan: OfficePlan, rules: PlanRules, path: readonly Point[]): PlanProblem[] {
   const problems: PlanProblem[] = []
+  const room = roomNeeded(plan, rules.body)
   for (const prop of plan.props) {
     const box = bounds(prop)
     if (box.min[1] >= plan.room.floorY + rules.body.height) continue
     let nearest: { at: Point, clearance: number } | undefined
     for (const at of path) {
-      const clearance = footprintDistance(box, at) - rules.body.reach
+      const clearance = footprintDistance(box, at) - room(prop)
       if (!nearest || clearance < nearest.clearance) nearest = { at, clearance }
     }
     if (nearest && nearest.clearance < rules.legClearance - slack) problems.push({ _tag: 'PathBlocked', prop: prop.id, ...nearest })
@@ -235,17 +254,18 @@ export function checkOfficePlan(plan: OfficePlan, rules: PlanRules): PlanProblem
   }
   // Only a prop that reaches down to his height can touch him.
   const obstacles = boxes.filter(({ box }) => box.min[1] < room.floorY + rules.body.height)
+  const needed = roomNeeded(plan, rules.body)
   for (const { prop, box } of obstacles) {
     for (const [index, stop] of stops.entries()) {
       const next = stops[(index + 1) % stops.length]!
-      const leg = walkDistance(box, stop.position, next.position) - rules.body.reach
+      const leg = walkDistance(box, stop.position, next.position) - needed(prop)
       if (leg < rules.legClearance - slack) problems.push({ _tag: 'RouteBlocked', prop: prop.id, leg: index, clearance: leg })
-      const stand = footprintDistance(box, stop.position) - rules.body.reach
+      const stand = footprintDistance(box, stop.position) - needed(prop)
       if (stand < rules.stopClearance - slack) problems.push({ _tag: 'StopCrowded', prop: prop.id, stop: index, clearance: stand })
     }
     // A journey can begin anywhere on his loop. Every stop and the start are its ends, so their straight walks to the door bound the rest.
     for (const [from, place] of [['start', plan.start] as const, ...stops.map((stop, index) => [index, stop.position] as const)]) {
-      const way = walkDistance(box, place, plan.exit) - rules.body.reach
+      const way = walkDistance(box, place, plan.exit) - needed(prop)
       if (way < rules.legClearance - slack) problems.push({ _tag: 'ExitBlocked', prop: prop.id, from, clearance: way })
     }
   }

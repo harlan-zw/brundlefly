@@ -6,9 +6,10 @@ import { createOffice } from '../layers/brand/shared/office.ts'
 import { defaultSceneSettings } from '../layers/brand/shared/scene-settings.ts'
 import { loadMascotModel } from './mascot-model.ts'
 import { officePlan } from '../layers/brand/shared/office-layout.ts'
-import { keyTaps, mannerismDuration, pauseMannerism, poseMannerisms } from '../layers/brand/shared/mannerism.ts'
+import { keyTaps, mannerismDuration, markerStrokes, pauseMannerism, poseMannerisms, roundHabits } from '../layers/brand/shared/mannerism.ts'
 import { advanceTurn, settleTurn, startStroll, startTurn, workLimit } from '../layers/brand/shared/mascot-stroll.ts'
 import type { Stroll } from '../layers/brand/shared/mascot-stroll.ts'
+import { headCounterTurn, neckLimit } from '../layers/brand/shared/mascot-mesh.ts'
 
 const turning = { walkSpeed: 1, rest: 0.5, limit: 1.3, attention: 'free' as const }
 const standingAt = (waypoint: number): Stroll => ({ ...startStroll([0, 0], waypoint), activity: { _tag: 'Pausing', remaining: 5, duration: 6, waypoint, age: 1 } })
@@ -74,6 +75,8 @@ test('the selected jar turns during contact and settles when the habit ends', as
   const model = await loadMascotModel(new URL('../../assets/3d/office/office.glb', import.meta.url))
   const texture = new Texture()
   const office = createOffice({ model: model.scene, lightMax: 1, atlas: texture, floor: texture, wall: texture, ceiling: texture, concrete: texture, light: texture })
+  // The jar he works with, by its place in the plan.
+  const jarX = officePlan.props.find(prop => prop.id === 'jar-1')!.position[0]
   const vertices = () => {
     const points: string[] = []
     office.root.updateMatrixWorld(true)
@@ -83,7 +86,7 @@ test('the selected jar turns during contact and settles when the habit ends', as
       const indices = object.geometry.getIndex()!
       for (let i = 0; i < indices.count; i++) {
         const p = object.localToWorld(new Vector3().fromBufferAttribute(positions, indices.getX(i)))
-        if (p.x > 1 && p.x < 1.5 && p.y > -0.63 && p.y < 0 && p.z < -2.9) points.push(p.toArray().map(n => n.toFixed(4)).join(','))
+        if (Math.abs(p.x - jarX) < 0.25 && p.y > -0.63 && p.y < 0 && p.z < -2.9) points.push(p.toArray().map(n => n.toFixed(4)).join(','))
       }
     })
     return points.sort()
@@ -138,4 +141,48 @@ test('the selected jar turns during contact and settles when the habit ends', as
   update()
   assert.deepEqual(vertices(), resting, 'the jar must return to rest after contact')
   office.dispose()
+})
+
+test('a walk point with a second habit takes it on every second visit, and the others keep theirs', () => {
+  const habits = ['TypeKeys', 'TendJar'] as const
+  const alternates = ['WriteBoard', undefined] as const
+  assert.deepEqual(roundHabits(habits, alternates, []), ['TypeKeys', 'TendJar'])
+  assert.deepEqual(roundHabits(habits, alternates, [1, 1]), ['TypeKeys', 'TendJar'])
+  assert.deepEqual(roundHabits(habits, alternates, [2, 2]), ['WriteBoard', 'TendJar'])
+  assert.deepEqual(roundHabits(habits, alternates, [3, 4]), ['TypeKeys', 'TendJar'])
+  assert.deepEqual(roundHabits(habits, undefined, [2, 2]), ['TypeKeys', 'TendJar'])
+})
+
+test('he writes four lines on the board, and lifts the writing arm higher than for a jar', () => {
+  assert.equal(markerStrokes(0.5), 0)
+  assert.equal(markerStrokes(1), 1)
+  assert.equal(markerStrokes(mannerismDuration({ _tag: 'WriteBoard' })), 4)
+  let last = 0
+  for (let age = 0; age <= 6.2; age += 0.05) { assert.ok(markerStrokes(age) >= last); last = markerStrokes(age) }
+  const board = poseMannerisms([{ mannerism: { _tag: 'WriteBoard' }, age: 2.5, side: -1 }]).turns
+  const jar = poseMannerisms([{ mannerism: { _tag: 'TendJar' }, age: 2.5, side: -1 }]).turns
+  assert.ok(board['right-shoulder']![0] < jar['right-shoulder']![0])
+  assert.equal(board['left-shoulder'], undefined)
+  const desk = officePlan.stops.find(stop => stop.alternate === 'WriteBoard')
+  assert.ok(desk && desk.facing !== undefined && mannerismDuration({ _tag: 'WriteBoard' }) < desk.pause)
+})
+
+test('his head stays on the viewer up to the neck limit, and goes with his body when he turns to his work', () => {
+  // Inside the walking limit the head undoes the whole turn, as before.
+  for (const heading of [-1.3, -0.6, 0, 0.5, 1.3]) assert.ok(Math.abs(headCounterTurn(heading, 0) - heading) < 1e-9)
+  // At a station the neck does not twist: the head keeps only a small turn back to the viewer.
+  for (const heading of [2.3, -2.35, 2.5]) {
+    const counter = headCounterTurn(heading, 0)
+    assert.ok(Math.abs(counter) <= 0.25 && Math.sign(counter) === Math.sign(heading), `the neck twists ${counter} at ${heading}`)
+  }
+  // No heading asks more of the neck than its limit, and the turn has no jump.
+  let last = headCounterTurn(-3, 0)
+  for (let heading = -3; heading <= 3; heading += 0.01) {
+    const counter = headCounterTurn(heading, 0)
+    assert.ok(Math.abs(counter) <= neckLimit + 1e-9)
+    assert.ok(Math.abs(counter - last) < 0.03, `the head jumps ${counter - last} at ${heading}`)
+    last = counter
+  }
+  // While he walks the head keeps half of the turn.
+  assert.ok(Math.abs(headCounterTurn(1, 1) - 0.5) < 1e-9)
 })

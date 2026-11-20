@@ -520,11 +520,11 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       pivot.position.set(depth.rootX, 0, 0)
       pivot.scale.y = body.root.scaleY
       // `heading` is his turn about the vertical: zero faces the viewer and a positive turn faces screen right.
-      // Only a file that turns its own top node can be turned. The body turns and the head stays toward the viewer.
+      // Only a file that turns its own top node can be turned. The body turns and the head stays toward the viewer, as far as his neck allows.
       // While he walks, the head keeps half of the turn, so he looks along his path.
       const yaw = turns ? heading : 0
       if (turns && stanceNode && stanceRest) stanceNode.quaternion.setFromAxisAngle(vertical, yaw).multiply(stanceRest)
-      bodyJoints.get('head')!.rotation.y -= yaw * (1 - gait * 0.5)
+      bodyJoints.get('head')!.rotation.y -= headCounterTurn(yaw, gait)
       // His voice moves the jaw and the cheeks, and a raised brow lifts the skin over each eye, by the relief rig's numbers.
       if (faceJoints) {
         const { jaw, cheekLeft, cheekRight, brows } = faceJoints
@@ -612,6 +612,20 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       releaseMeshSource(scene)
     },
   }
+}
+
+/** The furthest his head turns on his neck to keep facing the viewer, in radians. His walk never turns his body further than this. */
+export const neckLimit = 1.3
+/**
+ * How far his head turns back toward the viewer when his body is turned by `heading`. While he walks, the head keeps half of the turn, so he looks along his path.
+ * Up to the neck's limit the head stays on the viewer. A stop at his work turns his body further: his head then goes with his body and looks at his work,
+ * with a last small turn back. Without this the neck twists through the whole turn.
+ */
+export function headCounterTurn(heading: number, gait: number) {
+  const turn = Math.abs(heading)
+  const past = Math.min(1, Math.max(0, (turn - neckLimit) / 0.8))
+  const release = past * past * (3 - 2 * past)
+  return Math.sign(heading) * (Math.min(turn, neckLimit) * (1 - release) + 0.2 * release) * (1 - gait * 0.5)
 }
 
 /** How a host shades a full-bodied model: a tint on its skin, the strength of its own occlusion map, and the materials that keep their colour. */

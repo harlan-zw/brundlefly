@@ -2,7 +2,7 @@ import type { Stroll } from './mascot-stroll.ts'
 
 /** Habits he performs on his own or as a dialogue beat. Human habits first, then fly habits. */
 export type MannerismTag = 'CheckPalm' | 'HeadTilt' | 'JawCatch' | 'LeanIn' | 'AirWriting' | 'GlanceEggs'
-  | 'WingTwitch' | 'WingBuzz' | 'RubHands' | 'WipeEye' | 'ListenCeiling' | 'LookToLight' | 'Still' | 'ReachSwitch' | 'Greet' | 'TypeKeys' | 'TendJar'
+  | 'WingTwitch' | 'WingBuzz' | 'RubHands' | 'WipeEye' | 'ListenCeiling' | 'LookToLight' | 'Still' | 'ReachSwitch' | 'Greet' | 'TypeKeys' | 'TendJar' | 'WriteBoard'
 export type Mannerism = { _tag: 'None' } | { _tag: MannerismTag }
 /** `age` counts seconds since the mannerism began. `weight` fades a whole layer in or out. `side` mirrors a directional turn. */
 export type MannerismLayer = { mannerism: Mannerism, age: number, weight?: number, side?: 1 | -1 }
@@ -91,6 +91,18 @@ const shapes: Record<MannerismTag, Shape> = {
       [shoulder]: [-0.95 * e, 0, 0.18 * e * side], [elbow]: [-0.42 * e, 0, 0], [hand]: [-0.1 * e, turn * 0.35 * e, 0],
       head: [0.12 * e, 0.16 * e * side, (0.14 + turn * 0.08) * e * side], chest: [0.8 * e, 0.06 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
   } },
+  // He stands turned to the whiteboard. The long arm on `side` lifts high and writes four short lines, each a little lower, and his head follows the hand.
+  // `markerStrokes` gives the count of lines, so the marker's squeak can follow them.
+  WriteBoard: { duration: 6.2, attack: 0.7, release: 0.8, motion: (e, age, side) => {
+    const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
+    const line = markerProgress(age)
+    const along = Math.sin((line % 1) * Math.PI * 2 - Math.PI / 2)
+    const writing = age > strokeStart && line < strokeCount ? 1 : 0
+    return { cue: side === 1 ? 'Claw' : 'Palm', calm: e * 0.5, turns: {
+      [shoulder]: [(-1.55 + Math.floor(line) * 0.07) * e, 0, (0.2 + along * 0.14 * writing) * e * side], [elbow]: [-0.3 * e, 0, along * 0.1 * writing * e * side],
+      [hand]: [-0.2 * e, 0, along * 0.25 * writing * e * side],
+      head: [-0.2 * e, 0.14 * e * side, 0.06 * e * side], chest: [-0.05 * e, 0.06 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
+  } },
   // A small hello: his head tips, and the long claw on `side` lifts beside his face and opens twice. The wings give one short buzz.
   Greet: { duration: 1.7, attack: 0.3, release: 0.5, motion: (e, age, side) => {
     const [shoulder, elbow, hand] = side === 1 ? ['right-shoulder', 'right-elbow', 'right-hand'] as const : ['left-shoulder', 'left-elbow', 'left-hand'] as const
@@ -111,6 +123,20 @@ export function keyTaps(age: number) {
   for (const [from, to] of typingBursts) taps += Math.floor(Math.max(0, Math.min(age, to) - from) * keyTapRate)
   return taps
 }
+
+// He writes four lines on the board, one after the other.
+const strokeStart = 0.9, strokeTime = 1.1, strokeCount = 4
+/** Progress through the four strokes, shared by the hand, ink, and sound. */
+export const markerProgress = (age: number) => clamp01((age - strokeStart) / strokeTime / strokeCount) * strokeCount
+/** How many lines he has begun on the whiteboard by `age` seconds of the writing habit. The scene plays a squeak each time the count rises. */
+export const markerStrokes = (age: number) => age < strokeStart ? 0 : Math.min(strokeCount, Math.floor(markerProgress(age)) + 1)
+
+/**
+ * The habits of his round for this visit to each walk point. `visits` counts his stops at each point so far, this one included.
+ * A point with an alternate habit takes it on every second visit.
+ */
+export const roundHabits = (habits: readonly MannerismTag[], alternates: readonly (MannerismTag | undefined)[] | undefined, visits: readonly number[]): MannerismTag[] =>
+  habits.map((habit, point) => (visits[point] ?? 0) % 2 === 0 && (visits[point] ?? 0) > 0 ? alternates?.[point] ?? habit : habit)
 
 const smooth = (value: number) => value * value * (3 - 2 * value)
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value))

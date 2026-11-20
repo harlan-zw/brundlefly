@@ -78,7 +78,7 @@ export const officeSet: SceneSet = {
   name: 'office',
   // The camera keeps the lair's framing, so the conversation shots hold. The relief rig is flat artwork and can walk the mesh's route.
   layout: { floorLevel: officePlan.room.floorY, mascot: officePlan.start, exit: officePlan.exit, walk: route, meshWalk: route,
-    walkPauses: officePlan.stops.map(stop => stop.pause), walkHabits: officePlan.stops.map(stop => stop.habit), walkFacings: officePlan.stops.map(stop => stop.facing), camera: sceneLayout.camera,
+    walkPauses: officePlan.stops.map(stop => stop.pause), walkHabits: officePlan.stops.map(stop => stop.habit), walkFacings: officePlan.stops.map(stop => stop.facing), walkAlternates: officePlan.stops.map(stop => stop.alternate), camera: sceneLayout.camera,
     entrance: { ...officePlan.entrance, lightSwitch: officePlan.lightSwitch } },
   background: '#080B08',
   fog: { _tag: 'None' },
