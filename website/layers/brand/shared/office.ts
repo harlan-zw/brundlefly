@@ -152,7 +152,7 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
   const leak = new PointLight(new Color('#418B90'), 1, 8, 1.6)
   leak.position.set(plan.cues.light[0], plan.cues.light[1], plan.room.minZ - 1.2)
   root.add(sky, tubes, tubes.target, lamp, leak)
-  const levels = { sky: 1.15, tubes: 1.5, lamp: 7, leak: 9 }
+  const levels = { sky: 1.1, tubes: 1.5, lamp: 3.5, leak: 9 }
 
   return {
     root,
