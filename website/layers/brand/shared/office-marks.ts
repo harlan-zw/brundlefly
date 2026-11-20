@@ -1,3 +1,5 @@
+import { boardStroke } from './office-writing.ts'
+
 /**
  * The drawn surfaces of the office on one small sheet: the whiteboard, the clock face, the door sign, the mug's label, and the keyboard's keys.
  * Each has its own region of the sheet and its own flat face in the room. Text can come later as a new drawing in a region, or as an image with the same regions.
@@ -26,7 +28,7 @@ const ink = { board: '#D8DACB', smudge: '#C6CABA', chitin: '#343C3B', rust: '#AA
 export type MarkPainter = Pick<CanvasRenderingContext2D, 'fillRect' | 'clearRect'> & { fillStyle: string | CanvasGradient | CanvasPattern }
 
 /** Draws the whole sheet with whole pixels only, so every edge stays hard. */
-export function paintOfficeMarks(painter: MarkPainter) {
+export function paintOfficeMarks(painter: MarkPainter, strokes = 0) {
   const rect = (x: number, y: number, width: number, height: number, colour: string) => { painter.fillStyle = colour; painter.fillRect(x, y, width, height) }
   const line = (x0: number, y0: number, x1: number, y1: number, colour: string) => {
     const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1)
@@ -66,6 +68,14 @@ export function paintOfficeMarks(painter: MarkPainter) {
   for (let group = 0; group < 2; group++) {
     for (let mark = 0; mark < 4; mark++) line(130 + group * 22 + mark * 4, 88, 130 + group * 22 + mark * 4, 100, ink.bruise)
     line(128 + group * 22, 99, 144 + group * 22, 89, ink.bruise)
+  }
+
+  for (let row = 0; row < Math.ceil(strokes); row++) {
+    const length = Math.max(1, Math.round(Math.min(1, strokes - row) * 24))
+    for (let step = 0; step <= length; step++) {
+      const [x, y] = boardStroke(row, step / 24)
+      rect(Math.round(x), Math.round(y), 2, 2, ink.teal)
+    }
   }
 
   // The clock face: a disc with twelve ticks. The corners stay clear, so only the disc shows.

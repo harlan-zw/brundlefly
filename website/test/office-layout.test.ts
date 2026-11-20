@@ -71,7 +71,8 @@ test('the monitor and the whiteboard must face the cameras with nothing in front
   const turned: OfficePlan = { ...officePlan, props: officePlan.props.map(prop => prop.id === 'monitor' ? { ...prop, facing: '-z' as const } : prop) }
   assert.ok(checkOfficePlan(turned, rules).some(problem => problem._tag === 'Unreadable' && problem.prop === 'monitor' && problem.reason === 'faces-away'))
   // A cabinet in front of the desk hides the monitor's screen.
-  const hidden = checkOfficePlan(withProp({ ...crate('stack', -1.6, -2.75, 0.4), position: [-1.6, -0.7, -2.75], size: [1.2, 3, 0.4] }), rules)
+  const monitor = officePlan.props.find(prop => prop._tag === 'Monitor')!
+  const hidden = checkOfficePlan(withProp({ ...crate('stack', monitor.position[0], -2.75, 0.4), position: [monitor.position[0], -0.7, -2.75], size: [1.2, 3, 0.4] }), rules)
   assert.ok(hidden.some(problem => problem._tag === 'Unreadable' && problem.prop === 'monitor' && typeof problem.reason === 'object' && problem.reason.hiddenBy === 'stack'))
   const gone: OfficePlan = { ...officePlan, props: officePlan.props.filter(prop => prop.id !== 'whiteboard') }
   assert.ok(checkOfficePlan(gone, rules).some(problem => problem._tag === 'Unreadable' && problem.prop === 'whiteboard' && problem.reason === 'missing'))

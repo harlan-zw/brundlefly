@@ -9,7 +9,7 @@ import {
 } from 'three'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
-import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
+import { advanceTurn, settleTurn, startStroll, startTurn, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { resolveSceneQuality } from '@brundlefly/brand/shared/scene-quality'
@@ -23,6 +23,10 @@ import { sceneSets } from '@brundlefly/brand/shared/scene-sets'
 import { mascotInLight } from '@brundlefly/brand/shared/scene-set'
 import type { BuiltSet, SceneSet, SetArt, SetMascot, SetName } from '@brundlefly/brand/shared/scene-set'
 import { advanceEntrance, entranceAct, entranceLight, startEntrance } from '@brundlefly/brand/shared/office-entrance'
+import type { BoardWriting } from '@brundlefly/brand/shared/office-writing'
+import { advanceOfficeVisit } from '@brundlefly/brand/shared/office-visit'
+import { officePlan } from '@brundlefly/brand/shared/office-layout'
+import type { WritingVisit } from '@brundlefly/brand/shared/office-visit'
 import type { Entrance } from '@brundlefly/brand/shared/office-entrance'
 import { advanceTravel, startTravel, travelShade } from '@brundlefly/brand/shared/set-travel'
 import type { Travel } from '@brundlefly/brand/shared/set-travel'
@@ -340,6 +344,7 @@ watch(canvas, async (element) => {
     ? position => overMascot((position.x + 1) * renderWidth / 2, (1 - position.y) * renderHeight / 2)
     : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
   let stroll = startStroll(standing.stage.layout.mascot, 0)
+  let writingVisit: WritingVisit | undefined
   // The mesh's turn about the vertical. The relief rig is flat artwork and always faces screen right.
   // His feet carry every turn, so he never spins where he stands.
   let turn = startTurn(mascot._tag === 'Mesh' ? mascot.restHeading : 0)
@@ -605,9 +610,17 @@ watch(canvas, async (element) => {
     // In the dark he has noticed the visitor, and he waits. On his way to the switch a pointer that rests on him does not stop him.
     const attentionNow = journey ? 'free' as const : talking ? 'talking' as const
       : entrance._tag === 'Dark' ? 'noticed' as const : act.held ? 'free' as const : hovered.value ? 'noticed' as const : 'free' as const
-    if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
-      pauses: journey || act.held ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
-      cadence: meshCadence, facing: meshPose ? turn.heading : undefined })
+    let writingAge: number | undefined
+    if (walks && faceMotion && visibility.value === 'visible') {
+      const habit = pauseMannerism(stroll, roundHabits(layout.walkHabits, layout.walkAlternates, stopVisits))
+      const next = advanceOfficeVisit(stroll, writingVisit, { delta, route,
+        pauses: journey || act.held ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
+        cadence: meshCadence, facing: meshPose ? turn.heading : undefined, writing: officePlan.writing,
+        writes: !!meshPose && standing.stage.name === 'office' && !journey && !act.held && habit?.mannerism._tag === 'WriteBoard' })
+      stroll = next.stroll
+      writingVisit = next.visit
+      writingAge = next.writingAge
+    }
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
       // At a station of his round he faces his work, until a visitor has his attention. At the switch he faces it. After the strike he turns back to the visitor on his feet.
       const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing : workFacing(attentionNow) }
@@ -620,7 +633,7 @@ watch(canvas, async (element) => {
     figure.rotation.y = meshPose ? 0 : stroll.heading
     // The audio hears scene time twice a second, so the office tube buzzes when its light flickers.
     if (environmentMotion.value) { elapsed += delta; if (Math.floor(elapsed * 2) !== Math.floor((elapsed - delta) * 2)) emit('time', elapsed) }
-    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value, light })
+    let writing: BoardWriting | undefined
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
     // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.
@@ -640,7 +653,8 @@ watch(canvas, async (element) => {
         if (stop !== undefined) stopVisits = Object.assign([...stopVisits], { [stop]: (stopVisits[stop] ?? 0) + 1 })
         stoppedAt = stop
       }
-      const habit = faceMotion && !journey && !act.held ? pauseMannerism(stroll, roundHabits(layout.walkHabits, layout.walkAlternates, stopVisits)) : undefined
+      const habit = writingVisit ? writingAge === undefined ? undefined : { mannerism: { _tag: 'WriteBoard' } as const, age: writingAge }
+        : faceMotion && !journey && !act.held ? pauseMannerism(stroll, roundHabits(layout.walkHabits, layout.walkAlternates, stopVisits)) : undefined
       // A habit turns his head away: to the ceiling, to a palm, to the eggs. In a conversation he faces the visitor.
       // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
       habitWeight = faceMotion ? habitWeight + ((talking ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
@@ -654,6 +668,7 @@ watch(canvas, async (element) => {
       const tending = habit?.mannerism._tag === 'TendJar' && !talking && habit.age > 1.2
       if (tending && !workTending) emit('action', 'JarBubbles')
       workTending = tending
+      if (habit?.mannerism._tag === 'WriteBoard' && !talking) writing = { age: habit.age, writer: figure, side: station === undefined || station >= 0 ? 1 : -1 }
       const strokes = habit?.mannerism._tag === 'WriteBoard' && !talking ? markerStrokes(habit.age) : 0
       if (strokes > workStrokes) emit('action', 'MarkerSqueak')
       workStrokes = strokes
@@ -676,6 +691,7 @@ watch(canvas, async (element) => {
       if (meshPose) meshPose({ ...input, stepInPlace: turn.steps, stepPhase: turn.phase }, watch, turn.heading)
       else if (mascot._tag === 'Relief') mascot.update(input)
     }
+    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value, light, writing })
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
     if (mascot._tag === 'Mesh' && footShadows.length) {
