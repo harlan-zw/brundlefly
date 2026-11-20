@@ -1,0 +1,444 @@
+{
+ "note": "Stance of the jar variant of the print model: the figure hangs in fluid. The legs hang with the toes down, the long arms drift, the head droops, and no foot is on a floor. Build it with build_from_mesh.py --stance source/stance-float.json --no-base. The format is that of stance.json: each rotation is a joint's local quaternion [x, y, z, w] from the straight stand of rig-joints.json, in the body's axes: +X to the figure's left side, +Y up, +Z the way the body faces. stance_float.ts made this file from the values under inputs. Change them there and run it again. The website model does not use this file.",
+ "inputs": {
+  "pelvisOffset": [
+   0,
+   0,
+   0
+  ],
+  "turns": {
+   "pelvis": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      -10
+     ],
+     [
+      "z",
+      5
+     ]
+    ]
+   },
+   "chest": {
+    "from": "parent",
+    "turns": [
+     [
+      "x",
+      3
+     ],
+     [
+      "z",
+      -8
+     ],
+     [
+      "y",
+      6
+     ]
+    ]
+   },
+   "head": {
+    "from": "parent",
+    "turns": [
+     [
+      "x",
+      14
+     ],
+     [
+      "z",
+      22
+     ],
+     [
+      "y",
+      -15
+     ]
+    ]
+   },
+   "left-shoulder": {
+    "from": "parent",
+    "turns": [
+     [
+      "z",
+      -14
+     ],
+     [
+      "x",
+      -8
+     ]
+    ]
+   },
+   "left-elbow": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      -30
+     ],
+     [
+      "z",
+      -8
+     ]
+    ]
+   },
+   "left-hand": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      -18
+     ]
+    ]
+   },
+   "right-shoulder": {
+    "from": "parent",
+    "turns": [
+     [
+      "z",
+      22
+     ],
+     [
+      "x",
+      -4
+     ]
+    ]
+   },
+   "right-elbow": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      -40
+     ],
+     [
+      "z",
+      12
+     ]
+    ]
+   },
+   "right-hand": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      -20
+     ]
+    ]
+   },
+   "left-small-elbow": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      -10
+     ]
+    ]
+   },
+   "left-small-hand": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      40
+     ]
+    ]
+   },
+   "right-small-elbow": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      -5
+     ]
+    ]
+   },
+   "right-small-hand": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      45
+     ]
+    ]
+   },
+   "left-wing": {
+    "from": "parent",
+    "turns": [
+     [
+      "x",
+      -40
+     ],
+     [
+      "z",
+      -18
+     ]
+    ]
+   },
+   "left-wing-tip": {
+    "from": "parent",
+    "turns": [
+     [
+      "x",
+      -12
+     ]
+    ]
+   },
+   "right-wing": {
+    "from": "parent",
+    "turns": [
+     [
+      "x",
+      -45
+     ],
+     [
+      "z",
+      20
+     ]
+    ]
+   },
+   "right-wing-tip": {
+    "from": "parent",
+    "turns": [
+     [
+      "x",
+      -12
+     ]
+    ]
+   },
+   "left-hip": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      8
+     ],
+     [
+      "z",
+      12
+     ]
+    ]
+   },
+   "left-knee": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      -18
+     ],
+     [
+      "z",
+      8
+     ]
+    ]
+   },
+   "left-foot": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      55
+     ],
+     [
+      "z",
+      6
+     ]
+    ]
+   },
+   "right-hip": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      18
+     ],
+     [
+      "z",
+      -12
+     ]
+    ]
+   },
+   "right-knee": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      -8
+     ],
+     [
+      "z",
+      -8
+     ]
+    ]
+   },
+   "right-foot": {
+    "from": "straight",
+    "turns": [
+     [
+      "x",
+      42
+     ],
+     [
+      "z",
+      -6
+     ]
+    ]
+   }
+  }
+ },
+ "pelvis_offset_mm": [
+  0,
+  0,
+  0
+ ],
+ "rotations": {
+  "pelvis": [
+   -0.08707,
+   -0.0038,
+   0.04345,
+   0.99525
+  ],
+  "chest": [
+   0.02673,
+   0.05982,
+   -0.06155,
+   0.99595
+  ],
+  "head": [
+   0.07844,
+   -0.12529,
+   0.19791,
+   0.96901
+  ],
+  "left-shoulder": [
+   -0.05621,
+   0.00426,
+   -0.12833,
+   0.99013
+  ],
+  "left-elbow": [
+   -0.13254,
+   -0.05896,
+   0.06639,
+   0.98719
+  ],
+  "left-hand": [
+   0.10427,
+   -0.02837,
+   0.06373,
+   0.9921
+  ],
+  "left-rib": [
+   0,
+   0,
+   0,
+   1
+  ],
+  "left-small-elbow": [
+   -0.0246,
+   -0.05337,
+   0.01851,
+   0.9981
+  ],
+  "left-small-hand": [
+   0.42262,
+   0,
+   0,
+   0.90631
+  ],
+  "left-wing": [
+   -0.32378,
+   0.05832,
+   -0.17422,
+   0.92812
+  ],
+  "left-wing-tip": [
+   -0.09541,
+   -0.02582,
+   -0.03401,
+   0.99452
+  ],
+  "left-hip": [
+   0.15614,
+   -0.00107,
+   0.06104,
+   0.98585
+  ],
+  "left-knee": [
+   -0.22481,
+   0.00304,
+   -0.03477,
+   0.97378
+  ],
+  "left-foot": [
+   0.59473,
+   -0.00554,
+   -0.01655,
+   0.80373
+  ],
+  "right-shoulder": [
+   -0.05343,
+   -0.01895,
+   0.18539,
+   0.98103
+  ],
+  "right-elbow": [
+   -0.24495,
+   -0.03049,
+   -0.07785,
+   0.96592
+  ],
+  "right-hand": [
+   0.1727,
+   0.05226,
+   -0.09052,
+   0.97941
+  ],
+  "right-rib": [
+   0,
+   0,
+   0,
+   1
+  ],
+  "right-small-elbow": [
+   0.01896,
+   -0.05251,
+   0.02082,
+   0.99822
+  ],
+  "right-small-hand": [
+   0.42262,
+   0,
+   0,
+   0.90631
+  ],
+  "right-wing": [
+   -0.387,
+   -0.10113,
+   0.1104,
+   0.90984
+  ],
+  "right-wing-tip": [
+   -0.10145,
+   0.01796,
+   0.01766,
+   0.99452
+  ],
+  "right-hip": [
+   0.23926,
+   -0.01031,
+   -0.14745,
+   0.95964
+  ],
+  "right-knee": [
+   -0.22481,
+   0.00304,
+   0.03477,
+   0.97378
+  ],
+  "right-foot": [
+   0.42255,
+   0.0051,
+   0.01669,
+   0.90617
+  ]
+ }
+}

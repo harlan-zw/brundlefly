@@ -109,9 +109,9 @@ Import success: “Preset loaded.”
 Clipboard error: “Clipboard access failed. Select and copy the code.”
 Material controls: “Wetness”, “Viscosity”, “Pressure”, “Animate material”, “Hide material”, “Press to deform”, “Motion off”, “Motion on”.
 Mascot expression controls: “Speech”, “Blink”, “Brow”, “Squint”.
-Mascot inspector controls: “Mascot”, “Texture”, “Mapped”, “Sprite”, “Clip”, “Manual”, “Idle”, “Walk”, “Speaking”, “Play”, “Pause”, “Speed”, “Time”, “Bones”, “Wireframe”.
+Mascot inspector controls: “Mascot”, “Texture”, “Mapped”, “Sprite”, “Mesh”, “Clip”, “Manual”, “Idle”, “Walk”, “Speaking”, “Play”, “Pause”, “Speed”, “Time”, “Bones”, “Wireframe”.
 Inspector navigation uses “Inspect mascot” and “Brand kit”. Its camera hint is “Drag to orbit. Scroll to zoom.”
-3D status: “3D loading.”, “3D material”, “Static material. WebGL is unavailable.”, “Static material. The texture could not load.”
+3D status: “3D loading.”, “3D material”, “Static material. WebGL is unavailable.”, “Static material. The texture could not load.”, “Mapped texture. The mesh could not load.”
 Generic composition label: “Your text”. Its action defaults to “Review text”.
 Composition instructions: “Combine parts. Copy the Vue.”
 Source link label: “Layer source”. Task page link label: “Try the skills”.

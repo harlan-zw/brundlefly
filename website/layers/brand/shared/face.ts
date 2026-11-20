@@ -15,6 +15,27 @@ export type HeadProjection = { texture: Texture, raster: { width: number, height
 const headWidth = 0.67
 const headHeight = 0.86
 
+/**
+ * The reference head's two eyes, from screen left to right. `centres` are fractions of the head artwork and `radii` are in face units.
+ * A lid is a half shell around its globe. It turns `open` radians back from shut, and moves forward and flattens as it shuts.
+ * A squint shuts the smaller eye further. The mesh mascot builds its eyes from the same numbers.
+ */
+export const referenceEyes = {
+  centres: [[0.3934, 0.4417], [0.6916, 0.4826]],
+  radii: [[0.078, 0.074, 0.061], [0.054, 0.044, 0.045]],
+  lid: { open: 0.96, radius: 1.055, depth: 1.13, forward: 0.42, flatten: 0.35, squint: [0.18, 0.63], uvSpread: 0.22 },
+} as const
+
+/**
+ * How the reference face moves, in face units and radians. His voice drops the jaw, moves it forward, turns it open, and spreads the cheeks.
+ * A raised brow lifts the skin over each eye. The mesh mascot moves its face joints by the same numbers.
+ */
+export const referenceFace = {
+  jaw: { drop: 0.055, forward: 0.018, turn: 0.16 },
+  cheeks: { left: -0.004, right: 0.006 },
+  brows: [0.018, 0.027],
+} as const
+
 /** Places projected head pixels in face-local units. The body uses `covers` to hide only what the sculpt hides. */
 export function createHeadOutline({ width, height, data }: HeadProjection['raster']) {
   let minX = width - 1, maxX = 0, minY = height - 1, maxY = 0
@@ -69,11 +90,11 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
   const { uvAt, localAt } = createHeadOutline(raster)
   const depthAt = (x: number, y: number) => 0.028 + Math.sqrt(Math.max(0, 1 - Math.pow(x / 0.35, 2) * 0.82
     - Math.pow(y / 0.44, 2) * 0.75)) * 0.23
-  const eyeCenters = [localAt(width * 0.3934, height * 0.4417), localAt(width * 0.6916, height * 0.4826)]
-  const eyes = [
-    { x: eyeCenters[0]!.x, y: eyeCenters[0]!.y, rx: 0.078, ry: 0.074, rz: 0.061 },
-    { x: eyeCenters[1]!.x, y: eyeCenters[1]!.y, rx: 0.054, ry: 0.044, rz: 0.045 },
-  ]
+  const eyes = referenceEyes.centres.map(([x, y], index) => {
+    const centre = localAt(width * x, height * y)
+    const [rx, ry, rz] = referenceEyes.radii[index]!
+    return { x: centre.x, y: centre.y, rx, ry, rz }
+  })
   const anchors = [new Vector3(0.045, -0.11, 0.13), new Vector3(-0.21, -0.1, 0.1), new Vector3(0.23, -0.13, 0.1),
     ...eyes.map(eye => new Vector3(eye.x, eye.y + eye.ry, depthAt(eye.x, eye.y))),
     ...eyes.flatMap(eye => [new Vector3(eye.x, eye.y, depthAt(eye.x, eye.y)), new Vector3(eye.x, eye.y, depthAt(eye.x, eye.y))])]
@@ -233,7 +254,7 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
     const position = geometry.getAttribute('position')
     for (let i = 0; i < position.count; i++) {
       const p = new Vector3().fromBufferAttribute(position, i)
-      if (lid) uv.push(0.5 + p.x / eye.rx * 0.22, 0.5 + p.y / eye.ry * 0.22)
+      if (lid) uv.push(0.5 + p.x / eye.rx * referenceEyes.lid.uvSpread, 0.5 + p.y / eye.ry * referenceEyes.lid.uvSpread)
       else uv.push(...uvAt(eye.x + p.x, eye.y + p.y))
     }
     geometry.setAttribute('uv', new Float32BufferAttribute(uv, 2))
@@ -253,7 +274,7 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
     eyeCenter.addScaledVector(globe.position, 1 / eyes.length)
     for (const upper of [true, false]) {
       const cap = new SphereGeometry(1, 40, 24, 0, Math.PI * 2, upper ? 0 : Math.PI * 0.5, Math.PI * 0.5)
-      cap.scale(eye.rx * 1.055, eye.ry * 1.055, eye.rz * 1.13)
+      cap.scale(eye.rx * referenceEyes.lid.radius, eye.ry * referenceEyes.lid.radius, eye.rz * referenceEyes.lid.depth)
       projectedMesh(cap, animatedNodes[5 + index * 2 + (upper ? 0 : 1)]!, index, upper ? 'upper' : 'lower')
     }
   })
@@ -287,20 +308,20 @@ function createProjectedFace(skinTexture: Texture | undefined, { texture, raster
     const voice = Math.max(0, Math.min(1, speaking))
     const close = Math.max(0, Math.min(1, blink))
     animatedNodes.forEach((bone, index) => { bone.position.copy(anchors[index]!); bone.rotation.set(0, 0, 0); bone.scale.set(1, 1, 1) })
-    animatedNodes[0]!.position.y -= voice * 0.055
-    animatedNodes[0]!.position.z += voice * 0.018
-    animatedNodes[0]!.rotation.x = -voice * 0.16
-    animatedNodes[1]!.position.x -= voice * 0.004
-    animatedNodes[2]!.position.x += voice * 0.006
+    animatedNodes[0]!.position.y -= voice * referenceFace.jaw.drop
+    animatedNodes[0]!.position.z += voice * referenceFace.jaw.forward
+    animatedNodes[0]!.rotation.x = -voice * referenceFace.jaw.turn
+    animatedNodes[1]!.position.x += voice * referenceFace.cheeks.left
+    animatedNodes[2]!.position.x += voice * referenceFace.cheeks.right
     for (let index = 0; index < eyes.length; index++) {
-      const closure = Math.min(1, close + squint * (index === 0 ? 0.18 : 0.63))
-      animatedNodes[3 + index]!.position.y += brow * (index === 0 ? 0.018 : 0.027)
-      animatedNodes[5 + index * 2]!.rotation.x = -0.96 * (1 - closure)
-      animatedNodes[6 + index * 2]!.rotation.x = 0.96 * (1 - closure)
+      const closure = Math.min(1, close + squint * referenceEyes.lid.squint[index]!)
+      animatedNodes[3 + index]!.position.y += brow * referenceFace.brows[index]!
+      animatedNodes[5 + index * 2]!.rotation.x = -referenceEyes.lid.open * (1 - closure)
+      animatedNodes[6 + index * 2]!.rotation.x = referenceEyes.lid.open * (1 - closure)
       const z = depthAt(eyes[index]!.x, eyes[index]!.y) - eyes[index]!.rz * 0.3
       for (const lid of [animatedNodes[5 + index * 2]!, animatedNodes[6 + index * 2]!]) {
-        lid.position.z = z + eyes[index]!.rz * 0.42 * closure
-        lid.scale.z = 1 - closure * 0.35
+        lid.position.z = z + eyes[index]!.rz * referenceEyes.lid.forward * closure
+        lid.scale.z = 1 - closure * referenceEyes.lid.flatten
       }
     }
     root.updateMatrixWorld(true); skeleton.update()

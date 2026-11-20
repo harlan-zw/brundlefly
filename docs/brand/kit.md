@@ -207,6 +207,8 @@ The generated concept never replaces the supplied wordmark.
 | [Flesh diffuse](../../assets/brand/kit/modular/flesh-diffuse.png) | 1254 × 1254, RGB | Current texture |
 | [Rest model](../../assets/brand/kit/modular/aperture-rest.glb) | GLB 2.0 | Current model |
 | [Modular prompts](../../assets/prompts/modular-kit.json) | JSON | Prompt |
+| [Mascot print model](../../assets/3d/brundlefly/brundlefly-80mm.stl) | STL, 80 mm tall, 200,000 triangles | Standing Brundlefly for 3D printing. See [printing instructions](../../assets/3d/brundlefly/PRINTING.md) |
+| [Mascot web model](../../assets/3d/brundlefly/brundlefly-web.glb) | GLB 2.0, vertex colours, 80,000 triangles | Standing Brundlefly without the base, coloured from the character sheet |
 | [assets/archive/brand-kit/avatar-master-v2.png](../../assets/archive/brand-kit/avatar-master-v2.png) | 1254 × 1254 | Historical |
 | [assets/archive/brand-kit/avatar-master.png](../../assets/archive/brand-kit/avatar-master.png) | 1254 × 1254 | Historical |
 | [assets/archive/brand-kit/avatar-preview-32.png](../../assets/archive/brand-kit/avatar-preview-32.png) | 32 × 32 | Historical |
@@ -287,7 +289,7 @@ The homepage fills the viewport with the world. The scene has no rectangular pan
 The rear tunnel, tissue walls, overhead arches, and ground form one chamber.
 Brundlefly walks through its clear foreground. His contact shadow anchors him to the floor.
 Clicking him opens the speech dialog. The dialog pauses walking and provides native local text conversation.
-Desktop and mobile use the same world. Frame the mascot and complete tunnel without adding page scrolling.
+Desktop and mobile use the same world, at one of three quality tiers. A weak phone leaves out the finishing pass, the mist, and the light shaft. Only the highest tier blurs the lair behind him in a conversation and mirrors the room in the wet floor. The `quality` query value (`low`, `medium`, `high`) overrides the tier. Frame the mascot and complete tunnel without adding page scrolling.
 The separate brand kit retains its functional layout controls and composition examples.
 
 ## Mascot rig
@@ -323,6 +325,60 @@ The generated sculpt reference supplies that direction. Canonical anatomy remain
 
 The kit Motion section has a Brundlefly toggle. Download GLB exports the mascot when that toggle is active.
 The portable ZIP supplies runtime art and source. GLB interchange artifacts have separate download URLs.
+
+## Mascot mesh
+
+Use ?mascot=mesh on the homepage to show the full 3D model in place of the relief rig.
+The model is the web export of the figurine. The relief rig stays the default mascot.
+The site fits the model to the height of the relief rig and puts its lowest point on the chamber floor.
+The model keeps its own origin, facing, and materials: +Y is up and the face points to +Z.
+If the file has the relief rig's 25 body joints, each with an identity rest rotation, the site poses it with the relief rig's code.
+The model then idles, walks, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
+A full body also takes motion that would tear the relief: a longer stride with a foot lift, a pelvis that twists against the chest, forearms and wings that follow through, and a slow shift of weight while he stands. That motion is addBodyDepth in mascot-pose.ts.
+The site grounds the mesh each frame: the foot that is lower, against its own rest height, rests on the floor. So his body rises and settles with his legs, and no foot sinks into the floor.
+The mesh walks its own route, meshWalk in scene-layout.ts. It is about 2.5 units wide and 2 deep, so the relief rig's route takes it into the egg sacs.
+Nodes named Brundlefly-eye-0 and Brundlefly-eye-1 mark his eyes. The site hides each node and builds the relief rig's eye in its place.
+The built eye uses the relief rig's globe artwork, wet-eye shader, shell lids, blink, squint, and gaze. Their numbers come from referenceEyes in face.ts.
+Each node gives its eye a centre, a rest rotation, and a width. The height and depth keep the relief rig's proportions.
+So the model needs only a socket at each eye. It needs no eyeball or lid of its own.
+A model can name the skin beside an eye: it gives that eye node a material named Brundlefly-lid, with a base colour and, if it has one, a small skin texture.
+The built lids of that eye then take that skin. A lid shows the middle 44 percent of the texture, across and up.
+Without that material the lids take the relief rig's lid skin, which is the colour of the relief rig's head.
+If the head artwork or the face skin fails to load, the site keeps the file's own eyeballs and draws them with the wet-eye shader.
+It then turns the lid joints face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 to blink: 0.96 rad down for an upper lid and 0.96 rad up for a lower lid, the relief rig's lid travel.
+Joints named face-jaw, face-cheek-left, face-cheek-right, face-brow-0, and face-brow-1 move his face, each optional.
+His voice drops and opens the jaw and spreads the cheeks. A raised brow lifts the skin over each eye.
+The travel comes from referenceFace in face.ts, scaled to the model's own units. A file without these joints keeps a still face.
+If the file turns its top node about the vertical, the site turns that node as he moves. While he walks he faces his direction of travel, up to 1.3 rad from the viewer, so he never turns his back.
+While he stands he holds the file's three-quarter turn, to the side he last faced. He turns to the next side a little before he leaves. His head stays toward the viewer at rest.
+His feet carry every turn. He turns only as fast as he walks, or as he steps in place, and with both feet down he does not turn.
+While he stands, the foot that carries him keeps its place and his body moves over it, because he has no leg solver. A turn to the other side moves him up to 0.4 units, and a walk brings him back onto his route.
+With motion off he stands at once where the turn would end.
+His legs cycle once for each stride of ground he covers. The site measures that stride from the model, so a planted foot does not slide, and it walks the mesh at 1.5 times the relief rig's speed.
+A foot that carries him stays level, so its sole lies flat on the floor.
+Any other file loops its Brundlefly-idle clip, or sways about its feet if it has no clip. That model stands at the mascot start point.
+The scene logs the joint that stopped the pose code, and reports the motion in its data-mascot-motion attribute: posed, clip, or sway.
+If the file has a joint named head, the head turns to the camera while a visitor hovers or the dialog is open. A hover also tilts it.
+A click anywhere in its hover area opens the dialog, because the model has gaps between its limbs.
+A node named Brundlefly-base is removed.
+While the dialog is open, the camera takes a head-and-shoulders shot of the point between the two eye nodes, from the side he faces.
+A key light and a rim light rise with that shot, the fog thickens, and a dark ring closes around his head.
+The model's skin is painted flat, with no shadow in it, so the lair shades it: `meshShading` in mascot-mesh.ts tints the skin darker and redder and raises the model's own occlusion. The wings keep their colour. The inspector shows the model's own materials.
+Between talks the key light holds a low level above his head and falls off toward his feet. A small contact shadow sits under each foot and fades as the foot lifts.
+A file without eye nodes uses an empty node named anchor-face for that point.
+If the file is absent or unreadable, the mesh mode shows the relief rig and logs a warning.
+The rig inspection page has the same model as its Mesh texture option.
+The scene element reports the visible mascot in its data-mascot attribute: relief, sprite, or mesh.
+
+| File | Type | Role |
+| --- | --- | --- |
+| assets/3d/brundlefly/brundlefly-web.glb | GLB 2.0, 4 MiB or less | Web export of the figurine model |
+| website/scripts/sync-brand.ts | TypeScript | Copies the model to /brand/3d/ for the site and the kit, and enforces the size limit |
+| website/layers/brand/shared/mascot-mesh.ts | TypeScript | Load, fit, floor contact, idle motion, face point, and disposal |
+| website/layers/brand/shared/mascot-eyes.ts | TypeScript | The relief rig's eyes, built at the mesh's eye nodes |
+| website/layers/brand/shared/mascot-pose.ts | TypeScript | Joint turns for idle, walk, speech, and mannerisms, shared by the relief rig and the mesh |
+
+Plain GLTFLoader reads the file. Draco, meshopt, and KTX2 data need decoders that the site does not load.
 
 ## Living mucus and egg sacs
 
@@ -416,10 +472,10 @@ A wet eye shader adds small gaze shifts, ripples, and sparse grazing reflections
 Skin-textured lids cover both eyes during blinking, without repeating the pupil artwork.
 Skin and wing shaders vary microscopic normals and roughness while keeping the mapped artwork fixed.
 The room uses generated colour and height maps with world-scale projection across walls and ceiling.
-Large connected cave facets, ceiling shelves, and recesses replace the rounded room box.
+Large connected cave folds, ceiling shelves, and recesses replace the rounded room box.
 The height map raises folds into the chamber. Recomputed mesh normals and height bump supply depth lighting.
 Cavity shading darkens recessed pores. Height varies roughness and limits glow inside those cavities.
-The cave walls breathe along shared projection normals, keeping sharp fold seams connected.
+The cave walls breathe along shared projection normals, keeping fold seams connected.
 Layered spatial noise adds uneven swelling and regional pulses across the walls.
 Moving wet patches vary surface roughness and fine reflections without sliding the mapped artwork.
 Wet membranes attach to the carved shelves through raycast roots.
@@ -429,7 +485,10 @@ The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 | File | Role |
 | --- | --- |
 | assets/source/room-diffuse.png | Full-resolution room texture master |
-| assets/brand/kit/lair/room-diffuse.webp | Compact runtime room texture |
+| assets/brand/kit/lair/room-diffuse.webp | Runtime room texture, 1024 pixels |
+| assets/source/tunnel-diffuse.png | Smooth painting of the flesh tile, as generated |
+| assets/brand/kit/lair/tunnel-diffuse.webp | Runtime tissue of the tunnel wall and the wall folds on the homepage |
+| assets/prompts/tunnel-diffuse.json | Exact prompt, references, and runtime preparation |
 | assets/prompts/room-diffuse.json | Exact prompt, reference, and runtime preparation |
 | assets/source/room-height.png | Full-resolution generated room height master |
 | assets/brand/kit/lair/room-height.webp | Dedicated runtime height, bump, and cavity input |
@@ -437,7 +496,14 @@ The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 | assets/source/cave-direction.png | Generated concept for large cave shapes |
 | assets/brand/kit/lair/cave-direction.webp | Cave concept preview |
 | assets/prompts/cave-direction.json | Exact scene concept prompt |
-| website/layers/brand/shared/cave-geometry.ts | Continuous faceted cave mesh and membrane cross-section |
+| website/layers/brand/shared/cave-geometry.ts | Continuous folded cave mesh and membrane cross-section |
+| website/layers/brand/shared/scene-quality.ts | The quality tier for a device |
+| website/layers/brand/shared/scene-finish.ts | Finishing pass: blur behind him in a conversation, bloom, grade, and grain |
+| website/layers/brand/shared/floor-reflection.ts | The room mirrored in the wet floor |
+| website/layers/brand/shared/air.ts | Spores, floor mist, and one light shaft |
+| website/layers/brand/shared/floor-surface.ts | The floor's shape, shared by the floor and the marks on it |
+| website/layers/brand/shared/floor-marks.ts | Contact shadows and glow under the egg sacs |
+| website/layers/brand/shared/egg-membrane.ts | The bud inside each egg sac and the light on its rim |
 | website/layers/brand/shared/cave-goo.ts | Attached wet membranes, tapered strands, and falling drop cycles |
 | website/layers/brand/shared/room-height.ts | Registered inward height relief with recalculated normals |
 | assets/source/body-projection.png | Full-resolution generated body mapping master |
@@ -445,6 +511,7 @@ The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 | assets/prompts/body-projection.json | Exact prompt and canonical references |
 
 Use ?mascot=sprite on the homepage to compare the canonical sprite relief.
+Use ?mascot=mesh to compare the full 3D model.
 The normal homepage uses the detailed body and articulated head.
 
 ## Rig inspection
@@ -454,6 +521,10 @@ Drag to orbit and scroll to zoom. Bones and wireframe reveal the weighted model.
 Choose Idle, Walk, or Speaking for the exported animation clips. Play, pause, change speed, or scrub time.
 Manual speech, blink, brow, and squint controls stop clip playback and show a fixed pose.
 Mapped and Sprite switch the artwork. Download GLB exports the selected rig.
+Mesh shows the full 3D model. If it can take the relief rig's pose code, Idle, Walk, and Speaking pose it as the homepage does. If not, Idle plays its clip or its sway. Download GLB applies only to the relief rig.
+If the model can take the relief rig's pose code, Manual poses it from the Speech, Blink, Brow, and Squint controls.
+Bones applies only to a model with a skeleton.
+If the model file is absent, Mesh shows the mapped relief rig and the status line says so.
 
 The homepage Sound controls sit inside the hidden L panel.
 Master volume, Ambience volume, and Voice volume each accept values from zero to one.

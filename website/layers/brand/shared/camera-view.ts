@@ -65,6 +65,39 @@ export const resolveConversationFocus = (face: Vector3, width: number, height: n
   return { position: face.clone().add(new Vector3(0, 0.15, portrait ? 3.8 : 4.1)), target: face.clone().add(new Vector3(0, portrait ? -0.85 : -0.6, 0)) }
 }
 
+/**
+ * A head-and-shoulders shot for a full-bodied mascot. The camera stands a little to the side he faces, so he looks out of the frame at the visitor.
+ * It drifts slowly with `drift`, in seconds. Zero gives the still shot.
+ * `eyes` is the point between his eyes. His head reaches about half a unit above it and his mouthparts about half a unit below.
+ * Both stay in the area the dialog leaves free, so the visitor sees his mouth move.
+ */
+export const resolveConversationCloseUp = (eyes: Vector3, width: number, height: number, fieldOfView: number, side: 1 | -1, drift: number): CameraShot => {
+  const aspect = width / height
+  const landscape = width > height && height <= 540
+  const portrait = aspect < 0.8
+  const half = Math.tan(fieldOfView * Math.PI / 360)
+  // The pixels the bottom dialog covers: its usual height, its gap from the edge, and the seam that rises over its top.
+  // Matches _SpeechDialog.vue. The side dialog of a short landscape screen covers no height.
+  const cover = landscape ? 0 : width <= 600 ? Math.min(300, height * 0.52) + 26 : Math.min(270, height * 0.46) + 36
+  // His head is one unit tall. It must fit the free band with room to spare, so a short window moves the camera back.
+  const fit = height / (2 * half * (height - cover) * 0.9)
+  // A narrow screen needs more distance to hold his head between its edges.
+  const distance = Math.max(portrait ? 3 : landscape ? 2.6 : 2.7, fit) * (1 - Math.sin(drift * 0.13) * 0.025)
+  const angle = side * (0.22 + Math.sin(drift * 0.21) * 0.035)
+  // How far his eyes sit above the middle of the view, as a share of half the view height. They take the middle of the free band.
+  const rise = landscape ? 0.12 : cover / height
+  const position = eyes.clone().add(new Vector3(Math.sin(angle) * distance, 0.05, Math.cos(angle) * distance))
+  const target = eyes.clone().add(new Vector3(0, -rise * distance * half, 0))
+  if (landscape) {
+    // The dialog sits on the right. The view slides along its own right axis, so his face sits in the middle of the free area.
+    const dialogShare = (Math.min(400, width / 2) + 12) / width
+    const slide = new Vector3(Math.cos(angle), 0, -Math.sin(angle)).multiplyScalar(dialogShare * distance * half * aspect)
+    position.add(slide)
+    target.add(slide)
+  }
+  return { position, target }
+}
+
 /** Eases the conversation close-up in while the dialog is open and out after it closes. Each end holds exactly, so a settled shot stays still. */
 export const advanceConversationFocus = (progress: number, open: boolean, delta: number, reduced: boolean) =>
   reduced ? Number(open) : clamp(progress + (open ? delta : -delta) / 0.65, 0, 1)
