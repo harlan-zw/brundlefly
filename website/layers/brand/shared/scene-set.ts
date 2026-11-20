@@ -29,7 +29,12 @@ export type SetLayout = {
   /** What he does at each walk point. */
   walkHabits: readonly MannerismTag[]
   camera: { desktop: Place, portrait: Place, target: Place }
+  /** A set whose lamps are off when a visitor loads it names its entrance. */
+  entrance?: SetEntrance
 }
+
+/** Where he stands in the dark, where he stands to reach the switch, the way he faces there as a turn about the vertical, and the switch itself. */
+export type SetEntrance = { start: Point, stand: Point, facing: number, lightSwitch: Place }
 
 /** `scale` multiplies the Fog setting, so the slider keeps its meaning in every set. */
 export type SetFog = { _tag: 'None' } | { _tag: 'Exponential', colour: string, scale: number }
@@ -62,8 +67,23 @@ export type SetMascot = {
   vignette: 'Heavy' | 'Light'
 }
 
-/** `time` is scene time in seconds. It stands still under reduced motion, so a set that follows it stands still too. */
-export type SetInput = { time: number, pressure: number, settings: SceneSettings }
+/**
+ * His look at a light level of the set, from 0 to 1. With the lamps out he has no stage light and casts no shadow, and the picture takes the heavy dark edge.
+ * The set's own lights still reach him: the scene leaves those to the set.
+ */
+export function mascotInLight(look: SetMascot, light: number): SetMascot {
+  const level = Math.max(0, Math.min(1, light))
+  if (level === 1) return look
+  const dim = (lamp: StageLight): StageLight => ({ ...lamp, rest: lamp.rest * level, talk: lamp.talk * level })
+  return { ...look, key: dim(look.key), rim: dim(look.rim), shadow: { body: look.shadow.body * level, foot: look.shadow.foot * level },
+    vignette: level < 0.5 ? 'Heavy' : look.vignette }
+}
+
+/**
+ * `time` is scene time in seconds. It stands still under reduced motion, so a set that follows it stands still too.
+ * `light` is how bright the set's own lamps are, from 0 to 1. A set whose lamps can go out follows it.
+ */
+export type SetInput = { time: number, pressure: number, settings: SceneSettings, light: number }
 
 /** A set in the scene. `dispose` releases its geometry, its materials, and the artwork it loaded. */
 export type BuiltSet = { root: Object3D, cues: SetCues, update: (input: SetInput) => void, dispose: () => void }

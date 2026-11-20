@@ -166,8 +166,11 @@ export const strollPose = (state: Stroll) => ({ gait: state.gait, walkPhase: sta
  * `steps` is how far he steps in place, from 0 to 1, and `phase` is the cycle of those steps. `side` is the side he faces, or turns to.
  */
 export type Turn = { heading: number, rate: number, pace: number, steps: number, phase: number, side: 1 | -1 }
-/** `rest` is the artwork's three-quarter turn, in radians. `limit` is the furthest he turns from the viewer. */
-export type TurnInput = { delta: number, walkSpeed: number, rest: number, limit: number, attention: StrollAttention }
+/**
+ * `rest` is the artwork's three-quarter turn, in radians. `limit` is the furthest he turns from the viewer.
+ * `stand` is a heading he holds while he stands, in place of the three-quarter turn: a stop that has him face a thing gives it.
+ */
+export type TurnInput = { delta: number, walkSpeed: number, rest: number, limit: number, attention: StrollAttention, stand?: number }
 
 export const startTurn = (heading: number): Turn => ({ heading, rate: 0, pace: 0, steps: 0, phase: 0, side: heading < 0 ? -1 : 1 })
 
@@ -181,7 +184,7 @@ export const stepRate = 12
 export const turnEase = 10
 
 /** The side and the heading he should have: his travel while he walks, and the three-quarter turn while he stands. */
-function turnTarget(turn: Turn, state: Stroll, { walkSpeed, rest, limit }: Omit<TurnInput, 'delta' | 'attention'>) {
+function turnTarget(turn: Turn, state: Stroll, { walkSpeed, rest, limit, stand }: Omit<TurnInput, 'delta' | 'attention'>) {
   const stride = walkSpeed > 0 ? clamp(state.speed / walkSpeed, 0, 1) : 0
   // He faces his travel as far as the limit lets him. Travel almost straight toward the viewer or away gives no side, so he keeps the one he has.
   const facing = clamp(turnBetween(0, state.course), -limit, limit)
@@ -190,7 +193,7 @@ function turnTarget(turn: Turn, state: Stroll, { walkSpeed, rest, limit }: Omit<
   // and the last steps of his walk end the turn.
   const share = clamp((stride - 0.5) / 0.4, 0, 1)
   const moving = share * share * (3 - 2 * share)
-  const standing = side * rest
+  const standing = stand === undefined ? side * rest : clamp(stand, -limit, limit)
   return { side, stride, heading: standing + (facing - standing) * moving }
 }
 

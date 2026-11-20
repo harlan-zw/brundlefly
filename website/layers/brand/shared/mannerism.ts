@@ -2,7 +2,7 @@ import type { Stroll } from './mascot-stroll.ts'
 
 /** Habits he performs on his own or as a dialogue beat. Human habits first, then fly habits. */
 export type MannerismTag = 'CheckPalm' | 'HeadTilt' | 'JawCatch' | 'LeanIn' | 'AirWriting' | 'GlanceEggs'
-  | 'WingTwitch' | 'WingBuzz' | 'RubHands' | 'WipeEye' | 'ListenCeiling' | 'LookToLight' | 'Still'
+  | 'WingTwitch' | 'WingBuzz' | 'RubHands' | 'WipeEye' | 'ListenCeiling' | 'LookToLight' | 'Still' | 'ReachSwitch' | 'Greet'
 export type Mannerism = { _tag: 'None' } | { _tag: MannerismTag }
 /** `age` counts seconds since the mannerism began. `weight` fades a whole layer in or out. `side` mirrors a directional turn. */
 export type MannerismLayer = { mannerism: Mannerism, age: number, weight?: number, side?: 1 | -1 }
@@ -62,6 +62,21 @@ const shapes: Record<MannerismTag, Shape> = {
   LookToLight: { duration: 2.6, attack: 0.5, release: 0.8, motion: e => ({ cue: 'Light', turns: {
     head: [-0.18 * e, -0.45 * e, 0], chest: [-0.06 * e, -0.12 * e, 0], 'left-wing': [0, -0.16 * e, 0], 'right-wing': [0, 0.12 * e, 0] } }) },
   Still: { duration: 2.8, attack: 0.3, release: 0.6, motion: e => ({ calm: e }) },
+  // He faces a wall switch and lifts the long arm on the viewer's side to it. His head turns from the viewer to his hand. `side` is the side the wall is on.
+  // The hand holds at the switch while the tubes strike, then falls as he turns away.
+  ReachSwitch: { duration: 1.9, attack: 0.5, release: 0.55, motion: (e, _age, side) => {
+    const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
+    return { calm: e * 0.5, turns: {
+      [shoulder]: [-0.72 * e, 0, 0.5 * e * side], [elbow]: [-0.5 * e, 0, 0], [hand]: [-0.3 * e, 0, 0],
+      head: [0.05 * e, 0.75 * e * side, 0], chest: [0.08 * e, 0.1 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
+  } },
+  // A small hello: his head tips, and the long claw on `side` lifts beside his face and opens twice. The wings give one short buzz.
+  Greet: { duration: 1.7, attack: 0.3, release: 0.5, motion: (e, age, side) => {
+    const [shoulder, elbow, hand] = side === 1 ? ['right-shoulder', 'right-elbow', 'right-hand'] as const : ['left-shoulder', 'left-elbow', 'left-hand'] as const
+    return { buzz: e * Math.max(0, 1 - Math.abs(age - 0.45) / 0.3) * 0.7, turns: {
+      [shoulder]: [0, 0, 0.5 * e * side], [elbow]: [-1.3 * e, 0, -0.8 * e * side], [hand]: [0, 0, (0.25 + Math.sin(age * 7.5) * 0.3) * e * side],
+      head: [0.05 * e, 0, 0.2 * e * side], chest: [-0.04 * e, 0, 0.03 * e * side] } satisfies Partial<Record<MannerismJoint, Turn>> }
+  } },
 }
 
 const smooth = (value: number) => value * value * (3 - 2 * value)

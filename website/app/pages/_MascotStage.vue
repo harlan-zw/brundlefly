@@ -38,12 +38,14 @@ const reaction = ref(0)
 const audio = shallowRef<InstanceType<typeof SceneAudio>>()
 const sound = ref<SceneAudioState>({ muted: false, status: { _tag: 'Idle' } })
 const mix = ref<SceneAudioMix>({ ...defaultSceneAudioMix })
+// Whether this visit found the office dark, with him at the switch. A later change chooses his greeting by it.
+const foundDark = ref(false)
 </script>
 
 <template>
-  <main aria-label="Brundlefly">
+  <main aria-label="Brundlefly" :data-found-dark="foundDark">
     <ClientOnly>
-      <WorldScene :set="wanted" :paused="talking" :speaking="voice" :mood="mood" :thinking="thinking" :beat="beat" :reaction="reaction" @talk="talking = true" @mix="mix = $event" @shown="arrive" @time="audio?.keepTime($event)" />
+      <WorldScene :set="wanted" :paused="talking" :speaking="voice" :mood="mood" :thinking="thinking" :beat="beat" :reaction="reaction" @talk="talking = true" @mix="mix = $event" @shown="arrive" @time="audio?.keepTime($event)" @entrance="foundDark = $event" @action="audio?.playAction($event)" />
       <SceneAudio ref="audio" :set="shown" :talking="talking" :reply-count="replies" :reply-length="replyLength" :mix="mix" @state="sound = $event" @voice="voice = $event" />
       <template #fallback><SceneLoading /></template>
     </ClientOnly>
