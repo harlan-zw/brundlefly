@@ -5,6 +5,6 @@ import { MODEL, buildDialogueRequest, dialogueGateway } from '../worker/index.ts
 export const PRESET_DEPTH = 3
 export const presetOpenings = openingSeeds
 export const presetSourceHash = (catalog: readonly string[] = linkIds) => createHash('sha256').update(JSON.stringify({
-  model: MODEL, input: buildDialogueRequest({ text: '', history: [] }, null, catalog), options: dialogueGateway,
+  model: MODEL, input: buildDialogueRequest({ text: '', history: [], place: 'lair' }, null, catalog), options: dialogueGateway,
   openings: presetOpenings(), depth: PRESET_DEPTH,
 })).digest('hex')

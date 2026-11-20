@@ -1,3 +1,11 @@
+import { actionSounds } from './action-sounds.ts'
+import type { ActionSound } from './action-sounds.ts'
+import { playShot } from './audio-shot.ts'
+import type { LayerStage, Shot } from './audio-shot.ts'
+import { buildOfficeAmbience, buzzChanges, fillOfficeImpulse, officeEvents, officeLevels, officeRoomSeconds } from './office-ambience.ts'
+import { ambienceShares, audioTimeAt, fadeEnd, restingFade, sceneClockRuns, sceneTimeAt, syncSceneClock, turnFade } from './set-ambience.ts'
+import type { Ambience, SceneClock } from './set-ambience.ts'
+
 export type SceneAudioStatus =
   | { _tag: 'Idle' }
   | { _tag: 'Running' }
@@ -44,8 +52,17 @@ export function phraseVoiceEnvelope(time: number, start: number, syllables: read
   return syllables.reduce((peak, syllable) => Math.max(peak,
     sceneVoiceEnvelope(time, start + syllable.start, syllable.duration) * syllable.strength), 0)
 }
+/**
+ * One ambience in the graph. Its layers and events play into `input`, whose gain is the ambience's share of a cross-fade.
+ * `level` holds the Ambience volume and the duck under his voice. `voiceSend` feeds his voice to this ambience's room.
+ * `flicker` is the gain of the office's faulty tube. The cave has none.
+ */
+type AmbienceGraph = {
+  input: GainNode, level: GainNode, voiceSend: GainNode, flicker: GainNode | undefined,
+  nodes: Set<AudioNode>, sources: Set<AudioScheduledSourceNode>,
+}
 type Graph = {
-  context: AudioContext, master: GainNode, ambience: GainNode, voice: GainNode, noise: AudioBuffer,
+  context: AudioContext, master: GainNode, voice: GainNode, noise: () => AudioBuffer, ambiences: Map<Ambience, AmbienceGraph>,
   nodes: Set<AudioNode>, sources: Set<AudioScheduledSourceNode>, sounds: Set<SoundScope>,
 }
 
@@ -64,6 +81,15 @@ const levels = {
   ambience: 1, voice: 3.5, room: 0.5, breath: 0.25, drone: 0.04,
   drip: 0.55, squelch: 2.2, bubble: 0.22, groan: 0.65, click: 0.12,
 }
+// How much of the ambience and of his voice each room answers. The ambience sends more than the voice, so speech stays clear.
+// The office is small and dry, so it answers less than the cave.
+const rooms: Record<Ambience, { send: number, voice: number }> = {
+  Cave: { send: 0.6, voice: 0.18 },
+  Office: { send: officeLevels.room, voice: officeLevels.voiceRoom },
+}
+// Seconds between the steps of a cross-fade, and how far ahead the office sets its events. A late tick loses nothing inside the lookahead.
+const fadeStep = 0.05
+const lookahead = 0.4
 // Formant pairs for a, e, o, u, and a neutral vowel, set low for a large throat.
 const vowels = [[660, 1100], [460, 1650], [500, 860], [360, 900], [560, 1200]] as const
 // Soft clipping strains the voice without a harsh digital edge.
@@ -85,6 +111,57 @@ function caveImpulse(context: BaseAudioContext, random: () => number) {
   return impulse
 }
 
+function officeImpulse(context: BaseAudioContext) {
+  const impulse = context.createBuffer(2, Math.ceil(context.sampleRate * officeRoomSeconds), context.sampleRate)
+  for (let channel = 0; channel < 2; channel++) fillOfficeImpulse(impulse.getChannelData(channel), channel, context.sampleRate)
+  return impulse
+}
+
+/** The cave's steady layers: room tone, breath, and drone. It returns their sources. */
+function buildCaveAmbience({ context, noise, own, output }: LayerStage) {
+  const noiseSource = own(context.createBufferSource())
+  noiseSource.buffer = noise
+  noiseSource.loop = true
+  // Room tone: a low wash that small speakers can still play.
+  const room = own(context.createBiquadFilter())
+  room.type = 'lowpass'; room.frequency.value = 360; room.Q.value = 0.5
+  const roomGain = own(context.createGain())
+  roomGain.gain.value = levels.room
+  noiseSource.connect(room).connect(roomGain).connect(output)
+  // The room breathes: an airy band swells and brightens about every eight seconds.
+  const breath = own(context.createBiquadFilter())
+  breath.type = 'bandpass'; breath.frequency.value = 640; breath.Q.value = 0.9
+  const breathGain = own(context.createGain())
+  breathGain.gain.value = levels.breath
+  noiseSource.connect(breath).connect(breathGain).connect(output)
+  const breathCycle = own(context.createOscillator())
+  breathCycle.frequency.value = 0.125
+  const breathDepth = own(context.createGain())
+  breathDepth.gain.value = levels.breath
+  const breathSweep = own(context.createGain())
+  breathSweep.gain.value = 240
+  breathCycle.connect(breathDepth).connect(breathGain.gain)
+  breathCycle.connect(breathSweep).connect(breath.frequency)
+  // Drone: two beating saws, filtered so their low harmonics still carry on laptop speakers.
+  const droneFilter = own(context.createBiquadFilter())
+  droneFilter.type = 'lowpass'; droneFilter.frequency.value = 230; droneFilter.Q.value = 2.5
+  const droneGain = own(context.createGain())
+  droneGain.gain.value = levels.drone
+  droneFilter.connect(droneGain).connect(output)
+  const droneLow = own(context.createOscillator())
+  droneLow.type = 'sawtooth'; droneLow.frequency.value = 55
+  const droneHigh = own(context.createOscillator())
+  droneHigh.type = 'sawtooth'; droneHigh.frequency.value = 55.45
+  droneLow.connect(droneFilter)
+  droneHigh.connect(droneFilter)
+  const droneDrift = own(context.createOscillator())
+  droneDrift.frequency.value = 0.045
+  const droneDepth = own(context.createGain())
+  droneDepth.gain.value = 70
+  droneDrift.connect(droneDepth).connect(droneFilter.frequency)
+  return { sources: [noiseSource, breathCycle, droneLow, droneHigh, droneDrift], flicker: undefined }
+}
+
 export function createSceneAudio(dependencies: SceneAudioDependencies) {
   let graph: Graph | undefined
   let timer: number | undefined
@@ -98,6 +175,12 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
   let status: SceneAudioStatus = { _tag: 'Idle' }
   let mix = { ...defaultSceneAudioMix }
   let duckUntil = 0
+  let fade = restingFade('Cave')
+  let clock: SceneClock | undefined
+  let officeUntil = 0
+  let buzzUntil = 0
+  let buzzLevel = 0
+  let actions = 0
   let fadeTimer: number | undefined
   let fadeResolve: (() => void) | undefined
   const publish = (next: SceneAudioStatus) => { status = next; dependencies.onState({ muted, status }) }
@@ -123,67 +206,91 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     limiter.attack.value = 0.002
     limiter.release.value = 0.2
     master.connect(limiter).connect(context.destination)
-    const ambience = own(context.createGain())
-    ambience.gain.value = ambienceLevel(false)
-    ambience.connect(master)
     const voice = own(context.createGain())
     voice.gain.value = mix.voice * levels.voice
     voice.connect(master)
-    // One cave echoes everything. The ambience sends more than the voice, so speech stays clear.
-    const cave = own(context.createConvolver())
-    cave.buffer = caveImpulse(context, dependencies.random)
-    cave.connect(master)
-    const ambienceEcho = own(context.createGain())
-    ambienceEcho.gain.value = 0.6
-    ambience.connect(ambienceEcho).connect(cave)
-    const voiceEcho = own(context.createGain())
-    voiceEcho.gain.value = 0.18
-    voice.connect(voiceEcho).connect(cave)
-    const noise = context.createBuffer(1, context.sampleRate * 2, context.sampleRate)
-    const samples = noise.getChannelData(0)
-    for (let index = 0; index < samples.length; index++) samples[index] = dependencies.random() * 2 - 1
-    const noiseSource = own(context.createBufferSource())
-    noiseSource.buffer = noise
-    noiseSource.loop = true
-    // Room tone: a low wash that small speakers can still play.
-    const room = own(context.createBiquadFilter())
-    room.type = 'lowpass'; room.frequency.value = 360; room.Q.value = 0.5
-    const roomGain = own(context.createGain())
-    roomGain.gain.value = levels.room
-    noiseSource.connect(room).connect(roomGain).connect(ambience)
-    // The room breathes: an airy band swells and brightens about every eight seconds.
-    const breath = own(context.createBiquadFilter())
-    breath.type = 'bandpass'; breath.frequency.value = 640; breath.Q.value = 0.9
-    const breathGain = own(context.createGain())
-    breathGain.gain.value = levels.breath
-    noiseSource.connect(breath).connect(breathGain).connect(ambience)
-    const breathCycle = own(context.createOscillator())
-    breathCycle.frequency.value = 0.125
-    const breathDepth = own(context.createGain())
-    breathDepth.gain.value = levels.breath
-    const breathSweep = own(context.createGain())
-    breathSweep.gain.value = 240
-    breathCycle.connect(breathDepth).connect(breathGain.gain)
-    breathCycle.connect(breathSweep).connect(breath.frequency)
-    // Drone: two beating saws, filtered so their low harmonics still carry on laptop speakers.
-    const droneFilter = own(context.createBiquadFilter())
-    droneFilter.type = 'lowpass'; droneFilter.frequency.value = 230; droneFilter.Q.value = 2.5
-    const droneGain = own(context.createGain())
-    droneGain.gain.value = levels.drone
-    droneFilter.connect(droneGain).connect(ambience)
-    const droneLow = own(context.createOscillator())
-    droneLow.type = 'sawtooth'; droneLow.frequency.value = 55
-    const droneHigh = own(context.createOscillator())
-    droneHigh.type = 'sawtooth'; droneHigh.frequency.value = 55.45
-    droneLow.connect(droneFilter)
-    droneHigh.connect(droneFilter)
-    const droneDrift = own(context.createOscillator())
-    droneDrift.frequency.value = 0.045
-    const droneDepth = own(context.createGain())
-    droneDepth.gain.value = 70
-    droneDrift.connect(droneDepth).connect(droneFilter.frequency)
-    for (const source of [noiseSource, breathCycle, droneLow, droneHigh, droneDrift]) { sources.add(source); source.start() }
-    return { context, master, ambience, voice, noise, nodes, sources, sounds: new Set() }
+    // Every ambience shares one noise. The first ambience to need it draws it, so the cave draws its echo first, as it always has.
+    let drawn: AudioBuffer | undefined
+    const noise = () => {
+      if (drawn) return drawn
+      drawn = context.createBuffer(1, context.sampleRate * 2, context.sampleRate)
+      const samples = drawn.getChannelData(0)
+      for (let index = 0; index < samples.length; index++) samples[index] = dependencies.random() * 2 - 1
+      return drawn
+    }
+    const current: Graph = { context, master, voice, noise, ambiences: new Map(), nodes, sources, sounds: new Set() }
+    buildAmbience(current, fade.to, 1)
+    return current
+  }
+
+  // Each ambience has its own room. Its layers and his voice both play through it, so he sounds like he is in the place.
+  function buildAmbience(current: Graph, name: Ambience, share: number) {
+    const { context } = current
+    const nodes = new Set<AudioNode>()
+    const sources = new Set<AudioScheduledSourceNode>()
+    const own = <T extends AudioNode>(node: T) => { nodes.add(node); return node }
+    const input = own(context.createGain())
+    input.gain.value = share
+    const level = own(context.createGain())
+    level.gain.value = ambienceLevel(false)
+    input.connect(level).connect(current.master)
+    const room = own(context.createConvolver())
+    room.buffer = name === 'Cave' ? caveImpulse(context, dependencies.random) : officeImpulse(context)
+    room.connect(current.master)
+    const send = own(context.createGain())
+    send.gain.value = rooms[name].send
+    level.connect(send).connect(room)
+    const voiceSend = own(context.createGain())
+    voiceSend.gain.value = rooms[name].voice * share
+    current.voice.connect(voiceSend).connect(room)
+    const layers = (name === 'Cave' ? buildCaveAmbience : buildOfficeAmbience)({ context, noise: current.noise(), own, output: input })
+    for (const source of layers.sources) { sources.add(source); current.sources.add(source); source.start() }
+    const now = context.currentTime
+    if (name === 'Cave') { nextDrip = now + 1.4; nextGurgle = now + 4.5; nextGroan = now + 10 }
+    else { officeUntil = now; buzzUntil = now; buzzLevel = 0 }
+    const ambience: AmbienceGraph = { input, level, voiceSend, flicker: layers.flicker, nodes, sources }
+    current.ambiences.set(name, ambience)
+    return ambience
+  }
+  function releaseAmbience(current: Graph, name: Ambience) {
+    const ambience = current.ambiences.get(name)
+    if (!ambience) return
+    ambience.sources.forEach(source => { source.stop(); current.sources.delete(source) })
+    ambience.nodes.forEach(node => node.disconnect())
+    ambience.sources.clear(); ambience.nodes.clear()
+    current.ambiences.delete(name)
+  }
+  // One ambience at its full level, and no other. A fade ends here, and so does a change of set that had no sound to fade.
+  function snapAmbience(current: Graph, name: Ambience) {
+    fade = restingFade(name)
+    for (const other of [...current.ambiences.keys()]) if (other !== name) releaseAmbience(current, other)
+    const ambience = current.ambiences.get(name) ?? buildAmbience(current, name, 1)
+    const now = current.context.currentTime
+    // A fade that sound going off cut short still has steps on the audio clock. They must not pull this ambience down.
+    for (const [gain, level] of [[ambience.input.gain, 1], [ambience.voiceSend.gain, rooms[name].voice]] as const) {
+      gain.cancelScheduledValues(now)
+      gain.setValueAtTime(level, now)
+    }
+  }
+  // The shares follow the fade in small smooth steps, so no step makes a jump and a fade that turns back needs no undo.
+  // Each tick sets every step that is left on the audio clock, and replaces the steps the last tick set. A busy page cannot stall the fade.
+  function followFade(current: Graph, now: number) {
+    if (fade.from === fade.to) return
+    const end = fadeEnd(fade)
+    // The old ambience is silent a moment after the fade ends. Its layers then stop, so one set costs one ambience.
+    if (now > end + 0.3) { snapAmbience(current, fade.to); return }
+    for (const [name, ambience] of current.ambiences) {
+      ambience.input.gain.cancelScheduledValues(now)
+      ambience.voiceSend.gain.cancelScheduledValues(now)
+      for (let at = now; at < end + fadeStep; at += fadeStep) {
+        const share = ambienceShares(fade, at + fadeStep)[name] ?? 0
+        ambience.input.gain.setTargetAtTime(share, at, 0.03)
+        ambience.voiceSend.gain.setTargetAtTime(rooms[name].voice * share, at, 0.03)
+      }
+    }
+  }
+  function duck(current: Graph, ducked: boolean, at: number, constant: number) {
+    for (const ambience of current.ambiences.values()) ambience.level.gain.setTargetAtTime(ambienceLevel(ducked), at, constant)
   }
 
   function soundScope(current: Graph, duration: number, voice: boolean, delay = 0): SoundScope {
@@ -210,18 +317,18 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
   }
   function noiseSource(current: Graph, scope: SoundScope) {
     const source = ownSound(scope, current.context.createBufferSource())
-    source.buffer = current.noise
+    source.buffer = current.noise()
     source.loop = true
     return source
   }
-  function panner(current: Graph, scope: SoundScope) {
+  function panner(current: Graph, scope: SoundScope, output: AudioNode) {
     const node = ownSound(scope, current.context.createStereoPanner())
     node.pan.value = dependencies.random() * 1.4 - 0.7
-    node.connect(current.ambience)
+    node.connect(output)
     return node
   }
   // A drop lands in a shallow pool: a short click, then a bubble whose pitch rises as it closes.
-  function drip(current: Graph, delay = 0, size = 1) {
+  function drip(current: Graph, output: AudioNode, delay = 0, size = 1) {
     const scope = soundScope(current, 0.32, false, delay)
     const context = current.context
     const at = scope.start
@@ -240,18 +347,18 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     clickGain.gain.setValueAtTime(0, at)
     clickGain.gain.linearRampToValueAtTime(levels.drip * size * 0.35, at + 0.001)
     clickGain.gain.exponentialRampToValueAtTime(0.0001, at + 0.012)
-    const pan = panner(current, scope)
+    const pan = panner(current, scope, output)
     bubble.connect(bubbleGain).connect(pan)
     click.connect(clickFilter).connect(clickGain).connect(pan)
     startSound(current, scope, bubble)
     startSound(current, scope, click)
   }
   // Something wet shifts inside the walls: a resonant squelch with a few rising bubbles.
-  function gurgle(current: Graph) {
+  function gurgle(current: Graph, output: AudioNode) {
     const scope = soundScope(current, 0.9, false)
     const context = current.context
     const at = scope.start
-    const pan = panner(current, scope)
+    const pan = panner(current, scope, output)
     const squelch = noiseSource(current, scope)
     const band = ownSound(scope, context.createBiquadFilter())
     band.type = 'bandpass'; band.Q.value = 7
@@ -281,7 +388,7 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     startSound(current, scope, bubble)
   }
   // The ceiling membrane stretches: a low strained tone that swells and sags.
-  function groan(current: Graph) {
+  function groan(current: Graph, output: AudioNode) {
     const scope = soundScope(current, 2.6, false)
     const context = current.context
     const at = scope.start
@@ -304,25 +411,56 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     gain.gain.linearRampToValueAtTime(levels.groan, at + 0.7)
     gain.gain.linearRampToValueAtTime(levels.groan * 0.7, at + 1.8)
     gain.gain.linearRampToValueAtTime(0, at + 2.5)
-    membrane.connect(band).connect(gain).connect(panner(current, scope))
+    membrane.connect(band).connect(gain).connect(panner(current, scope, output))
     startSound(current, scope, membrane)
     startSound(current, scope, wobble)
+  }
+
+  // A short sound from data, played into an ambience. The office's events and his action sounds both use it.
+  function shot(current: Graph, sound: Shot, output: AudioNode, delay = 0) {
+    const scope = soundScope(current, sound.duration, false, delay)
+    playShot({ context: current.context, noise: current.noise(), own: node => ownSound(scope, node), start: source => startSound(current, scope, source) }, sound, scope.start, output)
+  }
+  // The office keeps time by the audio clock, so its events come at the same times on every visit.
+  // The tube's buzz keeps time by the scene clock, so it lands on the flashes of the light.
+  function officeTick(current: Graph, office: AmbienceGraph, now: number) {
+    const horizon = now + lookahead
+    for (const event of officeEvents(Math.max(officeUntil, now), horizon)) shot(current, event.shot, office.input, event.time - now)
+    officeUntil = horizon
+    if (!office.flicker) return
+    if (!sceneClockRuns(clock, now)) {
+      // A scene that stands still shows a still tube. A held buzz would only annoy.
+      if (buzzLevel !== 0) { buzzLevel = 0; office.flicker.gain.cancelScheduledValues(now); office.flicker.gain.setTargetAtTime(0, now, 0.02) }
+      buzzUntil = now
+      return
+    }
+    for (const change of buzzChanges(sceneTimeAt(clock, Math.max(buzzUntil, now)), sceneTimeAt(clock, horizon), buzzLevel)) {
+      buzzLevel = change.level
+      office.flicker.gain.setTargetAtTime(change.level, Math.max(now, audioTimeAt(clock, change.time)), 0.004)
+    }
+    buzzUntil = horizon
   }
 
   function tick() {
     if (!graph || disposed || status._tag !== 'Running') return
     const now = graph.context.currentTime
-    if (now >= nextDrip) {
-      drip(graph)
-      if (dependencies.random() < 0.35) drip(graph, 0.11 + dependencies.random() * 0.12, 0.45)
-      nextDrip = now + 2.2 + dependencies.random() * 4.6
+    followFade(graph, now)
+    const cave = graph.ambiences.get('Cave')?.input
+    if (cave) {
+      if (now >= nextDrip) {
+        drip(graph, cave)
+        if (dependencies.random() < 0.35) drip(graph, cave, 0.11 + dependencies.random() * 0.12, 0.45)
+        nextDrip = now + 2.2 + dependencies.random() * 4.6
+      }
+      if (now >= nextGurgle) { gurgle(graph, cave); nextGurgle = now + 6 + dependencies.random() * 9 }
+      if (now >= nextGroan) { groan(graph, cave); nextGroan = now + 17 + dependencies.random() * 16 }
     }
-    if (now >= nextGurgle) { gurgle(graph); nextGurgle = now + 6 + dependencies.random() * 9 }
-    if (now >= nextGroan) { groan(graph); nextGroan = now + 17 + dependencies.random() * 16 }
+    const office = graph.ambiences.get('Office')
+    if (office) officeTick(graph, office, now)
     let voice = 0
     for (const sound of graph.sounds) if (sound.voice) voice = Math.max(voice, sound.envelope(now))
     if (voice > 0.015) duckUntil = now + 0.24
-    graph.ambience.gain.setTargetAtTime(ambienceLevel(now < duckUntil), now, 0.09)
+    duck(graph, now < duckUntil, now, 0.09)
     dependencies.onVoice(voice)
     timer = dependencies.schedule(tick, 50)
   }
@@ -358,6 +496,8 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     if (disposed || graph !== current) return
     if (shouldRun !== (visible && !muted)) return reconcile()
     if (shouldRun) {
+      // The set can change while sound is off. The graph then holds an ambience that no longer stands.
+      if (fade.from === fade.to && (current.ambiences.size !== 1 || !current.ambiences.has(fade.to))) snapAmbience(current, fade.to)
       current.master.gain.setTargetAtTime(mix.master, current.context.currentTime, 0.05)
       publish({ _tag: 'Running' })
       if (timer === undefined) {
@@ -449,7 +589,7 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     }
     click.connect(clickFilter).connect(clickGain).connect(current.voice)
     duckUntil = at + 0.24
-    current.ambience.gain.setTargetAtTime(ambienceLevel(true), at, 0.045)
+    duck(current, true, at, 0.045)
     for (const source of [folds, sub, flutter, click]) startSound(current, scope, source)
   }
 
@@ -473,7 +613,7 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     setTalking(value: boolean) {
       talking = value
       if (graph) {
-        graph.ambience.gain.setTargetAtTime(ambienceLevel(false), graph.context.currentTime, 0.15)
+        duck(graph, false, graph.context.currentTime, 0.15)
         if (!talking) {
           for (const sound of graph.sounds) if (sound.voice) {
             sound.voice = false
@@ -484,13 +624,33 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
       }
     },
     playMascot,
+    /** The ambience of the set that stands. A change while sound runs is a cross-fade. With no sound, it is a plain change when sound next starts. */
+    setAmbience(value: Ambience) {
+      if (disposed || value === fade.to) return
+      // Sound that is off has nothing to fade. It starts again in the new ambience.
+      if (!graph || status._tag !== 'Running' || muted || !visible) { fade = restingFade(value); return }
+      fade = turnFade(fade, value, graph.context.currentTime)
+      if (!graph.ambiences.has(value)) buildAmbience(graph, value, 0)
+      // The scene draws a new set at this moment, and the page can stall. The whole fade goes to the audio clock at once.
+      followFade(graph, graph.context.currentTime)
+    },
+    /** The scene's time in seconds. The scene reports it while it moves, and the tube's buzz follows it. */
+    setSceneTime(seconds: number) {
+      if (graph && Number.isFinite(seconds)) clock = syncSceneClock(clock, seconds, graph.context.currentTime)
+    },
+    /** A short sound for something he does, in the room he is in. Each call varies the sound a little. */
+    playAction(action: ActionSound) {
+      const output = graph?.ambiences.get(fade.to)?.input
+      if (!graph || !output || status._tag !== 'Running' || muted || !visible || disposed) return
+      shot(graph, actionSounds[action](actions++), output)
+    },
     setMix(value: SceneAudioMix) {
       mix = parseSceneAudioMix(value)
       if (!graph) return
       const now = graph.context.currentTime
       graph.master.gain.setTargetAtTime(muted || !visible ? 0 : mix.master, now, 0.06)
       graph.voice.gain.setTargetAtTime(mix.voice * levels.voice, now, 0.06)
-      graph.ambience.gain.setTargetAtTime(ambienceLevel(now < duckUntil), now, 0.09)
+      duck(graph, now < duckUntil, now, 0.09)
     },
     async dispose() {
       disposed = true
@@ -500,8 +660,9 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
       if (!current) return
       current.sources.forEach(source => { source.onended = null; source.stop() })
       current.sounds.forEach(scope => { scope.nodes.forEach(node => node.disconnect()); scope.nodes.clear(); scope.sources.clear() })
+      current.ambiences.forEach(ambience => { ambience.nodes.forEach(node => node.disconnect()); ambience.nodes.clear(); ambience.sources.clear() })
       current.nodes.forEach(node => node.disconnect())
-      current.sources.clear(); current.sounds.clear(); current.nodes.clear()
+      current.sources.clear(); current.sounds.clear(); current.ambiences.clear(); current.nodes.clear()
       if (current.context.state !== 'closed') await current.context.close()
     },
   }

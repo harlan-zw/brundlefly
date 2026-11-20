@@ -191,6 +191,24 @@ These openings have no precomputed replies. Each choice gets a live reply.
 
 The return lines claim an earlier visit only. The late lines hedge the hour and never state a clock time.
 
+### Office openings
+
+A visitor who opens the dialog in the office gets one of these lines after the count. The cave keeps its own greetings.
+The owner approved the six lines on 2026-11-20. The approval covers the lines only.
+Each beat is one the scene already performs, and each choice is one a cave greeting already offers, so the office adds no other visible text.
+The count picks one of the first five. A return visit and a late hour do not change it, because those lines speak of the cave.
+These openings have no precomputed replies. Each choice gets a live reply.
+The sixth line says he has just put the lights on. It waits in `website/shared/conversation.ts` until the office can start dark.
+
+| Line after the count | Beat | Mood | Three visitor choices | Shown |
+| --- | --- | --- | --- | --- |
+| I signed you in at the front desk. The pen works better in my small hands. | His small hands rub together. | amused | What is this place? / Tell me what you do. / I just came to look. | Yes |
+| I still come in. Nobody asked for my badge back, and the eggs need someone on the day shift. | He checks an empty palm. | neutral | How are the eggs? / Tell me what you do. / Are you all right? | Yes |
+| Mind the floor. I do the eggs first, then the paperwork. The paperwork is easier to keep warm. | He glances at the eggs. | amused | What's inside them? / What do you make here? / Should I be worried? | Yes |
+| They moved my desk nearer the door after the experiment. I try not to read into it. | He tilts his head. | neutral | Are you all right? / What is this place? / Tell me what you do. | Yes |
+| I was told to take leave. I took the eggs instead. | One wing twitches. | amused | How are the eggs? / Are you all right? / What do you make here? | Yes |
+| The lights were off because I see better without them now. I put them on for you. | He looks toward the light. | neutral | What is this place? / Are you all right? / I just came to look. | Not yet |
+
 ### Approved openings outside the rotation
 
 The owner approved these lines on 2026-11-19. The site does not show them yet.
@@ -322,6 +340,9 @@ The website README documents the local generator and its checkpoint directory.
 
 The Worker serves static Nuxt exports and same-origin `/api/dialogue` and `/api/visit` handlers.
 `/api/visit` returns the daily count and whether the session has a visitor row from an earlier day.
+Each `/api/dialogue` request names the set the conversation is in, `lair` or `office`. A visitor can travel in the middle of a talk, so every turn names it.
+In the office the server adds one PLACE line to its context: he is at the office, with his desk, the jars that hold the eggs, a test chamber, and a failing ceiling light.
+In the cave the context is unchanged, so the precomputed replies stay valid. The system prompt itself does not change.
 A Workers AI binding routes Luna through the dedicated `brundlefly` AI Gateway.
 The build extracts this system prompt into a server-only module. No provider key reaches the browser.
 User-supplied text reaches Cloudflare and OpenAI. The dialogue states this before submission.
