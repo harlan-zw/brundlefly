@@ -380,7 +380,8 @@ History stays in browser memory. The server accepts at most eight messages and 1
 The browser also sends his last three beats. The server checks them against the beat list and names them in its context line.
 The server permits a voice catch on a session's live turns 2, 7, 12, and so on, counted for the UTC day. Precomputed replies carry none.
 The server sends no visit context yet. The prompt already holds the rules for it, so that addition needs no new precomputed replies.
-An atomic D1 reservation caps generation at 40 requests per session, 60 per daily IP hash, and 1,000 per UTC day.
+An atomic D1 reservation caps generation at 40 requests per session, 400 per daily IP hash, and 1,000 per UTC day.
+Guests at one venue share its address, so the IP limit leaves room for a full room. The daily total bounds the cost of a day.
 Two seconds separate requests from the same session. Failed generations consume quota too.
 Gateway rate limiting caps requests at 30 per minute. There is no automatic provider fallback or retry.
 Turnstile can follow if observed abuse justifies an extra interaction.

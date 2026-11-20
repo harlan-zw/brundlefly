@@ -19,6 +19,8 @@ for (const path of pages) {
   }
 }
 for (const name of await readdir(new URL('skills/', output))) required.add(`/skills/${name}`)
+// The 3D model is the mascot. A build without it shows the relief rig and reports no error, so its absence must fail here.
+required.add('/brand/3d/brundlefly-web.glb')
 
 const expected = await Promise.all([...required].map(async (path) => {
   const file = path.endsWith('/') ? `${path}index.html` : path

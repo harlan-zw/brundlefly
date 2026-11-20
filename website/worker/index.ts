@@ -54,16 +54,20 @@ const visit = async (request: Request, env: Env, now: number) => {
   return json({ ordinal: visitor.ordinal, returning: earlier !== null }, 200, { 'Set-Cookie': `${COOKIE}=${session}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=86400${secure}` })
 }
 
-const reserveTurn = async (request: Request, env: Env, day: string, session: string, now: number) => {
+// Live turns allowed in one UTC day: in total, for one session, and for one network address.
+// Guests at one venue share its address, so the network limit leaves room for a full room. The daily total bounds the cost of a day.
+const turnLimits = { day: 1000, session: 40, network: 400 }
+
+export const reserveTurn = async (request: Request, env: Env, day: string, session: string, now: number) => {
   const ip = request.headers.get('CF-Connecting-IP') ?? 'local'
   const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${day}:${ip}`))
   const ipHash = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('')
   // One SQL statement reserves quota atomically. Failed generations also consume quota.
   const reservation = await env.DIALOGUE_DB.prepare(`INSERT INTO turns (id, day, session, ip_hash, started)
     SELECT ?, ?, ?, ?, ? WHERE
-    (SELECT COUNT(*) FROM turns WHERE day = ?) < 1000 AND
-    (SELECT COUNT(*) FROM turns WHERE day = ? AND session = ?) < 40 AND
-    (SELECT COUNT(*) FROM turns WHERE day = ? AND ip_hash = ?) < 60 AND
+    (SELECT COUNT(*) FROM turns WHERE day = ?) < ${turnLimits.day} AND
+    (SELECT COUNT(*) FROM turns WHERE day = ? AND session = ?) < ${turnLimits.session} AND
+    (SELECT COUNT(*) FROM turns WHERE day = ? AND ip_hash = ?) < ${turnLimits.network} AND
     NOT EXISTS (SELECT 1 FROM turns WHERE day = ? AND session = ? AND started > ?)`)
     .bind(crypto.randomUUID(), day, session, ipHash, now, day, day, session, day, ipHash, day, session, now - 2000).run()
   return reservation.meta.changes === 1
