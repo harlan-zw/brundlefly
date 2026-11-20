@@ -1,3 +1,6 @@
+import { createOfficeWriting } from './office-writing.ts'
+import type { BoardWriting } from './office-writing.ts'
+import { markerProgress, markerStrokes } from './mannerism.ts'
 import {
   AdditiveBlending, CanvasTexture, Color, DirectionalLight, Group, HemisphereLight, NearestFilter, NormalBlending, PointLight, ShaderMaterial, SRGBColorSpace,
 } from 'three'
@@ -15,7 +18,7 @@ import { tubeFlicker } from './office-flicker.ts'
  */
 export type OfficeArt = { model: Object3D, lightMax: number, atlas: Texture, floor: Texture, wall: Texture, ceiling: Texture, concrete: Texture, light: Texture }
 /** `light` is how bright the room's tubes are, from 0 to 1. Zero is a dark room: only the things with their own light show. */
-export type OfficeInput = { time: number, settings: SceneSettings, light: number }
+export type OfficeInput = { time: number, settings: SceneSettings, light: number, writing?: BoardWriting }
 
 /** How a surface gets its light and its edge. Each look is one shader program. */
 type Look = 'Mapped' | 'Baked' | 'Cut' | 'Glass' | 'Beam'
@@ -110,6 +113,10 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
   // The model's uv follows the file format: v runs down from the top of the picture.
   marks.flipY = false
 
+  const writingProp = createOfficeWriting(plan)
+  root.add(writingProp.root)
+  let written = 0
+  let writingAge = 0
   const uniforms = { uGain: { value: art.lightMax }, uFlicker: { value: 1 }, uRoom: { value: 1 }, uTube: { value: new Color(1, 0.94, 0.8) } }
   const maps: Record<string, Texture> = { floor: art.floor, wall: art.wall, ceiling: art.ceiling, concrete: art.concrete, marks }
   const materials = new Map<string, ShaderMaterial>()
@@ -175,7 +182,19 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
 
   return {
     root,
-    update({ time, settings, light }: OfficeInput) {
+    update({ time, settings, light, writing }: OfficeInput) {
+      writingProp.update(writing)
+      if (writing) {
+        const along = markerProgress(writing.age)
+        const progress = markerStrokes(writing.age) === 0 ? 0 : Math.min(4, Math.floor(along) + Math.max(1 / 24, along % 1))
+        const next = writing.age < writingAge ? progress : Math.max(written, progress)
+        writingAge = writing.age
+        if (next !== written) {
+          written = next
+          paintOfficeMarks(sheet.getContext('2d')!, written)
+          marks.needsUpdate = true
+        }
+      }
       // The lighting sliders keep their roles: ambient is the room's light, key his light from above, inner the failing tube, rim the chamber's leak.
       const ambient = settings.ambient / defaultSceneSettings.ambient
       uniforms.uGain.value = art.lightMax * ambient
@@ -198,6 +217,7 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
     dispose() {
       geometries.forEach(geometry => geometry.dispose())
       materials.forEach(material => material.dispose())
+      writingProp.dispose()
       marks.dispose()
       root.clear()
     },

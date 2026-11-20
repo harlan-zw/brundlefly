@@ -23,6 +23,7 @@ import { sceneSets } from '@brundlefly/brand/shared/scene-sets'
 import { mascotInLight } from '@brundlefly/brand/shared/scene-set'
 import type { BuiltSet, SceneSet, SetArt, SetMascot, SetName } from '@brundlefly/brand/shared/scene-set'
 import { advanceEntrance, entranceAct, entranceLight, startEntrance } from '@brundlefly/brand/shared/office-entrance'
+import type { BoardWriting } from '@brundlefly/brand/shared/office-writing'
 import type { Entrance } from '@brundlefly/brand/shared/office-entrance'
 import { advanceTravel, startTravel, travelShade } from '@brundlefly/brand/shared/set-travel'
 import type { Travel } from '@brundlefly/brand/shared/set-travel'
@@ -620,7 +621,7 @@ watch(canvas, async (element) => {
     figure.rotation.y = meshPose ? 0 : stroll.heading
     // The audio hears scene time twice a second, so the office tube buzzes when its light flickers.
     if (environmentMotion.value) { elapsed += delta; if (Math.floor(elapsed * 2) !== Math.floor((elapsed - delta) * 2)) emit('time', elapsed) }
-    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value, light })
+    let writing: BoardWriting | undefined
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
     // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.
@@ -654,6 +655,7 @@ watch(canvas, async (element) => {
       const tending = habit?.mannerism._tag === 'TendJar' && !talking && habit.age > 1.2
       if (tending && !workTending) emit('action', 'JarBubbles')
       workTending = tending
+      if (habit?.mannerism._tag === 'WriteBoard' && !talking) writing = { age: habit.age, writer: figure, side: station === undefined || station >= 0 ? 1 : -1 }
       const strokes = habit?.mannerism._tag === 'WriteBoard' && !talking ? markerStrokes(habit.age) : 0
       if (strokes > workStrokes) emit('action', 'MarkerSqueak')
       workStrokes = strokes
@@ -676,6 +678,7 @@ watch(canvas, async (element) => {
       if (meshPose) meshPose({ ...input, stepInPlace: turn.steps, stepPhase: turn.phase }, watch, turn.heading)
       else if (mascot._tag === 'Relief') mascot.update(input)
     }
+    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value, light, writing })
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
     if (mascot._tag === 'Mesh' && footShadows.length) {
