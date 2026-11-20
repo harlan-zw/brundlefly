@@ -628,6 +628,8 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
       if (!graph || status._tag !== 'Running' || muted || !visible) { fade = restingFade(value); return }
       fade = turnFade(fade, value, graph.context.currentTime)
       if (!graph.ambiences.has(value)) buildAmbience(graph, value, 0)
+      // The scene draws a new set at this moment, and the page can stall. The whole fade goes to the audio clock at once.
+      followFade(graph, graph.context.currentTime)
     },
     /** The scene's time in seconds. The scene reports it while it moves, and the tube's buzz follows it. */
     setSceneTime(seconds: number) {

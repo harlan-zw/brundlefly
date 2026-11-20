@@ -101,6 +101,25 @@ test('a journey plays both ambiences through the cross-fade, then stops the one 
   assert.equal(count.steady, 0)
 })
 
+test('a page that stalls as the set changes cannot hold the fade', async () => {
+  const { audio, count, targets, clock, context } = stage()
+  await audio.activate()
+  const cave = count.steady
+  clock(1)
+  audio.setAmbience('Office')
+  // No tick has run. The whole fade is on the audio clock already.
+  const set = shares(targets)
+  assert.ok(set.some(target => target.value === 0 && target.time >= context.currentTime + ambienceFadeSeconds - 0.06))
+  assert.ok(set.some(target => target.value === 1 && target.time >= context.currentTime + ambienceFadeSeconds - 0.06))
+  assert.ok(set.every(target => target.time <= context.currentTime + ambienceFadeSeconds + 0.06))
+  // The page stalls for three seconds. Its next tick finds the fade done, and stops the cave.
+  context.currentTime += 3
+  clock(0.05)
+  assert.ok(count.steady > 0 && count.steady !== cave)
+  assert.equal(count.rooms, 2)
+  await audio.dispose()
+})
+
 test('a journey that turns back in the fade keeps both ambiences and builds nothing new', async () => {
   const { audio, count, clock } = stage()
   await audio.activate()
