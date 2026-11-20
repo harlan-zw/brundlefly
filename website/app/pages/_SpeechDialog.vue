@@ -11,7 +11,7 @@ import { voiceDuration } from '#shared/scene-audio'
 import { travelAction } from '#shared/travel'
 import type { SetName } from '@brundlefly/brand/shared/scene-set'
 
-const { open, place, travelling = false, muted = false, soundAvailable = true } = defineProps<{ open: boolean, place: SetName, travelling?: boolean, muted?: boolean, soundAvailable?: boolean }>()
+const { open, place, foundDark = false, travelling = false, muted = false, soundAvailable = true } = defineProps<{ open: boolean, place: SetName, foundDark?: boolean, travelling?: boolean, muted?: boolean, soundAvailable?: boolean }>()
 const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: Pick<ConversationReply, 'mood' | 'beat'>], pending: [value: boolean], travel: [to: SetName] }>()
 // The app's own action: it takes him to the other place. It is no reply, so it sends nothing and leaves the conversation as it is.
 // During a journey the action waits. It keeps the keyboard focus, so it is marked as unavailable and not disabled.
@@ -143,7 +143,7 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value, ch
   const response = kind === 'visit'
     ? $fetch<unknown>('/api/visit', { signal: controller.signal, retry: 0, timeout: 20_000 }).then((value) => {
         const visit = parseVisit(value)
-        return visit._tag === 'Ok' ? { _tag: 'Reply' as const, value: chooseOpening({ ...visit.value, hour: new Date().getHours(), place }) } : { _tag: 'Error' as const, status: undefined }
+        return visit._tag === 'Ok' ? { _tag: 'Reply' as const, value: chooseOpening({ ...visit.value, hour: new Date().getHours(), place, foundDark }) } : { _tag: 'Error' as const, status: undefined }
       })
     : $fetch<{ reply: ConversationReply }>('/api/dialogue', {
         method: 'POST', signal: controller.signal, retry: 0, timeout: 20_000,

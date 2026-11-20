@@ -135,15 +135,16 @@ const officeOpenings: Opening[] = [
   { line: 'I was told to take leave. I took the eggs instead.', beat: 'One wing twitches.', mood: 'amused',
     choices: ['How are the eggs?', 'Are you all right?', 'What do you make here?'] },
 ]
-// This approved line says he has just put the lights on. It waits until the office can start dark, or it would contradict what the visitor saw.
-const officeHeld: Opening[] = [
+// This approved line says he has just put the lights on. He says it only to a visitor who found the office dark and saw him at the switch.
+// To any other visitor it would contradict what they saw.
+const officeLights: Opening[] = [
   { line: 'The lights were off because I see better without them now. I put them on for you.', beat: 'He looks toward the light.', mood: 'neutral',
     choices: ['What is this place?', 'Are you all right?', 'I just came to look.'] },
 ]
-export const heldOfficeOpenings = (): ConversationReply[] => officeHeld.map(seed)
 
 /** What the site knows about a visit. The server verifies the count and the return. The hour is the browser's own and never leaves it. */
-export type VisitFacts = { ordinal: number; returning: boolean; hour: number | undefined; place: SetName }
+/** `foundDark` is true when this visit's office started dark and he put the lights on. The stage reports it, and it never leaves the browser. */
+export type VisitFacts = { ordinal: number; returning: boolean; hour: number | undefined; place: SetName; foundDark: boolean }
 /** Reads the server's visit reply. The count and the return are the two facts the server verifies. */
 export const parseVisit = (value: unknown): Result<Pick<VisitFacts, 'ordinal' | 'returning'>> =>
   record(value) && typeof value.ordinal === 'number' && Number.isInteger(value.ordinal) && value.ordinal > 0 && typeof value.returning === 'boolean'
@@ -155,9 +156,10 @@ const late = (hour: number | undefined) => hour !== undefined && (hour >= 23 || 
  * The count picks between a condition's lines, so a reopened dialog keeps its opening.
  * `preset` is the cached branch of the opening, or -1 when its choices get live replies.
  */
-export const chooseOpening = ({ ordinal: count, returning, hour, place }: VisitFacts): { reply: ConversationReply; preset: number } => {
+export const chooseOpening = ({ ordinal: count, returning, hour, place, foundDark }: VisitFacts): { reply: ConversationReply; preset: number } => {
   // The office has its own greetings. The return and late lines speak of the cave, so they stay there.
-  const conditional = place === 'office' ? officeOpenings : returning ? returnOpenings : late(hour) ? lateOpenings : undefined
+  const office = foundDark ? officeLights : officeOpenings
+  const conditional = place === 'office' ? office : returning ? returnOpenings : late(hour) ? lateOpenings : undefined
   if (!conditional) return { reply: openingReply(count), preset: openingIndex(count) }
   const opening = seed(conditional[count % conditional.length]!)
   return { reply: { ...opening, text: `You're my ${ordinal(count)} visitor today. ${opening.text}` }, preset: -1 }

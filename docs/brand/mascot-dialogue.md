@@ -198,7 +198,8 @@ The owner approved the six lines on 2026-11-20. The approval covers the lines on
 Each beat is one the scene already performs, and each choice is one a cave greeting already offers, so the office adds no other visible text.
 The count picks one of the first five. A return visit and a late hour do not change it, because those lines speak of the cave.
 These openings have no precomputed replies. Each choice gets a live reply.
-The sixth line says he has just put the lights on. It waits in `website/shared/conversation.ts` until the office can start dark.
+The sixth line says he has just put the lights on. He says it only when this visit's office started dark and the visitor saw him at the switch.
+The stage reports that, and it never leaves the browser. After a journey, with reduced motion, or on a later load in the session, the office is lit and he uses the first five.
 
 | Line after the count | Beat | Mood | Three visitor choices | Shown |
 | --- | --- | --- | --- | --- |
@@ -207,7 +208,7 @@ The sixth line says he has just put the lights on. It waits in `website/shared/c
 | Mind the floor. I do the eggs first, then the paperwork. The paperwork is easier to keep warm. | He glances at the eggs. | amused | What's inside them? / What do you make here? / Should I be worried? | Yes |
 | They moved my desk nearer the door after the experiment. I try not to read into it. | He tilts his head. | neutral | Are you all right? / What is this place? / Tell me what you do. | Yes |
 | I was told to take leave. I took the eggs instead. | One wing twitches. | amused | How are the eggs? / Are you all right? / What do you make here? | Yes |
-| The lights were off because I see better without them now. I put them on for you. | He looks toward the light. | neutral | What is this place? / Are you all right? / I just came to look. | Not yet |
+| The lights were off because I see better without them now. I put them on for you. | He looks toward the light. | neutral | What is this place? / Are you all right? / I just came to look. | After a dark entrance |
 
 ### Approved openings outside the rotation
 
