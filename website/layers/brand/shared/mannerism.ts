@@ -67,7 +67,7 @@ const shapes: Record<MannerismTag, Shape> = {
   ReachSwitch: { duration: 1.9, attack: 0.5, release: 0.55, motion: (e, _age, side) => {
     const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
     return { calm: e * 0.5, turns: {
-      [shoulder]: [-0.72 * e, 0, 0.5 * e * side], [elbow]: [-0.5 * e, 0, 0], [hand]: [-0.3 * e, 0, 0],
+      [shoulder]: [-0.8 * e, 0, 0.92 * e * side], [elbow]: [-0.5 * e, 0, 0], [hand]: [-0.3 * e, 0, 0],
       head: [0.05 * e, 0.75 * e * side, 0], chest: [0.08 * e, 0.1 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
   } },
   // A small hello: his head tips, and the long claw on `side` lifts beside his face and opens twice. The wings give one short buzz.

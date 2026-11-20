@@ -104,7 +104,7 @@ export const officePlan: OfficePlan = {
   // The plate hangs on the door's wall, on the side nearer the viewer.
   lightSwitch: [5.47, -0.7, -0.4],
   // He starts in front of the test chamber window, so its light edges him. The switch is a short walk to his left.
-  entrance: { start: [1.9, -1.2], stand: [4.27, -1.43], facing: 1.3 },
+  entrance: { start: [1.75, -0.9], stand: [4.14, -0.98], facing: 1.3 },
 }
 
 /**
