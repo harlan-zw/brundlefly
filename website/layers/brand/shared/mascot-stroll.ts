@@ -1,3 +1,5 @@
+import { swingShare } from './mascot-legs.ts'
+
 type Point = readonly [number, number]
 /** `waypoint` names the stop. `age` keeps counting while a visitor holds his attention, so a habit there still finishes. */
 export type StrollActivity = { _tag: 'Walking' } | { _tag: 'Pausing', remaining: number, duration: number, waypoint: number, age: number }
@@ -12,6 +14,8 @@ export type Stroll = {
   heading: number
   gaze: Gaze
   activity: StrollActivity
+  /** The ground he covers while one foot carries him, as a world vector. Zero while he stands. A full body places its feet by it. */
+  stance: Point
 }
 /** `cadence` is how far the walk cycle advances, in radians, for each unit he travels. A full body derives it from its stride. */
 export type StrollInput = { delta: number, route: readonly Point[], pauses: readonly number[], walkSpeed: number, attention: StrollAttention, cadence?: number }
@@ -20,7 +24,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 const approach = (value: number, target: number, rate: number, delta: number) => value + (target - value) * Math.min(1, delta * rate)
 
 export const startStroll = (position: Point, destination: number): Stroll => ({
-  position, destination, speed: 0, phase: 0, heading: 0, gaze: { yaw: 0, tilt: 0 }, activity: { _tag: 'Walking' },
+  position, destination, speed: 0, phase: 0, heading: 0, gaze: { yaw: 0, tilt: 0 }, activity: { _tag: 'Walking' }, stance: [0, 0],
 })
 
 function gazeTarget(state: Stroll, route: readonly Point[], attention: StrollAttention): Gaze {
@@ -58,7 +62,10 @@ export function advanceStroll(state: Stroll, { delta, route, pauses, walkSpeed, 
     activity = { _tag: 'Pausing', remaining: duration, duration, waypoint: destination, age: 0 }
     destination = (destination + 1) % route.length
   }
+  // One foot carries him for this share of a walk cycle.
+  const carried = step > 0 && cadence > 0 ? (2 - swingShare) * Math.PI / cadence : 0
   const moved: Stroll = { ...state, position, destination, speed, activity, phase: state.phase + step * cadence,
+    stance: carried > 0 ? [dx / distance * carried, dz / distance * carried] : [0, 0],
     heading: approach(state.heading, activity._tag === 'Walking' && distance > 0 ? dx / distance * 0.2 : 0, 3, delta) }
   const gaze = gazeTarget(moved, route, attention)
   return { ...moved, gaze: { yaw: approach(state.gaze.yaw, gaze.yaw, 4, delta), tilt: approach(state.gaze.tilt, gaze.tilt, 4, delta) } }
@@ -69,6 +76,7 @@ export const strollPose = (state: Stroll, walkSpeed: number) => ({
   gait: walkSpeed > 0 ? clamp(state.speed / walkSpeed, 0, 1) : 0,
   walkPhase: state.phase,
   gaze: state.gaze,
+  stance: state.stance,
 })
 
 /** His direction of travel as a turn about the vertical. Zero faces the viewer and a positive turn faces screen right. */

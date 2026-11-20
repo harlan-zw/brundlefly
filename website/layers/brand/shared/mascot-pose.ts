@@ -20,6 +20,12 @@ export type MascotPoseInput = {
   gait?: number, walkPhase?: number, gaze?: { yaw: number, tilt: number }
   /** Steps in place, for a full body that turns where it stands: how far each foot lifts, from 0 to 1, and the cycle of those steps. */
   stepInPlace?: number, stepPhase?: number
+  /**
+   * The ground he covers while one foot carries him, in world units: x to screen right and z toward the viewer. Only a full body uses it.
+   * With it, each foot holds its place on the floor from frame to frame and steps to where his travel takes it.
+   * Without it, the pose depends on this input alone: he walks on the spot, as on a treadmill.
+   */
+  stance?: readonly [x: number, z: number]
   speaking?: number, blink?: number, brow?: number, squint?: number, eyes?: EyeFocus, mannerism?: MannerismPose
 }
 /** Whole-figure motion and face inputs that the pose produces beside the joint turns. */
