@@ -1,9 +1,11 @@
 // Run every print check on the delivered STL files and write validation-report.json.
 //
-//   node validate.ts [--dir /abs/dir/with/stl] [--work /abs/scratch/dir] [--name brundlefly-jar]
+//   node validate.ts [--dir /abs/dir/with/stl] [--work /abs/scratch/dir] [--name brundlefly-jar] [--heights 87.2,109.0]
 //
 // --name is the first part of the two STL file names. With a name other than brundlefly,
 // the report is <name>-validation-report.json, so it does not replace the report of the main files.
+// --heights gives the height of each file in millimetres, for a model with a print stand under the figure.
+// Without it, the two files must be 80 and 100 mm tall.
 // Checks: Blender mesh checks and 3D Print Toolbox on the reimported STL,
 // a voxel thickness check, and two PrusaSlicer slices (with and without supports).
 import { execFileSync } from 'node:child_process'
@@ -11,7 +13,16 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { homedir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 
-interface Args { dir: string, work: string, name: string }
+interface Args { dir: string, work: string, name: string, heights: [number, number] }
+
+function parseHeights(text: string | undefined): [number, number] {
+  if (text === undefined)
+    return [80, 100]
+  const heights = text.split(',').map(Number)
+  if (heights.length !== 2 || heights.some(height => !Number.isFinite(height) || height <= 0))
+    throw new Error(`--heights takes two heights in millimetres, such as 87.2,109.0. It got "${text}".`)
+  return [heights[0]!, heights[1]!]
+}
 
 function parseArgs(argv: string[]): Args {
   const value = (flag: string, fallback: string) => {
@@ -20,8 +31,11 @@ function parseArgs(argv: string[]): Args {
   }
   const dir = value('--dir', import.meta.dirname)
   // The Flatpak apps reach the home folder only, so the work folder is under home.
-  const named = argv.indexOf('--name')
-  return { dir, work: value('--work', join(homedir(), '.cache', 'brundlefly-validate')), name: named >= 0 && argv[named + 1] ? argv[named + 1] : 'brundlefly' }
+  const text = (flag: string) => {
+    const i = argv.indexOf(flag)
+    return i >= 0 ? argv[i + 1] : undefined
+  }
+  return { dir, work: value('--work', join(homedir(), '.cache', 'brundlefly-validate')), name: text('--name') ?? 'brundlefly', heights: parseHeights(text('--heights')) }
 }
 
 function run(cmd: string, args: string[]): string {
@@ -68,8 +82,8 @@ function main(args: Args): void {
     const supported = slice(stl80, join(work, 'supported.gcode'), true)
     const report = {
       note: 'Automated checks only. A print service has not approved this model. Slicer values are for a generic 0.4 mm FDM profile, not a tested TPU profile.',
-      mesh_80mm: blenderChecks(stl80, join(work, 'mesh-80.json'), 80),
-      mesh_100mm: blenderChecks(stl100, join(work, 'mesh-100.json'), 100),
+      mesh_80mm: blenderChecks(stl80, join(work, 'mesh-80.json'), args.heights[0]),
+      mesh_100mm: blenderChecks(stl100, join(work, 'mesh-100.json'), args.heights[1]),
       thickness_80mm: thickness(stl80, join(work, 'thickness-80.json')),
       slice_80mm: {
         profile: '0.2 mm layers, 0.4 mm nozzle, 3 walls, 15% gyroid infill',

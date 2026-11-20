@@ -22,6 +22,7 @@ import bmesh
 import bpy
 import numpy as np
 import openvdb as vdb
+from mathutils import Vector
 from mathutils.kdtree import KDTree
 
 sys.dont_write_bytecode = True   # keep __pycache__ out of the asset folder
@@ -46,15 +47,20 @@ SLOT_MIN_MM3 = 0.1            # a narrower slot smaller than this is a skin fold
 SLOT_NARROWED_MM = 0.3        # the pose made a slot if its walls came this much closer
 WING_ROOT_MM = 3.0            # the posed print model braces this much of each wing, from the body outward
 WING_ROOT_GROWTH_MM = 0.35    # the brace, on each side of the membrane
-SOLE_CUT_MM = 0.6             # with no base, the bed plane lies this far above the lowest point of the feet
-SOLE_PRINT_MM = 1.6           # the thickness of the sole that each foot gets on that plane, at the 80 mm scale: the print minimum
-SOLE_SHADOW_MM = 2.4          # the outline of a sole is the foot as seen from above, up to this height over the bed
-SOLE_CLOSE_MM = 2.5           # gaps in that outline narrower than twice this are closed: the gaps between the toes
-SOLE_CONTACT_MM2 = 150.0      # each sole meets the bed over this area at least, at the 80 mm scale, as each foot met the base
-SOLE_RIM_MM = 1.2             # each sole reaches this far past the outline of its foot, so the figure stands more firmly
-SOLE_MARGIN_MAX_MM = 2.4      # the rim may grow to this much to reach that area
-SOLE_LEAN = 0.6               # the side of a sole moves inward by this share of its height
-SOLE_STRAY_MM = 2.5           # solid this far from the skin of a foot is not a foot
+FLOAT_GRID_MM = 16.0          # with no base, the grid is this much higher: a figure that hangs is longer than one that stands
+STAND_GAP_MM = 7.0            # the print stand, at the 100 mm scale: the lowest point of the figure is this far above the plate
+STAND_PLATE_MM = 1.2          # the thickness of the plate
+STAND_SHAFT_MM = 2.5          # the diameter of a post
+STAND_NECK_MM = 1.2           # the diameter of a post where it meets the body
+STAND_NECK_LONG_MM = 1.0      # the length of that neck
+STAND_TAPER_MM = 1.5          # the post narrows to the neck over this length
+STAND_NECK_IN_MM = 0.4        # the neck ends this far inside the body, so the two are one piece
+STAND_NECK_ROOM_MM = 0.6      # in the field: a post is clear if nothing is in its way up to this far under the body
+STAND_RIM_MM = 3.0            # the plate reaches this far past the outermost post
+STAND_FOOT_APART_MM = 6.0     # the two posts under one foot stand at least this far apart
+STAND_POST_APART_MM = 12.0    # the post under the pelvis stands at least this far from each post under a foot
+STAND_STURDY_MM = 3.0         # the body must be solid this far above the post under the pelvis
+STAND_TIP_DEGREES = 24.0      # the plate is wide enough for this much tilt, by the centre of mass of the figure
 
 
 def parse():
@@ -77,12 +83,15 @@ def parse():
     ap.add_argument("--dimples", action="store_true", help="add pilot dimples for hand-implanted bristles")
     ap.add_argument("--dump-field", action="store_true", help="also write field.npz, for measuring joints, and with --stance pose.npz, for measuring the pose")
     ap.add_argument("--stance", help="print model only: pose the solid into this stance of the website model, such as source/stance.json")
-    ap.add_argument("--no-base", action="store_true", help="print model with --stance only: no base. The figure stands on its own flat soles.")
+    ap.add_argument("--no-base", action="store_true", help="print model with --stance only: no base. The export scales the figure alone to 80 and 100 mm.")
+    ap.add_argument("--print-stand", action="store_true", help="with --no-base: a plate on the bed and thin posts up to the figure, to cut off after the print")
     args, _ = ap.parse_known_args(argv)
     if args.stance and args.variant != "print":
         ap.error("--stance poses the print model only. The website model takes its stance in export_model.py.")
     if args.no_base and not args.stance:
-        ap.error("--no-base needs --stance. The build finds the two feet through the skeleton of the stance.")
+        ap.error("--no-base needs --stance. A figure with no base hangs, and the straight stand does not.")
+    if args.print_stand and not args.no_base:
+        ap.error("--print-stand needs --no-base. The model with the base stands on its base.")
     return args
 
 
@@ -1095,6 +1104,9 @@ def pose_solid(f, stance, joints, eyes, heights):
     # point follows most, the same points in the straight stand with their normals, and each joint
     # before and after the pose.
     spots = [name for name in joints if name in arm.pose.bones]
+    # The far end of a bone rides on that bone: "left-foot-end" is where the toes of the left foot begin.
+    ends = [name for name in joints if name.endswith("-end") and name[:-4] in arm.pose.bones]
+    carried = [(arm.pose.bones[name[:-4]].matrix @ arm.data.bones[name[:-4]].matrix_local.inverted()) @ Vector(joints[name]) for name in ends]
     # Also the small copy with its skin weights, in the millimetres of the joints. A pose can be tried on it in seconds.
     groups = [g.name for g in proxy.vertex_groups]
     weights = np.zeros((len(proxy.data.vertices), len(groups)), dtype=np.float32)
@@ -1104,9 +1116,9 @@ def pose_solid(f, stance, joints, eyes, heights):
     proxy_faces = np.empty(len(proxy.data.polygons) * 3, dtype=np.int32)
     proxy.data.polygons.foreach_get("vertices", proxy_faces)
     parents = {bone.name: bone.parent.name if bone.parent else "" for bone in arm.data.bones}
-    record["posed"] = {"points": surface, "owner": owner, "rest": rest / to_rig + lift, "normals": normals, "joints": np.array(spots),
-                       "joints_rest": np.array([joints[name] for name in spots]) / to_rig + lift,
-                       "joints_posed": back(np.array([arm.pose.bones[name].head for name in spots])),
+    record["posed"] = {"points": surface, "owner": owner, "rest": rest / to_rig + lift, "normals": normals, "joints": np.array(spots + ends),
+                       "joints_rest": np.array([joints[name] for name in spots + ends]) / to_rig + lift,
+                       "joints_posed": back(np.array([arm.pose.bones[name].head for name in spots] + carried)),
                        "proxy_points": vertex_array(proxy.data), "proxy_faces": proxy_faces.reshape(-1, 3), "proxy_weights": weights,
                        "proxy_groups": np.array(groups), "proxy_parents": np.array([parents[name] for name in groups]),
                        "joint_mm_per_field_mm": to_rig, "joint_floor_mm": floor}
@@ -1131,16 +1143,16 @@ def skin_tree(points):
     return tree
 
 
-def fuse_slots(f, skin, straight, owner):
-    """Fill each slot that the pose made narrower than SLOT_MM. Returns a record of each slot filled.
+def fuse_slots(f, skin, straight, owner, width=SLOT_MM):
+    """Fill each slot that the pose made narrower than `width`. Returns a record of each slot filled.
 
-    A closing fills every slot under SLOT_MM: the solid grows by half of it and shrinks back.
+    A closing fills every slot under that width: the solid grows by half of it and shrinks back.
     Most of what it fills is the sculpted folds of the skin, which the straight model has too.
     Those stay. A slot is filled only where the pose brought its walls together: the skin points
     around it were farther apart in the straight stand. skin and straight are the same points
     after and before the pose. owner names the joint that each point follows most.
     """
-    half = SLOT_MM / 2
+    half = width / 2
     shape = tuple(int(n) for n in f.n)
     grid = vdb.FloatGrid(float(BAND))
     grid.copyFromArray(np.ascontiguousarray(f.F / f.h, dtype=np.float32))
@@ -1217,78 +1229,105 @@ def brace_wing_roots(f, skin, owner):
     return float(int((f.F[box] < 0).sum()) - before) * f.h ** 3
 
 
-def nearest_distance(cells, targets, chunk=2000):
-    """For each cell of a 2D grid, the distance in cells to the nearest target cell."""
-    out = np.empty(len(cells))
-    for start in range(0, len(cells), chunk):
-        part = cells[start:start + chunk, None, :] - targets[None, :, :]
-        out[start:start + chunk] = np.sqrt((part ** 2).sum(axis=2).min(axis=1))
-    return out
+def lift_solid(f, voxels):
+    """Move the solid up by a whole number of voxels. Empty space comes in below."""
+    if voxels == 0:
+        return
+    for grid, empty in ((f.F, float(BAND) * f.h), (f.M, 0), (f.S, 0)):
+        moved = np.roll(grid, voxels, axis=2)
+        if voxels > 0:
+            moved[:, :, :voxels] = empty
+        else:
+            moved[:, :, voxels:] = empty
+        grid[...] = moved
 
 
-def stand_on_soles(f, skin, owner):
-    """Give a figure with no base two flat soles to print from and to stand on. Returns the bed height and a record.
+def clear_below(f, x, y, z, radius, floor):
+    """True if a post of this radius can stand under the point (x, y, z): no solid in its way down to `floor`.
 
-    The bed is a level plane SOLE_CUT_MM above the lowest point of the feet: the print starts there.
-    A bare foot meets that plane on a few toes only. So each foot gets a thin sole: its own outline,
-    seen from above, with the gaps between the toes closed and a rim of SOLE_RIM_MM around it. The sole
-    is SOLE_PRINT_MM thick on the print. The rim is for balance: the figure tips over the edge of its soles, and its mass is high.
-    If a sole is still smaller than SOLE_CONTACT_MM2 at the 80 mm scale, the rim grows.
-    Only the feet may reach the bed. A hand or a wing that hangs that low would be cut flat.
-    skin is the posed surface. owner names the joint that each of its points follows most.
+    The last STAND_NECK_ROOM_MM under the point do not count. The neck of the post is thin there, and the body curves in.
     """
-    foot = np.char.endswith(owner, "-foot")
-    lowest = float(skin[foot, 2].min())
-    bed = lowest + SOLE_CUT_MM
-    k0, k1 = int(round((bed - f.lo[2]) / f.h)), int(round((bed + SOLE_SHADOW_MM - f.lo[2]) / f.h))
-    top = float(f.ax[2][np.nonzero((f.F < 0).any(axis=(0, 1)))[0].max()])
-    to_print = bm.HEIGHT_MM / (top - bed)                     # the export scales the figure to this height
-    tree, sides = skin_tree(skin[foot]), np.char.partition(owner[foot], "-")[:, 0]
-    slab = np.argwhere(f.F[:, :, :k1 + 1] < 0)
-    shadow = {"left": set(), "right": set()}
-    for x, y, k in slab.tolist():
-        _, index, distance = tree.find((f.lo[0] + x * f.h, f.lo[1] + y * f.h, f.lo[2] + k * f.h))
-        if distance > SOLE_STRAY_MM:
-            if k <= k0:
-                raise SystemExit(f"A part that is not a foot reaches the bed at {[round(float(f.lo[i] + c * f.h), 1) for i, c in enumerate((x, y, k))]}. Lift it in the stance.")
-        elif k >= k0:
-            shadow[sides[index]].add((x, y))
-    thick = SOLE_PRINT_MM / to_print
-    record = {"bed_mm": round(bed, 3), "sole_cut_mm": SOLE_CUT_MM, "soles": {}}
-    reach = int(math.ceil((SOLE_CLOSE_MM + SOLE_MARGIN_MAX_MM) / f.h)) + 3
-    plates = []
-    for side, cells in shadow.items():
-        cells = np.array(sorted(cells))
-        lo = cells.min(axis=0) - reach
-        size = cells.max(axis=0) + reach + 1 - lo
-        inside = np.zeros(tuple(size), dtype=bool)
-        inside[tuple((cells - lo).T)] = True
-        grid = np.argwhere(np.ones_like(inside))
-        # The outline with the gaps between the toes closed: grown by SOLE_CLOSE_MM, then shrunk by as much.
-        out = nearest_distance(grid, cells - lo).reshape(inside.shape) * f.h
-        grown = out <= SOLE_CLOSE_MM
-        back = nearest_distance(grid, np.argwhere(~grown)).reshape(inside.shape) * f.h
-        past = np.where(grown, SOLE_CLOSE_MM - back, out)        # distance past the closed outline, negative inside it
-        plates.append((side, lo, past, len(cells) * f.h ** 2))
-    # One margin for both feet: the rim, or more if a sole would be smaller than the wanted area.
-    margin = SOLE_RIM_MM
-    while margin < SOLE_MARGIN_MAX_MM and min(float((past < margin).sum()) * f.h ** 2 for _, _, past, _ in plates) * to_print ** 2 < SOLE_CONTACT_MM2:
-        margin += f.h / 2
-    Z = f.ax[2][None, None, k0 - 1:k0 + int(math.ceil(thick / f.h)) + 4]
-    for side, lo, past, bare in plates:
-        box = (slice(int(lo[0]), int(lo[0] + past.shape[0])), slice(int(lo[1]), int(lo[1] + past.shape[1])), slice(k0 - 1, k0 - 1 + Z.shape[2]))
-        # The side of a sole leans inward as it rises, so it reads as skin and not as a plate.
-        plate = np.maximum(past[:, :, None] - margin + (Z - bed) * SOLE_LEAN, Z - (bed + thick))
-        f.add(plate, box, 0.3, bm.FLESH)
-        record["soles"][side] = {"bare_outline_mm2": round(bare * to_print ** 2, 1)}
-    middle = (skin[foot & np.char.startswith(owner, "left"), 0].mean() + skin[foot & np.char.startswith(owner, "right"), 0].mean()) / 2
-    on_bed = f.F[:, :, k0] < 0
-    left = f.ax[0] < middle if skin[foot & np.char.startswith(owner, "left"), 0].mean() < middle else f.ax[0] >= middle
-    record["sole_margin_mm"] = round(margin, 2)
-    record["soles"]["left"]["contact_mm2"] = round(float(on_bed[left].sum()) * f.h ** 2 * to_print ** 2, 1)
-    record["soles"]["right"]["contact_mm2"] = round(float(on_bed[~left].sum()) * f.h ** 2 * to_print ** 2, 1)
-    record["scale_to_print"] = round(float(to_print), 4)
-    return bed, record
+    reach = int(math.ceil(radius / f.h))
+    i, j = int(round((x - f.lo[0]) / f.h)), int(round((y - f.lo[1]) / f.h))
+    k0, k1 = int(round((floor - f.lo[2]) / f.h)), int(round((z - STAND_NECK_ROOM_MM - f.lo[2]) / f.h))
+    if i - reach < 0 or j - reach < 0 or i + reach >= f.n[0] or j + reach >= f.n[1] or k1 <= k0:
+        return False
+    return bool((f.F[i - reach:i + reach + 1, j - reach:j + reach + 1, k0:k1] > 0.0).all())
+
+
+def lowest_clear_point(f, points, radius, floor, sturdy=0.0):
+    """The lowest of these skin points that a post can reach from below, or None.
+
+    With `sturdy`, the body must be solid and deep for that many millimetres above the point: a post does not go under a thin stub.
+    """
+    for index in np.argsort(points[:, 2]).tolist():
+        x, y, z = points[index]
+        if sturdy and (f.sample(bm.V(x, y, z + sturdy / 2)) > -0.3 * sturdy or f.sample(bm.V(x, y, z + sturdy)) > -0.4 * sturdy):
+            continue
+        if clear_below(f, x, y, z, radius, floor):
+            return points[index]
+    return None
+
+
+def add_print_stand(f, skin, owner, joints, to_print):
+    """A plate on the bed and thin posts up to the figure, so a figure with no foot on the floor can be printed. Returns a record.
+
+    The figure of the jar variant hangs: its toes point down and nothing of it is level. A slicer
+    can support it, but its first layers would be a few toe tips. The stand gives the print a wide
+    first layer and holds the figure upright while it grows. It is cut off after the print.
+    Each foot gets a post under its toes and a post under its heel, or under a second toe if the
+    heel is hidden from below. One more post goes under the pelvis if a clear way up exists. A post narrows to a short neck where it meets the body, so
+    flush cutters or a twist remove it and the mark is small.
+    The plate is a disc under the centre of mass, wide enough for STAND_TIP_DEGREES of tilt.
+    Sizes are given for the 100 mm print. to_print is the scale from the field to the 80 mm print.
+    skin is the posed surface, owner the joint that each point follows most, joints the posed joints by name.
+    """
+    size = lambda at_100: at_100 / (to_print * 1.25)              # a length of the 100 mm print, in the millimetres of the field
+    plate_top = size(STAND_PLATE_MM)
+    shaft, neck = size(STAND_SHAFT_MM) / 2, size(STAND_NECK_MM) / 2
+    spots = []
+    for side in ("left", "right"):
+        mine = skin[owner == f"{side}-foot"]
+        ankle, toes = joints[f"{side}-foot"], joints[f"{side}-foot-end"]
+        along = (mine - ankle) @ ((toes - ankle) / np.linalg.norm(toes - ankle)) / np.linalg.norm(toes - ankle)
+        toe = lowest_clear_point(f, mine, shaft + f.h, plate_top)
+        if toe is None:
+            raise SystemExit(f"No clear way from the plate up to the {side} foot. Change the stance, so the foot is not above another part.")
+        spots.append((f"{side} toes", toe))
+        # The second post goes under the heel. A foot that points down hides its heel from below.
+        # Then the post goes under another part of the foot, away from the first post.
+        heel = lowest_clear_point(f, mine[along < 0.25], shaft + f.h, plate_top)
+        if heel is not None and np.linalg.norm(heel[:2] - toe[:2]) >= size(STAND_FOOT_APART_MM):
+            spots.append((f"{side} heel", heel))
+            continue
+        apart = np.linalg.norm(mine[:, :2] - toe[:2], axis=1) >= size(STAND_FOOT_APART_MM)
+        other = lowest_clear_point(f, mine[apart], shaft + f.h, plate_top)
+        if other is None:
+            raise SystemExit(f"No clear way from the plate up to a second place on the {side} foot.")
+        spots.append((f"{side} foot, second toe", other))
+    # A post under the pelvis, clear of the posts at the feet, steadies the body from front to back.
+    hips = skin[np.isin(owner, ("pelvis", "left-hip", "right-hip"))]
+    far = np.array([min(float(np.linalg.norm(p[:2] - q[:2])) for _, q in spots) for p in hips]) > size(STAND_POST_APART_MM)
+    point = lowest_clear_point(f, hips[far], shaft + f.h, plate_top, sturdy=size(STAND_STURDY_MM)) if far.any() else None
+    if point is not None:
+        spots.append(("pelvis", point))
+
+    solid = f.F < 0
+    cells = solid.sum(axis=(1, 2)).astype(np.float64), solid.sum(axis=(0, 2)).astype(np.float64), solid.sum(axis=(0, 1)).astype(np.float64)
+    centre = np.array([float((count * axis).sum() / count.sum()) for count, axis in zip(cells, f.ax)])
+    radius = max(math.tan(math.radians(STAND_TIP_DEGREES)) * centre[2],
+                 max(float(np.linalg.norm(p[:2] - centre[:2])) for _, p in spots) + shaft + size(STAND_RIM_MM))
+    sl, X, Y, Z = f.box(bm.V(centre[0] - radius, centre[1] - radius, 0.0), bm.V(centre[0] + radius, centre[1] + radius, plate_top), 3 * f.h)
+    f.add(np.maximum(np.sqrt((X - centre[0]) ** 2 + (Y - centre[1]) ** 2) - radius, Z - plate_top), sl, 0.1, bm.SLIME)
+    posts = []
+    for part, (x, y, z) in spots:
+        f.tube([bm.V(x, y, plate_top - 2 * f.h), bm.V(x, y, z - size(STAND_NECK_LONG_MM + STAND_TAPER_MM)), bm.V(x, y, z - size(STAND_NECK_LONG_MM)), bm.V(x, y, z + size(STAND_NECK_IN_MM))],
+               [shaft, shaft, neck, neck], k=0.1, mat=bm.SLIME)
+        posts.append({"under": part, "at_mm": [round(float(c) * to_print, 1) for c in (x, y, z)], "height_mm": round(float(z - plate_top) * to_print, 1)})
+    at = lambda scale: {"plate_mm": round(STAND_PLATE_MM * scale, 2), "plate_across_mm": round(2 * radius * to_print * 1.25 * scale, 1), "shaft_mm": round(STAND_SHAFT_MM * scale, 2),
+                        "neck_mm": round(STAND_NECK_MM * scale, 2), "neck_long_mm": round(STAND_NECK_LONG_MM * scale, 2)}
+    return {"at_100mm": at(1.0), "at_80mm": at(0.8), "plate_centre_mm": [round(float(c) * to_print, 1) for c in centre[:2]],
+            "centre_of_mass_height_mm": round(float(centre[2]) * to_print, 1), "posts": posts, "positions": "millimetres of the 80 mm print, from the bed"}
 
 
 def carried_colours(colour_fn, skin, straight, normals):
@@ -1320,7 +1359,7 @@ def main():
 
     verts, tris, dropped = load_largest_shell(args.source)
     scale = FIGURE_MM / (verts[:, 2].max() - verts[:, 2].min())
-    f = bm.Field(LO, HI, h)
+    f = bm.Field(LO, HI + np.array([0.0, 0.0, FLOAT_GRID_MM if args.no_base else 0.0]), h)
     shape = tuple(int(n) for n in f.n)
 
     def place(points_mm):
@@ -1432,18 +1471,38 @@ def main():
             placed, pose = pose_solid(f, stance, joints, [(c, r) for c, r in found if c is not None], heights)
             placed = [placed.pop(0) if c is not None else (None, None) for c, _ in found]
             dump = pose.pop("posed")
+            grow = 1.0
+            if args.no_base:
+                # The figure alone is 80 mm tall on the print. Its lowest point goes to the height that the stand needs,
+                # or just above the bed. A long figure is printed smaller than the field, so its thin parts grow more.
+                low, high = float(dump["points"][:, 2].min()), float(dump["points"][:, 2].max())
+                to_print = bm.HEIGHT_MM / (high - low)
+                want = (STAND_PLATE_MM + STAND_GAP_MM) / (to_print * 1.25) if args.print_stand else 2 * h
+                lift = int(round((want - low) / h))
+                lift_solid(f, lift)
+                for name in ("points", "joints_posed"):           # the straight stand stays where the sheet views show it
+                    dump[name][:, 2] += lift * h
+                placed = [(c if c is None else c + bm.V(0, 0, lift * h), turn) for c, turn in placed]
+                grow = max(1.0, 1.0 / to_print)
             if args.dump_field:
                 np.savez_compressed(os.path.join(args.out, "pose.npz"), **dump)
             # A turned joint stretches the skin beside it, and a stretched membrane is thinner. So thin parts grow once more.
-            pose["max_growth_after_pose_mm"] = round(thicken(f, args.min_radius, args.max_growth), 3)
+            pose["max_growth_after_pose_mm"] = round(thicken(f, args.min_radius * grow, args.max_growth * grow), 3)
             pose["wing_root_brace_mm3"] = round(brace_wing_roots(f, dump["points"], dump["owner"]), 1)
-            pose["slots_filled"] = fuse_slots(f, dump["points"], dump["rest"], dump["owner"])
+            pose["slots_filled"] = fuse_slots(f, dump["points"], dump["rest"], dump["owner"], SLOT_MM * grow)
             if getattr(f, "colour_fn", None) is not None:
                 f.colour_fn = carried_colours(f.colour_fn, dump["points"], dump["rest"], dump["normals"])
             stats["stance"] = {"file": os.path.basename(args.stance), **pose}
-        bed = 0.0
         if args.no_base:
-            bed, stats["soles"] = stand_on_soles(f, dump["points"], dump["owner"])
+            heights = surface_of(f)[0][:, 2]
+            low, high = float(heights.min()), float(heights.max())
+            to_print = bm.HEIGHT_MM / (high - low)
+            stats["figure"] = {"scale_to_print": round(to_print, 4), "thin_parts_grow_by": round(grow, 3), "print_height_mm": {"80mm": 80.0, "100mm": 100.0}}
+            if args.print_stand:
+                stats["print_stand"] = add_print_stand(f, dump["points"], dump["owner"], dict(zip(dump["joints"].tolist(), dump["joints_posed"])), to_print)
+                # The figure alone keeps its height. The stand comes on top of it: the mesher scales from the bed to the highest point.
+                bm.HEIGHT_MM *= high / (high - low)
+                stats["figure"]["print_height_mm"] = {"80mm": round(bm.HEIGHT_MM, 2), "100mm": round(bm.HEIGHT_MM * 1.25, 2)}
         else:
             stats["base"] = add_base(f)
         if args.dimples:
@@ -1455,7 +1514,7 @@ def main():
     if face is not None:
         anchors["anchor-face"] = face
     Z = f.ax[2][None, None, :]
-    f.F = np.maximum(f.F, (bed if printing else 0.0) - Z).astype(np.float32)          # flat underside
+    f.F = np.maximum(f.F, -Z).astype(np.float32)          # flat underside
     if args.dump_field:
         np.savez_compressed(os.path.join(args.out, "field.npz"), solid=np.packbits(f.F < 0), shape=f.n, lo=f.lo, h=f.h)
 

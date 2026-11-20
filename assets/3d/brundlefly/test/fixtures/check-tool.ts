@@ -34,6 +34,7 @@ if (args.includes('org.blender.Blender')) {
     volume_cm3: 2,
     self_intersecting_face_pairs: 0,
     passes_mesh_checks: !failed,
+    expected_height_mm: Number(value('--expect-height')),
   }
   if (failed)
     Object.assign(report, { [check]: check === 'height_ok' ? false : check === 'volume_cm3' ? 0 : 2 })

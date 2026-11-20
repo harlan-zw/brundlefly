@@ -24,6 +24,9 @@ def stability(mesh):
     """Centre of mass against the footprint on the bed. The margin is positive when the figure stands."""
     com = mesh.center_mass
     foot = mesh.vertices[mesh.vertices[:, 2] < 0.05][:, :2]
+    if len(foot) < 3 or min(foot.max(axis=0) - foot.min(axis=0)) < 1.0:
+        # A figure with no base and no stand touches the bed at a point or a line. It does not stand.
+        return {"centre_of_mass_mm": [round(float(c), 2) for c in com], "stands": False}
     hull = foot[ConvexHull(foot).vertices]            # counter-clockwise
     margins = []
     for i in range(len(hull)):
