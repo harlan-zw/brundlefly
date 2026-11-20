@@ -7,7 +7,7 @@ export const mainsHz = 60
 export const ballastHz = mainsHz * 2
 export const scanHz = 15734
 
-// Stage gains, set by offline rendering at the default mix. The office averages about -39 dBFS, 10 dB below the cave.
+// Stage gains, set by offline rendering at the default mix. The office averages about -39.6 dBFS, 10 dB below the cave.
 // The hum's harmonics from 240 Hz to 480 Hz carry it on small speakers. The whine holds under one percent of the energy.
 export const officeLevels = {
   hum: 0.024, mains: 0.0046, buzz: 0.021, flicker: 0.18,

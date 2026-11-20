@@ -455,11 +455,25 @@ The earlier sprite relief remains a useful visual reference for the body.
 | website/layers/brand/shared/face.ts | Face geometry, projection, weights, and expression updates |
 | website/app/pages/_SceneLoading.vue | Branded loading surface with reduced motion support |
 | website/app/pages/_SceneAudio.vue | Trusted input, mute control, and audio lifecycle |
-| website/shared/scene-audio.ts | Local ambient synthesis and mascot phrase envelopes |
+| website/shared/scene-audio.ts | The audio graph: the cave ambience, the voice, each set's room, and the cross-fade |
+| website/shared/set-ambience.ts | The ambience each set names, the cross-fade state, and the scene clock |
+| website/shared/office-ambience.ts | The office's layers, event times, tube buzz, and room response |
+| website/shared/audio-shot.ts | A short sound as data, and the one player for it |
+| website/shared/action-sounds.ts | Key click, marker squeak, and jar bubbles. Nothing plays them yet. |
 
 Audio starts after trusted input. M toggles sound outside text fields. The dialog also has a sound button.
 Mascot phrases use synthesized tones. They require no microphone, speech service, or account.
-The room breathes, drones, drips, gurgles, and groans through one cave echo. Its sound sits mostly above 200 Hz, so laptop and phone speakers can play it.
+Each set names its ambience, and the sound follows the set that stands.
+A journey cross-fades the two ambiences with equal power over the 0.9 seconds the picture takes to return. The fade starts when the scene has changed the set.
+The cave breathes, drones, drips, gurgles, and groans through one cave echo. Its sound sits mostly above 200 Hz, so laptop and phone speakers can play it.
+The office tubes hum at 120 Hz, twice a 60 Hz supply, with harmonics to 600 Hz and a little buzz. Four fifths of the office's energy sits above 200 Hz.
+A computer adds a soft fan and a faint 15.7 kHz screen whine. The whine holds under one percent of the energy.
+Slow air moves in the ventilation, and a wall clock ticks each second, barely audible.
+A water cooler, a distant door, and a chair sound at irregular times. The times are a function of audio time, so every visit hears the same ones.
+The faulty tube buzzes louder when its light flickers. The buzz reads the light's function in office-flicker.ts on the scene's own clock.
+The office room is small, hard, and dry: its response ends in a third of a second. The cave's echo runs for 2.4 seconds.
+The office averages about -39.6 dBFS at the default mix, 10 dB below the cave, and peaks near -20 dBFS.
+His voice plays through the room of the set he is in.
 The voice is a strained saw with two vowel formants and mandible clicks. One envelope drives both the voice and the mouth.
 Reply length controls phrase duration. The voice envelope drives mouth movement.
 
