@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { PerspectiveCamera, Quaternion, Vector3 } from 'three'
-import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '../layers/brand/shared/camera-view.ts'
+import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveDialogClearance, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '../layers/brand/shared/camera-view.ts'
 
 test('mouse look permits a full turn and limits pitch before the view flips', () => {
   const view = rotateCameraView(defaultCameraView, Math.PI * 2 / 0.0028, 10000)
@@ -236,4 +236,17 @@ test('a view turned away from the mascot swings to his face without a snap', () 
     assert.ok(facing(shots.at(-1)!).angleTo(focus.target.clone().sub(focus.position)) < 1e-6, 'The blend must finish looking at his face.')
     assert.ok(facing(shots[0]!).angleTo(from.target.clone().sub(from.position)) < 1e-6, 'The blend must start from the free view.')
   }
+})
+
+test('a journey with the dialog open moves the wide view by half of what the dialog covers', () => {
+  // A phone: the dialog covers 326 of 844 pixels. The middle of the view must move up by 163 pixels.
+  const phone = resolveDialogClearance(390, 844, 50)
+  assert.ok(Math.abs(Math.tan(phone.pitch) / Math.tan(50 * Math.PI / 360) * 844 / 2 - 163) < 0.5)
+  assert.equal(phone.yaw, 0)
+  // A short landscape screen has its dialog at the right: 412 of 844 pixels. The view turns right, so its middle moves 206 pixels left.
+  const sideways = resolveDialogClearance(844, 390, 44)
+  assert.equal(sideways.pitch, 0)
+  assert.ok(Math.abs(Math.tan(sideways.yaw) / (Math.tan(44 * Math.PI / 360) * 844 / 390) * 844 / 2 - 206) < 0.5)
+  const desktop = resolveDialogClearance(1280, 720, 44)
+  assert.ok(desktop.pitch > 0 && desktop.yaw === 0)
 })
