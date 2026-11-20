@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { CanvasTexture, Group, Mesh, ShaderMaterial, Texture, Vector2, Vector3 } from 'three'
+import { CanvasTexture, Group, Mesh, ShaderMaterial, SkinnedMesh, Texture, Vector2, Vector3 } from 'three'
 import { createOffice } from '../layers/brand/shared/office.ts'
 import { defaultSceneSettings } from '../layers/brand/shared/scene-settings.ts'
 import { createMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
@@ -14,7 +14,7 @@ import type { Stroll } from '../layers/brand/shared/mascot-stroll.ts'
 import { advanceOfficeVisit } from '../layers/brand/shared/office-visit.ts'
 import type { WritingVisit } from '../layers/brand/shared/office-visit.ts'
 
-test('a full writing visit holds planted feet in world space and lifts steps on both trips', async () => {
+test('the default mesh approach, writing stance, and return clear floor props and reach the board', async () => {
   const result = createMeshMascot(await loadMascotModel())
   assert.equal(result._tag, 'Ok')
   if (result._tag !== 'Ok') return
@@ -32,11 +32,16 @@ test('a full writing visit holds planted feet in world space and lifts steps on 
   let largestSlide = 0
   let finished = false
   let strokes = 0
+  const floorProps = officePlan.props.filter(prop => prop.rests === 'floor').map(prop => ({
+    id: prop.id,
+    min: prop.position.map((value, axis) => value - prop.size[axis]! / 2 + 0.001),
+    max: prop.position.map((value, axis) => value + prop.size[axis]! / 2 - 0.001),
+  }))
   try {
     for (let frame = 0; frame < 60 * 40; frame++) {
       const next = advanceOfficeVisit(stroll, visit, { delta: 1 / 60, route: officePlan.stops.map(stop => stop.position),
         pauses: officePlan.stops.map(stop => stop.pause), walkSpeed: defaultSceneSettings.walkSpeed * 1.5,
-        attention: 'free', cadence: Math.PI * 2 / (mascot.strideLength! * writer.scale.x), facing: turn.heading, writes: true })
+        attention: 'free', cadence: Math.PI * 2 / (mascot.strideLength! * writer.scale.x), facing: turn.heading, writes: true, writing: officePlan.writing })
       stroll = next.stroll
       visit = next.visit
       turn = advanceTurn(turn, stroll, { delta: 1 / 60, walkSpeed: defaultSceneSettings.walkSpeed * 1.5, rest: 0.5, limit: 1.3, attention: 'free', stand: -2.35 })
@@ -46,8 +51,32 @@ test('a full writing visit holds planted feet in world space and lifts steps on 
         stepInPlace: turn.steps, stepPhase: turn.phase,
         mannerism: poseMannerisms(age === undefined ? [] : [{ mannerism: { _tag: 'WriteBoard' }, age, side: -1 }]) }, undefined, turn.heading)
       office.update(age === undefined ? undefined : { age, writer, side: -1 })
+      for (const prop of floorProps) {
+        const inside = writer.position.x > prop.min[0]! && writer.position.x < prop.max[0]! && writer.position.z > prop.min[2]! && writer.position.z < prop.max[2]!
+        assert.ok(!inside, `${visit?.stage._tag}: path enters ${prop.id}`)
+      }
+      {
+        writer.updateMatrixWorld(true)
+        const point = new Vector3()
+        writer.traverse(object => {
+          if (!(object instanceof Mesh)) return
+          if (object instanceof SkinnedMesh) object.skeleton.update()
+          for (let vertex = 0; vertex < object.geometry.attributes.position.count; vertex++) {
+            object.getVertexPosition(vertex, point).applyMatrix4(object.matrixWorld)
+            for (const prop of floorProps) {
+              if (point.x > prop.min[0]! && point.x < prop.max[0]! && point.y > prop.min[1]! && point.y < prop.max[1]! && point.z > prop.min[2]! && point.z < prop.max[2]!)
+                assert.fail(`${visit?.stage._tag}: mesh intersects ${prop.id} at frame ${frame}`)
+            }
+          }
+        })
+      }
       if (age !== undefined) {
-        assert.ok(Math.hypot(writer.position.x - home[0] - 0.75, writer.position.z - home[1] + 2.7) < 0.15, 'Writing starts only at the board')
+        if (age >= 0.9 && age <= 4.3) {
+          const nib = office.root.getObjectByName('whiteboard-marker')!.localToWorld(new Vector3(0, 0, -0.42))
+          const board = officePlan.props.find(prop => prop._tag === 'Whiteboard')!
+          assert.ok(Math.abs(nib.z - (board.position[2] + board.size[2] / 2 - 0.03)) < 0.06, 'The nib must touch the board during each stroke')
+          assert.ok(Math.abs(nib.x - board.position[0]) < board.size[0] / 2 - 0.06 && Math.abs(nib.y - board.position[1]) < board.size[1] / 2 - 0.06, 'The nib must stay inside the writing surface')
+        }
         strokes = Math.max(strokes, markerStrokes(age))
       }
       mascot.footContacts((place, planted, index) => {
@@ -91,7 +120,7 @@ test('each of four marker squeaks leaves fresh board ink while the hand holds a 
   writer.scale.setScalar(1.25)
   writer.add(result.mascot.root)
   const update = (age: number) => {
-    writer.position.set(-0.15, -2.2, -3.65)
+    writer.position.set(officePlan.writing.stance[0], officePlan.room.floorY, officePlan.writing.stance[1])
     result.mascot.pose!({ time: age, pressure: 0, pointer: new Vector2(), transform: 'squeeze', mannerism: poseMannerisms([{ mannerism: { _tag: 'WriteBoard' }, age, side: -1 }]) }, undefined, -2.35)
     office.update({ time: age, light: 1, settings: defaultSceneSettings, writing: { age, writer, side: -1 } })
   }

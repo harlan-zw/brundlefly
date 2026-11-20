@@ -25,6 +25,7 @@ import type { BuiltSet, SceneSet, SetArt, SetMascot, SetName } from '@brundlefly
 import { advanceEntrance, entranceAct, entranceLight, startEntrance } from '@brundlefly/brand/shared/office-entrance'
 import type { BoardWriting } from '@brundlefly/brand/shared/office-writing'
 import { advanceOfficeVisit } from '@brundlefly/brand/shared/office-visit'
+import { officePlan } from '@brundlefly/brand/shared/office-layout'
 import type { WritingVisit } from '@brundlefly/brand/shared/office-visit'
 import type { Entrance } from '@brundlefly/brand/shared/office-entrance'
 import { advanceTravel, startTravel, travelShade } from '@brundlefly/brand/shared/set-travel'
@@ -614,7 +615,7 @@ watch(canvas, async (element) => {
       const habit = pauseMannerism(stroll, roundHabits(layout.walkHabits, layout.walkAlternates, stopVisits))
       const next = advanceOfficeVisit(stroll, writingVisit, { delta, route,
         pauses: journey || act.held ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
-        cadence: meshCadence, facing: meshPose ? turn.heading : undefined,
+        cadence: meshCadence, facing: meshPose ? turn.heading : undefined, writing: officePlan.writing,
         writes: !!meshPose && standing.stage.name === 'office' && !journey && !act.held && habit?.mannerism._tag === 'WriteBoard' })
       stroll = next.stroll
       writingVisit = next.visit
