@@ -318,6 +318,8 @@ watch(canvas, async (element) => {
   let faceElapsed = 0
   // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
   const attention = { weight: 0, tilt: 0 }
+  // How much of a walk-pause habit shows. It falls to zero in a conversation and returns after it.
+  let habitWeight = 1
   // A mesh with the relief rig's joints takes the relief rig's pose code. Any other mesh plays its own clip or sway.
   const meshPose = mascot._tag === 'Mesh' ? mascot.pose : undefined
   const walks = mascot._tag === 'Relief' || meshPose !== undefined
@@ -453,7 +455,10 @@ watch(canvas, async (element) => {
       // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
       const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
       const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
-      if (habit) layers.push(habit)
+      // A habit turns his head away: to the ceiling, to a palm, to the eggs. In a conversation he faces the visitor.
+      // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
+      habitWeight = faceMotion ? habitWeight + ((paused ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
+      if (habit) layers.push({ ...habit, weight: habitWeight })
       // Directional habits turn toward the nearer egg cluster. Screen right is +x.
       const side = nearestEggs().x >= figure.position.x ? 1 : -1
       const mannerism = poseMannerisms(layers.map(layer => ({ ...layer, side })))
