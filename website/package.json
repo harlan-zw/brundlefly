@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/sync-brand.ts && nuxt dev",
     "build": "node scripts/sync-persona.ts && node scripts/sync-brand.ts && nuxt generate && pnpm kit:build && node scripts/assemble-kit.ts && vite build && cf deploy --prebuilt --dry-run",
+    "office:build": "node scripts/build-office.ts",
     "kit:dev": "node scripts/sync-brand.ts && nuxt dev apps/brand-kit",
     "kit:build": "NUXT_APP_BASE_URL=/brand-kit/ nuxt generate apps/brand-kit",
     "postinstall": "nuxt prepare",

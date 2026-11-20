@@ -15,6 +15,7 @@ type Place = readonly [x: number, y: number, z: number]
 export type Facing = '+x' | '-x' | '+z' | '-z'
 type PropShape =
   | { _tag: 'Desk' | 'Monitor' | 'Keyboard' | 'Mug' | 'Chair' | 'Whiteboard' | 'JarShelf' | 'FilingCabinet' | 'VendingMachine' | 'WallClock' | 'Door' | 'ChamberWindow' }
+  | { _tag: 'DeskLamp' | 'Papers' | 'WasteBin' | 'FireExtinguisher' | 'WallPanel' | 'Chart' | 'Corkboard' | 'StorageBox' | 'Locker' | 'CeilingVent' | 'Duct' | 'PipeRun' }
   | { _tag: 'Jar', contents: 'specimen' | 'empty' }
   | { _tag: 'CeilingTube', lamp: 'steady' | 'flickering' }
 /**
@@ -39,7 +40,7 @@ export type OfficePlan = {
 const jar = (id: string, x: number, contents: 'specimen' | 'empty'): OfficeProp =>
   ({ _tag: 'Jar', contents, id, position: [x, -0.345, -3.75], size: [0.4, 0.55, 0.4], facing: '+z', rests: { on: 'jar-shelf' } })
 const tube = (id: string, x: number, z: number, length: number, lamp: 'steady' | 'flickering'): OfficeProp =>
-  ({ _tag: 'CeilingTube', lamp, id, position: [x, 2.34, z], size: [0.16, 0.12, length], facing: '+z', rests: 'ceiling' })
+  ({ _tag: 'CeilingTube', lamp, id, position: [x, 2.33, z], size: [0.44, 0.14, length], facing: '+z', rests: 'ceiling' })
 
 export const officePlan: OfficePlan = {
   // The room reaches behind the camera, so a visitor who walks back or turns round still stands inside it.
@@ -52,18 +53,39 @@ export const officePlan: OfficePlan = {
     { _tag: 'Mug', id: 'mug', position: [-0.81, -0.825, -3.28], size: [0.25, 0.25, 0.25], facing: '+z', rests: { on: 'desk' } },
     { _tag: 'Chair', id: 'chair', position: [-4.25, -1.47, -2.7], size: [1, 1.46, 1.2], facing: '-z', rests: 'floor' },
     { _tag: 'Whiteboard', id: 'whiteboard', position: [-1.9, 0.78, -4.4], size: [3, 1.7, 0.1], facing: '+z', rests: 'wall' },
+    { _tag: 'DeskLamp', id: 'desk-lamp', position: [-3.2, -0.65, -4.05], size: [0.4, 0.6, 0.5], facing: '+z', rests: { on: 'desk' } },
+    { _tag: 'Papers', id: 'papers', position: [-2.75, -0.92, -3.45], size: [0.6, 0.06, 0.45], facing: '+z', rests: { on: 'desk' } },
+    { _tag: 'WasteBin', id: 'waste-bin', position: [-0.2, -1.95, -3.7], size: [0.4, 0.5, 0.4], facing: '+z', rests: 'floor' },
+    // The corner behind the chair: an extinguisher and a control box on the back wall, and a pinboard on the side wall.
+    { _tag: 'FireExtinguisher', id: 'fire-extinguisher', position: [-4.55, -0.75, -4.36], size: [0.3, 0.8, 0.28], facing: '+z', rests: 'wall' },
+    { _tag: 'WallPanel', id: 'wall-panel', position: [-4.55, 0.6, -4.42], size: [0.7, 0.7, 0.16], facing: '+z', rests: 'wall' },
+    { _tag: 'Corkboard', id: 'corkboard', position: [-5.47, 0.45, -3.3], size: [0.06, 1, 2], facing: '+x', rests: 'wall' },
+    // A wall chart of a fly hangs between the two stations.
+    { _tag: 'Chart', id: 'chart', position: [-0.08, 0.85, -4.48], size: [0.56, 1.12, 0.04], facing: '+z', rests: 'wall' },
     // The science station, on the right of the back wall.
     { _tag: 'JarShelf', id: 'jar-shelf', position: [2.27, -1.41, -3.765], size: [3.68, 1.58, 1.47], facing: '+z', rests: 'floor' },
     jar('jar-1', 1.25, 'specimen'), jar('jar-2', 1.71, 'specimen'), jar('jar-3', 2.17, 'empty'), jar('jar-4', 2.7, 'specimen'), jar('jar-5', 3.4, 'specimen'),
     { _tag: 'ChamberWindow', id: 'chamber-window', position: [2.28, 0.95, -4.4], size: [4.1, 1.9, 0.1], facing: '+z', rests: 'wall' },
-    { _tag: 'WallClock', id: 'wall-clock', position: [-0.07, 1.97, -4.4], size: [0.48, 0.48, 0.1], facing: '+z', rests: 'wall' },
+    { _tag: 'WallClock', id: 'wall-clock', position: [-0.07, 1.87, -4.4], size: [0.48, 0.48, 0.1], facing: '+z', rests: 'wall' },
+    // Lockers fill the corner between the window and the door.
+    { _tag: 'Locker', id: 'locker-1', position: [4.64, -0.7, -4.14], size: [0.56, 3, 0.7], facing: '+z', rests: 'floor' },
+    { _tag: 'Locker', id: 'locker-2', position: [5.21, -0.7, -4.14], size: [0.56, 3, 0.7], facing: '+z', rests: 'floor' },
+    // Under the ceiling: two pipes along the back wall, a duct along the left wall, and a vent.
+    { _tag: 'PipeRun', id: 'pipe-run', position: [0.325, 2.29, -4.36], size: [10.35, 0.22, 0.28], facing: '+z', rests: 'wall' },
+    { _tag: 'Duct', id: 'duct', position: [-5.2, 2.15, -0.75], size: [0.6, 0.5, 7.5], facing: '+z', rests: 'ceiling' },
+    { _tag: 'CeilingVent', id: 'ceiling-vent', position: [-3.3, 2.35, -1], size: [1, 0.1, 1], facing: '+z', rests: 'ceiling' },
     // The side walls. Only a wide screen shows them.
     { _tag: 'FilingCabinet', id: 'filing-cabinet-1', position: [-5.02, -1.05, -1.37], size: [0.96, 2.3, 1.16], facing: '+x', rests: 'floor' },
     { _tag: 'FilingCabinet', id: 'filing-cabinet-2', position: [-5.02, -1.05, -0.08], size: [0.96, 2.3, 1.16], facing: '+x', rests: 'floor' },
-    { _tag: 'Door', id: 'door', position: [5.4, -0.4, -1.75], size: [0.1, 3.6, 1.7], facing: '-x', rests: 'wall' },
-    { _tag: 'VendingMachine', id: 'vending-machine', position: [5, -0.55, 1.25], size: [1, 3.3, 1.5], facing: '-x', rests: 'floor' },
+    { _tag: 'StorageBox', id: 'storage-box-1', position: [-5.05, 0.3, -1.45], size: [0.7, 0.4, 0.9], facing: '+x', rests: { on: 'filing-cabinet-1' } },
+    { _tag: 'StorageBox', id: 'storage-box-2', position: [-5.08, 0.28, -0.05], size: [0.6, 0.36, 0.8], facing: '+x', rests: { on: 'filing-cabinet-2' } },
+    // The door's box reaches 0.4 from the wall. That holds the leaf if the door stands ajar, so his way out keeps clear of it.
+    { _tag: 'Door', id: 'door', position: [5.3, -0.4, -1.75], size: [0.4, 3.6, 1.7], facing: '-x', rests: 'wall' },
+    { _tag: 'VendingMachine', id: 'vending-machine', position: [5, -0.55, 1.9], size: [1, 3.3, 1.5], facing: '-x', rests: 'floor' },
     tube('tube-office', -1.65, -3.05, 1.8, 'steady'), tube('tube-science', 1.65, -3.05, 1.8, 'steady'), tube('tube-walk-rear', 0, -1.22, 1.46, 'steady'),
     tube('tube-walk-left', -0.7, 0.4, 1.8, 'steady'), tube('tube-walk-right', 0.7, 0.7, 1.8, 'flickering'),
+    // Two tubes light the room behind the camera, for a visitor who turns round.
+    tube('tube-rear-near', 0, 4.8, 1.8, 'steady'), tube('tube-rear-far', 0, 9.8, 1.8, 'steady'),
   ],
   start: [0.35, -0.4],
   exit: [3.1, -1],

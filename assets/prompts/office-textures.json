@@ -1,48 +1,188 @@
 {
-  "version": 1,
-  "mode": "codex exec (Codex CLI 0.169.0), built-in imagegen",
+  "version": 2,
+  "mode": "codex exec (Codex CLI 0.169.0), built-in imagegen, four runs with one palette sheet attached to each",
   "date": "2026-11-20",
-  "shared": "Use your built-in image generation tool to make 8 square texture tiles for a low-poly 3D science office in the style of a late-1990s PC game. Generate each tile as its own image. Save each one as a PNG in the current directory with the exact file name given. Then reply with one line per file: the file name and the path you saved.\n\nShared style for every tile: flat, straight-on, edge-to-edge material swatch for a 3D game texture. Chunky hand-made pixel art, as if drawn at 64 by 64 pixels and scaled up with hard square pixels. Limited palette of about 16 colours, visible dithering, no smooth gradients, no anti-aliasing, no photo detail. No perspective, no scene, no objects standing on it, no border, no vignette, no cast shadows, no strong baked lighting. Seamless tiling edges. Absolutely no text, letters, numbers, logos, symbols, or signs. Muted, slightly grimy palette built from: rust #AA604B, bruised mauve #69404B, dark chitin gray-green #343C3B, olive #777648, pale gray-green #A4B5A0, cream #E8D4A6, near-black #080B08, with a little teal #418B90 only where named.",
-  "processing": "Each 1254 px result was resized to 128 px with nearest-neighbour sampling and saved as a PNG with a 32 colour palette.",
+  "replaces": "Version 1 was eight 128 px pixel-art tiles. The owner found them too simple, so this set looks photographed and worn.",
+  "reference": "A sheet of eight flat swatches: rust #AA604B, bruise #69404B, chitin #343C3B, olive #777648, teal #418B90, cream #E8D4A6, night #080B08, wing #A4B5A0.",
+  "shared": "Use your built-in image generation tool to make texture images for a low-poly 3D research office in a PC game from 1998. Generate each texture as its own image. Save each one as a PNG in the current directory with the exact file name given. Then reply with one line per file: the file name and the path you saved.\n\nThe attached image is the colour palette. Keep every texture inside this family of colours: rust, bruised mauve, dark gray-green, olive, pale gray-green, cream, near-black, and teal only where named. Muted and a little dirty. Not saturated.\n\nShared style for every texture: it must look like a photograph of a real, used surface that an artist in 1998 scanned, cropped, and reduced to a small game texture. Photographic source, not a drawing and not cartoon pixel art. Low resolution with hard square pixels, as if 256 pixels across and scaled up without smoothing. A limited palette of about 48 colours with some dithering. Real wear: scuffs, scratches, stains, dents, chipped paint, grime in the corners. Flat, straight-on view that fills the whole image edge to edge. No perspective, no scene, no border, no frame, no vignette, no cast shadow from outside, even flat lighting. Absolutely no text, letters, numbers, logos, brand marks, or readable symbols anywhere: where a real surface would carry a label, show a blank plate, plain bars, or scribbles.",
+  "processing": [
+    "Each result was resized with nearest-neighbour sampling to the size of its place: 256 px for a tile that repeats, and the size of its cell in assets/3d/office/atlas.json for a prop texture.",
+    "Each texture was reduced to a small palette with no dithering. Each tile and each atlas cell has 16 colours or fewer. The vending machine has 48 and the pinboard 38.",
+    "office-atlas.png holds every prop texture as one indexed PNG. One white cell serves parts with a plain colour.",
+    "office-wall.png is 256 by 512 px and runs once from the ceiling to the floor. The plaster fills the upper part and the wainscot the lowest unit. A script then drew a panel seam with rivets at each edge, one cross seam, dirt toward the floor, and dust under the ceiling. The plaster and the wainscot then went back to 16 colours each.",
+    "The screen, the vending machine, the notes, and the wall chart were read at full size, and the rest on contact sheets. None carries a letter, a number, or a logo."
+  ],
   "assets": [
     {
       "file": "assets/brand/office/office-floor.png",
-      "prompt": "worn vinyl floor tiles, a 2 by 2 grid of square tiles in the swatch, pale gray-green and olive checker with dark seams, scuffs and a few stains.",
-      "transparent": false
-    },
-    {
-      "file": "assets/brand/office/office-wall.png",
-      "prompt": "painted concrete wall panel. Upper two thirds cream gone dingy, a thin dark rust stripe, lower third olive wainscot. Vertical panel seam at the left and right edges, a few rivets.",
+      "shape": "square",
+      "prompt": "worn linoleum floor seen from straight above, a 2 by 2 grid of square tiles that fills the image exactly, thin dark seams on the centre lines and on the outer edges. Two tiles pale gray-green and two tiles dull olive, in a checker. Speckled linoleum pattern, black heel scuffs, drag marks, a few dried stains, dirt in the seams. Seamless tiling edges.",
       "transparent": false
     },
     {
       "file": "assets/brand/office/office-ceiling.png",
-      "prompt": "one drop-ceiling acoustic tile, pale gray-green with small dark pinholes, dark metal grid line along the edges.",
+      "shape": "square",
+      "prompt": "a 2 by 2 grid of square acoustic drop-ceiling tiles that fills the image exactly, with a thin off-white metal grid bar on the centre lines and on the outer edges. Tiles are off-white gone yellow-gray, with fine fissures and pinholes. One tile has a brown water stain with a darker rim. Dust near the grid. Seamless tiling edges.",
       "transparent": false
     },
     {
-      "file": "assets/brand/office/office-desk.png",
-      "prompt": "desk laminate, warm rust-brown wood grain running left to right, drawn in 4 or 5 flat colours.",
+      "file": "assets/brand/office/office-wall.png",
+      "part": "plaster, above the wainscot",
+      "shape": "square",
+      "prompt": "painted plaster wall, cream paint gone dingy, faint roller marks, hairline cracks, old drips, a few smudges and scuffs, slight mottling. One plain surface with no seams, no objects. Seamless tiling edges.",
       "transparent": false
     },
     {
-      "file": "assets/brand/office/office-metal.png",
-      "prompt": "painted sheet metal of a filing cabinet, dark chitin gray-green, one horizontal panel seam across the middle, small chips and scratches, a few rivets.",
+      "file": "assets/brand/office/office-wall.png",
+      "part": "wainscot, the lowest unit of the wall",
+      "shape": "wide, twice as wide as tall",
+      "prompt": "the lower band of an office wall. Olive painted sheet-metal wainscot, with a dark rust-coloured rail along the top edge, and a dark rubber skirting strip along the bottom edge. Kick marks, scuffs, chipped paint, and dirt that gathers toward the bottom. Tiles seamlessly left to right.",
       "transparent": false
     },
     {
-      "file": "assets/brand/office/office-screen.png",
-      "prompt": "the screen of an old CRT monitor showing a science readout, near-black background, teal #418B90 and cream phosphor: a jagged line graph in the upper half, a row of vertical bars in the lower half, a few short horizontal dashes in place of text. Faint scanlines. No readable characters of any kind.",
+      "file": "assets/brand/office/office-concrete.png",
+      "shape": "square",
+      "prompt": "poured concrete wall of an industrial test chamber, dark gray-green, faint horizontal formwork lines, a few round tie holes, vertical water stains, rust streaks. Seamless tiling edges.",
       "transparent": false
     },
     {
-      "file": "assets/brand/office/office-hazard.png",
-      "prompt": "diagonal hazard stripes at 45 degrees, cream-yellow #E8D4A6 and near-black, 4 stripe pairs across the swatch, worn and chipped paint.",
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "metal",
+      "shape": "square",
+      "prompt": "painted sheet metal of old office furniture, plain mid gray with a faint green cast, fine brushed scratches, small dents, chipped paint at spots that shows darker steel, a few rust specks. One plain surface with no seams and no handles. Even tone so it can be tinted. Seamless tiling edges.",
       "transparent": false
     },
     {
-      "file": "assets/brand/office/office-door.png",
-      "prompt": "a heavy steel facility door seen straight on, filling the whole tall swatch edge to edge: bruised mauve-gray painted metal, a recessed upper panel and lower panel, a small dark window slit in the upper panel, a blank cream sign plate with nothing on it, a rust kick plate along the bottom, a handle on the right side.",
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "laminate",
+      "shape": "square",
+      "prompt": "worn desk-top laminate with a warm rust-brown wood grain that runs left to right, scratches, one faint coffee ring, a few chips. One plain surface. Seamless tiling edges.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "screen",
+      "shape": "square",
+      "prompt": "the glass face of an old CRT monitor that shows a science readout. Near-black background with a faint glow. Teal and cream phosphor: a jagged line graph in the upper half, a row of vertical bars in the lower half, a small ring gauge in one corner, and short plain dashes where text would be. Faint scanlines and slight blur of the phosphor. No readable characters of any kind.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "vending",
+      "shape": "tall, twice as tall as wide",
+      "prompt": "the front of an old snack vending machine, seen straight on, filling the image edge to edge. Bruised mauve-gray painted steel cabinet. A large glass window on the left two thirds that shows five shelves of small snack packets in muted rust, olive, teal, cream and mauve, lit from inside. On the right a column with a coin slot, a blank dark display, and two columns of plain square buttons with nothing on them. A dark delivery flap along the bottom. Scratches, dents, grime. Every packet and plate is blank: no words, no letters, no logos.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "door",
+      "shape": "tall, twice as tall as wide",
+      "prompt": "a heavy steel facility door seen straight on, filling the image edge to edge. Bruised mauve-gray painted metal, a recessed upper panel and a recessed lower panel, a small wired-glass window slit in the upper panel, a blank cream plate, a rust-stained steel kick plate along the bottom. Chipped paint at the edges, hand grime near the middle of the right side. No handle. No text.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "pod",
+      "shape": "tall, twice as tall as wide",
+      "prompt": "the front of a tall steel transport capsule in a laboratory, seen straight on, filling the image edge to edge. Dark gray-green riveted plates, a heavy door with a round porthole of thick glass that glows faint teal, a wheel latch, thick hinges on one side, a band of worn black and cream hazard stripes along the bottom. Scorch marks, oil streaks. No text.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "locker",
+      "shape": "tall, twice as tall as wide",
+      "prompt": "the door of a steel staff locker seen straight on, filling the image edge to edge. Dull olive-gray paint, a row of louvre vents near the top, a blank card holder, a recessed latch handle, dents, scratches, chipped paint, rust at the bottom edge. No text.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "panel",
+      "shape": "square",
+      "prompt": "the face of a wall-mounted electrical control box seen straight on, filling the image edge to edge. Gray-green painted steel, two round analogue dials with blank faces and a needle, a row of dark indicator lamps with one lit rust-red, three toggle switches, a blank plate, screw heads in the corners, a rust streak. No text, no numbers on the dials.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "keypad",
+      "shape": "square",
+      "prompt": "a door access keypad plate seen straight on, filling the image edge to edge. Brushed steel plate, a 3 by 4 grid of worn square buttons with blank tops, a small indicator lamp above them that glows dull red, a dark card slot below, screw heads in the corners, finger grime. No digits, no letters.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "hazard",
+      "shape": "wide, twice as wide as tall",
+      "prompt": "diagonal hazard stripes at 45 degrees painted on steel, dull cream-yellow and near-black, 6 stripe pairs across the image, the paint worn, chipped and scuffed with dirt. Tiles seamlessly left to right.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "fabric",
+      "shape": "square",
+      "prompt": "worn woven office-chair fabric, bruised mauve, coarse weave, pilling, a pale worn patch and one dark stain. One plain surface.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "organic",
+      "shape": "square",
+      "prompt": "preserved biological tissue in a specimen jar, seen close: pale wrinkled flesh with folds, mottled cream, rust and mauve, faint veins. One plain surface that fills the image. Not gory, no blood.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "paper",
+      "shape": "square",
+      "prompt": "a sheet of laboratory notes on cream paper that fills the image, seen from straight above. Wavy scribble lines in dark ink in place of handwriting, one small bar graph in teal, one hand-drawn circle in rust, a brown coffee ring, a folded corner. The scribbles must not form letters or numbers.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "diffuser",
+      "shape": "wide, twice as wide as tall",
+      "prompt": "the plastic diffuser of a fluorescent ceiling light, lit from behind, seen straight on. Warm white prismatic acrylic with a fine diamond pattern, a little yellowed, darker toward both short ends, a few dark specks of dead insects. Fills the image edge to edge.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "grille",
+      "shape": "square",
+      "prompt": "a square ceiling air-vent grille seen straight on, filling the image edge to edge. Off-white painted metal frame, horizontal louvre slats with dark gaps between them, dust and dark streaks on the slats, a screw in each corner.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "glass",
+      "shape": "square",
+      "prompt": "a pane of old laboratory safety glass seen straight on against a dark teal void: mostly dark, with two soft diagonal streaks of pale reflection, a few smears, fine scratches and dust near the edges. Fills the image edge to edge.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "plastic",
+      "shape": "square",
+      "prompt": "the moulded plastic case of an old beige desktop computer monitor, seen close and straight on. Beige plastic that has yellowed unevenly, a fine pebbled grain, grime in the grain, light scratches, one faint darker smudge. One plain surface with no vents, no buttons, no seams. Even tone so it can be tinted. Seamless tiling edges.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "corkboard",
+      "shape": "wide, twice as wide as tall",
+      "prompt": "an office cork pinboard in a thin dull metal frame, seen straight on, filling the image edge to edge. Pinned to it: a few blank cream paper notes, two curled blank photographs that show only dark blurred shapes, a rust-coloured index card, a strip of masking tape, and round pins. The cork is worn and has pin holes. Every paper is blank or carries only wavy scribble lines: no letters, no numbers.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "cardboard",
+      "shape": "square",
+      "prompt": "the side of an old brown cardboard storage box, seen straight on, filling the image edge to edge. Corrugated cardboard, soft dents, a strip of yellowed packing tape across the middle, a blank cream label plate, scuffed corners, a water stain. No print, no text, no arrows.",
+      "transparent": false
+    },
+    {
+      "file": "assets/brand/office/office-atlas.png",
+      "cell": "chart",
+      "shape": "tall, twice as tall as wide",
+      "prompt": "an old laboratory wall chart on yellowed paper, seen straight on, filling the image edge to edge. A large anatomical drawing of a housefly from above in dark ink with muted rust and teal tints: head with compound eyes, thorax, wings with veins, six legs, abdomen. Thin leader lines run from parts of the fly to small empty boxes. A smaller side-view drawing of the fly below. Fold creases, a torn corner, tape at the top corners. The boxes are empty and nothing is written: no letters, no numbers.",
       "transparent": false
     }
   ]

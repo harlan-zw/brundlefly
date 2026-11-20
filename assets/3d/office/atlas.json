@@ -1,0 +1,27 @@
+{
+  "note": "Where each prop texture lies on the office atlas, in pixels: left, top, width, height. The build script maps faces to these cells.",
+  "size": [1024, 768],
+  "cells": {
+    "metal": [0, 0, 256, 256],
+    "laminate": [256, 0, 256, 256],
+    "screen": [512, 0, 256, 256],
+    "pod": [768, 0, 128, 256],
+    "locker": [896, 0, 128, 256],
+    "vending": [0, 256, 256, 512],
+    "door": [256, 256, 256, 512],
+    "hazard": [512, 256, 256, 128],
+    "diffuser": [768, 256, 256, 128],
+    "corkboard": [512, 384, 256, 128],
+    "plastic": [768, 384, 128, 128],
+    "fabric": [896, 384, 128, 128],
+    "chart": [512, 512, 128, 256],
+    "panel": [640, 512, 128, 128],
+    "glass": [768, 512, 128, 128],
+    "organic": [896, 512, 64, 64],
+    "keypad": [960, 512, 64, 64],
+    "white": [896, 576, 64, 64],
+    "paper": [640, 640, 128, 128],
+    "grille": [768, 640, 128, 128],
+    "cardboard": [896, 640, 128, 128]
+  }
+}

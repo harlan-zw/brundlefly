@@ -72,7 +72,8 @@ function namedLidSkin(node: Object3D | undefined): LidSkin | undefined {
   if (!(node instanceof Mesh) || Array.isArray(node.material)) return undefined
   const material: Material & { color?: unknown, map?: unknown } = node.material
   if (material.name !== lidMaterialName || !(material.color instanceof Color)) return undefined
-  return { colour: material.color.clone(), map: material.map instanceof Texture ? material.map : undefined }
+  // The colour stays the material's own, so a host that shades the model again reaches the lids too.
+  return { colour: material.color, map: material.map instanceof Texture ? material.map : undefined }
 }
 /** Eyeballs and their lids, from screen left to right. Each part is optional, so a file can have eyes that aim and no lids that blink. */
 function findEyes(scene: Object3D) {
@@ -137,7 +138,7 @@ export function releaseMeshSource(scene: Object3D) {
   })
 }
 
-function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds: Box3, height: number) {
+function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds: Box3, height: number, shadeSkin: (shading: MeshShading) => void) {
   const size = bounds.getSize(new Vector3())
   const scale = height / size.y
   // The file sets where he stands. Only the height and the floor contact come from the measured bounds.
@@ -565,6 +566,14 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       if (referenceEyes || eyeNodes.length === 0) return
       referenceEyes = createReferenceEyes(eyes.flatMap(({ node, lid }) => node ? [{ node, lid }] : []), dressing)
     },
+    /**
+     * Shades him for the place he stands in. Each shading starts from the model's own colours, so a host can shade him again in another place.
+     * The lids the site built follow the skin beside each eye.
+     */
+    shade(shading: MeshShading) {
+      shadeSkin(shading)
+      referenceEyes?.matchSkin()
+    },
     /** The turn about the vertical that the file gives him at rest: the artwork's three-quarter turn. Zero for a file that cannot be turned. */
     restHeading: turns ? stanceYaw : 0,
     /** The ground one walk cycle covers, in the mascot's own units. Undefined for a file whose feet do not move with its legs. */
@@ -590,19 +599,24 @@ export type MeshShading = { tint: readonly [number, number, number], occlusion: 
  * `tint` brings the skin to that level and hue, and his own occlusion map counts for more. His wings keep their pale green, as on the relief rig.
  */
 export const meshShading: MeshShading = { tint: [0.62, 0.54, 0.52], occlusion: 1.5, untinted: ['Brundlefly-wing'] }
-function shadeBody(scene: Object3D, shading: MeshShading) {
-  const tint = new Color(...shading.tint)
-  const shaded = new Set<Material>()
+/** Records the model's own colours, and returns a function that shades them. A second shading replaces the first. */
+function shadeBody(scene: Object3D) {
+  const own = new Map<MeshStandardMaterial, Color>()
   scene.traverse((object) => {
     if (!(object instanceof Mesh)) return
     for (const material of (Array.isArray(object.material) ? object.material : [object.material]) as Material[]) {
       // The skin beside each eye is one of these materials, so the lids the site builds take the same tint.
-      if (!(material instanceof MeshStandardMaterial) || shaded.has(material)) continue
-      shaded.add(material)
+      if (material instanceof MeshStandardMaterial && !own.has(material)) own.set(material, material.color.clone())
+    }
+  })
+  return (shading: MeshShading) => {
+    const tint = new Color(...shading.tint)
+    for (const [material, colour] of own) {
+      material.color.copy(colour)
       if (!shading.untinted.includes(material.name)) material.color.multiply(tint)
       if (material.aoMap) material.aoMapIntensity = shading.occlusion
     }
-  })
+  }
 }
 
 /**
@@ -619,8 +633,9 @@ export function createMeshMascot({ scene, animations }: MeshMascotSource, height
     releaseMeshSource(scene)
     return { _tag: 'Err', reason: 'The file contains no geometry with height.' }
   }
-  if (shading) shadeBody(scene, shading)
-  return { _tag: 'Ok', mascot: assemble(scene, animations, bounds, height) }
+  const shadeSkin = shadeBody(scene)
+  if (shading) shadeSkin(shading)
+  return { _tag: 'Ok', mascot: assemble(scene, animations, bounds, height, shadeSkin) }
 }
 
 /**
