@@ -4,12 +4,11 @@ import { useDeviceOrientation, useDocumentVisibility, useElementSize, useEventLi
 import { useRoute } from '#app'
 import {
   ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
-  NoColorSpace, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion, Raycaster, RepeatWrapping, Scene, ShaderMaterial, SpotLight, SRGBColorSpace, TextureLoader,
+  PerspectiveCamera, PlaneGeometry, PointLight, Quaternion, Raycaster, Scene, ShaderMaterial, SpotLight, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
-import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
-import { loadMeshMascot, meshShading } from '@brundlefly/brand/shared/mascot-mesh'
+import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
 import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
@@ -18,7 +17,8 @@ import { resolveMascotMode } from '@brundlefly/brand/shared/mascot-mode'
 import type { MascotMode } from '@brundlefly/brand/shared/mascot-mode'
 import { createSceneFinish } from '@brundlefly/brand/shared/scene-finish'
 import { createFloorReflection } from '@brundlefly/brand/shared/floor-reflection'
-import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
+import { sceneSets } from '@brundlefly/brand/shared/scene-sets'
+import type { SetName } from '@brundlefly/brand/shared/scene-set'
 import { beatMannerism, pauseMannerism, poseMannerisms } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
 import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
@@ -28,7 +28,10 @@ import type { ConversationMood } from '#shared/conversation'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
-const { paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
+const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
+// The set is the place he stands in. It is chosen once, when the page loads.
+const stage = sceneSets[set]
+const layout = stage.layout
 const requestedMascot = useRoute().query.mascot
 const mascotMode = resolveMascotMode(requestedMascot)
 const spriteMascot = mascotMode === 'sprite'
@@ -167,53 +170,35 @@ watch(canvas, async (element) => {
   const context = element.getContext('webgl2', { alpha: false, antialias: true })
   if (!context) { status.value = { _tag: 'Fallback', reason: 'context' }; return }
   // A missing or broken model file is an error value. The relief rig then takes its place.
-  const [results, meshResult] = await Promise.all([Promise.allSettled([
-    // The tunnel's tissue is a smooth painting of the kit's pixel-art flesh tile, with every fold in the same place.
-    new TextureLoader().loadAsync('/brand/kit/lair/tunnel-diffuse.webp'),
+  const [results, setArt, meshResult] = await Promise.all([Promise.allSettled([
     new TextureLoader().loadAsync('/brand/character.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/goo-diffuse.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/chitin-diffuse.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/floor-diffuse.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/egg-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/face-skin-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/head-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
-    new TextureLoader().loadAsync('/brand/kit/lair/room-diffuse.webp'),
-    new TextureLoader().loadAsync('/brand/kit/lair/room-height.webp'),
-  ]), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, meshShading) : undefined])
-  const [surfaceResult, mascotResult, gooResult, chitinResult, floorResult, eggResult, faceResult, projectionResult, bodyProjectionResult, roomResult, roomHeightResult] = results
-  if (surfaceResult.status === 'rejected' || mascotResult.status === 'rejected' || gooResult.status === 'rejected'
-    || chitinResult.status === 'rejected' || floorResult.status === 'rejected' || eggResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || roomResult.status === 'rejected' || roomHeightResult.status === 'rejected') {
+  ]), stage.load(), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, stage.shading) : undefined])
+  const [mascotResult, faceResult, projectionResult, bodyProjectionResult] = results
+  if (mascotResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || setArt._tag === 'Err') {
     for (const result of results) {
       if (result.status === 'fulfilled') result.value.dispose()
       else console.error('Brundlefly world artwork failed to load.', result.reason)
     }
+    if (setArt._tag === 'Ok') setArt.release()
+    else for (const reason of setArt.reasons) console.error('Brundlefly world artwork failed to load.', reason)
     if (meshResult?._tag === 'Ok') meshResult.mascot.dispose()
     status.value = { _tag: 'Fallback', reason: 'art' }
     return
   }
-  const [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture, roomHeightTexture] = [
-    surfaceResult.value, mascotResult.value, gooResult.value, chitinResult.value, floorResult.value, eggResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value, roomResult.value, roomHeightResult.value,
-  ]
-  const loadedTextures = [texture, mascotTexture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture, projectionTexture, bodyProjectionTexture, roomTexture, roomHeightTexture]
-  if (!alive) { loadedTextures.forEach(value => value.dispose()); if (meshResult?._tag === 'Ok') meshResult.mascot.dispose(); return }
+  const [mascotTexture, faceTexture, projectionTexture, bodyProjectionTexture] = [mascotResult.value, faceResult.value, projectionResult.value, bodyProjectionResult.value]
+  const loadedTextures = [mascotTexture, faceTexture, projectionTexture, bodyProjectionTexture]
+  if (!alive) { loadedTextures.forEach(value => value.dispose()); setArt.release(); if (meshResult?._tag === 'Ok') meshResult.mascot.dispose(); return }
   loadedTextures.forEach(value => { value.colorSpace = SRGBColorSpace })
-  roomHeightTexture.colorSpace = NoColorSpace
-  for (const tiled of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, faceTexture]) {
-    tiled.wrapS = tiled.wrapT = MirroredRepeatWrapping
-  }
-  chitinTexture.repeat.set(2, 2)
-  floorTexture.repeat.set(5, 8)
-  roomTexture.wrapS = roomTexture.wrapT = RepeatWrapping
-  roomHeightTexture.wrapS = roomHeightTexture.wrapT = RepeatWrapping
-  roomTexture.magFilter = LinearFilter
-  roomHeightTexture.magFilter = LinearFilter
+  faceTexture.wrapS = faceTexture.wrapT = MirroredRepeatWrapping
   mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.wrapS = projectionTexture.wrapT = ClampToEdgeWrapping
   projectionTexture.magFilter = LinearFilter
   bodyProjectionTexture.wrapS = bodyProjectionTexture.wrapT = ClampToEdgeWrapping
   bodyProjectionTexture.magFilter = LinearFilter
-  // The relief mascot is pixel artwork, so it keeps hard pixels. The tissue of the lair is a surface in a lit room: hard pixels show there as a grid.
+  // The relief mascot is pixel artwork, so it keeps hard pixels.
   mascotTexture.magFilter = NearestFilter
   const image = mascotTexture.image as HTMLImageElement
   const raster = document.createElement('canvas')
@@ -241,30 +226,20 @@ watch(canvas, async (element) => {
   shownMascot.value = mascot._tag === 'Mesh' ? 'mesh' : mascotMode === 'sprite' ? 'sprite' : 'relief'
   // The mesh gets the relief rig's eyes, from the same head artwork and face skin.
   if (mascot._tag === 'Mesh') mascot.dressEyes({ projection: headProjection, skin: faceTexture })
-  const roomHeightImage = roomHeightTexture.image as HTMLImageElement
-  const roomHeightRaster = document.createElement('canvas')
-  roomHeightRaster.width = roomHeightImage.width
-  roomHeightRaster.height = roomHeightImage.height
-  const roomHeightPainter = roomHeightRaster.getContext('2d')!
-  roomHeightPainter.drawImage(roomHeightImage, 0, 0)
   const quality = resolveSceneQuality({ requested: requestedQuality, coarsePointer: touchScreen.value, cores: navigator.hardwareConcurrency,
     memory: (navigator as Navigator & { deviceMemory?: number }).deviceMemory, shortSide: Math.min(window.innerWidth, window.innerHeight) })
   shownQuality.value = quality.tier
-  const world = createWorld(texture, gooTexture, { chitin: chitinTexture, floor: floorTexture, egg: eggTexture, room: roomTexture,
-    roomHeight: { texture: roomHeightTexture, raster: roomHeightPainter.getImageData(0, 0, roomHeightRaster.width, roomHeightRaster.height) } }, quality)
   const renderer = new WebGLRenderer({ canvas: element, context, antialias: true })
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio))
-  // The floor and the walls run away from the camera at shallow angles. Without this they blur there.
-  const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
-  for (const surface of [texture, gooTexture, chitinTexture, floorTexture, eggTexture, roomTexture, roomHeightTexture]) surface.anisotropy = anisotropy
+  const world = setArt.build({ quality, anisotropy: Math.min(8, renderer.capabilities.getMaxAnisotropy()) })
   const scene = new Scene()
-  scene.background = new Color('#080B08')
-  const environment = createWetEnvironment(renderer)
-  scene.environment = environment.texture
-  const fog = new FogExp2('#080B08', 0.028)
-  scene.fog = fog
+  scene.background = new Color(stage.background)
+  const environment = stage.effects.includes('WetEnvironment') ? createWetEnvironment(renderer) : undefined
+  if (environment) scene.environment = environment.texture
+  const fog = stage.fog._tag === 'Exponential' ? { air: new FogExp2(stage.fog.colour, 0.028), scale: stage.fog.scale } : undefined
+  if (fog) scene.fog = fog.air
   scene.add(world.root)
   const figure = new Group()
   figure.scale.setScalar(1.25)
@@ -276,8 +251,8 @@ watch(canvas, async (element) => {
     const indices = mascot.mesh.geometry.index!
     for (let index = 0; index < indices.count; index++) bottom = Math.min(bottom, positions.getY(indices.getX(index)))
   }
-  const floorY = -2.2 - bottom * 1.25
-  figure.position.set(sceneLayout.mascot[0], floorY, sceneLayout.mascot[1])
+  const floorY = layout.floorLevel - bottom * 1.25
+  figure.position.set(layout.mascot[0], floorY, layout.mascot[1])
   scene.add(figure)
   const shadowGeometry = new PlaneGeometry(2.5, 1.8)
   const shadowMaterial = new ShaderMaterial({ transparent: true, depthWrite: false,
@@ -286,7 +261,7 @@ watch(canvas, async (element) => {
   })
   const shadow = new Mesh(shadowGeometry, shadowMaterial)
   shadow.rotation.x = -Math.PI / 2
-  shadow.position.y = -2.19
+  shadow.position.y = layout.floorLevel + 0.01
   scene.add(shadow)
   // The mesh has real feet. A small dark patch under each one ties it to the floor, and fades as the foot lifts.
   const footShadowGeometry = new PlaneGeometry(0.66, 0.5)
@@ -296,22 +271,22 @@ watch(canvas, async (element) => {
       fragmentShader: 'uniform float uStrength;varying vec2 vUv;void main(){float r=length((vUv-.5)*2.0);gl_FragColor=vec4(0.0,0.0,0.0,max(0.0,1.0-r*r)*.62*uStrength);}',
     }))
     patch.rotation.x = -Math.PI / 2
-    patch.position.y = -2.185
+    patch.position.y = layout.floorLevel + 0.015
     scene.add(patch)
     return patch
   }) : []
   const camera = new PerspectiveCamera(44, 1, 0.1, 50)
   // The finishing pass draws the scene through its own target. A tier without it draws straight to the canvas.
-  const finish = createSceneFinish(renderer, scene, camera, quality)
+  const finish = stage.effects.includes('Finish') ? createSceneFinish(renderer, scene, camera, quality) : undefined
   // The wet floor mirrors the room at the highest tier only: it draws the room a second time.
-  const reflection = finish && quality.reflection ? createFloorReflection(768, 432) : undefined
+  const reflection = finish && quality.reflection && stage.effects.includes('FloorMirror') ? createFloorReflection(768, 432) : undefined
   if (reflection) scene.add(reflection.mesh)
   const raycaster = new Raycaster()
   // The mesh has thin limbs with gaps between them, so its click area is its hover area. The pointer cursor and the click then agree.
   hit = mascot._tag === 'Mesh'
     ? position => overMascot((position.x + 1) * renderWidth / 2, (1 - position.y) * renderHeight / 2)
     : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
-  let stroll = startStroll(sceneLayout.mascot, 0)
+  let stroll = startStroll(layout.mascot, 0)
   // The mesh's turn about the vertical. The relief rig is flat artwork and always faces screen right.
   // His feet carry every turn, so he never spins where he stands.
   let turn = startTurn(mascot._tag === 'Mesh' ? mascot.restHeading : 0)
@@ -324,8 +299,8 @@ watch(canvas, async (element) => {
   // A mesh with the relief rig's joints takes the relief rig's pose code. Any other mesh plays its own clip or sway.
   const meshPose = mascot._tag === 'Mesh' ? mascot.pose : undefined
   const walks = mascot._tag === 'Relief' || meshPose !== undefined
-  // The mesh is a full body, so it walks a route that keeps it clear of the egg sacs.
-  const route = meshPose ? sceneLayout.meshWalk : sceneLayout.walk
+  // The mesh is a full body, so it walks a route that keeps it clear of the set's furniture.
+  const route = meshPose ? layout.meshWalk : layout.walk
   // His legs cycle once for each stride of ground he covers, so a planted foot does not slide. The relief rig keeps its own cadence.
   const stride = mascot._tag === 'Mesh' ? mascot.strideLength : undefined
   const meshCadence = stride ? Math.PI * 2 / (stride * figure.scale.x) : undefined
@@ -338,15 +313,13 @@ watch(canvas, async (element) => {
   // Only the relief rig has hand joints. The mesh performs no habit, so it never needs a hand cue.
   const leftHand = mascot.root.getObjectByName('left-hand') ?? figure
   const rightHand = mascot.root.getObjectByName('right-hand') ?? figure
-  const light = new Vector3(...sceneLayout.opening.position)
-  const eggClusters = sceneLayout.eggs.map(([x, z]) => new Vector3(x, -1.9, z))
-  // A habit's eye cue becomes a world point. Eggs resolve to the nearer cluster.
+  // A habit's eye cue becomes a world point. The set places the light, the ceiling, and the eggs. Eggs resolve to the nearer cluster.
   const cueTarget = (cue: EyeCue) => cue === 'Palm' ? rightHand.getWorldPosition(new Vector3())
     : cue === 'Claw' ? leftHand.getWorldPosition(new Vector3())
-      : cue === 'Light' ? light
-        : cue === 'Ceiling' ? figure.position.clone().add(new Vector3(0, 6, 0.5))
+      : cue === 'Light' ? world.cues.light
+        : cue === 'Ceiling' ? world.cues.ceiling(figure.position)
           : nearestEggs()
-  const nearestEggs = () => eggClusters.reduce((near, egg) => egg.distanceTo(figure.position) < near.distanceTo(figure.position) ? egg : near)
+  const nearestEggs = () => world.cues.eggs.reduce((near, egg) => egg.distanceTo(figure.position) < near.distanceTo(figure.position) ? egg : near)
   let lastTime = 0
   let looping = false
   let renderWidth = 0
@@ -368,12 +341,12 @@ watch(canvas, async (element) => {
     renderer.toneMappingExposure = settings.value.exposure
     scene.environmentIntensity = settings.value.reflections
     const aspect = renderWidth / renderHeight
-    const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(sceneLayout.camera.desktop, sceneLayout.camera.portrait, aspect)
+    const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(layout.camera.desktop, layout.camera.portrait, aspect)
     const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     focusProgress = advanceConversationFocus(focusProgress, paused, delta, reduced.value === 'reduce')
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
-    // Thicker air during a staged talk pushes the lair back behind him.
-    fog.density = settings.value.fog * fogScale * (staging ? 1 + blend * 0.7 : 1)
+    // Thicker air during a staged talk pushes the set back behind him.
+    if (fog) fog.air.density = settings.value.fog * fog.scale * fogScale * (staging ? 1 + blend * 0.7 : 1)
     if (camera.fov !== fieldOfView) { camera.fov = fieldOfView; camera.updateProjectionMatrix() }
     if (!paused) cameraView = moveCameraView(cameraView, cameraKeys, delta)
     const { alpha, beta, gamma } = orientation
@@ -386,7 +359,7 @@ watch(canvas, async (element) => {
     const tiltEase = reduced.value === 'reduce' ? 1 : Math.min(1, delta * 8)
     tilt.yaw += (tiltTarget.yaw - tilt.yaw) * tiltEase
     tilt.pitch += (tiltTarget.pitch - tilt.pitch) * tiltEase
-    const view = resolveCameraView(tiltCameraView(cameraView, tilt), framing, sceneLayout.camera.target, settings.value.zoom)
+    const view = resolveCameraView(tiltCameraView(cameraView, tilt), framing, layout.camera.target, settings.value.zoom)
     basePosition.set(...view.position)
     baseTarget.set(...view.target)
     // Frame his face clear of the dialog, so his mouth stays visible while he speaks.
@@ -430,7 +403,7 @@ watch(canvas, async (element) => {
     const along = meshPose ? Math.max(0.35, Math.cos(travelYaw(stroll, route) - turn.heading)) : 1
     const attentionNow = paused ? 'talking' as const : hovered.value ? 'noticed' as const : 'free' as const
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
-      pauses: sceneLayout.walkPauses, walkSpeed, attention: attentionNow,
+      pauses: layout.walkPauses, walkSpeed, attention: attentionNow,
       cadence: meshCadence ? meshCadence * along : undefined })
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
       const facing = { route, walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow }
@@ -455,7 +428,7 @@ watch(canvas, async (element) => {
     else {
       // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
       const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
-      const habit = faceMotion ? pauseMannerism(stroll, sceneLayout.walkHabits) : undefined
+      const habit = faceMotion ? pauseMannerism(stroll, layout.walkHabits) : undefined
       // A habit turns his head away: to the ceiling, to a palm, to the eggs. In a conversation he faces the visitor.
       // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
       habitWeight = faceMotion ? habitWeight + ((paused ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
@@ -526,7 +499,7 @@ watch(canvas, async (element) => {
     renderer.setAnimationLoop(null)
     world.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
     staging?.key.dispose(); staging?.rim.dispose(); finish?.dispose(); reflection?.dispose()
-    shadowGeometry.dispose(); shadowMaterial.dispose(); environment.dispose(); renderer.dispose()
+    shadowGeometry.dispose(); shadowMaterial.dispose(); environment?.dispose(); renderer.dispose()
     footShadowGeometry.dispose(); footShadows.forEach(patch => patch.material.dispose())
   }
   status.value = { _tag: 'Ready' }
@@ -535,7 +508,7 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-set="set" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && shownMascot === 'mesh' }" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
