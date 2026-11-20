@@ -10,8 +10,9 @@ await Promise.all(['github-banner-overhang-gross.png', 'github-social-preview.jp
   copyFile(new URL(name, source), new URL(name, target)),
 ))
 await cp(new URL('kit/', source), new URL('kit/', target), { recursive: true })
-// The office set's texture tiles. They are small on purpose: pixel art, drawn with hard pixels.
-await cp(new URL('office/', source), new URL('office/', target), { recursive: true })
+// The office set's files are site assets. The brand layer and its download do not carry them, so they leave before the layer copy below.
+const officeTarget = new URL('office/', target)
+await rm(officeTarget, { recursive: true, force: true })
 const layer = new URL('../layers/brand/', import.meta.url)
 const layerArt = new URL('public/brand/', layer)
 // The mesh mascot comes from the figurine model. The site and the kit inspector serve it only when the file exists.
@@ -33,7 +34,15 @@ else {
   await copyFile(meshSource, meshTarget)
 }
 await mkdir(layerArt, { recursive: true })
+// A copy of the office from an earlier run must not stay in the layer.
+await rm(new URL('office/', layerArt), { recursive: true, force: true })
 await cp(target, layerArt, { recursive: true })
+// The office set: its textures, its baked light map, and the model that Blender built. They are small on purpose, and drawn with hard pixels.
+const officeLimit = 1024 * 1024
+await cp(new URL('office/', source), officeTarget, { recursive: true })
+await copyFile(new URL('../../assets/3d/office/office.glb', import.meta.url), new URL('office.glb', officeTarget))
+const officeSize = (await Promise.all((await readdir(officeTarget)).map(name => stat(new URL(name, officeTarget))))).reduce((sum, file) => sum + file.size, 0)
+if (officeSize > officeLimit) throw new Error(`The office files take ${officeSize} bytes. The site limit is ${officeLimit} bytes.`)
 
 async function collectFiles(directory: URL, prefix: string): Promise<Record<string, Uint8Array>> {
   const files: Record<string, Uint8Array> = {}

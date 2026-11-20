@@ -12,9 +12,9 @@ const required = new Set<string>(pages)
 for (const name of await readdir(new URL('brand/kit/lair/', output))) {
   if (/\.(png|webp|glb)$/.test(name)) required.add(`/brand/kit/lair/${name}`)
 }
-// The office set's texture tiles. Without one, the office shows the static fallback.
+// The office set's textures, light map, and model. Without one, the office shows the static fallback.
 for (const name of await readdir(new URL('brand/office/', output))) {
-  if (name.endsWith('.png')) required.add(`/brand/office/${name}`)
+  if (/\.(png|glb)$/.test(name)) required.add(`/brand/office/${name}`)
 }
 for (const path of pages) {
   const html = await readFile(new URL(`.${path}index.html`, output), 'utf8')
