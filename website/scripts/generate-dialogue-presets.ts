@@ -23,7 +23,7 @@ const sourceHash = presetSourceHash()
 let generated = 0
 let lastStart = 0
 
-const generate = async (text: string, history: ConversationHistoryMessage[], id: string): Promise<ConversationReply> => {
+const generate = async (text: string, history: ConversationHistoryMessage[], beats: string[], id: string): Promise<ConversationReply> => {
   const file = join(scratch, `${sourceHash}-${id}.json`)
   const saved = await readFile(file, 'utf8').then(value => ({ _tag: 'Saved' as const, value })).catch((error: unknown) => {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') return { _tag: 'Missing' as const }
@@ -39,7 +39,7 @@ const generate = async (text: string, history: ConversationHistoryMessage[], id:
     lastStart = Date.now()
     const response = await fetch('http://127.0.0.1:8790/generate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, history: history.slice(-8) }), signal: AbortSignal.timeout(20_000),
+      body: JSON.stringify({ text, history: history.slice(-8), beats }), signal: AbortSignal.timeout(20_000),
     })
     if (!response.ok) throw new Error(`Generator returned HTTP ${response.status}.`)
     const completion: unknown = await response.json()
@@ -55,7 +55,8 @@ const generate = async (text: string, history: ConversationHistoryMessage[], id:
   throw new Error(`Generation failed for ${id}.`)
 }
 
-const expand = async (reply: ConversationReply, id: string, depth: number, history: ConversationHistoryMessage[]) => {
+// `beats` holds his last three beats on this path, newest first, as the live dialog sends them.
+const expand = async (reply: ConversationReply, id: string, depth: number, history: ConversationHistoryMessage[], beats: string[]) => {
   const node: Node = { id, reply: wireReply(reply), targets: [] }
   nodes.push(node)
   for (const [index, choice] of reply.choices.entries()) {
@@ -63,9 +64,9 @@ const expand = async (reply: ConversationReply, id: string, depth: number, histo
     else if (depth === PRESET_DEPTH) node.targets.push({ _tag: 'Live' })
     else {
       const nextId = `${id}-${index}`
-      const next = await generate(choice, history, nextId)
+      const next = await generate(choice, history, beats, nextId)
       node.targets.push({ _tag: 'Reply', id: nextId })
-      await expand(next, nextId, depth + 1, [...history.slice(-6), { role: 'user', content: choice }, { role: 'assistant', content: next.text }])
+      await expand(next, nextId, depth + 1, [...history.slice(-6), { role: 'user', content: choice }, { role: 'assistant', content: next.text }], [next.beat, ...beats].slice(0, 3))
     }
   }
 }
@@ -73,7 +74,7 @@ const expand = async (reply: ConversationReply, id: string, depth: number, histo
 for (const [index, reply] of presetOpenings().entries()) {
   const id = `opening-${index}`
   roots.push(id)
-  await expand(reply, id, 0, [{ role: 'assistant', content: reply.text }])
+  await expand(reply, id, 0, [{ role: 'assistant', content: reply.text }], [reply.beat])
 }
 const graph = { version: 1, sourceHash, catalog: linkIds, depth: PRESET_DEPTH, model: MODEL, roots, nodes }
 const parsed = parsePresetGraph(graph)

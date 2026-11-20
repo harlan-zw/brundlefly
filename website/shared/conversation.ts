@@ -6,7 +6,8 @@ export type ConversationReply = { text: string; beat: string; mood: Conversation
 export type ConversationHistoryMessage = { role: 'user' | 'assistant'; content: string }
 export type ConversationMessage = { _tag: 'User'; text: string } | { _tag: 'Reply'; reply: ConversationReply }
 export type Result<T> = { _tag: 'Ok'; value: T } | { _tag: 'Err'; message: string }
-export type DialogueInput = { text: string; history: ConversationHistoryMessage[] }
+/** `beats` holds his last three beats, newest first. The model reads them so it can vary his movement. */
+export type DialogueInput = { text: string; history: ConversationHistoryMessage[]; beats: string[] }
 export const dialogueCopy = {
   privacy: 'AI replies use Cloudflare and OpenAI. Avoid sharing private details.',
   // The first sentence of the approved visit note in COPY.md. The rest joins it when the site first sends a browser fact.
@@ -39,7 +40,9 @@ export const parseDialogueInput = (value: unknown): Result<DialogueInput> => {
     if (!record(message) || (message.role !== 'user' && message.role !== 'assistant') || !plain(message.content, message.role === 'user' ? 1000 : MAX_REPLY_LENGTH)) return fail(dialogueCopy.failure)
     history.push({ role: message.role, content: message.content })
   }
-  return { _tag: 'Ok', value: { text, history } }
+  const recent = value.beats ?? []
+  if (!Array.isArray(recent) || recent.length > 3 || !recent.every((beat): beat is string => typeof beat === 'string' && beats.includes(beat))) return fail(dialogueCopy.failure)
+  return { _tag: 'Ok', value: { text, history, beats: recent } }
 }
 
 export const parseDialogueReply = (value: unknown): Result<ConversationReply> => {

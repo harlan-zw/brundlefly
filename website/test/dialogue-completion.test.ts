@@ -17,7 +17,7 @@ test('truncated or malformed model output cannot become a cached or live reply',
 })
 
 test('precomputation retains dialogue context without assigning a future visitor number', () => {
-  const input = { text: 'Why does the wall heal?', history: [{ role: 'assistant' as const, content: 'The wall heals every morning.' }] }
+  const input = { text: 'Why does the wall heal?', history: [{ role: 'assistant' as const, content: 'The wall heals every morning.' }], beats: [] }
   const preset = buildDialogueRequest(input, null)
   const live = buildDialogueRequest(input, 21)
   assert.deepEqual(preset.messages.slice(1), [{ role: 'assistant', content: input.history[0]!.content }, { role: 'user', content: input.text }])
