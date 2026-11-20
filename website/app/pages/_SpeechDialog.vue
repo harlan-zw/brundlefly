@@ -143,11 +143,11 @@ const receive = async (kind: 'visit' | 'dialogue', suppliedText = text.value, ch
   const response = kind === 'visit'
     ? $fetch<unknown>('/api/visit', { signal: controller.signal, retry: 0, timeout: 20_000 }).then((value) => {
         const visit = parseVisit(value)
-        return visit._tag === 'Ok' ? { _tag: 'Reply' as const, value: chooseOpening({ ...visit.value, hour: new Date().getHours() }) } : { _tag: 'Error' as const, status: undefined }
+        return visit._tag === 'Ok' ? { _tag: 'Reply' as const, value: chooseOpening({ ...visit.value, hour: new Date().getHours(), place }) } : { _tag: 'Error' as const, status: undefined }
       })
     : $fetch<{ reply: ConversationReply }>('/api/dialogue', {
         method: 'POST', signal: controller.signal, retry: 0, timeout: 20_000,
-        body: { text: message, history: history.value.slice(-8) },
+        body: { text: message, history: history.value.slice(-8), place },
       }).then(value => ({ _tag: 'Reply' as const, value: { reply: value.reply, preset: -1 } }))
   const result = await response.catch((cause: unknown) => {
     if (controller.signal.aborted) return { _tag: 'Cancelled' as const }
