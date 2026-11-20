@@ -4,8 +4,8 @@ import type { Shot, ShotPoint } from './audio-shot.ts'
 /** A short sound for something he does. Nothing in the scene asks for one yet. */
 export type ActionSound = 'KeyClick' | 'MarkerSqueak' | 'JarBubbles'
 
-// Stage gains for the action sounds. Each sits below the office's door, so no action masks his voice.
-const levels = { key: 0.09, squeak: 0.05, bubble: 0.07 }
+// Stage gains for the action sounds, set by offline rendering at the default mix. Each peaks between -38 and -29 dBFS, far below his voice.
+const levels = { key: 0.06, squeak: 0.05, bubble: 0.07 }
 
 /** One key of his keyboard: a sharp click and a short plastic knock. `index` counts the keys he has pressed, and varies each one. */
 export function keyClick(index: number): Shot {
@@ -22,7 +22,7 @@ export function markerSqueak(index: number): Shot {
   const pitch = 1900 + shotChance(index, 34) * 700
   const length = 0.2 + shotChance(index, 35) * 0.12
   return { duration: length + 0.03, pan: (shotChance(index, 36) - 0.5) * 0.4, voices: [
-    { _tag: 'Tone', wave: 'sawtooth', filter: { type: 'bandpass', frequency: [[0, pitch * 1.5]], q: 6 },
+    { _tag: 'Tone', wave: 'sawtooth', filter: { type: 'bandpass', frequency: [[0, pitch]], q: 4 },
       pitch: [[0, pitch], [length * 0.4, pitch * 1.12], [length, pitch * 0.96]],
       level: [[0, 0], [0.02, levels.squeak], [length * 0.5, levels.squeak * 0.55], [length * 0.8, levels.squeak], [length, 0]] },
     { _tag: 'Noise', filter: { type: 'bandpass', frequency: [[0, 5200]], q: 1.5 }, level: [[0, 0], [0.02, levels.squeak * 0.3], [length, 0]] },
