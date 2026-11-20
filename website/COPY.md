@@ -143,11 +143,17 @@ Material swatches use the role labels in the shared catalogue: Background, Text 
 The scene action label is “Talk to Brundlefly”. It opens a dialog titled “Brundlefly”.
 The dialog uses “Close”, “Your text”, “Send”, and “Conversation” for its functional controls.
 Its scope note is “AI replies use Cloudflare and OpenAI. Avoid sharing private details.”
+The note also says what the site knows about a visit. The approved text is “The site can tell that this browser was here on an earlier day. It also tells him a few facts about this visit: your local hour, a Skill page you opened, your time in the lair, and whether you hovered the eggs. None of them says who you are.”
+The note shows only the first sentence of that text while the site sends him no browser fact. The other two sentences join it in the first change that sends one.
+A fact outside that list needs new approved wording before the site sends it.
 The note opens from a “!” button beside the title. The button label is “About AI replies”.
 The character prompt and starter conversations live in `docs/brand/mascot-dialogue.md`.
-The pending message is “He listens…”.
-Generation errors use “The room swallowed that reply. Try again.”.
-The retry action is “Try again”. Rate limits use “Give him a moment. Try again later.”.
+The pending message starts as “He listens…”. Later replies rotate it with six more stage directions:
+“He turns the words over…”, “All four hands go still…”, “He works his jaw…”, “He weighs a word…”, “One wing folds flat…”, and “He looks at the wall, then back…”.
+A missing reply uses “No reply came back. Your text is still here.”. A missing greeting uses “No reply came back.”.
+With a missing reply he also says one fallback line as speech. The openings and the fallback lines live in `docs/brand/mascot-dialogue.md`.
+The retry action is “Try again”. Rate limits use “Replies are limited. Wait a minute and try again, or come back after midnight UTC.”.
+An expired session uses “Your session ended and this conversation was cleared. Select “Try again” to start a new one.”.
 Choice buttons use “Your reply” as their accessible group label.
 The aside label is “Brundlefly's movement”. History uses “Conversation history”.
 Anonymous counting: “The site keeps a daily visitor session count and temporary rate-limit records. It does not save your conversation.”

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onScopeDispose, shallowRef, watch } from 'vue'
-import { useDocumentVisibility, useEventListener } from '@vueuse/core'
-import { createSceneAudio, defaultSceneAudioMix } from '#shared/scene-audio'
+import { useDocumentVisibility, useEventListener, useIntervalFn } from '@vueuse/core'
+import { createSceneAudio, createVoicePhrase, defaultSceneAudioMix, phraseVoiceEnvelope } from '#shared/scene-audio'
 import type { SceneAudioMix, SceneAudioState } from '#shared/scene-audio'
 
 const { talking, replyCount, replyLength = 120, mix = defaultSceneAudioMix } = defineProps<{ talking: boolean, replyCount: number, replyLength?: number, mix?: SceneAudioMix }>()
@@ -12,10 +12,32 @@ let audio: ReturnType<typeof createSceneAudio> | undefined
 let pendingVoice: 'open' | 'reply' | undefined
 let mounted = false
 
+// A line with no sound still moves his mouth. The voice's own syllables run on a wall clock, so one source drives the face at a time.
+// The mouth level updates every 50 ms, as the audible voice does. Each update redraws the scene, so a faster clock would draw it twice a frame.
+let mime: { started: number, duration: number, envelope: (elapsed: number) => number } | undefined
+const { pause: restMouth, resume: moveMouth } = useIntervalFn(() => {
+  if (!mime) { restMouth(); return }
+  const elapsed = (performance.now() - mime.started) / 1000
+  if (elapsed < mime.duration) { emit('voice', mime.envelope(elapsed)); return }
+  stopMime()
+}, 50, { immediate: false })
+function stopMime() {
+  if (!mime) return
+  mime = undefined
+  restMouth()
+  emit('voice', 0)
+}
+function startMime(kind: 'open' | 'reply') {
+  const phrase = createVoicePhrase(kind, replyLength, Math.random)
+  mime = { started: performance.now(), duration: phrase.duration, envelope: elapsed => phraseVoiceEnvelope(elapsed, 0, phrase.syllables) }
+  moveMouth()
+}
 function requestVoice(kind: 'open' | 'reply') {
-  if (state.value.muted) return
-  if (state.value.status._tag === 'Running') audio?.playMascot(kind, replyLength)
-  else pendingVoice = kind
+  stopMime()
+  if (!state.value.muted && state.value.status._tag === 'Running') { audio?.playMascot(kind, replyLength); return }
+  // Sound that is off, or not yet allowed by the browser, leaves the line silent. Sound that starts later takes over.
+  if (!state.value.muted) pendingVoice = kind
+  startMime(kind)
 }
 function toggle() {
   if (!audio) return
@@ -44,7 +66,7 @@ watch(visibility, value => audio?.setVisible(value === 'visible'))
 watch(() => talking, value => {
   audio?.setTalking(value)
   if (value) requestVoice('open')
-  else pendingVoice = undefined
+  else { pendingVoice = undefined; stopMime() }
 })
 watch(() => replyCount, (value, previous) => { if (talking && value > previous) requestVoice('reply') })
 watch(() => mix, value => audio?.setMix(value), { deep: true })
@@ -61,10 +83,11 @@ onMounted(() => {
       if (value.status._tag === 'Running' && pendingVoice) {
         const kind = pendingVoice
         pendingVoice = undefined
+        stopMime()
         audio?.playMascot(kind, replyLength)
       }
     },
-    onVoice: envelope => emit('voice', envelope),
+    onVoice: (envelope) => { if (!mime) emit('voice', envelope) },
     onError: error => console.error('Brundlefly scene audio failed.', error),
   })
   audio.setVisible(visibility.value === 'visible')
@@ -75,6 +98,7 @@ onMounted(() => {
 onScopeDispose(() => {
   mounted = false
   pendingVoice = undefined
+  mime = undefined
   emit('voice', 0)
   void audio?.dispose().catch(error => console.error('Brundlefly scene audio cleanup failed.', error))
 })
