@@ -1,10 +1,12 @@
 import type { Object3D, Vector3 } from 'three'
 import type { MannerismTag } from './mannerism.ts'
-import type { MeshShading } from './mascot-mesh.ts'
 import type { SceneQuality } from './scene-quality.ts'
 import type { SceneSettings } from './scene-settings.ts'
 
-/** A set is the place the mascot stands in. The scene owns the mascot, the camera, and the conversation. The set owns everything else. */
+/**
+ * A set is the place the mascot stands in. The scene owns the mascot, the camera, and the conversation. The set owns everything else.
+ * The scene can change the set while it runs. The mascot is the same in every set, so a set lights him and never reshades him.
+ */
 export type SetName = 'lair' | 'office'
 type Point = readonly [x: number, z: number]
 type Place = readonly [x: number, y: number, z: number]
@@ -15,6 +17,8 @@ export type SetLayout = {
   floorLevel: number
   /** Where he starts. */
   mascot: Point
+  /** The way out to another set: the point he walks toward when he leaves, and where he comes in. */
+  exit: Point
   /** The relief rig's walk route. */
   walk: readonly Point[]
   /** The walk route of the full-bodied mesh, which needs more room. */
@@ -57,7 +61,5 @@ export type SceneSet = {
   background: string
   fog: SetFog
   effects: readonly SetEffect[]
-  /** How the set's lights want the mesh mascot's skin shaded. */
-  shading: MeshShading
   load: () => Promise<SetArt>
 }

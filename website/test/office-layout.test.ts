@@ -79,3 +79,13 @@ test('props that share space or leave the room are reported', () => {
   // A jar on its shelf and a monitor on its desk touch what holds them. That is no overlap.
   assert.ok(!tags(officePlan).some(tag => tag.startsWith('Overlap')))
 })
+
+test('his way to the door must be clear from the start point and from every stop', () => {
+  // A plant stands on the straight walk from the last stop to the door.
+  const problems = checkOfficePlan(withProp(crate('plant', 2.2, -0.3, 0.3)), rules).filter(problem => problem._tag === 'ExitBlocked')
+  assert.ok(problems.some(problem => problem._tag === 'ExitBlocked' && problem.prop === 'plant' && problem.from === 3))
+  assert.ok(problems.some(problem => problem._tag === 'ExitBlocked' && problem.from === 'start'))
+  // The door's own point keeps clear of the door, the jars, and the vending machine.
+  const tight = checkOfficePlan({ ...officePlan, exit: [3.6, -1.6] }, rules).filter(problem => problem._tag === 'ExitBlocked').map(problem => problem.prop)
+  assert.ok(tight.includes('jar-shelf') && tight.includes('door'))
+})

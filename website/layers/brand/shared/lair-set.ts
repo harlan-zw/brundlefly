@@ -1,6 +1,5 @@
 import { LinearFilter, MirroredRepeatWrapping, NoColorSpace, RepeatWrapping, SRGBColorSpace, TextureLoader, Vector3 } from 'three'
 import type { Texture } from 'three'
-import { meshShading } from './mascot-mesh'
 import { sceneLayout } from './scene-layout'
 import type { SceneSet, SetArt } from './scene-set'
 import { createWorld } from './world'
@@ -59,11 +58,10 @@ async function loadLair(): Promise<SetArt> {
 /** The fleshy cave of the homepage: the tunnel, the egg sacs, and the wet floor. */
 export const lairSet: SceneSet = {
   name: 'lair',
-  layout: { floorLevel: -2.2, mascot: sceneLayout.mascot, walk: sceneLayout.walk, meshWalk: sceneLayout.meshWalk,
+  layout: { floorLevel: -2.2, mascot: sceneLayout.mascot, exit: sceneLayout.exit, walk: sceneLayout.walk, meshWalk: sceneLayout.meshWalk,
     walkPauses: sceneLayout.walkPauses, walkHabits: sceneLayout.walkHabits, camera: sceneLayout.camera },
   background: '#080B08',
   fog: { _tag: 'Exponential', colour: '#080B08', scale: 1 },
   effects: ['Finish', 'FloorMirror', 'WetEnvironment'],
-  shading: meshShading,
   load: loadLair,
 }

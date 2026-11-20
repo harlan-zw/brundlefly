@@ -28,6 +28,8 @@ export type OfficePlan = {
   props: readonly OfficeProp[]
   /** Where he starts. */
   start: Point
+  /** The point in front of the door. He walks to it when he leaves for another place, and comes in from it. */
+  exit: Point
   /** The loop he walks, in order. */
   stops: readonly OfficeStop[]
   /** What his habits look at: the jars for the eggs, the test chamber for the light, the flickering tube for the ceiling. */
@@ -64,6 +66,7 @@ export const officePlan: OfficePlan = {
     tube('tube-walk-left', -0.7, 0.4, 1.8, 'steady'), tube('tube-walk-right', 0.7, 0.7, 1.8, 'flickering'),
   ],
   start: [0.35, -0.4],
+  exit: [3.1, -1],
   // He crosses the room between the stations: the desk, the jars, the near left, and the flickering tube.
   stops: [
     { position: [-0.9, -0.95], pause: 3.2, habit: 'AirWriting' },
@@ -98,6 +101,8 @@ export type PlanProblem =
   | { _tag: 'Overlap', prop: string, other: string }
   | { _tag: 'RouteBlocked', prop: string, leg: number, clearance: number }
   | { _tag: 'StopCrowded', prop: string, stop: number, clearance: number }
+  /** `from` is the stop he leaves from, or the start point. */
+  | { _tag: 'ExitBlocked', prop: string, from: number | 'start', clearance: number }
   | { _tag: 'SightlineBlocked', prop: string, stop: number, viewpoint: string }
   | { _tag: 'Unreadable', prop: string, viewpoint: string, reason: 'faces-away' | 'missing' | { hiddenBy: string } }
 
@@ -156,7 +161,7 @@ const closeShot = ([x, z]: Point, floorY: number, body: PlanBody, side: 1 | -1):
   [x + side * Math.sin(0.255) * 3.2, floorY + body.height * 0.85, z + Math.cos(0.255) * 3.2]
 
 /**
- * Judges a plan. He must walk his loop clear of every prop, each camera must see all of him at every stop,
+ * Judges a plan. He must walk his loop and his way to the door clear of every prop, each camera must see all of him at every stop,
  * and the fixed cameras must see each readable prop from its front. An empty list means the plan holds.
  */
 export function checkOfficePlan(plan: OfficePlan, rules: PlanRules): PlanProblem[] {
@@ -183,6 +188,11 @@ export function checkOfficePlan(plan: OfficePlan, rules: PlanRules): PlanProblem
       if (leg < rules.legClearance - slack) problems.push({ _tag: 'RouteBlocked', prop: prop.id, leg: index, clearance: leg })
       const stand = footprintDistance(box, stop.position) - rules.body.reach
       if (stand < rules.stopClearance - slack) problems.push({ _tag: 'StopCrowded', prop: prop.id, stop: index, clearance: stand })
+    }
+    // A journey can begin anywhere on his loop. Every stop and the start are its ends, so their straight walks to the door bound the rest.
+    for (const [from, place] of [['start', plan.start] as const, ...stops.map((stop, index) => [index, stop.position] as const)]) {
+      const way = walkDistance(box, place, plan.exit) - rules.body.reach
+      if (way < rules.legClearance - slack) problems.push({ _tag: 'ExitBlocked', prop: prop.id, from, clearance: way })
     }
   }
   // Each camera must see his whole box: nine points across it, from his feet to the top of his head.

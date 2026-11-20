@@ -326,7 +326,7 @@ export function createOffice(textures: OfficeTextures, plan: OfficePlan = office
   marks.colorSpace = SRGBColorSpace
   marks.magFilter = NearestFilter
   const failing = new MeshBasicMaterial({ vertexColors: true })
-  const lit = (map?: Texture) => new MeshLambertMaterial({ map, vertexColors: true })
+  const lit = (map?: Texture) => new MeshLambertMaterial(map ? { map, vertexColors: true } : { vertexColors: true })
   const materials: Record<Surface, Material> = {
     floor: lit(textures.floor), wall: lit(textures.wall), ceiling: lit(textures.ceiling), desk: lit(textures.desk), metal: lit(textures.metal),
     hazard: lit(textures.hazard), door: lit(textures.door), paint: lit(),

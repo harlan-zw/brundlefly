@@ -1,6 +1,5 @@
 import { NearestFilter, RepeatWrapping, SRGBColorSpace, TextureLoader, Vector3 } from 'three'
 import type { Texture } from 'three'
-import type { MeshShading } from './mascot-mesh.ts'
 import { createOffice } from './office.ts'
 import { officePlan } from './office-layout.ts'
 import { sceneLayout } from './scene-layout.ts'
@@ -44,19 +43,16 @@ async function loadOffice(): Promise<SetArt> {
   }
 }
 
-/** The office's lights are plain and even. His painted skin needs less darkening here than in the lair, and his own occlusion map shapes him. */
-const officeShading: MeshShading = { tint: [0.82, 0.74, 0.72], occlusion: 1.5, untinted: ['Brundlefly-wing'] }
 const route = officePlan.stops.map(stop => stop.position)
 
 /** The research office at /office: the same mascot at his old desk. It draws no fog, no finishing pass, and no floor mirror, so it costs far less than the lair. */
 export const officeSet: SceneSet = {
   name: 'office',
   // The camera keeps the lair's framing, so the conversation shots hold. The relief rig is flat artwork and can walk the mesh's route.
-  layout: { floorLevel: officePlan.room.floorY, mascot: officePlan.start, walk: route, meshWalk: route,
+  layout: { floorLevel: officePlan.room.floorY, mascot: officePlan.start, exit: officePlan.exit, walk: route, meshWalk: route,
     walkPauses: officePlan.stops.map(stop => stop.pause), walkHabits: officePlan.stops.map(stop => stop.habit), camera: sceneLayout.camera },
   background: '#080B08',
   fog: { _tag: 'None' },
   effects: ['WetEnvironment'],
-  shading: officeShading,
   load: loadOffice,
 }
