@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { advanceStroll, startStroll, strollPose } from '../layers/brand/shared/mascot-stroll.ts'
+import { advanceHeading, advanceStroll, startStroll, strollPose, travelYaw } from '../layers/brand/shared/mascot-stroll.ts'
 import type { Stroll, StrollAttention } from '../layers/brand/shared/mascot-stroll.ts'
 
 const route = [[2, 0], [0, 0]] as const
@@ -58,4 +58,39 @@ test('before leaving a pause he looks toward the next waypoint', () => {
   })
   assert.ok(ending, 'The walk must reach the end of a pause.')
   assert.ok(strollPose(ending, 0.5).gaze.yaw < -0.05, 'The next waypoint lies toward negative x, so his head must turn that way first.')
+})
+
+test('walking, he faces his travel up to the limit; standing, he holds the three-quarter turn and turns before he leaves', () => {
+  const heading = { delta: frame, route, walkSpeed: 0.5, rest: 0.5, limit: 1.3 }
+  let yaw = 0.5
+  let widest = 0, heldWhilePaused = true, turnedWhilePaused = false
+  // The first waypoint is straight to screen right, so his travel is a quarter turn from the viewer. The second is to screen left.
+  const state = run(startStroll([0, 0], 0), 9, 'free', (value) => {
+    yaw = advanceHeading(yaw, value, heading)
+    if (value.activity._tag === 'Walking' && value.destination === 0) widest = Math.max(widest, yaw)
+    if (value.activity._tag === 'Pausing' && value.activity.waypoint === 0) {
+      if (value.activity.remaining > 0.9 && value.activity.age > 1) heldWhilePaused &&= Math.abs(yaw - 0.5) < 0.02
+      else if (value.activity.remaining < 0.1) turnedWhilePaused ||= yaw < 0
+    }
+  })
+  assert.ok(widest > 1.25 && widest <= 1.3, `He must face his travel up to the limit, not ${widest.toFixed(2)}.`)
+  assert.ok(heldWhilePaused, 'He must hold the three-quarter turn while he stands.')
+  assert.ok(turnedWhilePaused, 'The turn must begin before the walk to screen left.')
+  assert.equal(state.activity._tag, 'Walking')
+  assert.ok(yaw < -1.2, 'He must face screen left while he walks there.')
+  // A visitor stops him mid-walk. He eases back to the three-quarter turn on the side he faces.
+  let stopped = state
+  for (let elapsed = 0; elapsed < 3; elapsed += frame) {
+    stopped = advanceStroll(stopped, { delta: frame, route, pauses, walkSpeed: 0.5, attention: 'noticed' })
+    yaw = advanceHeading(yaw, stopped, heading)
+  }
+  assert.ok(Math.abs(yaw + 0.5) < 0.02)
+})
+
+test('the walk cycle advances by the cadence for each unit he travels', () => {
+  let state = startStroll([0, 0], 0)
+  for (let elapsed = 0; elapsed < 2; elapsed += frame) state = advanceStroll(state, { delta: frame, route, pauses, walkSpeed: 0.5, attention: 'free', cadence: 6 })
+  assert.ok(state.position[0] > 0.5)
+  assert.ok(Math.abs(state.phase - state.position[0] * 6) < 1e-6)
+  assert.ok(Math.abs(travelYaw(state, route) - Math.PI / 2) < 1e-6, 'A waypoint to screen right is a quarter turn from the viewer.')
 })

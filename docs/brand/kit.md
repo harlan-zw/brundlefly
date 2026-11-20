@@ -332,8 +332,29 @@ Use ?mascot=mesh on the homepage to show the full 3D model in place of the relie
 The model is the web export of the figurine. The relief rig stays the default mascot.
 The site fits the model to the height of the relief rig and puts its lowest point on the chamber floor.
 The model keeps its own origin, facing, and materials: +Y is up and the face points to +Z.
-If the file has animation clips, the site loops Brundlefly-idle. If it has none, the whole model sways about its feet.
-The model stands at the mascot start point. It does not walk, speak, or perform mannerisms.
+If the file has the relief rig's 25 body joints, each with an identity rest rotation, the site poses it with the relief rig's code.
+The model then idles, walks, speaks, and performs the same mannerisms. Its mouthpart joints drift and open with his voice.
+A full body also takes motion that would tear the relief: a longer stride with a foot lift, a pelvis that twists against the chest, forearms and wings that follow through, and a slow shift of weight while he stands. That motion is addBodyDepth in mascot-pose.ts.
+The site grounds the mesh each frame: the foot that is lower, against its own rest height, rests on the floor. So his body rises and settles with his legs, and no foot sinks into the floor.
+The mesh walks its own route, meshWalk in scene-layout.ts. It is about 2.5 units wide and 2 deep, so the relief rig's route takes it into the egg sacs.
+Nodes named Brundlefly-eye-0 and Brundlefly-eye-1 mark his eyes. The site hides each node and builds the relief rig's eye in its place.
+The built eye uses the relief rig's globe artwork, wet-eye shader, shell lids, blink, squint, and gaze. Their numbers come from referenceEyes in face.ts.
+Each node gives its eye a centre, a rest rotation, and a width. The height and depth keep the relief rig's proportions.
+So the model needs only a socket at each eye. It needs no eyeball or lid of its own.
+A model can name the skin beside an eye: it gives that eye node a material named Brundlefly-lid, with a base colour and, if it has one, a small skin texture.
+The built lids of that eye then take that skin. A lid shows the middle 44 percent of the texture, across and up.
+Without that material the lids take the relief rig's lid skin, which is the colour of the relief rig's head.
+If the head artwork or the face skin fails to load, the site keeps the file's own eyeballs and draws them with the wet-eye shader.
+It then turns the lid joints face-upper-lid-0, face-lower-lid-0, face-upper-lid-1, and face-lower-lid-1 to blink: 0.96 rad down for an upper lid and 0.96 rad up for a lower lid, the relief rig's lid travel.
+Joints named face-jaw, face-cheek-left, face-cheek-right, face-brow-0, and face-brow-1 move his face, each optional.
+His voice drops and opens the jaw and spreads the cheeks. A raised brow lifts the skin over each eye.
+The travel comes from referenceFace in face.ts, scaled to the model's own units. A file without these joints keeps a still face.
+If the file turns its top node about the vertical, the site turns that node as he moves. While he walks he faces his direction of travel, up to 1.3 rad from the viewer, so he never turns his back.
+While he stands he holds the file's three-quarter turn, to the side he last faced. He turns to the next side a little before he leaves. His head stays toward the viewer at rest.
+His legs cycle once for each stride of ground he covers. The site measures that stride from the model, so a planted foot does not slide, and it walks the mesh at 1.5 times the relief rig's speed.
+A foot that carries him stays level, so its sole lies flat on the floor.
+Any other file loops its Brundlefly-idle clip, or sways about its feet if it has no clip. That model stands at the mascot start point.
+The scene logs the joint that stopped the pose code, and reports the motion in its data-mascot-motion attribute: posed, clip, or sway.
 If the file has a joint named head, the head turns to the camera while a visitor hovers or the dialog is open. A hover also tilts it.
 A click anywhere in its hover area opens the dialog, because the model has gaps between its limbs.
 A node named Brundlefly-base is removed. An empty node named anchor-face sets the conversation close-up.
@@ -346,6 +367,8 @@ The scene element reports the visible mascot in its data-mascot attribute: relie
 | assets/3d/brundlefly/brundlefly-web.glb | GLB 2.0, 4 MiB or less | Web export of the figurine model |
 | website/scripts/sync-brand.ts | TypeScript | Copies the model to /brand/3d/ for the site and the kit, and enforces the size limit |
 | website/layers/brand/shared/mascot-mesh.ts | TypeScript | Load, fit, floor contact, idle motion, face point, and disposal |
+| website/layers/brand/shared/mascot-eyes.ts | TypeScript | The relief rig's eyes, built at the mesh's eye nodes |
+| website/layers/brand/shared/mascot-pose.ts | TypeScript | Joint turns for idle, walk, speech, and mannerisms, shared by the relief rig and the mesh |
 
 Plain GLTFLoader reads the file. Draco, meshopt, and KTX2 data need decoders that the site does not load.
 
@@ -480,7 +503,8 @@ Drag to orbit and scroll to zoom. Bones and wireframe reveal the weighted model.
 Choose Idle, Walk, or Speaking for the exported animation clips. Play, pause, change speed, or scrub time.
 Manual speech, blink, brow, and squint controls stop clip playback and show a fixed pose.
 Mapped and Sprite switch the artwork. Download GLB exports the selected rig.
-Mesh shows the full 3D model. Idle plays its clip or its sway. Walk, Speaking, the expression controls, and Download GLB apply only to the relief rig.
+Mesh shows the full 3D model. If it can take the relief rig's pose code, Idle, Walk, and Speaking pose it as the homepage does. If not, Idle plays its clip or its sway. Download GLB applies only to the relief rig.
+If the model can take the relief rig's pose code, Manual poses it from the Speech, Blink, Brow, and Squint controls.
 Bones applies only to a model with a skeleton.
 If the model file is absent, Mesh shows the mapped relief rig and the status line says so.
 

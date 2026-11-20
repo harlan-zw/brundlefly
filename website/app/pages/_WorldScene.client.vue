@@ -10,7 +10,7 @@ import {
 import { createWorld } from '@brundlefly/brand/shared/world'
 import { createMascotModel } from '@brundlefly/brand/shared/mascot'
 import { loadMeshMascot } from '@brundlefly/brand/shared/mascot-mesh'
-import { advanceStroll, startStroll, strollPose } from '@brundlefly/brand/shared/mascot-stroll'
+import { advanceHeading, advanceStroll, startStroll, strollPose, travelYaw } from '@brundlefly/brand/shared/mascot-stroll'
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
@@ -30,6 +30,8 @@ const mascotMode: MascotMode = requestedMascot === 'sprite' || requestedMascot =
 const spriteMascot = mascotMode === 'sprite'
 // The scene reports the mascot it shows. A mesh that cannot load shows the relief rig.
 const shownMascot = ref<MascotMode>()
+// How the visible mascot moves: the relief rig's pose code, the file's own clip, or a whole-body sway.
+const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
 const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
@@ -222,11 +224,14 @@ watch(canvas, async (element) => {
   bodyProjectionRaster.height = Math.round(180 * bodyProjectionImage.height / bodyProjectionImage.width)
   const bodyProjectionPainter = bodyProjectionRaster.getContext('2d')!
   bodyProjectionPainter.drawImage(bodyProjectionImage, 0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height)
+  const headProjection = { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) }
   if (meshResult?._tag === 'Err') console.warn(`The Brundlefly mesh could not load. The relief rig takes its place. ${meshResult.reason}`)
   const mascot = meshResult?._tag === 'Ok' ? meshResult.mascot : { _tag: 'Relief' as const, ...createMascotModel(mascotTexture, painter.getImageData(0, 0, raster.width, raster.height), faceTexture,
-    spriteMascot ? undefined : { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) },
+    spriteMascot ? undefined : headProjection,
     spriteMascot ? undefined : { texture: bodyProjectionTexture, raster: bodyProjectionPainter.getImageData(0, 0, bodyProjectionRaster.width, bodyProjectionRaster.height) }) }
   shownMascot.value = mascot._tag === 'Mesh' ? 'mesh' : mascotMode === 'sprite' ? 'sprite' : 'relief'
+  // The mesh gets the relief rig's eyes, from the same head artwork and face skin.
+  if (mascot._tag === 'Mesh') mascot.dressEyes({ projection: headProjection, skin: faceTexture })
   const roomHeightImage = roomHeightTexture.image as HTMLImageElement
   const roomHeightRaster = document.createElement('canvas')
   roomHeightRaster.width = roomHeightImage.width
@@ -275,10 +280,24 @@ watch(canvas, async (element) => {
     ? position => overMascot((position.x + 1) * renderWidth / 2, (1 - position.y) * renderHeight / 2)
     : position => { raycaster.setFromCamera(position, camera); return raycaster.intersectObject(mascot.root, true).length > 0 }
   let stroll = startStroll(sceneLayout.mascot, 0)
+  // The mesh's turn about the vertical. The relief rig is flat artwork and always faces screen right.
+  let heading = mascot._tag === 'Mesh' ? mascot.restHeading : 0
   let elapsed = 0
   let faceElapsed = 0
   // How far the mesh has turned its head to the visitor, and how far it has tilted. Both ease, so neither snaps.
   const attention = { weight: 0, tilt: 0 }
+  // A mesh with the relief rig's joints takes the relief rig's pose code. Any other mesh plays its own clip or sway.
+  const meshPose = mascot._tag === 'Mesh' ? mascot.pose : undefined
+  const walks = mascot._tag === 'Relief' || meshPose !== undefined
+  // The mesh is a full body, so it walks a route that keeps it clear of the egg sacs.
+  const route = meshPose ? sceneLayout.meshWalk : sceneLayout.walk
+  // His legs cycle once for each stride of ground he covers, so a planted foot does not slide. The relief rig keeps its own cadence.
+  const stride = mascot._tag === 'Mesh' ? mascot.strideLength : undefined
+  const meshCadence = stride ? Math.PI * 2 / (stride * figure.scale.x) : undefined
+  // A full body reads as heavy at about one walk cycle in 1.6 seconds. That needs more speed than the relief rig's short cycle.
+  const walkPace = meshPose ? 1.5 : 1
+  mascotMotion.value = walks ? 'posed' : mascot._tag === 'Mesh' && mascot.motion._tag === 'Clip' ? 'clip' : 'sway'
+  if (mascot._tag === 'Mesh' && mascot.poseGap) console.warn(`The Brundlefly mesh keeps its own motion. ${mascot.poseGap}`)
   let lastReaction = reaction
   let reactionStarted = 0
   // Only the relief rig has hand joints. The mesh performs no habit, so it never needs a hand cue.
@@ -337,24 +356,29 @@ watch(canvas, async (element) => {
     camera.updateMatrixWorld()
     const faceMotion = !settings.value.motionOff && reduced.value !== 'reduce'
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
-    // A mesh without a walk cycle stands where the relief rig starts.
-    if (mascot._tag === 'Relief' && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route: sceneLayout.walk,
-      pauses: sceneLayout.walkPauses, walkSpeed: settings.value.walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free' })
-    const pose = faceMotion ? strollPose(stroll, settings.value.walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
+    // A mesh without the relief rig's joints stands where the relief rig starts.
+    const walkSpeed = settings.value.walkSpeed * walkPace
+    // Only the part of his travel that lies along his facing moves his legs. He cannot turn his back, so some legs of the route are partly sideways.
+    const along = meshPose ? Math.max(0.35, Math.cos(travelYaw(stroll, route) - heading)) : 1
+    if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
+      pauses: sceneLayout.walkPauses, walkSpeed, attention: paused ? 'talking' : hovered.value ? 'noticed' : 'free',
+      cadence: meshCadence ? meshCadence * along : undefined })
+    if (mascot._tag === 'Mesh' && meshPose && faceMotion && visibility.value === 'visible') heading = advanceHeading(heading, stroll,
+      { delta, route, walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3 })
+    const pose = faceMotion ? strollPose(stroll, walkSpeed) : { gait: 0, walkPhase: stroll.phase, gaze: { yaw: 0, tilt: 0 } }
     figure.position.set(stroll.position[0], floorY, stroll.position[1])
     figure.rotation.y = stroll.heading
     if (environmentMotion.value) elapsed += delta
     world.update({ time: elapsed, pressure: paused ? 0.25 : 0, settings: settings.value })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
-    if (mascot._tag === 'Mesh') {
-      // A hovering visitor or the dialog draws his head to the camera. A hover alone adds a curious tilt, as on the relief rig.
-      // Reduced motion and Motion off keep the clip pose.
-      const ease = Math.min(1, delta * 4)
-      attention.weight = faceMotion ? attention.weight + (Number(paused || hovered.value) - attention.weight) * ease : 0
-      attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused ? 0.07 : 0) - attention.tilt) * ease : 0
-      mascot.update(faceElapsed, { target: camera.position, weight: attention.weight, tilt: attention.tilt })
-    }
+    // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.
+    // Reduced motion and Motion off keep the pose.
+    const ease = Math.min(1, delta * 4)
+    attention.weight = faceMotion ? attention.weight + (Number(paused || hovered.value) - attention.weight) * ease : 0
+    attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused ? 0.07 : 0) - attention.tilt) * ease : 0
+    const look = { target: camera.position, weight: attention.weight, tilt: attention.tilt }
+    if (mascot._tag === 'Mesh' && !meshPose) mascot.update(faceElapsed, look)
     else {
       // A dialog beat and a walk-pause habit can overlap. Reduced motion and Motion off show neither.
       const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
@@ -367,11 +391,13 @@ watch(canvas, async (element) => {
       const eyes = !faceMotion ? { _tag: 'Ahead' } as const
         : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
           : paused || hovered.value ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
-      mascot.update({ time: faceElapsed, pressure: 0, pointer, transform: 'squeeze', ...pose, eyes, mannerism,
+      const input = { time: faceElapsed, pressure: 0, pointer, transform: 'squeeze' as const, ...pose, eyes, mannerism,
         speaking: faceMotion ? speaking : 0,
         brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
           : mood === 'curious' ? 0.2 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.08 : 0,
-        squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 })
+        squint: thinking ? 0.06 : mood === 'wary' ? 0.14 : mood === 'amused' ? 0.1 : mood === 'soft' ? 0.04 : 0 }
+      if (meshPose) meshPose(input, look, heading)
+      else if (mascot._tag === 'Relief') mascot.update(input)
     }
     shadow.position.x = figure.position.x
     shadow.position.z = figure.position.z
@@ -416,7 +442,7 @@ watch(canvas, async (element) => {
 </script>
 
 <template>
-  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :aria-busy="status._tag === 'Loading'">
+  <div ref="host" class="world-scene" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-vignette" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />

@@ -9,6 +9,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createOrganismModel } from '../../shared/organism'
 import { createMascotModel } from '../../shared/mascot'
 import { loadMeshMascot, reliefStandingHeight } from '../../shared/mascot-mesh'
+import { clipPoses } from '../../shared/mascot-pose'
 import type { Presentation, Transform } from '../../shared/organism'
 
 const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform = 'squeeze', presentation = 'specimen', interactive = true, motionOff = false, exportable = false, mascot = false, framing = 'center', distance, speaking = 0, blink, brow, squint, inspector = false, bones = false, wireframe = false, clip = 'Manual', playing = false, playbackSpeed = 1, textureMode = 'mapped' } = defineProps<{
@@ -24,7 +25,7 @@ const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform 
 }>()
 const clipTime = defineModel<number>('clipTime', { default: 0 })
 type ShownMascot = 'relief' | 'sprite' | 'mesh'
-const emit = defineEmits<{ clips: [durations: Record<string, number>], shown: [mascot: ShownMascot, rigged: boolean] }>()
+const emit = defineEmits<{ clips: [durations: Record<string, number>], shown: [mascot: ShownMascot, rigged: boolean, posable: boolean] }>()
 // The component reports the mascot it shows. A mesh that cannot load shows the relief rig.
 const shownMascot = ref<ShownMascot>()
 const meshUnavailable = ref(false)
@@ -143,6 +144,16 @@ watch(canvas, async (element) => {
     console.warn(`The Brundlefly mesh could not load. The relief rig takes its place. ${meshResult.reason}`)
     meshUnavailable.value = true
   }
+  if (meshMascot && projectionTexture && faceTexture) {
+    // The mesh gets the relief rig's eyes, from the same head artwork and face skin.
+    const projectionImage = projectionTexture.image as HTMLImageElement
+    const projectionRaster = document.createElement('canvas')
+    projectionRaster.width = 180
+    projectionRaster.height = Math.round(180 * projectionImage.height / projectionImage.width)
+    const projectionPainter = projectionRaster.getContext('2d')!
+    projectionPainter.drawImage(projectionImage, 0, 0, projectionRaster.width, projectionRaster.height)
+    meshMascot.dressEyes({ projection: { texture: projectionTexture, raster: projectionPainter.getImageData(0, 0, projectionRaster.width, projectionRaster.height) }, skin: faceTexture })
+  }
   const reliefMascot = !meshMascot && mascotTexture ? (() => {
     mascotTexture.colorSpace = SRGBColorSpace
     mascotTexture.wrapS = mascotTexture.wrapT = ClampToEdgeWrapping
@@ -184,7 +195,7 @@ watch(canvas, async (element) => {
     figure.add(mascotRoot)
     scene.add(figure)
     shownMascot.value = meshMascot ? 'mesh' : textureMode === 'sprite' ? 'sprite' : 'relief'
-    emit('shown', shownMascot.value, meshMascot ? meshMascot.skinned : true)
+    emit('shown', shownMascot.value, meshMascot ? meshMascot.skinned : true, meshMascot ? meshMascot.pose !== undefined : true)
   }
   const orbit = inspector ? new OrbitControls(camera, element) : undefined
   if (orbit) {
@@ -206,7 +217,10 @@ watch(canvas, async (element) => {
   const clips = mixer && reliefMascot ? { Idle: reliefMascot.idleAnimation(), Walk: reliefMascot.walkAnimation(), Speaking: reliefMascot.speakingAnimation() } : undefined
   if (clips) emit('clips', Object.fromEntries(Object.entries(clips).map(([name, animation]) => [name, animation.duration])))
   // The mesh has one motion: its idle clip or its sway.
-  else if (inspector && meshMascot) emit('clips', { Idle: meshMascot.idleDuration })
+  // A mesh that takes the relief rig's pose code plays the same three motions. Any other mesh has one motion: its idle clip or its sway.
+  else if (inspector && meshMascot) emit('clips', meshMascot.pose
+    ? Object.fromEntries(Object.entries(clipPoses).map(([name, { duration }]) => [name, duration]))
+    : { Idle: meshMascot.idleDuration })
   let activeClip = ''
   let currentPressure = 0
   let elapsed = 0
@@ -228,11 +242,18 @@ watch(canvas, async (element) => {
     }
     model.update({ time: elapsed, pressure: currentPressure, wetness, pointer, transform,
       opening: opening + (presentation === 'lair' ? Math.min(elapsed / 2, 1) * 0.15 + approach * 0.12 : 0) })
-    if (meshMascot) {
+    const posedClip = inspector && meshMascot?.pose && clip !== 'Manual' ? clipPoses[clip] : undefined
+    if (meshMascot?.pose && posedClip) {
+      if (delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % posedClip.duration
+      meshMascot.pose(posedClip.pose(clipTime.value))
+    }
+    else if (meshMascot) {
       // Every clip except Idle shows the mesh at rest. Outside the inspector the idle motion always runs.
       const idle = !inspector || clip === 'Idle'
       if (inspector && idle && delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % meshMascot.idleDuration
       meshMascot.update(!idle ? 0 : inspector ? clipTime.value : elapsed)
+      // Manual shows the pose the controls set, when the file can take the relief rig's pose code.
+      if (!idle) meshMascot.pose?.({ time: 0, pressure: currentPressure, pointer, transform, speaking, blink: blink ?? 0, brow, squint })
     }
     else if (mixer && clips && clip !== 'Manual') {
       if (activeClip !== clip) {
