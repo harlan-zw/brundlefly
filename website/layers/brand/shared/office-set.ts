@@ -8,9 +8,8 @@ import type { SceneSet, SetArt } from './scene-set.ts'
 
 // Served copies of assets/brand/office and assets/3d/office/office.glb. The brand sync script owns them.
 const folder = '/brand/office'
-// Tiles that repeat across the room, the atlas of every prop texture, and the baked light map.
-const tiles = ['floor', 'wall', 'ceiling', 'concrete'] as const
-const pictures = [...tiles, 'atlas', 'light'] as const
+// Four tiles that repeat across the room, the atlas of every prop texture, and the baked light map.
+const pictures = ['office-floor.png', 'office-wall.png', 'office-ceiling.png', 'office-concrete.png', 'office-atlas.png', 'office-light.webp'] as const
 
 const releaseModel = (model: Object3D) => model.traverse((object) => {
   const mesh = object as Mesh<BufferGeometry, Material>
@@ -22,7 +21,7 @@ const releaseModel = (model: Object3D) => model.traverse((object) => {
 async function loadOffice(): Promise<SetArt> {
   const [file, ...results] = await Promise.allSettled([
     new GLTFLoader().loadAsync(`${folder}/office.glb`),
-    ...pictures.map(name => new TextureLoader().loadAsync(`${folder}/office-${name}.png`)),
+    ...pictures.map(name => new TextureLoader().loadAsync(`${folder}/${name}`)),
   ])
   const loaded = results.flatMap(result => result.status === 'fulfilled' ? [result.value] : [])
   const model = file.status === 'fulfilled' ? file.value.scene : undefined

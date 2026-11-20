@@ -111,6 +111,122 @@
       "rests": "wall"
     },
     {
+      "_tag": "DeskLamp",
+      "id": "desk-lamp",
+      "position": [
+        -3.2,
+        -0.65,
+        -4.05
+      ],
+      "size": [
+        0.4,
+        0.6,
+        0.5
+      ],
+      "facing": "+z",
+      "rests": {
+        "on": "desk"
+      }
+    },
+    {
+      "_tag": "Papers",
+      "id": "papers",
+      "position": [
+        -2.75,
+        -0.92,
+        -3.45
+      ],
+      "size": [
+        0.6,
+        0.06,
+        0.45
+      ],
+      "facing": "+z",
+      "rests": {
+        "on": "desk"
+      }
+    },
+    {
+      "_tag": "WasteBin",
+      "id": "waste-bin",
+      "position": [
+        -0.2,
+        -1.95,
+        -3.7
+      ],
+      "size": [
+        0.4,
+        0.5,
+        0.4
+      ],
+      "facing": "+z",
+      "rests": "floor"
+    },
+    {
+      "_tag": "FireExtinguisher",
+      "id": "fire-extinguisher",
+      "position": [
+        -4.55,
+        -0.75,
+        -4.36
+      ],
+      "size": [
+        0.3,
+        0.8,
+        0.28
+      ],
+      "facing": "+z",
+      "rests": "wall"
+    },
+    {
+      "_tag": "WallPanel",
+      "id": "wall-panel",
+      "position": [
+        -4.55,
+        0.6,
+        -4.42
+      ],
+      "size": [
+        0.7,
+        0.7,
+        0.16
+      ],
+      "facing": "+z",
+      "rests": "wall"
+    },
+    {
+      "_tag": "Corkboard",
+      "id": "corkboard",
+      "position": [
+        -5.47,
+        0.45,
+        -3.3
+      ],
+      "size": [
+        0.06,
+        1,
+        2
+      ],
+      "facing": "+x",
+      "rests": "wall"
+    },
+    {
+      "_tag": "Chart",
+      "id": "chart",
+      "position": [
+        -0.08,
+        0.85,
+        -4.48
+      ],
+      "size": [
+        0.56,
+        1.12,
+        0.04
+      ],
+      "facing": "+z",
+      "rests": "wall"
+    },
+    {
       "_tag": "JarShelf",
       "id": "jar-shelf",
       "position": [
@@ -242,7 +358,7 @@
       "id": "wall-clock",
       "position": [
         -0.07,
-        1.97,
+        1.87,
         -4.4
       ],
       "size": [
@@ -252,6 +368,86 @@
       ],
       "facing": "+z",
       "rests": "wall"
+    },
+    {
+      "_tag": "Locker",
+      "id": "locker-1",
+      "position": [
+        4.64,
+        -0.7,
+        -4.14
+      ],
+      "size": [
+        0.56,
+        3,
+        0.7
+      ],
+      "facing": "+z",
+      "rests": "floor"
+    },
+    {
+      "_tag": "Locker",
+      "id": "locker-2",
+      "position": [
+        5.21,
+        -0.7,
+        -4.14
+      ],
+      "size": [
+        0.56,
+        3,
+        0.7
+      ],
+      "facing": "+z",
+      "rests": "floor"
+    },
+    {
+      "_tag": "PipeRun",
+      "id": "pipe-run",
+      "position": [
+        0.325,
+        2.29,
+        -4.36
+      ],
+      "size": [
+        10.35,
+        0.22,
+        0.28
+      ],
+      "facing": "+z",
+      "rests": "wall"
+    },
+    {
+      "_tag": "Duct",
+      "id": "duct",
+      "position": [
+        -5.2,
+        2.15,
+        -0.75
+      ],
+      "size": [
+        0.6,
+        0.5,
+        7.5
+      ],
+      "facing": "+z",
+      "rests": "ceiling"
+    },
+    {
+      "_tag": "CeilingVent",
+      "id": "ceiling-vent",
+      "position": [
+        -3.3,
+        2.35,
+        -1
+      ],
+      "size": [
+        1,
+        0.1,
+        1
+      ],
+      "facing": "+z",
+      "rests": "ceiling"
     },
     {
       "_tag": "FilingCabinet",
@@ -286,15 +482,51 @@
       "rests": "floor"
     },
     {
+      "_tag": "StorageBox",
+      "id": "storage-box-1",
+      "position": [
+        -5.05,
+        0.3,
+        -1.45
+      ],
+      "size": [
+        0.7,
+        0.4,
+        0.9
+      ],
+      "facing": "+x",
+      "rests": {
+        "on": "filing-cabinet-1"
+      }
+    },
+    {
+      "_tag": "StorageBox",
+      "id": "storage-box-2",
+      "position": [
+        -5.08,
+        0.28,
+        -0.05
+      ],
+      "size": [
+        0.6,
+        0.36,
+        0.8
+      ],
+      "facing": "+x",
+      "rests": {
+        "on": "filing-cabinet-2"
+      }
+    },
+    {
       "_tag": "Door",
       "id": "door",
       "position": [
-        5.4,
+        5.3,
         -0.4,
         -1.75
       ],
       "size": [
-        0.1,
+        0.4,
         3.6,
         1.7
       ],
@@ -307,7 +539,7 @@
       "position": [
         5,
         -0.55,
-        1.25
+        1.9
       ],
       "size": [
         1,
@@ -323,12 +555,12 @@
       "id": "tube-office",
       "position": [
         -1.65,
-        2.34,
+        2.33,
         -3.05
       ],
       "size": [
-        0.16,
-        0.12,
+        0.44,
+        0.14,
         1.8
       ],
       "facing": "+z",
@@ -340,12 +572,12 @@
       "id": "tube-science",
       "position": [
         1.65,
-        2.34,
+        2.33,
         -3.05
       ],
       "size": [
-        0.16,
-        0.12,
+        0.44,
+        0.14,
         1.8
       ],
       "facing": "+z",
@@ -357,12 +589,12 @@
       "id": "tube-walk-rear",
       "position": [
         0,
-        2.34,
+        2.33,
         -1.22
       ],
       "size": [
-        0.16,
-        0.12,
+        0.44,
+        0.14,
         1.46
       ],
       "facing": "+z",
@@ -374,12 +606,12 @@
       "id": "tube-walk-left",
       "position": [
         -0.7,
-        2.34,
+        2.33,
         0.4
       ],
       "size": [
-        0.16,
-        0.12,
+        0.44,
+        0.14,
         1.8
       ],
       "facing": "+z",
@@ -391,12 +623,46 @@
       "id": "tube-walk-right",
       "position": [
         0.7,
-        2.34,
+        2.33,
         0.7
       ],
       "size": [
-        0.16,
-        0.12,
+        0.44,
+        0.14,
+        1.8
+      ],
+      "facing": "+z",
+      "rests": "ceiling"
+    },
+    {
+      "_tag": "CeilingTube",
+      "lamp": "steady",
+      "id": "tube-rear-near",
+      "position": [
+        0,
+        2.33,
+        4.8
+      ],
+      "size": [
+        0.44,
+        0.14,
+        1.8
+      ],
+      "facing": "+z",
+      "rests": "ceiling"
+    },
+    {
+      "_tag": "CeilingTube",
+      "lamp": "steady",
+      "id": "tube-rear-far",
+      "position": [
+        0,
+        2.33,
+        9.8
+      ],
+      "size": [
+        0.44,
+        0.14,
         1.8
       ],
       "facing": "+z",

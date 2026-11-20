@@ -16,6 +16,7 @@ import sys
 
 import bpy
 import numpy as np
+from mathutils import Vector
 
 ARGS = sys.argv[sys.argv.index('--') + 1:]
 PLAN_PATH, ATLAS_PATH, GLB_PATH, LIGHT_PATH = ARGS[:4]
@@ -36,9 +37,13 @@ RNG = random.Random(1998)
 LIGHT_MAX = 4.0
 # The light on the floor under a tube, after the bake is scaled.
 POOL = 1.5
+# The bake is physical, and a room of pale walls comes out even. This power deepens the corners and the shadows, and keeps the pool level.
+CONTRAST = 1.25
 # The light map: pixels across, and pixels for one world unit.
 LM_SIZE = 256
 LUXELS = 8
+# The model file stores a position as whole steps of this size.
+GRID = 1 / 1024
 
 
 def colour(hex_code, gain=1.0):
@@ -55,7 +60,7 @@ INK = {name: colour(code) for name, code in {
     'cream': '#E8D4A6', 'night': '#080B08', 'wing': '#A4B5A0', 'beige': '#C9BC98'}.items()}
 # How much light each texture gives back, for the bounce in the bake.
 ALBEDO = {'floor': (0.33, 0.35, 0.27), 'wall': (0.55, 0.5, 0.36), 'ceiling': (0.5, 0.48, 0.4), 'concrete': (0.07, 0.08, 0.07),
-          'metal': (0.3, 0.33, 0.29), 'laminate': (0.2, 0.07, 0.03), 'plastic': (0.5, 0.46, 0.36), 'white': (0.8, 0.8, 0.8)}
+          'metal': (0.3, 0.33, 0.29), 'marks': (0.7, 0.7, 0.62), 'laminate': (0.2, 0.07, 0.03), 'plastic': (0.5, 0.46, 0.36), 'white': (0.8, 0.8, 0.8)}
 
 # ---------------------------------------------------------------- the kit
 
@@ -328,30 +333,631 @@ def build_room():
 
 # ---------------------------------------------------------------- the props
 
+PLAIN = Cell('white')
+METAL_AVG = np.array(ALBEDO['metal'])
+
+
+def paint(name, gain=1.0):
+    """A tint that brings the metal swatch to a brand colour. The swatch keeps its scratches."""
+    return INK[name] * gain / METAL_AVG
+
+
+def flat(name, gain=1.0):
+    """A plain brand colour, for small parts on the white cell."""
+    return INK[name] * gain
+
+
+def wall_z(prop):
+    """Where the wall behind a wall prop lies, along the prop's own z. The plan leaves some props a little off the wall."""
+    x, _, z = prop['position']
+    return -{'+z': z - ROOM['minZ'], '-z': ROOM['maxZ'] - z, '+x': x - ROOM['minX'], '-x': ROOM['maxX'] - x}[prop['facing']]
+
+
+def rect_z(cx, cy, z, w, h):
+    """A rectangle that faces along z, in the order that a loft toward -z needs."""
+    return [(cx + w / 2, cy + h / 2, z), (cx + w / 2, cy - h / 2, z), (cx - w / 2, cy - h / 2, z), (cx - w / 2, cy + h / 2, z)]
+
+
+def handle(m, x, y, z, length=0.3, tint=None, upright=False):
+    """A bar handle on two posts, on a face that looks along +z."""
+    tint = flat('cream', 0.85) if tint is None else tint
+    size = (0.028, length, 0.028) if upright else (length, 0.028, 0.028)
+    box('atlas', m, (x, y, z + 0.045), size, PLAIN, tint)
+    for end in (-1, 1):
+        offset = end * (length / 2 - 0.03)
+        box('atlas', m, (x, y + offset, z + 0.02) if upright else (x + offset, y, z + 0.02), (0.024, 0.024, 0.04), PLAIN, flat('chitin', 1.2), skip='+z-z')
+
+
+def label_holder(m, x, y, z, w=0.2, h=0.09):
+    """A card holder: a thin frame with a blank card in it."""
+    box('atlas', m, (x, y, z + 0.006), (w, h, 0.012), PLAIN, flat('chitin', 1.4), skip='-z')
+    quad('atlas', m, [(x - w / 2 + 0.015, y - h / 2 + 0.015, z + 0.013), (x + w / 2 - 0.015, y - h / 2 + 0.015, z + 0.013),
+                      (x + w / 2 - 0.015, y + h / 2 - 0.015, z + 0.013), (x - w / 2 + 0.015, y + h / 2 - 0.015, z + 0.013)], PLAIN, flat('cream', 0.95))
+
+
 def build_desk(prop):
     m, w, h, d = stand_of(prop)
     wood, steel = Cell('laminate', 2.0), metal()
     top, plinth = h / 2, -h / 2
-    drawer_tint, dark = INK['wing'] * 1.5, INK['chitin'] * 0.7
+    body, dark = WHITE * 1.25, paint('chitin', 0.8)
     # The top: a laminate slab with a dark edge band, a little wider than the pedestals.
-    box('atlas', m, (0, top - 0.035, 0), (w, 0.07, d), wood, step=0.3, skins={name: metal() for name in ('+z', '-z', '+x', '-x')},
-        tints={name: INK['bruise'] * 0.8 for name in ('+z', '-z', '+x', '-x', '-y')})
+    box('atlas', m, (0, top - 0.035, 0), (w, 0.07, d), wood, step=0.38, skins={name: metal() for name in ('+z', '-z', '+x', '-x', '-y')},
+        tints={name: paint('bruise', 0.9) for name in ('+z', '-z', '+x', '-x', '-y')})
     for side in (-1, 1):
         x = side * (w / 2 - 0.42)
         box('atlas', m, (x, plinth + 0.05, -0.02), (0.66, 0.1, d - 0.2), steel, dark, skip='+y-y')
-        box('atlas', m, (x, (plinth + 0.1 + top - 0.07) / 2, -0.01), (0.74, h - 0.17, d - 0.1), steel, drawer_tint, step=0.4, skip='+y-y')
+        box('atlas', m, (x, (plinth + 0.1 + top - 0.07) / 2, -0.01), (0.74, h - 0.17, d - 0.1), steel, body, step=0.5, skip='+y-y')
         # Drawer fronts stand proud of the pedestal. The right pedestal has three, the left has two.
-        fronts = [0.3, 0.3, 0.42] if side > 0 else [0.3, 0.74]
+        fronts = [0.3, 0.3, 0.44] if side > 0 else [0.3, 0.74]
         y = top - 0.1
         for tall in fronts:
-            box('atlas', m, (x, y - tall / 2, d / 2 - 0.045), (0.68, tall - 0.03, 0.03), steel, drawer_tint * 1.08, skip='-z')
-            # A bar handle on two posts.
-            box('atlas', m, (x, y - 0.1, d / 2 - 0.005), (0.3, 0.025, 0.025), steel, INK['cream'] * 0.9)
-            for post in (-0.12, 0.12):
-                box('atlas', m, (x + post, y - 0.1, d / 2 - 0.022), (0.025, 0.025, 0.03), steel, INK['chitin'], skip='+z-z')
+            box('atlas', m, (x, y - tall / 2, d / 2 - 0.045), (0.68, tall - 0.03, 0.03), steel, body * 1.1, skip='-z')
+            handle(m, x, y - 0.1, d / 2 - 0.03)
             y -= tall
     # The modesty panel closes the back of the kneehole.
-    box('atlas', m, (0, 0.1, -d / 2 + 0.12), (w - 1.56, h - 0.5, 0.04), steel, drawer_tint * 0.9, step=0.4, skip='+x-x')
+    box('atlas', m, (0, 0.1, -d / 2 + 0.12), (w - 1.56, h - 0.5, 0.04), steel, body * 0.9, step=0.5, skip='+x-x')
+
+
+def build_monitor(prop):
+    m, w, h, d = stand_of(prop)
+    case = Cell('plastic', 1.0)
+    low = -h / 2
+    # The computer lies flat under the monitor, as desktop cases of the time did.
+    box('atlas', m, (0, low + 0.085, 0), (0.78, 0.17, 0.74), case, skip='-y')
+    front = 0.37
+    box('atlas', m, (-0.17, low + 0.1, front), (0.32, 0.05, 0.012), PLAIN, flat('beige', 0.8), skip='-z')
+    box('atlas', m, (0.2, low + 0.11, front), (0.2, 0.014, 0.008), PLAIN, flat('night', 2), skip='-z')
+    box('atlas', m, (0.3, low + 0.05, front), (0.05, 0.03, 0.012), PLAIN, flat('beige', 0.7), skip='-z')
+    quad('atlas', m, [(0.2, low + 0.04, front + 0.002), (0.225, low + 0.04, front + 0.002), (0.225, low + 0.055, front + 0.002), (0.2, low + 0.055, front + 0.002)],
+         PLAIN, kind='glow', value=INK['teal'] * 3)
+    # A swivel foot, then the tube: a bezel at the front and a case that narrows to the back.
+    lathe('atlas', m, (0, low + 0.17, 0.02), [(0.19, 0), (0.17, 0.035), (0.09, 0.035), (0.09, 0.08)], 8, case, WHITE * 0.85)
+    base, top = low + 0.25, h / 2
+    middle, tall = (base + top) / 2, top - base
+    box('atlas', m, (0, middle, 0.3), (0.74, tall, 0.14), case, skip='-z')
+    loft('atlas', m, rect_z(0, middle, 0.23, 0.7, tall - 0.04), rect_z(0, middle - 0.02, -0.36, 0.4, tall * 0.6), case, WHITE * 0.9)
+    cap('atlas', m, rect_z(0, middle - 0.02, -0.36, 0.4, tall * 0.6), case, WHITE * 0.7)
+    # The glass bulges a little, inside a dark surround.
+    wide, high, glass = 0.56, tall - 0.14, front + 0.003
+    centre = middle + 0.025
+    quad('atlas', m, [(-wide / 2 - 0.02, centre - high / 2 - 0.02, glass - 0.002), (wide / 2 + 0.02, centre - high / 2 - 0.02, glass - 0.002),
+                      (wide / 2 + 0.02, centre + high / 2 + 0.02, glass - 0.002), (-wide / 2 - 0.02, centre + high / 2 + 0.02, glass - 0.002)], PLAIN, flat('night', 1.5))
+    picture = Cell('screen')
+    across, up = 4, 3
+    for i in range(across):
+        for j in range(up):
+            spots = [(i / across, j / up), ((i + 1) / across, j / up), ((i + 1) / across, (j + 1) / up), (i / across, (j + 1) / up)]
+            emit('atlas', m, [(-wide / 2 + wide * a, centre - high / 2 + high * b, glass + 0.022 * (1 - (2 * a - 1) ** 2) * (1 - (2 * b - 1) ** 2)) for a, b in spots],
+                 [picture.uv((0, 0, 1, 1), a, b) for a, b in spots], kind='glow', value=WHITE * 1.15)
+    for index in range(3):
+        box('atlas', m, (0.12 + index * 0.07, base + 0.035, front), (0.04, 0.022, 0.012), PLAIN, flat('beige', 0.75), skip='-z')
+    quad('atlas', m, [(-0.3, base + 0.027, front + 0.002), (-0.28, base + 0.027, front + 0.002), (-0.28, base + 0.043, front + 0.002), (-0.3, base + 0.043, front + 0.002)],
+         PLAIN, kind='glow', value=INK['teal'] * 3)
+
+
+def build_keyboard(prop):
+    m, w, h, d = stand_of(prop)
+    case = Cell('plastic', 1.0)
+    low = -h / 2
+    # A wedge: low at the front, higher at the back.
+    front = [(-w / 2, low, d / 2), (w / 2, low, d / 2), (w / 2, low + 0.03, d / 2), (-w / 2, low + 0.03, d / 2)]
+    back = [(w / 2, low, -d / 2), (-w / 2, low, -d / 2), (-w / 2, low + h, -d / 2), (w / 2, low + h, -d / 2)]
+    quad('atlas', m, front, case)
+    quad('atlas', m, back, case, WHITE * 0.8)
+    quad('atlas', m, [front[3], front[2], back[3], back[2]], case)
+    quad('atlas', m, [back[1], front[0], front[3], back[2]], case, WHITE * 0.85)
+    quad('atlas', m, [front[1], back[0], back[3], front[2]], case, WHITE * 0.85)
+    inset = 0.025
+    lift = lambda z: low + 0.03 + (h - 0.03) * (d / 2 - z) / d + 0.004
+    quad('marks', m, [(-w / 2 + inset, lift(d / 2 - inset), d / 2 - inset), (w / 2 - inset, lift(d / 2 - inset), d / 2 - inset),
+                      (w / 2 - inset, lift(-d / 2 + inset), -d / 2 + inset), (-w / 2 + inset, lift(-d / 2 + inset), -d / 2 + inset)], Sheet('keys'))
+    # The cable runs back to the computer.
+    pipe('atlas', m, [(0.2, low + 0.02, -d / 2), (0.24, low + 0.012, -d / 2 - 0.08), (0.1, low + 0.012, -d / 2 - 0.16)], 0.012, 4, PLAIN, flat('beige', 0.6))
+
+
+def build_mug(prop):
+    m, w, h, d = stand_of(prop)
+    radius = w * 0.36
+    lathe('atlas', m, (0, 0, 0), [(radius * 0.92, -h / 2), (radius, -h / 2 + 0.03), (radius, h / 2)], 8, PLAIN, flat('rust', 1.1), caps='b')
+    # The coffee sits a little under the rim.
+    lathe('atlas', m, (0, 0, 0), [(radius, h / 2), (radius - 0.015, h / 2), (radius - 0.015, h / 2 - 0.03)], 8, PLAIN, flat('rust', 0.7))
+    cap('atlas', m, ring((0, 0, 0), radius - 0.015, 8, h / 2 - 0.03), PLAIN, flat('bruise', 0.35))
+    grip = [(radius * 0.95 + 0.065 * math.sin(step / 4 * math.pi), 0.07 * (1 - 2 * step / 4), 0) for step in range(5)]
+    pipe('atlas', m, grip, 0.014, 4, PLAIN, flat('rust', 1.1))
+    # The label faces the room. A name can go on it later.
+    reach = radius * math.cos(math.pi / 8) + 0.003
+    quad('marks', m, [(-0.04, -0.045, reach), (0.04, -0.045, reach), (0.04, 0.045, reach), (-0.04, 0.045, reach)], Sheet('label'))
+
+
+def build_chair(prop):
+    m, w, h, d = stand_of(prop, 0.55)
+    cloth, steel = Cell('fabric', 1.0), metal()
+    dark = paint('chitin', 0.9)
+    low = -h / 2
+    # Five legs on casters round a hub.
+    for leg in range(5):
+        spoke = m @ frame(yaw=leg / 5 * math.tau)
+        quad('atlas', spoke, [(-0.03, low + 0.085, 0.44), (0.03, low + 0.085, 0.44), (0.035, low + 0.11, 0.05), (-0.035, low + 0.11, 0.05)], steel, dark)
+        for side in (-1, 1):
+            quad('atlas', spoke, [(side * 0.035, low + 0.06, 0.05), (side * 0.03, low + 0.06, 0.44), (side * 0.03, low + 0.085, 0.44), (side * 0.035, low + 0.11, 0.05)][::-side], steel, dark * 0.8)
+        quad('atlas', spoke, [(-0.03, low + 0.06, 0.44), (0.03, low + 0.06, 0.44), (0.03, low + 0.085, 0.44), (-0.03, low + 0.085, 0.44)], steel, dark * 0.8)
+        box('atlas', spoke, (0, low + 0.03, 0.41), (0.05, 0.06, 0.07), PLAIN, flat('night', 2.5), skip='+y')
+    lathe('atlas', m, (0, low + 0.05, 0), [(0.075, 0), (0.075, 0.08), (0.04, 0.1), (0.04, 0.32), (0.028, 0.32), (0.028, 0.56)], 6, steel, dark * 1.3)
+    seat = low + 0.62
+    # The seat: a plate, then a cushion with a softer front edge.
+    box('atlas', m, (0, seat - 0.02, 0), (0.5, 0.04, 0.5), PLAIN, flat('night', 2.5), skip='+y')
+    box('atlas', m, (0, seat + 0.05, 0.02), (0.66, 0.1, 0.62), cloth, step=0.35, skip='-y')
+    # The back leans a little. A steel bar carries it.
+    lean = m @ frame((0, seat + 0.1, -0.3)) @ turn_x(-0.14)
+    box('atlas', lean, (0, 0.2, -0.03), (0.09, 0.5, 0.03), steel, dark)
+    box('atlas', lean, (0, 0.46, 0.02), (0.6, 0.56, 0.09), cloth, step=0.35)
+    for side in (-1, 1):
+        box('atlas', m, (side * 0.37, seat + 0.14, 0.02), (0.035, 0.24, 0.05), steel, dark, skip='+y-y')
+        box('atlas', m, (side * 0.37, seat + 0.275, 0.03), (0.07, 0.035, 0.34), PLAIN, flat('night', 2.5))
+
+
+def build_whiteboard(prop):
+    m, w, h, d = stand_of(prop)
+    rail = paint('wing', 1.3)
+    face = d / 2 - 0.03
+    wall = wall_z(prop)
+    middle, d = (d / 2 + wall) / 2, d / 2 - wall
+    # An aluminium frame, the board, and a tray with markers and an eraser.
+    box('atlas', m, (0, h / 2 - 0.03, middle), (w, 0.06, d), metal(), rail, skip='-z')
+    box('atlas', m, (0, -h / 2 + 0.03, middle), (w, 0.06, d), metal(), rail, skip='-z')
+    for side in (-1, 1):
+        box('atlas', m, (side * (w / 2 - 0.03), 0, middle), (0.06, h - 0.12, d), metal(), rail, skip='-z+y-y')
+    quad('marks', m, [(-w / 2 + 0.06, -h / 2 + 0.06, face), (w / 2 - 0.06, -h / 2 + 0.06, face), (w / 2 - 0.06, h / 2 - 0.06, face), (-w / 2 + 0.06, h / 2 - 0.06, face)], Sheet('whiteboard'), WHITE * 0.82, step=0.6)
+    d = prop['size'][2]
+    tray = -h / 2 - 0.015
+    box('atlas', m, (0, tray, d / 2 + 0.06), (w * 0.7, 0.025, 0.13), metal(), rail * 0.9)
+    box('atlas', m, (0, tray + 0.02, d / 2 + 0.12), (w * 0.7, 0.03, 0.012), metal(), rail)
+    for x, ink in ((-0.62, 'rust'), (-0.36, 'teal'), (0.3, 'chitin')):
+        lying = m @ frame((x, tray + 0.032, d / 2 + 0.06)) @ turn_z(math.pi / 2)
+        lathe('atlas', lying, (0, 0, 0), [(0.02, -0.09), (0.02, 0.05)], 6, PLAIN, flat('cream', 0.95), caps='b')
+        lathe('atlas', lying, (0, 0, 0), [(0.021, 0.05), (0.021, 0.09)], 6, PLAIN, flat(ink, 1.2), caps='t')
+    box('atlas', m, (0.72, tray + 0.035, d / 2 + 0.06), (0.17, 0.045, 0.07), PLAIN, flat('chitin', 1.6), tints={'-y': flat('cream')})
+
+
+def build_jar_shelf(prop):
+    m, w, h, d = stand_of(prop)
+    steel = metal()
+    body = paint('olive', 0.95)
+    low, top = -h / 2, h / 2
+    # A lab bench: a dark plinth, a steel carcass with four doors, and a dark worktop with a low back.
+    box('atlas', m, (0, low + 0.06, -0.03), (w - 0.1, 0.12, d - 0.16), steel, paint('night', 4), skip='+y-y')
+    box('atlas', m, (0, (low + 0.12 + top - 0.06) / 2, -0.01), (w, h - 0.18, d - 0.06), steel, body, step=0.6, skip='+y-y')
+    box('atlas', m, (0, top - 0.03, 0), (w + 0.04, 0.06, d + 0.02), steel, paint('chitin', 1.25), step=0.4)
+    box('atlas', m, (0, top + 0.06, -d / 2 + 0.03), (w + 0.04, 0.12, 0.05), steel, paint('chitin', 1.25), skip='-y')
+    doors = 4
+    span = (w - 0.08) / doors
+    for index in range(doors):
+        x = -w / 2 + 0.04 + span * (index + 0.5)
+        box('atlas', m, (x, 0.0, d / 2 - 0.03), (span - 0.035, h - 0.3, 0.03), steel, body * 1.12, step=0.6, skip='-z')
+        handle(m, x + (0.32 if index % 2 == 0 else -0.32), 0.25, d / 2 - 0.015, 0.26, upright=True)
+        label_holder(m, x, 0.48, d / 2 - 0.015)
+
+
+def build_jar(prop, index):
+    m, w, h, d = stand_of(prop)
+    low = -h / 2
+    radius = w / 2 - 0.02
+    glass = Cell('glass')
+    part = (0.05, 0.05, 0.95, 0.95)
+    shell = [(radius * 0.9, low), (radius, low + 0.05), (radius, low + 0.36), (radius * 0.72, low + 0.45), (radius * 0.72, low + 0.49)]
+    rings = [ring((0, 0, 0), r, 10, y) for r, y in shell]
+    for a, b in zip(rings, rings[1:]):
+        loft('glass', m, a, b, glass, rect=part, kind='glass', value=(0.02, 0.05, 0.05, 0.14))
+    # The lid is steel, with a rim.
+    lathe('atlas', m, (0, low + 0.47, 0), [(radius * 0.78, 0), (radius * 0.78, 0.06), (radius * 0.7, 0.075)], 10, metal(), paint('chitin', 1.3), caps='t')
+    if prop['contents'] == 'empty':
+        return
+    # Each full jar holds a different lump in a different fluid.
+    fluid = [INK['olive'], INK['rust'], INK['teal'], INK['bruise'], INK['cream']][index % 5]
+    level = low + 0.33
+    lathe('glass', m, (0, 0, 0), [(radius * 0.86, low + 0.02), (radius * 0.94, low + 0.06), (radius * 0.94, level)], 10, glass, kind='glass', value=(*(fluid * 0.5), 0.5))
+    cap('glass', m, ring((0, 0, 0), radius * 0.94, 10, level), glass, kind='glass', value=(*(fluid * 0.8), 0.5))
+    lump = m @ frame((0, low + 0.03, 0), index * 1.3)
+    flesh = Cell('organic')
+    tint = [WHITE, INK['cream'] * 1.4, WHITE * 0.8, INK['cream'] * 1.3, INK['rust'] * 2.2][index % 5]
+    shape = [(0.05, 0), (0.1 + 0.02 * (index % 2), 0.06), (0.085, 0.15 + 0.02 * (index % 3)), (0.03, 0.24)]
+    lathe('atlas', lump, (0, 0, 0), shape, 6, flesh, tint, caps='t', depth=0.75)
+
+
+def build_window(prop):
+    m, w, h, d = stand_of(prop)
+    rim = 0.2
+    wall = wall_z(prop)
+    back = wall - 0.3
+    stripes = Cell('hazard', part=(0, 0, 1, 0.57))
+    steel = metal()
+    # The hazard frame stands proud of the wall. Each piece shows the stripes at their real size.
+
+    def bar(centre, size, long):
+        repeats = max(1, round(long / 0.7))
+        for index in range(repeats):
+            share = (index + 0.5) / repeats - 0.5
+            if size[0] > size[1]:
+                box('atlas', m, (centre[0] + share * size[0], centre[1], centre[2]), (size[0] / repeats, size[1], size[2]), stripes, skip='-z', skins={name: steel for name in ('+x', '-x', '+y', '-y')},
+                    tints={name: paint('chitin') for name in ('+x', '-x', '+y', '-y')})
+            else:
+                turned = m @ frame((centre[0], centre[1] + share * size[1], centre[2])) @ turn_z(math.pi / 2)
+                box('atlas', turned, (0, 0, 0), (size[1] / repeats, size[0], size[2]), stripes, skip='-z', skins={name: steel for name in ('+x', '-x', '+y', '-y')},
+                    tints={name: paint('chitin') for name in ('+x', '-x', '+y', '-y')})
+    bar((0, h / 2 - rim / 2, wall + 0.04), (w, rim, 0.08), w)
+    bar((0, -h / 2 + rim / 2, wall + 0.04), (w, rim, 0.08), w)
+    for side in (-1, 1):
+        bar((side * (w / 2 - rim / 2), 0, wall + 0.04), (rim, h - rim * 2, 0.08), h - rim * 2)
+    # The reveal is the thickness of the wall, in dark steel. The glass sits deep in it, with a post in the middle.
+    inner_w, inner_h = w - rim * 2, h - rim * 2
+    dark = paint('chitin', 0.9)
+    quad('atlas', m, [(-inner_w / 2, -inner_h / 2, wall + 0.08), (inner_w / 2, -inner_h / 2, wall + 0.08), (inner_w / 2, -inner_h / 2, back), (-inner_w / 2, -inner_h / 2, back)], steel, dark, step=1.0)
+    quad('atlas', m, [(-inner_w / 2, inner_h / 2, back), (inner_w / 2, inner_h / 2, back), (inner_w / 2, inner_h / 2, wall + 0.08), (-inner_w / 2, inner_h / 2, wall + 0.08)], steel, dark, step=1.0)
+    quad('atlas', m, [(-inner_w / 2, -inner_h / 2, wall + 0.08), (-inner_w / 2, -inner_h / 2, back), (-inner_w / 2, inner_h / 2, back), (-inner_w / 2, inner_h / 2, wall + 0.08)], steel, dark)
+    quad('atlas', m, [(inner_w / 2, -inner_h / 2, back), (inner_w / 2, -inner_h / 2, wall + 0.08), (inner_w / 2, inner_h / 2, wall + 0.08), (inner_w / 2, inner_h / 2, back)], steel, dark)
+    box('atlas', m, (0, -inner_h / 2 - 0.02, wall + 0.11), (inner_w + 0.2, 0.04, 0.1), steel, paint('wing', 1.1))
+    pane = Cell('glass')
+    for half in (0, 1):
+        x0, x1 = -inner_w / 2 + inner_w / 2 * half, inner_w / 2 * half
+        quad('glass', m, [(x0, -inner_h / 2, wall - 0.14), (x1, -inner_h / 2, wall - 0.14), (x1, inner_h / 2, wall - 0.14), (x0, inner_h / 2, wall - 0.14)], pane,
+             kind='glass', value=(0.01, 0.035, 0.04, 0.1))
+
+
+def build_clock(prop):
+    m, w, h, d = stand_of(prop)
+    # A deep rim round a recessed face. The rim lies on its side, so its open end faces the room.
+    flatways = m @ turn_x(math.pi / 2)
+    lathe('atlas', flatways, (0, 0, 0), [(w / 2, wall_z(prop)), (w / 2, d / 2), (w / 2 - 0.035, d / 2), (w / 2 - 0.035, d / 2 - 0.04)], 12, metal(), paint('chitin', 1.3))
+    face = d / 2 - 0.04
+    quad('marks', m, [(-w / 2 + 0.03, -h / 2 + 0.03, face), (w / 2 - 0.03, -h / 2 + 0.03, face), (w / 2 - 0.03, h / 2 - 0.03, face), (-w / 2 + 0.03, h / 2 - 0.03, face)], Sheet('clock'))
+    # The two slow hands are fixed. The second hand is its own part: the site turns it with scene time.
+    for angle, length in ((-1.05, 0.11), (1.9, 0.16)):
+        box('atlas', m @ turn_z(-angle), (0, length / 2, face + 0.008), (0.028, length, 0.006), PLAIN, flat('night', 2), skip='-z')
+    origin = place(m, [(0, 0, face + 0.016)])[0]
+    NODE_ORIGINS['second-hand'] = origin
+    quad('atlas', m, [(-0.008, -0.03, face + 0.016), (0.008, -0.03, face + 0.016), (0.008, 0.19, face + 0.016), (-0.008, 0.19, face + 0.016)], PLAIN, flat('rust', 1.3), node='second-hand')
+
+
+def build_cabinet(prop, index):
+    m, w, h, d = stand_of(prop)
+    steel = metal()
+    body = WHITE * 1.2
+    low = -h / 2
+    box('atlas', m, (0, low + 0.04, -0.02), (w - 0.06, 0.08, d - 0.08), steel, paint('night', 4), skip='+y-y')
+    box('atlas', m, (0, 0.04, -0.015), (w, h - 0.08, d - 0.03), steel, body, step=0.6, skip='-y')
+    drawers = 4
+    tall = (h - 0.14) / drawers
+    for drawer in range(drawers):
+        y = low + 0.1 + tall * (drawer + 0.5)
+        # One drawer of the second cabinet stands a little open.
+        out = 0.14 if index == 1 and drawer == 2 else 0
+        face = d / 2 - 0.005 + out
+        box('atlas', m, (0, y, face - 0.015 - out / 2), (w - 0.06, tall - 0.03, 0.03 + out), steel, body * 1.1, step=0.6, skip='-z')
+        handle(m, 0, y - 0.1, face, 0.34)
+        label_holder(m, 0, y + 0.14, face)
+    box('atlas', m, (w / 2 - 0.1, h / 2 - 0.12, d / 2 + 0.002), (0.045, 0.045, 0.014), PLAIN, flat('cream', 0.7), skip='-z')
+
+
+def build_door(prop):
+    m, w, h, d = stand_of(prop)
+    steel = metal()
+    frame_tint = paint('wing', 0.75)
+    wall = wall_z(prop)
+    far = wall - 0.3
+    low = -h / 2
+    # The frame lines the hole through the wall and stands a little proud of it.
+    for side in (-1, 1):
+        box('atlas', m, (side * (w / 2 + 0.03), 0, (wall + 0.06 + far) / 2), (0.22, h, wall + 0.06 - far), steel, frame_tint, step=1.2, skip='+y-y')
+    box('atlas', m, (0, h / 2 + 0.03, (wall + 0.06 + far) / 2), (w + 0.28, 0.22, wall + 0.06 - far), steel, frame_tint, skip='+y')
+    box('atlas', m, (0, low + 0.012, (wall + far) / 2), (w - 0.16, 0.024, 0.34), steel, paint('wing', 0.9), skip='-y')
+    # The leaf hangs on the far jamb and stands ajar into the room.
+    swing = m @ frame((-w / 2 + 0.08, 0, wall - 0.1), -math.radians(12))
+    leaf_w, leaf_h = w - 0.18, h - 0.1
+    art = Cell('door')
+    box('atlas', swing, (leaf_w / 2, -0.03, 0), (leaf_w, leaf_h, 0.07), art, step=1.0, skins={name: steel for name in ('+x', '-x', '+y', '-y')},
+        tints={name: paint('bruise', 1.1) for name in ('+x', '-x', '+y', '-y')})
+    for face in (1, -1):
+        z = face * 0.035
+        box('atlas', swing, (leaf_w - 0.13, -0.38, z + face * 0.008), (0.08, 0.24, 0.016), steel, paint('wing', 1.2))
+        box('atlas', swing, (leaf_w - 0.13, -0.33, z + face * 0.04), (0.03, 0.03, 0.06), PLAIN, flat('chitin', 1.5))
+        box('atlas', swing, (leaf_w - 0.2, -0.33, z + face * 0.065), (0.18, 0.032, 0.026), steel, paint('wing', 1.3))
+    for y in (-1.3, 0, 1.3):
+        lathe('atlas', swing, (-0.02, y - 0.03, 0.04), [(0.03, -0.09), (0.03, 0.09)], 6, steel, paint('chitin', 1.4), caps='bt')
+    # A lamp over the door, the sign plate beside it, and a keypad on a conduit.
+    box('atlas', m, (0, h / 2 + 0.3, wall + 0.05), (0.56, 0.18, 0.1), steel, frame_tint)
+    quad('atlas', m, [(-0.24, h / 2 + 0.24, wall + 0.102), (0.24, h / 2 + 0.24, wall + 0.102), (0.24, h / 2 + 0.36, wall + 0.102), (-0.24, h / 2 + 0.36, wall + 0.102)],
+         PLAIN, kind='glow', value=INK['teal'] * 2.2)
+    side = w / 2 + 0.62
+    box('atlas', m, (side, 0.5, wall + 0.015), (0.62, 0.3, 0.03), steel, frame_tint, skip='-z')
+    quad('marks', m, [(side - 0.28, 0.395, wall + 0.032), (side + 0.28, 0.395, wall + 0.032), (side + 0.28, 0.605, wall + 0.032), (side - 0.28, 0.605, wall + 0.032)], Sheet('sign'))
+    box('atlas', m, (side - 0.12, -0.3, wall + 0.03), (0.3, 0.3, 0.06), steel, paint('wing', 1.1), skip='-z', skins={'+z': Cell('keypad')}, tints={'+z': WHITE})
+    pipe('atlas', m, [(side - 0.12, -0.15, wall + 0.03), (side - 0.12, 0.3, wall + 0.03)], 0.02, 5, steel, paint('wing', 1.2))
+    pipe('atlas', m, [(side - 0.12, 0.7, wall + 0.03), (side - 0.12, CEILING - prop['position'][1], wall + 0.03)], 0.02, 5, steel, paint('wing', 1.2))
+
+
+def build_vending(prop):
+    m, w, h, d = stand_of(prop)
+    steel = metal()
+    body = paint('bruise', 1.25)
+    low = -h / 2
+    box('atlas', m, (0, low + 0.06, -0.02), (w - 0.08, 0.12, d - 0.1), steel, paint('night', 4), skip='+y-y')
+    box('atlas', m, (0, 0.06, -0.01), (w, h - 0.12, d - 0.02), steel, body, step=0.8, skip='-y+z')
+    # The front is one picture of the machine. Its window shines, and the rest takes the room's light.
+    front = d / 2 - 0.02
+    art = Cell('vending')
+    left, right, bottom, top = -w / 2 + 0.03, w / 2 - 0.03, low + 0.14, h / 2 - 0.03
+
+    def piece(s0, t0, s1, t1, z, **look):
+        quad('atlas', m, [(left + (right - left) * s0, bottom + (top - bottom) * t0, z), (left + (right - left) * s1, bottom + (top - bottom) * t0, z),
+                          (left + (right - left) * s1, bottom + (top - bottom) * t1, z), (left + (right - left) * s0, bottom + (top - bottom) * t1, z)], art, rect=(s0, t0, s1, t1), **look)
+    window = (0.03, 0.15, 0.73, 0.97)
+    piece(0, 0, 1, window[1], front, step=0.8)
+    piece(0, window[3], 1, 1, front)
+    piece(0, window[1], window[0], window[3], front)
+    piece(window[2], window[1], 1, window[3], front, step=0.8)
+    piece(*window, front - 0.01, kind='glow', value=WHITE * 1.05)
+    box('atlas', m, (0, low + 0.2, front + 0.02), (w - 0.1, 0.04, 0.04), steel, body * 0.8)
+
+
+def build_lamp(prop):
+    m, w, h, d = stand_of(prop)
+    low = -h / 2
+    dark = flat('chitin', 1.5)
+    lathe('atlas', m, (0, low, 0), [(0.13, 0), (0.12, 0.025), (0.03, 0.035)], 8, PLAIN, dark, caps='b')
+    elbow, head = (-0.02, low + 0.34, -0.1), (0.1, low + 0.46, 0.08)
+    pipe('atlas', m, [(0, low + 0.03, 0), elbow, head], 0.013, 4, PLAIN, flat('cream', 0.8))
+    # The shade tips toward the desk, with the bulb inside.
+    shade = m @ frame(head) @ turn_x(0.5) @ turn_z(-0.25)
+    lathe('atlas', shade, (0, 0, 0), [(0.11, -0.1), (0.05, 0.02), (0.035, 0.05)], 8, PLAIN, flat('rust', 1.2))
+    cap('atlas', shade, ring((0, 0, 0), 0.035, 8, 0.05), PLAIN, flat('rust', 1.2))
+    cap('atlas', shade, ring((0, 0, 0), 0.1, 8, -0.085), PLAIN, up=False, kind='glow', value=INK['cream'] * 2.4)
+
+
+def build_papers(prop):
+    m, w, h, d = stand_of(prop)
+    sheet = Cell('paper')
+    # A rust folder, a stack of paper on it, and one loose sheet at an angle.
+    box('atlas', m, (0.02, -h / 2 + 0.008, 0), (w, 0.016, d), PLAIN, flat('rust', 1.0), skip='-y')
+    box('atlas', m, (-0.03, -h / 2 + 0.03, 0.01), (w - 0.1, 0.03, d - 0.06), PLAIN, flat('cream', 0.9), skip='-y', skins={'+y': sheet}, tints={'+y': WHITE})
+    loose = m @ frame((0.05, -h / 2 + 0.048, 0.0), 0.3)
+    quad('atlas', loose, [(-0.2, 0, 0.15), (0.2, 0, 0.15), (0.2, 0, -0.15), (-0.2, 0, -0.15)], sheet)
+
+
+def build_extinguisher(prop):
+    m, w, h, d = stand_of(prop)
+    low = -h / 2
+    red = paint('rust', 1.25)
+    steel = metal(1.0)
+    z = 0.0
+    box('atlas', m, (0, 0.05, -d / 2 + 0.01), (0.18, 0.5, 0.02), steel, paint('chitin', 1.2), skip='-z')
+    lathe('atlas', m, (0, low, z), [(0.1, 0), (0.115, 0.03), (0.115, 0.26), (0.117, 0.26), (0.117, 0.42), (0.115, 0.42), (0.115, 0.55), (0.085, 0.63), (0.04, 0.66), (0.04, 0.7)], 10, steel, red, caps='b')
+    # A blank label band, then the valve, the lever, the gauge, and the hose.
+    lathe('atlas', m, (0, low, z), [(0.1175, 0.27), (0.1175, 0.41)], 10, PLAIN, flat('cream', 0.9))
+    box('atlas', m, (0, low + 0.725, z), (0.07, 0.05, 0.07), PLAIN, flat('chitin', 1.3))
+    box('atlas', m @ frame((0, low + 0.765, z)) @ turn_z(0.0), (0.05, 0, 0), (0.2, 0.02, 0.035), PLAIN, flat('night', 2.5))
+    box('atlas', m @ frame((0, low + 0.72, z)) @ turn_z(-0.25), (0.07, 0, 0), (0.16, 0.018, 0.03), PLAIN, flat('night', 2.5))
+    lathe('atlas', m @ frame((0, low + 0.72, z + 0.05)) @ turn_x(math.pi / 2), (0, 0, 0), [(0.03, -0.012), (0.03, 0.012)], 6, PLAIN, flat('cream', 0.9), caps='t')
+    pipe('atlas', m, [(-0.04, low + 0.72, z), (-0.13, low + 0.7, z + 0.02), (-0.15, low + 0.45, z + 0.03), (-0.14, low + 0.2, z + 0.03)], 0.017, 5, PLAIN, flat('night', 2.2))
+
+
+def build_locker(prop):
+    m, w, h, d = stand_of(prop)
+    steel = metal()
+    body = paint('olive', 1.05)
+    low = -h / 2
+    art = Cell('locker')
+    # Two doors, one over the other, under a sloped top.
+    box('atlas', m, (0, low + 0.05, 0), (w - 0.06, 0.1, d - 0.06), steel, paint('night', 4), skip='+y-y')
+    straight = h - 0.1 - 0.22
+    box('atlas', m, (0, low + 0.1 + straight / 2, 0), (w, straight, d), steel, body, step=1.0, skip='+y-y')
+    top = low + 0.1 + straight
+    quad('atlas', m, [(-w / 2, top, d / 2), (w / 2, top, d / 2), (w / 2, top + 0.22, -d / 2), (-w / 2, top + 0.22, -d / 2)], steel, body * 1.1)
+    for side in (-1, 1):
+        emit('atlas', m, [(side * w / 2, top, d / 2), (side * w / 2, top, -d / 2), (side * w / 2, top + 0.22, -d / 2)][::side], [steel.uv((0, 0, 0.3, 0.1), a, b) for a, b in ((0, 0), (1, 0), (1, 1))][::side], body)
+    tall = straight / 2
+    for tier in range(2):
+        y = low + 0.1 + tall * (tier + 0.5)
+        box('atlas', m, (0, y, d / 2 + 0.008), (w - 0.04, tall - 0.03, 0.016), art, step=1.0, skip='-z', skins={name: steel for name in ('+x', '-x', '+y', '-y')},
+            tints={name: body for name in ('+x', '-x', '+y', '-y')})
+
+
+def build_corkboard(prop):
+    m, w, h, d = stand_of(prop)
+    box('atlas', m, (0, 0, 0), (w, h, d), Cell('corkboard'), step=0.8, skip='-z', skins={name: metal() for name in ('+x', '-x', '+y', '-y')},
+        tints={name: paint('wing', 1.2) for name in ('+x', '-x', '+y', '-y')})
+
+
+def build_chart(prop):
+    m, w, h, d = stand_of(prop)
+    # The paper hangs a little off the wall at the bottom, where it has curled.
+    quad('atlas', m, [(-w / 2, -h / 2, d / 2 + 0.02), (w / 2, -h / 2, d / 2 + 0.02), (w / 2, h / 2, -d / 2 + 0.005), (-w / 2, h / 2, -d / 2 + 0.005)], Cell('chart'), step=0.7)
+
+
+def build_wall_panel(prop):
+    m, w, h, d = stand_of(prop)
+    steel = metal()
+    box('atlas', m, (0, 0, 0), (w, h, d), steel, WHITE * 1.1, skip='-z', skins={'+z': Cell('panel')}, tints={'+z': WHITE})
+    # Conduits leave it for the ceiling and the floor.
+    for x in (-0.2, 0.1):
+        pipe('atlas', m, [(x, h / 2, 0), (x, CEILING - prop['position'][1], 0)], 0.028, 5, steel, paint('wing', 1.2))
+    pipe('atlas', m, [(0.2, -h / 2, 0), (0.2, FLOOR - prop['position'][1], 0)], 0.028, 5, steel, paint('wing', 1.2))
+    for y in (h / 2 + 0.5, -h / 2 - 0.6):
+        box('atlas', m, (0.2 if y < 0 else -0.05, y, -0.01), (0.12 if y < 0 else 0.42, 0.03, 0.07), steel, paint('chitin', 1.3), skip='-z')
+
+
+def build_vent(prop):
+    m, w, h, d = stand_of(prop)
+    steel = metal()
+    box('atlas', m, (0, 0, 0), (w, h, d), steel, paint('wing', 1.4), skip='+y-y')
+    quad('atlas', m, [(-w / 2, -h / 2, -d / 2), (w / 2, -h / 2, -d / 2), (w / 2, -h / 2, d / 2), (-w / 2, -h / 2, d / 2)], Cell('grille'))
+
+
+def build_duct(prop):
+    m, w, h, d = stand_of(prop)
+    steel = metal()
+    tin = paint('wing', 1.25)
+    # A sheet-metal duct under the ceiling, with a flange at each joint, straps to the ceiling, and one grille.
+    box('atlas', m, (0, -0.03, 0), (w - 0.08, h - 0.1, d), steel, tin, step=1.4, skip='+y')
+    joints = max(2, round(d / 1.4))
+    for joint in range(joints + 1):
+        z = -d / 2 + 0.03 + (d - 0.06) * joint / joints
+        box('atlas', m, (0, -0.03, z), (w, h - 0.02, 0.05), steel, tin * 0.85, skip='+y')
+        if joint % 2 == 1:
+            for side in (-1, 1):
+                box('atlas', m, (side * (w / 2 - 0.02), h / 2 - 0.03, z + 0.2), (0.02, 0.1, 0.06), steel, paint('chitin', 1.4), skip='+y-y')
+    side = w / 2 - 0.04 + 0.004
+    quad('atlas', m, [(side, -0.2, 0.9), (side, -0.2, 0.3), (side, 0.12, 0.3), (side, 0.12, 0.9)], Cell('grille'))
+
+
+def build_pipe_run(prop):
+    m, w, h, d = stand_of(prop)
+    steel = metal()
+    # Two pipes along the top of the wall: a thick rust one with flanges, and a thin one under it. Brackets hold them.
+    for y, z, radius, tint, joints in ((0.02, 0, 0.075, paint('rust', 0.95), 5), (-0.07, 0.07, 0.03, paint('chitin', 1.5), 0)):
+        cuts = 8
+        pipe('atlas', m, [(-w / 2 + w * cut / cuts, y, z) for cut in range(cuts + 1)], radius, 6, steel, tint)
+        for joint in range(joints):
+            x = -w / 2 + w * (joint + 0.5) / joints
+            lying = m @ frame((x, y, z)) @ turn_z(math.pi / 2)
+            lathe('atlas', lying, (0, 0, 0), [(radius, -0.05), (radius + 0.035, -0.05), (radius + 0.035, 0.05), (radius, 0.05)], 6, steel, tint * 1.15)
+    for bracket in range(6):
+        x = -w / 2 + w * (bracket + 0.5) / 6 + 0.5
+        box('atlas', m, (x, -0.02, -d / 2 + 0.03), (0.05, 0.2, 0.06), steel, paint('chitin', 1.2), skip='-z')
+
+
+def build_bin(prop):
+    m, w, h, d = stand_of(prop)
+    lathe('atlas', m, (0, 0, 0), [(w * 0.36, -h / 2), (w * 0.46, h / 2), (w * 0.43, h / 2), (w * 0.4, h / 2 - 0.1)], 8, metal(1.0), paint('chitin', 1.3), caps='b')
+    cap('atlas', m, ring((0, 0, 0), w * 0.4, 8, h / 2 - 0.1), PLAIN, flat('night', 3))
+    # Crumpled paper shows over the rim.
+    for x, z, turn in ((0.04, 0.02, 0.4), (-0.06, -0.05, 1.3)):
+        box('atlas', m @ frame((x, h / 2 - 0.06, z), turn), (0, 0, 0), (0.11, 0.09, 0.1), Cell('paper', 0.6), WHITE * 0.95, skip='-y')
+
+
+def build_storage_box(prop):
+    m, w, h, d = stand_of(prop)
+    card = Cell('cardboard')
+    box('atlas', m, (0, -0.03, 0), (w - 0.03, h - 0.06, d - 0.03), card, skip='-y+y')
+    box('atlas', m, (0, h / 2 - 0.05, 0), (w, 0.1, d), card, WHITE * 1.05, skip='-y', skins={'+y': Cell('cardboard', 1.2)})
+
+
+def build_trim():
+    """Skirting and a rail along the walls the camera sees. They give the wall's foot and its wainscot a real edge."""
+    x0, x1, z0 = ROOM['minX'], ROOM['maxX'], ROOM['minZ']
+    near = 6.0
+    d0, d1, _, _ = door_hole()
+    steel = metal()
+    runs = [(frame((0, 0, z0)), x0, x1), (frame((x0, 0, 0), math.pi / 2), -near, -z0), (frame((x1, 0, 0), -math.pi / 2), z0, d0 - 0.14), (frame((x1, 0, 0), -math.pi / 2), d1 + 0.14, near)]
+    for m, start, end in runs:
+        pieces = max(1, round((end - start) / 2.2))
+        for piece in range(pieces):
+            a, b = start + (end - start) * piece / pieces, start + (end - start) * (piece + 1) / pieces
+            box('atlas', m, ((a + b) / 2, FLOOR + 0.06, 0.015), (b - a, 0.12, 0.03), PLAIN, flat('night', 3), skip='-z-y+x-x')
+            box('atlas', m, ((a + b) / 2, FLOOR + 1.0, 0.02), (b - a, 0.06, 0.04), steel, paint('rust', 0.85), skip='-z+x-x')
+
+
+def build_chamber():
+    """The test chamber behind the window: two transport pods on striped plinths, a control cabinet with the warning light, a gantry, and cables."""
+    hx0, hx1, hy0, hy1 = window_hole()
+    left, right, front, back = hx0 - 1.45, hx1 + 1.3, ROOM['minZ'] - 0.3, ROOM['minZ'] - 5.6
+    deck, top = -1.0, 2.9
+    rock = Tile(2.0)
+    grey = WHITE * 1.3
+    quad('concrete', WORLD, [(left, deck, back), (right, deck, back), (right, top, back), (left, top, back)], rock, grey, step=1.3)
+    quad('concrete', WORLD, [(left, deck, front), (left, deck, back), (left, top, back), (left, top, front)], rock, grey, step=1.3)
+    quad('concrete', WORLD, [(right, deck, back), (right, deck, front), (right, top, front), (right, top, back)], rock, grey, step=1.3)
+    quad('concrete', WORLD, [(left, top, back), (right, top, back), (right, top, front), (left, top, front)], rock, grey * 0.8, step=2.0)
+    quad('concrete', WORLD, [(left, deck, front), (right, deck, front), (right, deck, back), (left, deck, back)], rock, grey, step=1.3)
+    steel = metal()
+    stripes = Cell('hazard')
+    # A hazard band crosses the far wall at the height of the window.
+    count = round((right - left) / 0.8)
+    for index in range(count):
+        a, b = left + (right - left) * index / count, left + (right - left) * (index + 1) / count
+        quad('atlas', WORLD, [(a, 0.28, back + 0.02), (b, 0.28, back + 0.02), (b, 0.68, back + 0.02), (a, 0.68, back + 0.02)], stripes, WHITE * 0.9)
+    middle = (hx0 + hx1) / 2
+    pod_z = back + 2.5
+    art = Cell('pod')
+    sides = 12
+    for x in (middle - 1.12, middle + 1.12):
+        spot = frame((x, 0, pod_z))
+        # The plinth, with stripes round its top edge.
+        lathe('atlas', spot, (0, 0, 0), [(0.98, deck), (0.98, 0.04)], sides, steel, paint('chitin', 0.9))
+        low, high = ring((0, 0, 0), 0.98, sides, 0.04), ring((0, 0, 0), 0.98, sides, 0.3)
+        for index in range(sides):
+            after = (index + 1) % sides
+            emit('atlas', spot, [low[index], low[after], high[after], high[index]], [stripes.uv((0, 0, 1, 1), a, b) for a, b in ((0, 0), (1, 0), (1, 1), (0, 1))])
+        cap('atlas', spot, ring((0, 0, 0), 0.98, sides, 0.3), steel, paint('chitin', 1.1))
+        # The capsule. The three faces toward the window carry the door.
+        radius, foot, shoulder = 0.74, 0.3, 2.2
+        low, high = ring((0, 0, 0), radius, sides, foot, phase=0.5), ring((0, 0, 0), radius, sides, shoulder, phase=0.5)
+        hull = paint('chitin', 0.75)
+        for index in range(sides):
+            after = (index + 1) % sides
+            # Faces 11, 0, and 1 look toward +z.
+            door = {sides - 2: 0, sides - 1: 1, 0: 2}.get(index)
+            if door is None:
+                rect = steel.rect(0.38, shoulder - foot)
+                emit('atlas', spot, [low[index], low[after], high[after], high[index]], [steel.uv(rect, a, b) for a, b in ((0, 0), (1, 0), (1, 1), (0, 1))], hull)
+            else:
+                emit('atlas', spot, [low[index], low[after], high[after], high[index]], [art.uv((door / 3, 0, (door + 1) / 3, 1), a, b) for a, b in ((0, 0), (1, 0), (1, 1), (0, 1))])
+        lathe('atlas', spot, (0, 0, 0), [(radius, shoulder), (radius * 0.86, shoulder + 0.22), (radius * 0.5, shoulder + 0.4), (radius * 0.2, shoulder + 0.45)], sides, steel, hull, caps='t')
+        lathe('atlas', spot, (0, 0, 0), [(radius + 0.04, 1.02), (radius + 0.04, 1.1)], sides, steel, paint('chitin', 1.5))
+        # The porthole shines.
+        reach = radius * math.cos(math.pi / sides) + 0.012
+        quad('atlas', spot, [(-0.16, 1.52, reach), (0.16, 1.52, reach), (0.16, 1.86, reach), (-0.16, 1.86, reach)], art, rect=(0.36, 0.64, 0.64, 0.82), kind='glow', value=WHITE * 1.5)
+        # A thick cable hangs from the capsule to the cabinet between the pods.
+        toward = 1 if x < middle else -1
+        cable = [(x + toward * 0.72, 1.95, pod_z), (x + toward * 0.86, 1.62, pod_z + 0.3), (x + toward * 0.9, 1.4, pod_z + 0.75), (middle - toward * 0.2, 1.3, pod_z + 1.1)]
+        pipe('atlas', WORLD, cable, 0.05, 5, PLAIN, flat('night', 2.5))
+        # Cables on the deck run from each pod to the wall.
+        pipe('atlas', WORLD, [(x - toward * 0.9, deck + 0.05, pod_z + 0.2), (x - toward * 1.4, deck + 0.05, pod_z + 0.9), (x - toward * 1.5, deck + 0.05, front - 0.6), (x - toward * 1.9, deck + 0.05, front - 0.2)],
+             0.05, 4, PLAIN, flat('night', 2.5))
+    # The control cabinet stands between the pods, nearer the window. Its warning light turns.
+    cabinet = frame((middle, 0, pod_z + 1.15))
+    box('atlas', cabinet, (0, (deck + 1.3) / 2, 0), (0.8, 1.3 - deck, 0.5), steel, paint('chitin', 1.2), step=1.2, skip='-y')
+    box('atlas', cabinet, (0, 0.9, 0.26), (0.62, 0.62, 0.03), Cell('panel'), skip='-z')
+    lathe('atlas', cabinet, (0, 1.3, 0), [(0.1, 0), (0.1, 0.06), (0.03, 0.06), (0.03, 0.12)], 8, steel, paint('chitin', 1.5))
+    origin = np.array([middle, 1.5, pod_z + 1.15])
+    NODE_ORIGINS['beacon'] = origin
+    lamp = frame(origin)
+    red = np.array([1.0, 0.1, 0.06])
+    lathe('atlas', lamp, (0, 0, 0), [(0.09, -0.08), (0.09, 0.06), (0.05, 0.1)], 8, PLAIN, caps='t', kind='glow', value=red * 2.6, node='beacon')
+    # Two beams of red light turn with it. They fade toward their far end.
+    for side in (0.7, 0.7 + math.pi):
+        beam = lamp @ frame(yaw=side)
+        for order in (1, -1):
+            emit('beam', beam, [(0, 0, 0.09), (0.16, 0, 1.2), (-0.16, 0, 1.2)][::order], [(0, 0), (0, 0), (0, 0)], kind='beam',
+                 value=[(*(red * 0.16), 1), (0, 0, 0, 1), (0, 0, 0, 1)][::order], node='beacon')
+    # A gantry beam crosses the chamber near the top of the window's view, with pipes on the far wall.
+    box('atlas', WORLD, (middle, 1.92, pod_z - 0.9), (right - left, 0.2, 0.26), steel, paint('rust', 0.8), step=1.6, skip='+x-x')
+    for x in (left + 0.5, right - 0.45):
+        pipe('atlas', WORLD, [(x, deck, back + 0.16), (x, 1.2, back + 0.16), (x, top, back + 0.16)], 0.1, 6, steel, paint('wing', 0.9))
+        lathe('atlas', frame((x, 1.2, back + 0.16)), (0, 0, 0), [(0.1, -0.05), (0.15, -0.05), (0.15, 0.05), (0.1, 0.05)], 6, steel, paint('wing', 1.0))
+
+
+def build_corridor():
+    """The corridor behind the door: lockers on its far wall, a pipe under its ceiling, and one caged lamp."""
+    near, far = ROOM['maxX'] + 0.3, ROOM['maxX'] + 2.9
+    z0, z1 = -10.5, 0.6
+    top = 1.95
+    rock = Tile(2.0)
+    quad('concrete', WORLD, [(near, FLOOR, z1), (far, FLOOR, z1), (far, FLOOR, z0), (near, FLOOR, z0)], rock, WHITE * 2.2, step=1.6)
+    quad('concrete', WORLD, [(far, FLOOR, z0), (far, FLOOR, z1), (far, top, z1), (far, top, z0)], rock, WHITE * 2.6, step=1.4)
+    quad('concrete', WORLD, [(near, top, z0), (far, top, z0), (far, top, z1), (near, top, z1)], rock, WHITE * 2.0, step=2.4)
+    quad('concrete', WORLD, [(near, FLOOR, z0), (far, FLOOR, z0), (far, top, z0), (near, top, z0)], rock, WHITE * 2.2, step=1.4)
+    quad('concrete', WORLD, [(far, FLOOR, z1), (near, FLOOR, z1), (near, top, z1), (far, top, z1)], rock, WHITE * 2.2, step=1.4)
+    for index in range(5):
+        build_locker({'position': [far - 0.36, FLOOR + 1.4, -8.3 + index * 0.62], 'size': [0.7, 2.8, 0.6], 'facing': '-x'})
+    steel = metal()
+    run = [(far - 0.2, top - 0.25, z) for z in (z0, -8.5, -6.5, -4.5, -2.5, z1)]
+    pipe('atlas', WORLD, run, 0.09, 6, steel, paint('rust', 0.9))
+    for z in (-7.5, -5.5, -3.5):
+        lathe('atlas', frame((far - 0.2, top - 0.25, z)) @ turn_x(math.pi / 2), (0, 0, 0), [(0.09, -0.05), (0.13, -0.05), (0.13, 0.05), (0.09, 0.05)], 6, steel, paint('rust', 1.05))
+    # The lamp hangs on the far wall, past the lockers.
+    lamp = frame((far - 0.08, 1.2, -4.9), -math.pi / 2)
+    box('atlas', lamp, (0, 0, 0), (0.3, 0.2, 0.16), steel, paint('chitin', 1.3), skip='-z')
+    quad('atlas', lamp, [(-0.11, -0.07, 0.082), (0.11, -0.07, 0.082), (0.11, 0.07, 0.082), (-0.11, 0.07, 0.082)], Cell('diffuser'), kind='glow', value=INK['cream'] * 2.6)
 
 
 def build_tube(prop):
@@ -371,21 +977,38 @@ def build_tube(prop):
     corners = [(-half + 0.04, -0.035, -length / 2 + 0.06), (half - 0.04, -0.035, -length / 2 + 0.06), (half - 0.04, -0.035, length / 2 - 0.06), (-half + 0.04, -0.035, length / 2 - 0.06)]
     quad('atlas', m, corners, Cell('diffuser'), kind='flicker' if failing else 'glow', value=glow)
     # A grille of thin blades hangs under the diffuser.
-    blades = max(3, round(length / 0.22))
+    blades = max(3, round(length / 0.36))
+    lit = INK['cream'] * (0.5 if failing else 1.1)
     for index in range(1, blades):
         z = -length / 2 + 0.06 + (length - 0.12) * index / blades
-        box('atlas', m, (0, -0.06, z), (half * 2 - 0.1, 0.045, 0.012), steel, INK['wing'] * 1.1, skip='+y-y+x-x')
-    box('atlas', m, (0, -0.06, 0), (0.012, 0.045, length - 0.12), steel, INK['wing'] * 1.1, skip='+y-y+z-z')
+        box('atlas', m, (0, -0.05, z), (half * 2 - 0.1, 0.028, 0.014), PLAIN, skip='+y+x-x', kind='glow', value=lit)
+    box('atlas', m, (0, -0.05, 0), (0.014, 0.028, length - 0.12), PLAIN, skip='+y+z-z', kind='glow', value=lit)
 
 
-BUILDERS = {'Desk': build_desk, 'CeilingTube': build_tube}
+BUILDERS = {
+    'Desk': build_desk, 'CeilingTube': build_tube, 'Monitor': build_monitor, 'Keyboard': build_keyboard, 'Mug': build_mug, 'Chair': build_chair,
+    'Whiteboard': build_whiteboard, 'JarShelf': build_jar_shelf, 'ChamberWindow': build_window, 'WallClock': build_clock, 'Door': build_door,
+    'VendingMachine': build_vending, 'DeskLamp': build_lamp, 'Papers': build_papers, 'FireExtinguisher': build_extinguisher, 'Locker': build_locker,
+    'Corkboard': build_corkboard, 'Chart': build_chart, 'WallPanel': build_wall_panel, 'CeilingVent': build_vent, 'Duct': build_duct, 'PipeRun': build_pipe_run,
+    'WasteBin': build_bin, 'StorageBox': build_storage_box,
+}
+INDEXED = {'Jar': build_jar, 'FilingCabinet': build_cabinet}
 
 
 def build_props():
-    for prop in PLAN['props']:
-        builder = BUILDERS.get(prop['_tag'])
-        if builder:
-            builder(prop)
+    counts = {}
+    for index, prop in enumerate(PLAN['props']):
+        tag = prop['_tag']
+        if tag in INDEXED:
+            INDEXED[tag](prop, counts.get(tag, 0))
+            counts[tag] = counts.get(tag, 0) + 1
+        elif tag in BUILDERS:
+            BUILDERS[tag](prop)
+        else:
+            raise ValueError(f'The plan has a prop this script cannot build: {tag}')
+    build_trim()
+    build_chamber()
+    build_corridor()
 
 
 # ---------------------------------------------------------------- the bake
@@ -439,7 +1062,7 @@ def make_object(name, faces):
             mesh.materials.append(bake_material(f'{name}-{len(slots)}', albedo))
     mesh.polygons.foreach_set('material_index', [slots[albedo] for albedo in albedos])
     mesh.polygons.foreach_set('use_smooth', [True] * len(polygons))
-    mesh.set_sharp_from_angle(angle=math.radians(35))
+    mesh.set_sharp_from_angle(angle=math.radians(50))
     thing = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(thing)
     return thing
@@ -463,7 +1086,7 @@ def add_light(name, kind, position, power, tint, size=None, aim=(0, -1, 0), spre
         data.shadow_soft_size = size or 0.1
     thing = bpy.data.objects.new(name, data)
     thing.location = tuple(to_blender(position))
-    direction = __import__('mathutils').Vector(tuple(to_blender(aim)))
+    direction = Vector(tuple(to_blender(aim)))
     thing.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
     bpy.context.scene.collection.objects.link(thing)
     return thing
@@ -472,12 +1095,34 @@ def add_light(name, kind, position, power, tint, size=None, aim=(0, -1, 0), spre
 def add_lights():
     """The lights of the bake, in two groups: the steady ones, and the failing tube alone."""
     steady, failing = [], []
-    tube_tint = (1.0, 0.95, 0.82)
+    tube_tint = (0.96, 1.0, 0.95)
     for prop in find('CeilingTube'):
         x, y, z = prop['position']
         length = prop['size'][2]
-        light = add_light(prop['id'], 'AREA', (x, y - 0.12, z), 120 * length, tube_tint, size=(0.3, length - 0.1), spread=150)
+        light = add_light(prop['id'], 'AREA', (x, y - 0.14, z), 120 * length, tube_tint, size=(0.3, length - 0.1), spread=130)
         (failing if prop['lamp'] == 'flickering' else steady).append(light)
+    # The test chamber: one cold light over the pods, the glow of each porthole, and the red of the warning light.
+    hx0, hx1, _, _ = window_hole()
+    middle, pod_z = (hx0 + hx1) / 2, ROOM['minZ'] - 5.6 + 2.5
+    steady.append(add_light('chamber', 'AREA', (middle, 2.8, pod_z + 0.7), 300, (0.6, 0.92, 1.0), size=(2.4, 1.6), spread=140))
+    for x in (middle - 1.12, middle + 1.12):
+        steady.append(add_light('porthole', 'POINT', (x, 1.7, pod_z + 0.95), 12, (0.3, 1.0, 0.9), size=0.08))
+    steady.append(add_light('beacon', 'POINT', NODE_ORIGINS['beacon'] + np.array([0, 0.14, 0]), 26, (1.0, 0.08, 0.04), size=0.05))
+    # The corridor's lamp. Its light falls through the door that stands ajar.
+    steady.append(add_light('corridor', 'POINT', (ROOM['maxX'] + 2.55, 1.2, -4.9), 400, (1.0, 0.86, 0.62), size=0.12))
+    # The small lights of the room: the screen, the vending machine's window, the desk lamp, and the lamp over the door.
+    for prop in find('Monitor'):
+        x, y, z = prop['position']
+        steady.append(add_light('screen', 'AREA', (x, y + 0.14, z + prop['size'][2] / 2 + 0.03), 5, (0.45, 1.0, 0.85), size=(0.5, 0.36), aim=(0, 0, 1)))
+    for prop in find('VendingMachine'):
+        x, y, z = prop['position']
+        steady.append(add_light('vending', 'AREA', (x - prop['size'][0] / 2 - 0.03, y + 0.3, z - 0.2), 24, (1.0, 0.92, 0.75), size=(0.9, 1.9), aim=(-1, 0, 0)))
+    for prop in find('DeskLamp'):
+        x, y, z = prop['position']
+        steady.append(add_light('desk-lamp', 'SPOT', (x + 0.1, y + 0.12, z + 0.09), 70, (1.0, 0.85, 0.6), aim=(0.15, -1, 0.5), spot=95))
+    for prop in find('Door'):
+        x, y, z = prop['position']
+        steady.append(add_light('door-lamp', 'POINT', (x - 0.1, y + prop['size'][1] / 2 + 0.3, z), 4, (0.3, 0.9, 0.9), size=0.05))
     return steady, failing
 
 
@@ -558,6 +1203,12 @@ def luminance(rgb):
     return rgb @ np.array([0.2126, 0.7152, 0.0722])
 
 
+def grade(light):
+    """Deepens the dark end of scaled light. A value at the pool level stays where it is."""
+    level = np.maximum(luminance(light), 1e-6)
+    return light * ((level / POOL) ** (CONTRAST - 1))[..., None]
+
+
 def encode(light):
     return np.clip(np.sqrt(np.clip(light, 0, None) / LIGHT_MAX), 0, 1)
 
@@ -573,14 +1224,15 @@ def soften(grid, rounds=1):
 def write_light_map(maps, scale):
     """The light map file: the steady light on the left half, the failing tube's light on the right half."""
     wide = np.ones((LM_SIZE, LM_SIZE * 2, 4), np.float32)
-    wide[:, :LM_SIZE, :3] = encode(soften(maps['base'], 2) * scale)
+    wide[:, :LM_SIZE, :3] = encode(grade(soften(maps['base'], 2) * scale))
     wide[:, LM_SIZE:, :3] = encode(luminance(soften(maps['failing'], 2) * scale))[:, :, None]
     image = bpy.data.images.new('office-light', LM_SIZE * 2, LM_SIZE, alpha=False)
     image.colorspace_settings.name = 'Non-Color'
     image.pixels.foreach_set(wide.ravel())
+    # Light is smooth, so a lossy picture holds it in a tenth of the bytes.
     image.filepath_raw = LIGHT_PATH
-    image.file_format = 'PNG'
-    image.save()
+    image.file_format = 'WEBP'
+    image.save(quality=92)
 
 
 def write_glb(groups):
@@ -588,42 +1240,52 @@ def write_glb(groups):
     chunks, views, accessors, meshes, nodes, materials = [], [], [], [], [], {}
     offset = 0
 
-    def view(data, target):
+    def view(data, target, stride=None):
         nonlocal offset
         raw = data.tobytes()
         raw += b'\0' * (-len(raw) % 4)
         chunks.append(raw)
-        views.append({'buffer': 0, 'byteOffset': offset, 'byteLength': len(data.tobytes()), 'target': target})
+        views.append({'buffer': 0, 'byteOffset': offset, 'byteLength': len(data.tobytes()), 'target': target, **({'byteStride': stride} if stride else {})})
         offset += len(raw)
         return len(views) - 1
 
-    def accessor(data, kind, component, target=34962, normalized=False, bounds=False):
-        entry = {'bufferView': view(data, target), 'componentType': component, 'count': len(data), 'type': kind}
+    def accessor(data, kind, component, target=34962, normalized=False, bounds=False, stride=None):
+        entry = {'bufferView': view(data, target, stride), 'componentType': component, 'count': len(data), 'type': kind}
         if normalized:
             entry['normalized'] = True
         if bounds:
-            entry['min'], entry['max'] = [float(v) for v in data.min(axis=0)], [float(v) for v in data.max(axis=0)]
+            entry['min'], entry['max'] = [int(v) for v in data[:, :3].min(axis=0)], [int(v) for v in data[:, :3].max(axis=0)]
         accessors.append(entry)
         return len(accessors) - 1
+
+    def texcoord(uv):
+        # A uv inside the picture fits 16 bits. A uv that repeats keeps its float.
+        if uv.min() >= 0 and uv.max() <= 1:
+            return accessor(np.round(uv * 65535).astype(np.uint16), 'VEC2', 5123, normalized=True)
+        return accessor(uv.astype(np.float32), 'VEC2', 5126)
 
     for node_name, (origin, surfaces) in groups.items():
         primitives = []
         for surface, part in surfaces.items():
             if surface not in materials:
                 materials[surface] = len(materials)
-            attributes = {'POSITION': accessor((part['position'] - origin).astype(np.float32), 'VEC3', 5126, bounds=True),
-                          'TEXCOORD_0': accessor(part['uv'].astype(np.float32), 'VEC2', 5126),
+            # Positions are whole steps of GRID, as 16 bit numbers with two bytes of padding. The node's scale turns them back into world units.
+            steps = np.zeros((len(part['position']), 4), np.int16)
+            steps[:, :3] = np.round((part['position'] - origin) / GRID)
+            attributes = {'POSITION': accessor(steps, 'VEC3', 5122, bounds=True, stride=8),
+                          'TEXCOORD_0': texcoord(part['uv']),
                           'COLOR_0': accessor(part['colour'].astype(np.uint8), 'VEC4', 5121, normalized=True)}
             if part['uv1'] is not None:
-                attributes['TEXCOORD_1'] = accessor(part['uv1'].astype(np.float32), 'VEC2', 5126)
+                attributes['TEXCOORD_1'] = texcoord(part['uv1'])
             small = len(part['position']) < 65536
             indices = accessor(part['index'].astype(np.uint16 if small else np.uint32), 'SCALAR', 5123 if small else 5125, target=34963)
             primitives.append({'attributes': attributes, 'indices': indices, 'material': materials[surface]})
         meshes.append({'name': node_name, 'primitives': primitives})
-        nodes.append({'name': node_name, 'mesh': len(meshes) - 1, 'translation': [float(v) for v in origin]})
+        nodes.append({'name': node_name, 'mesh': len(meshes) - 1, 'translation': [float(v) for v in origin], 'scale': [GRID] * 3})
     document = {
         'asset': {'version': '2.0', 'generator': 'Brundlefly build_office_props.py',
                   'extras': {'light': 'COLOR_0 holds baked light: rgb is the steady light and alpha the failing tube. Decode a value as value * value * lightMax.', 'lightMax': LIGHT_MAX}},
+        'extensionsUsed': ['KHR_mesh_quantization'], 'extensionsRequired': ['KHR_mesh_quantization'],
         'scene': 0, 'scenes': [{'nodes': list(range(len(nodes)))}], 'nodes': nodes, 'meshes': meshes,
         'materials': [{'name': name} for name in materials], 'accessors': accessors, 'bufferViews': views, 'buffers': [{'byteLength': offset}],
     }
@@ -646,7 +1308,7 @@ def assemble(shell_faces, lit_faces, other_faces, corners, normals, scale):
     cursor = 0
     for face in lit_faces:
         count = len(face['points'])
-        base, failing, normal = corners['base'][cursor:cursor + count] * scale, corners['failing'][cursor:cursor + count] * scale, normals[cursor:cursor + count]
+        base, failing, normal = grade(corners['base'][cursor:cursor + count] * scale), corners['failing'][cursor:cursor + count] * scale, normals[cursor:cursor + count]
         cursor += count
         for index in range(count):
             if face['kind'] == 'glow':
@@ -656,9 +1318,11 @@ def assemble(shell_faces, lit_faces, other_faces, corners, normals, scale):
             else:
                 light, flick = base[index] * face['tint'], float(luminance(failing[index]) * luminance(face['tint']) / max(luminance(WHITE), 1e-6))
             records.append((face, face['points'][index], face['uv'][index], None, light, flick, normal[index]))
+    # Glass and beams carry their own colour and opacity: one value for the face, or one for each corner.
     for face in other_faces:
-        for point, uv in zip(face['points'], face['uv']):
-            records.append((face, point, uv, None, np.asarray(face['value'], float), None, np.zeros(3)))
+        values = np.asarray(face['value'], float)
+        for index, (point, uv) in enumerate(zip(face['points'], face['uv'])):
+            records.append((face, point, uv, None, values[index] if values.ndim == 2 else values, None, np.zeros(3)))
 
     groups = {}
     cursor = 0

@@ -17,6 +17,6 @@ await writeFile(planFile, `${JSON.stringify(plan, null, 2)}\n`)
 const path = (name: string) => fileURLToPath(new URL(name, folder))
 const art = fileURLToPath(new URL('../../assets/brand/office/', import.meta.url))
 const result = spawnSync('flatpak', ['run', 'org.blender.Blender', '-b', '--factory-startup', '--python', path('build_office_props.py'), '--',
-  planFile, path('atlas.json'), path('office.glb'), `${art}office-light.png`, ...process.argv.slice(2)], { stdio: 'inherit' })
+  planFile, path('atlas.json'), path('office.glb'), `${art}office-light.webp`, ...process.argv.slice(2)], { stdio: 'inherit' })
 if (result.error) throw result.error
 process.exitCode = result.status ?? 1

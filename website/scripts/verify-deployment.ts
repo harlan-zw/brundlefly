@@ -14,7 +14,7 @@ for (const name of await readdir(new URL('brand/kit/lair/', output))) {
 }
 // The office set's textures, light map, and model. Without one, the office shows the static fallback.
 for (const name of await readdir(new URL('brand/office/', output))) {
-  if (/\.(png|glb)$/.test(name)) required.add(`/brand/office/${name}`)
+  if (/\.(png|webp|glb)$/.test(name)) required.add(`/brand/office/${name}`)
 }
 for (const path of pages) {
   const html = await readFile(new URL(`.${path}index.html`, output), 'utf8')
