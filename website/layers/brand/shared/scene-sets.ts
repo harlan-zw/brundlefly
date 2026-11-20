@@ -1,5 +1,6 @@
 import { lairSet } from './lair-set'
+import { officeSet } from './office-set'
 import type { SceneSet, SetName } from './scene-set'
 
 /** Every set the scene can show, by name. */
-export const sceneSets: Record<SetName, SceneSet> = { lair: lairSet }
+export const sceneSets: Record<SetName, SceneSet> = { lair: lairSet, office: officeSet }

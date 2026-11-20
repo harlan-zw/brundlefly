@@ -5,7 +5,7 @@ import type { SceneQuality } from './scene-quality.ts'
 import type { SceneSettings } from './scene-settings.ts'
 
 /** A set is the place the mascot stands in. The scene owns the mascot, the camera, and the conversation. The set owns everything else. */
-export type SetName = 'lair'
+export type SetName = 'lair' | 'office'
 type Point = readonly [x: number, z: number]
 type Place = readonly [x: number, y: number, z: number]
 
