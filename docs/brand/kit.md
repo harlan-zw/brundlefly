@@ -351,6 +351,9 @@ His voice drops and opens the jaw and spreads the cheeks. A raised brow lifts th
 The travel comes from referenceFace in face.ts, scaled to the model's own units. A file without these joints keeps a still face.
 If the file turns its top node about the vertical, the site turns that node as he moves. While he walks he faces his direction of travel, up to 1.3 rad from the viewer, so he never turns his back.
 While he stands he holds the file's three-quarter turn, to the side he last faced. He turns to the next side a little before he leaves. His head stays toward the viewer at rest.
+His feet carry every turn. He turns only as fast as he walks, or as he steps in place, and with both feet down he does not turn.
+While he stands, the foot that carries him keeps its place and his body moves over it, because he has no leg solver. A turn to the other side moves him up to 0.4 units, and a walk brings him back onto his route.
+With motion off he stands at once where the turn would end.
 His legs cycle once for each stride of ground he covers. The site measures that stride from the model, so a planted foot does not slide, and it walks the mesh at 1.5 times the relief rig's speed.
 A foot that carries him stays level, so its sole lies flat on the floor.
 Any other file loops its Brundlefly-idle clip, or sways about its feet if it has no clip. That model stands at the mascot start point.
