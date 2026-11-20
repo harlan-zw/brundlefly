@@ -6,6 +6,8 @@ import { frame, meshCadence, meshWalk, startWalk, stepWalk, walkSets } from './w
 import type { Point, Walk } from './walk-sim.ts'
 
 // The cameras of the scene at its default zoom, and the close shot on both sides.
+// The first stop of his loop. The back leg of the loop runs from it, along the furniture.
+const [stopX, stopZ] = officePlan.stops[0]!.position
 const rules: PlanRules = { body: meshBody, legClearance: 0.3, stopClearance: 0.4, readable: ['monitor', 'whiteboard'], viewpoints: [
   { _tag: 'Fixed', name: 'desktop', position: [0, 0.75, 8.67] }, { _tag: 'Fixed', name: 'phone', position: [0, 0.75, 6.93] },
   { _tag: 'CloseShot', name: 'close-right', side: 1 }, { _tag: 'CloseShot', name: 'close-left', side: -1 },
@@ -28,7 +30,7 @@ test('the office plan gives every stop a pause long enough for its habit, and on
 
 test('a prop beside his walk is reported with the clearance it leaves', () => {
   // The crate stands 1.6 units behind the back leg of the loop. His turned body reaches 1.65.
-  const problems = checkOfficePlan(withProp(crate('crate', 0, -2.85)), rules)
+  const problems = checkOfficePlan(withProp(crate('crate', 0, stopZ - 1.9)), rules)
   const blocked = problems.find(problem => problem._tag === 'RouteBlocked')
   assert.ok(blocked && blocked._tag === 'RouteBlocked')
   assert.equal(blocked.prop, 'crate')
@@ -44,7 +46,7 @@ test('a prop that a diagonal leg crosses is reported, even when it is far from e
 
 test('a stop needs more room than a leg, because he turns on his feet there', () => {
   // The bin stands left of the first stop and leaves 0.35: enough to walk past, too little to turn in.
-  const problems = checkOfficePlan(withProp(crate('bin', -0.9 - meshBody.reach - 0.35 - 0.3, -0.95)), rules)
+  const problems = checkOfficePlan(withProp(crate('bin', stopX - meshBody.reach - 0.35 - 0.3, stopZ)), rules)
   assert.deepEqual(problems.map(problem => problem._tag), ['StopCrowded'])
   const crowded = problems[0]!
   assert.ok(crowded._tag === 'StopCrowded' && crowded.prop === 'bin' && crowded.stop === 0 && Math.abs(crowded.clearance - 0.35) < 1e-9)
@@ -87,9 +89,9 @@ test('his way to the door must be clear from the start point and from every stop
   const problems = checkOfficePlan(withProp(crate('plant', 2.2, -0.3, 0.3)), rules).filter(problem => problem._tag === 'ExitBlocked')
   assert.ok(problems.some(problem => problem._tag === 'ExitBlocked' && problem.prop === 'plant' && problem.from === 3))
   assert.ok(problems.some(problem => problem._tag === 'ExitBlocked' && problem.from === 'start'))
-  // The door's own point keeps clear of the door, the jars, and the vending machine.
+  // The door's own point keeps clear of the door and the vending machine. He works at the jars, so only his trunk must clear them.
   const tight = checkOfficePlan({ ...officePlan, exit: [3.6, -1.6] }, rules).filter(problem => problem._tag === 'ExitBlocked').map(problem => problem.prop)
-  assert.ok(tight.includes('jar-shelf') && tight.includes('door'))
+  assert.ok(tight.includes('door') && !tight.includes('jar-shelf'))
 })
 
 /**
@@ -134,18 +136,30 @@ test('the path he really walks, with its curves and every journey to the door, k
   assert.ok(path.length > 5000, 'The path must hold his laps and his journeys.')
   assert.deepEqual(checkWalkedPath(officePlan, rules, path), [])
   // His curves stay close to the straight legs: he never swings wide of the room he was given.
-  for (const [x, z] of path) assert.ok(x > -1.3 && x < 3.2 && z > -1.25 && z < 1, `He walked to ${x.toFixed(2)}, ${z.toFixed(2)}.`)
+  for (const [x, z] of path) assert.ok(x > -1.3 && x < 3.2 && z > stopZ - 0.3 && z < 1, `He walked to ${x.toFixed(2)}, ${z.toFixed(2)}.`)
 })
 
 test('a prop beside a curve of his path is reported with the point that comes nearest it', () => {
   // A crate behind the first stop, clear of the straight legs by the leg clearance and a hair.
-  const crowded = withProp(crate('crate', -0.9, -0.95 - meshBody.reach - 0.3 - 0.3 - 0.005))
+  const crowded = withProp(crate('crate', stopX, stopZ - meshBody.reach - 0.3 - 0.3 - 0.005))
   assert.ok(!checkOfficePlan(crowded, rules).some(problem => problem._tag === 'RouteBlocked'))
-  const path: Point[] = [[-0.9, -0.95], [-0.5, -0.97], [0, -0.95]]
+  const path: Point[] = [[stopX, stopZ], [-0.5, stopZ - 0.02], [0, stopZ]]
   const problems = checkWalkedPath(crowded, rules, path)
   assert.equal(problems.length, 1)
   const blocked = problems[0]!
   assert.ok(blocked._tag === 'PathBlocked' && blocked.prop === 'crate' && blocked.at[0] === -0.5 && blocked.clearance < 0.3 && blocked.clearance > 0.25)
   // A path of the straight legs only is clear of it.
-  assert.deepEqual(checkWalkedPath(crowded, rules, [[-0.9, -0.95], [0.9, -0.95]]), [])
+  assert.deepEqual(checkWalkedPath(crowded, rules, [[stopX, stopZ], [0.9, stopZ]]), [])
+})
+
+test('he stands within reach of furniture he works at, and keeps his whole reach clear of every other prop', () => {
+  const desk = officePlan.props.find(prop => prop.id === 'desk')!
+  const front = desk.position[2] + desk.size[2] / 2
+  // At the desk station his long arms reach the desk's front edge, and his trunk keeps the stop clearance from it.
+  assert.ok(stopZ - front < meshBody.reach && stopZ - front >= meshBody.torso + rules.stopClearance)
+  assert.deepEqual(checkOfficePlan(officePlan, rules).filter(problem => problem._tag === 'StopCrowded' || problem._tag === 'RouteBlocked'), [])
+  // The same stop beside a prop he does not work at is crowded.
+  const unworked = { ...officePlan, stops: officePlan.stops.map(stop => ({ ...stop, works: undefined })) }
+  const crowded = checkOfficePlan(unworked, rules).filter(problem => problem._tag === 'StopCrowded').map(problem => problem.prop)
+  assert.ok(crowded.includes('desk') && crowded.includes('jar-shelf'))
 })
