@@ -6,22 +6,34 @@ import { createSceneAudio } from '../shared/scene-audio.ts'
 import { ambienceFadeSeconds } from '../shared/set-ambience.ts'
 
 type Target = { value: number, time: number, constant: number }
+// What a gain is set to do, in the order it was set. `live` is false once the graph has released the gain's node.
+type Plan = { events: { value: number, time: number, constant?: number }[], live: () => boolean }
+// Where a gain ends: its latest event, and the later one of two at the same time.
+const ending = (plan: Plan) => plan.events.reduce((last, event) => event.time >= last.time ? event : last)
 // A context that counts what the graph builds and starts. `steady` counts the layers that run until they are stopped.
 // `shots` counts the short sounds, which start at a set time. `clock` moves audio time and runs the graph's 50 ms tick.
 function stage() {
   const targets: Target[] = []
+  const plans: Plan[] = []
   const timers = new Map<number, { callback: () => void, delay: number }>()
   const count = { steady: 0, shots: 0, rooms: 0, timer: 0 }
   let state = 'suspended'
-  const param = () => ({
-    value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setValueCurveAtTime() {}, cancelScheduledValues() {},
-    setTargetAtTime(value: number, time: number, constant: number) { targets.push({ value, time, constant }) },
-  })
+  const param = (live: () => boolean = () => true) => {
+    const plan: Plan = { events: [], live }
+    plans.push(plan)
+    return {
+      value: 0, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setValueCurveAtTime() {},
+      setValueAtTime(value: number, time: number) { plan.events.push({ value, time }) },
+      cancelScheduledValues(time: number) { plan.events = plan.events.filter(event => event.time < time) },
+      setTargetAtTime(value: number, time: number, constant: number) { plan.events.push({ value, time, constant }); targets.push({ value, time, constant }) },
+    }
+  }
   const node = () => {
     let steady = false
+    let connected = true
     return {
-      gain: param(), frequency: param(), Q: param(), pan: param(), threshold: param(), knee: param(), ratio: param(), attack: param(), release: param(),
-      connect(next: unknown) { return next }, disconnect() {},
+      gain: param(() => connected), frequency: param(), Q: param(), pan: param(), threshold: param(), knee: param(), ratio: param(), attack: param(), release: param(),
+      connect(next: unknown) { return next }, disconnect() { connected = false },
       start(at?: number) { if (at === undefined) { steady = true; count.steady++ } else count.shots++ },
       stop(at?: number) { if (at === undefined && steady) { steady = false; count.steady-- } },
     }
@@ -51,7 +63,7 @@ function stage() {
     for (const [id, timer] of [...timers]) if (timer.delay === 45) { timers.delete(id); timer.callback() }
     for (let turn = 0; turn < 6; turn++) await Promise.resolve()
   }
-  return { audio, context, count, targets, clock, flush }
+  return { audio, context, count, targets, plans, clock, flush }
 }
 // The gains of a cross-fade move with a 30 ms constant. The tube's buzz moves with a 4 ms constant.
 const shares = (targets: Target[]) => targets.filter(target => target.constant === 0.03)
@@ -150,6 +162,27 @@ test('a change of set while sound is off needs no fade: sound starts again in th
   clock(2)
   assert.equal(shares(targets).length, 0)
   assert.equal(count.steady, office, 'The office plays alone.')
+  await audio.dispose()
+})
+
+test('sound that goes off in a fade, and comes back in the other set, plays that set at its full level', async () => {
+  const { audio, count, plans, clock, flush } = stage()
+  await audio.activate()
+  const cave = count.steady
+  clock(1)
+  audio.setAmbience('Office')
+  clock(0.3)
+  // The rest of the fade waits on the audio clock when the sound goes off.
+  audio.setMuted(true)
+  await flush()
+  audio.setAmbience('Cave')
+  audio.setMuted(false)
+  await flush()
+  clock(0.5)
+  assert.equal(count.steady, cave)
+  const shares = plans.filter(plan => plan.live() && plan.events.some(event => event.constant === 0.03))
+  assert.ok(shares.length >= 2, 'The cave has a share for its layers and a share for his voice.')
+  for (const share of shares) assert.ok(ending(share).value > 0, 'No step of the old fade pulls the cave down.')
   await audio.dispose()
 })
 

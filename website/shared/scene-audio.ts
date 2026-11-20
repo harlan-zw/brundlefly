@@ -266,8 +266,11 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     for (const other of [...current.ambiences.keys()]) if (other !== name) releaseAmbience(current, other)
     const ambience = current.ambiences.get(name) ?? buildAmbience(current, name, 1)
     const now = current.context.currentTime
-    ambience.input.gain.setValueAtTime(1, now)
-    ambience.voiceSend.gain.setValueAtTime(rooms[name].voice, now)
+    // A fade that sound going off cut short still has steps on the audio clock. They must not pull this ambience down.
+    for (const [gain, level] of [[ambience.input.gain, 1], [ambience.voiceSend.gain, rooms[name].voice]] as const) {
+      gain.cancelScheduledValues(now)
+      gain.setValueAtTime(level, now)
+    }
   }
   // The shares follow the fade in small smooth steps, so no step makes a jump and a fade that turns back needs no undo.
   // Each tick sets every step that is left on the audio clock, and replaces the steps the last tick set. A busy page cannot stall the fade.
