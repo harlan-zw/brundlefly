@@ -1,10 +1,11 @@
-import { AnimationMixer, Box3, BufferAttribute, Color, DataTexture, Euler, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three'
+import { AnimationMixer, Box3, BufferAttribute, Color, DataTexture, Euler, Group, Matrix4, Mesh, MeshStandardMaterial, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector3 } from 'three'
 import type { AnimationClip, Material } from 'three'
 import { fixationDrift, lookToward, pupilDirection, pupilSize, wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus, Look } from './eye-gaze.ts'
 import { createEyeMaterial } from './eye-material.ts'
 import { referenceEyes as reliefEyes, referenceFace } from './face.ts'
 import { createReferenceEyes } from './mascot-eyes.ts'
+import { cycleReach, cycleToMidStance, footCycle, hipDrop, landingReach, solveLeg, swingLift, swingShare, swingStep, swingTravel } from './mascot-legs.ts'
 import type { EyeDressing, LidSkin } from './mascot-eyes.ts'
 import { addBodyDepth, bodyJointNames, poseBody } from './mascot-pose.ts'
 import type { BodyJointName, MascotPoseInput } from './mascot-pose.ts'
@@ -179,13 +180,10 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
   // The fit is in place, so each joint's parent has its final scale inside the mascot.
   root.updateMatrixWorld(true)
-  // A leg that swings on a full body also moves its foot up or down, which a flat relief never shows.
-  // So the figure is grounded each frame: the foot that is lower, measured against its own rest height, rests on the floor.
   const feet = bodyJoints ? [bodyJoints.get('left-foot')!, bodyJoints.get('right-foot')!] : []
   const footPoint = new Vector3()
   const footHeight = (foot: Object3D) => root.worldToLocal(foot.getWorldPosition(footPoint)).y
   const footRest = feet.map(footHeight)
-  const legTurn = new Quaternion()
   /** Turns the body joints for one frame. The figure's place, face, and eyes follow in `pose`. */
   function turnJoints(input: MascotPoseInput) {
     // Some joints only move during a habit. Clearing every joint stops a habit's turn from accumulating across frames.
@@ -197,10 +195,10 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   }
   // A foot is fully planted on the floor and free of it once its joint is this far above its rest height: about 2 percent of his height.
   const plantedBand = height * 0.02
+  const legTurn = new Quaternion()
   /**
-   * Stands him on the floor: the foot that is lower, against its own rest height, rests on it.
-   * A foot on the floor then lies level, by undoing the tilt of its leg, so its sole is flat and no toe goes under.
-   * A foot that has left the floor keeps its own turn.
+   * For a file whose legs are not chains. The pose code turns each leg joint, and the foot that is lower, against its own rest height, rests on the floor.
+   * A foot on the floor then lies level, by undoing the tilt of its leg.
    */
   function plantFeet() {
     const drops = feet.map((foot, index) => footRest[index]! - footHeight(foot))
@@ -211,56 +209,186 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       for (let joint = foot.parent; joint && joint !== stanceNode; joint = joint.parent) legTurn.premultiply(joint.quaternion)
       foot.quaternion.slerp(legTurn.invert(), Math.min(1, Math.max(0, 1 - (rise - drops[index]!) / plantedBand)))
     })
-    // The foot he stands on.
-    return drops[1]! > drops[0]! ? 1 : 0
-  }
-  // He has no leg solver, so any move of his body drags the foot he stands on: a turn swings it like a figure on a turntable,
-  // and a step in place pushes it along the floor. So while he stands, that foot keeps its place and his body moves over it.
-  // A walk covers the ground itself, so the hold lets go as he walks and his place returns to his route.
-  const shift = new Vector2()
-  // His feet do not stand under the axis he turns about, so a turn to the other side moves him about a tenth of his height.
-  const shiftLimit = height * 0.13
-  const hold = { foot: 0, x: 0, z: 0, time: 0, held: false }
-  const stood = new Vector3()
-  function standOnFoot(support: number, time: number, gait: number) {
-    const elapsed = Math.min(0.1, Math.max(0, time - hold.time))
-    hold.time = time
-    root.worldToLocal(feet[support]!.getWorldPosition(stood))
-    if (gait > 0.05 || !hold.held || hold.foot !== support) {
-      // A walk fades the shift. A new foot takes the hold where it stands now, so nothing jumps.
-      if (gait > 0.05) shift.multiplyScalar(Math.exp(-gait * elapsed * 4))
-      Object.assign(hold, { foot: support, x: stood.x + shift.x, z: stood.z + shift.y, held: gait <= 0.05 })
-    }
-    else {
-      shift.set(hold.x - stood.x, hold.z - stood.z)
-      if (shift.length() > shiftLimit) {
-        shift.setLength(shiftLimit)
-        Object.assign(hold, { x: stood.x + shift.x, z: stood.z + shift.y })
-      }
-    }
-    pivot.position.x += shift.x
-    pivot.position.z = shift.y
   }
   /**
-   * The ground one walk cycle covers, in the mascot's own units: how far each foot travels back under him while it carries him.
-   * The host walks him at this length, so a planted foot does not slide.
+   * A leg as a chain: hip, knee, and the foot joint at the ankle. The site places each foot and solves the leg to it,
+   * so a foot on the floor stays where it stands while his body moves over it.
+   * Lengths and places are in the mascot's own units. Directions are in the frame of the joint that holds them.
    */
-  function measureStride() {
-    if (!bodyJoints) return undefined
-    const place = (foot: Object3D, walkPhase: number) => {
-      turnJoints({ time: 0, pressure: 0, pointer: new Vector2(), transform: 'squeeze', gait: 1, walkPhase })
-      return root.worldToLocal(foot.getWorldPosition(new Vector3()))
-    }
-    const travel = (foot: Object3D, from: number, to: number) => {
-      const [start, end] = [place(foot, from), place(foot, to)]
-      return Math.hypot(start.x - end.x, start.z - end.z)
-    }
-    // The left foot carries him through the second and third quarters of the cycle, and the right foot through the others.
-    const length = travel(feet[0]!, Math.PI / 2, Math.PI * 1.5) + travel(feet[1]!, Math.PI * 1.5, Math.PI * 2.5)
-    for (const joint of bodyJoints.values()) joint.rotation.set(0, 0, 0)
-    return length > 1e-6 ? length : undefined
+  type Leg = {
+    hip: Object3D, knee: Object3D, foot: Object3D
+    thigh: Vector3, shin: Vector3, thighLength: number, shinLength: number
+    /** Undoes the rest pose of the hip's bend frame. */
+    unbend: Quaternion
+    /** The way the knee points, in the frame of the node that turns him. */
+    pole: Vector3
+    /** Where the ankle stands at rest, in the frame of the node that turns him. */
+    home: Vector3
+    /** The furthest the leg straightens, as a share of its full length. A file may stand on straighter legs than the site would give it. */
+    limit: number
+    /** The share of that reach over which his hips begin to sink. A leg that stands near its limit at rest has none, so his rest pose stays as the file has it. */
+    slack: number
   }
-  const strideLength = measureStride()
+  function findLegs(): Leg[] | undefined {
+    if (!bodyJoints || !stanceNode) return undefined
+    const turned = stanceNode
+    const legs = (['left', 'right'] as const).map((side): Leg | undefined => {
+      const [hip, knee, foot] = [bodyJoints.get(`${side}-hip`)!, bodyJoints.get(`${side}-knee`)!, bodyJoints.get(`${side}-foot`)!]
+      if (knee.parent !== hip || foot.parent !== knee || !hip.parent) return undefined
+      const [thigh, shin] = [knee.position.clone(), foot.position.clone()]
+      // The joints are in the file's units. One of those is this long in the mascot's.
+      const unit = hip.parent.getWorldScale(new Vector3()).x
+      const [thighLength, shinLength] = [thigh.length() * unit, shin.length() * unit]
+      if (thighLength < 1e-6 || shinLength < 1e-6) return undefined
+      thigh.normalize()
+      shin.normalize()
+      const [hipPlace, kneePlace, anklePlace] = [hip, knee, foot].map(joint => joint.getWorldPosition(new Vector3())) as [Vector3, Vector3, Vector3]
+      // The knee points the way it stands off the line from hip to ankle. A straight leg gives no such way, so its knee points forward.
+      const line = anklePlace.clone().sub(hipPlace)
+      const off = kneePlace.clone().sub(hipPlace)
+      off.addScaledVector(line, -off.dot(line) / line.lengthSq())
+      const pole = off.length() > (thighLength + shinLength) * 0.01
+        ? off.normalize().applyQuaternion(turned.getWorldQuaternion(new Quaternion()).invert())
+        : new Vector3(0, 0, 1)
+      // The hinge is the axis the knee bends about. It is square to the thigh in every pose.
+      const bent = new Vector3().crossVectors(thigh, shin)
+      const hinge = bent.length() > 1e-3 ? bent.normalize() : new Vector3().crossVectors(thigh, new Vector3(0, 0, 1)).normalize()
+      const unbend = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(thigh, hinge, new Vector3().crossVectors(thigh, hinge))).invert()
+      const stood = hipPlace.distanceTo(anklePlace) / (thighLength + shinLength)
+      const limit = Math.min(0.9995, Math.max(0.97, stood))
+      return { hip, knee, foot, thigh, shin, thighLength, shinLength, unbend, pole, home: turned.worldToLocal(anklePlace.clone()),
+        limit, slack: Math.min(0.06, Math.max(0, 1 - (stood + 0.02) / limit)) }
+    })
+    return legs[0] && legs[1] ? [legs[0], legs[1]] : undefined
+  }
+  const legs = findLegs()
+  const legLength = legs ? (legs[0]!.thighLength + legs[0]!.shinLength + legs[1]!.thighLength + legs[1]!.shinLength) / 2 : 0
+  /**
+   * The ground one walk cycle covers, in the mascot's own units. The host walks him at this length. It suits the length of his legs:
+   * each foot then lands and leaves well inside its reach. A file whose legs are not chains has none.
+   */
+  const strideLength = legs ? legLength * 0.75 : undefined
+  // Where each foot stands on the floor, in world units, and the way it points. `swing` is how far through its swing the foot was in the last frame.
+  // `aim` is where a foot in the air will land. He chooses it in the first half of the foot's travel and then keeps it, as a walker commits to a step.
+  const stand = [0, 1].map(() => ({ x: 0, z: 0, yaw: 0, swing: 0, lift: 0, aim: { x: 0, z: 0, yaw: 0 } }))
+  let stoodAt: number | undefined
+  // His turn and his walk cycle in the last frame that held the feet. Their rates say how he will be turned when a foot in the air lands.
+  // `sag` is how far his hips have come down for a foot's reach, in the mascot's own units, and `rise` is how fast they come up again.
+  const last = { yaw: 0, phase: 0, sag: 0, rise: 0 }
+  // A foot this far from its place under him did not get there by walking: the host moved him. Then both feet take their places again.
+  const leash = legLength * 0.9
+  const scratch = { scale: new Vector3(), forward: new Vector3(), home: [new Vector3(), new Vector3()], hip: new Vector3(), target: new Vector3(), pole: new Vector3(),
+    axis: new Vector3(), thigh: new Vector3(), shin: new Vector3(), hinge: new Vector3(), basis: new Matrix4(), turn: new Quaternion(), level: new Quaternion(), turnedWorld: new Quaternion(), tip: new Quaternion(), slide: new Vector3() }
+  const unit = (value: number) => Math.min(1, Math.max(0, value))
+  // The furthest his foot reaches from its ankle along the floor: about a quarter of his height, at the tips of his claws.
+  const footReach = height * 0.26
+  const across = new Vector3(1, 0, 0)
+  /**
+   * Places both feet and solves each leg to its foot. It runs after the pose code has turned the body.
+   * With `stance` in the input, a foot on the floor holds its place in the world, and a foot in the air swings to where his travel will need it.
+   * Without it, each foot takes its place in the cycle under him, so the pose depends on the input alone.
+   */
+  function placeLegs(input: MascotPoseInput, phase: number, gait: number) {
+    const { forward, home } = scratch
+    const scale = root.getWorldScale(scratch.scale).x
+    const turned = stanceNode!
+    // His feet take their places under his body as the pose code turned it, before any sway of this frame.
+    turned.updateWorldMatrix(true, false)
+    forward.set(0, 0, 1).transformDirection(turned.matrixWorld)
+    const bodyYaw = Math.atan2(forward.x, forward.z)
+    legs!.forEach((leg, index) => turned.localToWorld(home[index]!.copy(leg.home)))
+    // A slow walk still lifts each foot clear of the floor. Steps in place fade as a walk takes over.
+    const steps = unit(input.stepInPlace ?? 0) * (1 - gait)
+    const lifts = Math.max(unit(gait / 0.25), unit(steps / 0.25))
+    const liftHeight = height * (0.03 + 0.02 * gait) * scale
+    const reach = strideLength! * scale * (2 - swingShare) / 2 * gait
+    const [strideX, strideZ] = input.stance ?? [forward.x * reach, forward.z * reach]
+    const elapsed = stoodAt === undefined ? Number.NaN : input.time - stoodAt
+    // The feet hold their places only from one moment to a later one. A first frame, a jump in time, and a pose with no stance begin again.
+    let held = input.stance !== undefined && elapsed >= 0 && elapsed <= 0.25
+    for (const [index, foot] of stand.entries()) {
+      const away = Math.hypot(foot.x - home[index]!.x, foot.z - home[index]!.z)
+      if (!(away <= leash * scale) || !Number.isFinite(foot.yaw)) held = false
+    }
+    stoodAt = input.stance !== undefined ? input.time : undefined
+    // A foot lands turned as his body will be when it is over that foot. So a turn twists each leg half as far, first one way and then the other.
+    const tempo = held && elapsed > 0 ? (phase - last.phase) / elapsed : 0
+    const turnRate = held && elapsed > 0 ? Math.atan2(Math.sin(bodyYaw - last.yaw), Math.cos(bodyYaw - last.yaw)) / elapsed : 0
+    if (!held || elapsed > 0) Object.assign(last, { yaw: bodyYaw, phase })
+    root.getWorldPosition(scratch.axis)
+    stand.forEach((foot, index) => {
+      const cycle = footCycle(phase, index)
+      const inAir = cycle._tag === 'Swing' && lifts > 0
+      if (!held) {
+        const share = cycleReach(cycle)
+        Object.assign(foot, { x: home[index]!.x + strideX * share, z: home[index]!.z + strideZ * share, yaw: bodyYaw })
+        // A foot that begins again late in its swing aims for where that swing ends: half a stance ahead.
+        Object.assign(foot.aim, { x: home[index]!.x + strideX / 2, z: home[index]!.z + strideZ / 2, yaw: bodyYaw })
+      }
+      else if (inAir && elapsed > 0) {
+        const step = swingStep(foot.swing, cycle.progress)
+        if (foot.swing === 0 || swingTravel(cycle.progress) < 0.5) {
+          const lead = landingReach(cycle.progress)
+          const turnLead = tempo > 1e-3 ? Math.min(0.5, Math.max(-0.5, turnRate * cycleToMidStance(cycle.progress) * Math.PI * 2 / tempo)) : 0
+          const [fromAxisX, fromAxisZ] = [home[index]!.x - scratch.axis.x, home[index]!.z - scratch.axis.z]
+          const [cos, sin] = [Math.cos(turnLead), Math.sin(turnLead)]
+          Object.assign(foot.aim, { x: scratch.axis.x + fromAxisX * cos + fromAxisZ * sin + strideX * lead,
+            z: scratch.axis.z - fromAxisX * sin + fromAxisZ * cos + strideZ * lead, yaw: bodyYaw + turnLead })
+        }
+        foot.x += (foot.aim.x - foot.x) * step
+        foot.z += (foot.aim.z - foot.z) * step
+        foot.yaw += Math.atan2(Math.sin(foot.aim.yaw - foot.yaw), Math.cos(foot.aim.yaw - foot.yaw)) * step
+      }
+      foot.swing = inAir ? cycle.progress : 0
+      foot.lift = inAir ? lifts * liftHeight * swingLift(cycle.progress) : 0
+    })
+    // His weight goes over the foot that carries him, and his body rises as the legs pass each other.
+    // The sway is still at the moment both feet stand, so a walk that begins or ends there does not jolt him sideways.
+    const over = Math.cos(phase)
+    const sway = -over * Math.abs(over) * 0.16 * Math.max(unit(gait / 0.25) * (0.5 + 0.5 * gait), steps) / scale / 2
+    pivot.position.x += (home[1]!.x - home[0]!.x) * sway
+    pivot.position.z += (home[1]!.z - home[0]!.z) * sway
+    pivot.position.y = height * (0.012 * gait + 0.005 * steps) * Math.cos(phase) ** 2
+    // His hips come down as far as a foot on the floor needs. A foot in the air asks for nothing.
+    let drop = 0
+    legs!.forEach((leg, index) => {
+      const foot = stand[index]!
+      leg.hip.getWorldPosition(scratch.hip)
+      scratch.target.set(foot.x, root.localToWorld(footPoint.set(0, footRest[index]!, 0)).y + foot.lift, foot.z)
+      const planted = unit(1 - foot.lift / (plantedBand * scale))
+      drop = Math.max(drop, planted * hipDrop(scratch.hip, scratch.target, (leg.thighLength + leg.shinLength) * scale * leg.limit, leg.slack))
+    })
+    // They come down at once, because a leg cannot stretch. They come up again from a slow start, so a foot that lifts does not jolt him.
+    const sag = Math.min(drop, legLength * scale * 0.3) / scale
+    last.rise = held && sag < last.sag ? Math.min(height * 0.08, last.rise + height * 0.5 * elapsed) : 0
+    last.sag = held ? Math.max(sag, last.sag - last.rise * elapsed) : sag
+    pivot.position.y -= last.sag
+    legs!.forEach((leg, index) => {
+      const foot = stand[index]!
+      const { hip, target, pole, thigh, shin, hinge, basis, turn, level } = scratch
+      leg.hip.getWorldPosition(hip)
+      target.set(foot.x, root.localToWorld(footPoint.set(0, footRest[index]!, 0)).y + foot.lift, foot.z)
+      pole.copy(leg.pole).transformDirection(turned.matrixWorld)
+      const solved = solveLeg(hip, target, leg.thighLength * scale, leg.shinLength * scale, pole, leg.limit)
+      // A foot that its leg cannot reach is dragged. It then stands where the leg left it.
+      if (solved.stretched && held && foot.lift === 0) Object.assign(foot, { x: solved.foot.x, z: solved.foot.z })
+      // The hip turns the thigh onto its line and the knee's hinge square to the bend. The knee then turns the shin onto its line.
+      leg.hip.parent!.getWorldQuaternion(turn).invert()
+      thigh.set(solved.knee.x - hip.x, solved.knee.y - hip.y, solved.knee.z - hip.z).normalize().applyQuaternion(turn)
+      shin.set(solved.foot.x - solved.knee.x, solved.foot.y - solved.knee.y, solved.foot.z - solved.knee.z).normalize().applyQuaternion(turn)
+      hinge.crossVectors(thigh, shin).normalize()
+      leg.hip.quaternion.setFromRotationMatrix(basis.makeBasis(thigh, hinge, scratch.slide.crossVectors(thigh, hinge))).multiply(leg.unbend)
+      leg.knee.quaternion.setFromUnitVectors(leg.shin, shin.applyQuaternion(turn.copy(leg.hip.quaternion).invert()))
+      // A foot on the floor lies level and keeps the way it pointed when it landed.
+      // A foot in the air tips its toes down as it leaves and up before it lands. His feet are long and splayed,
+      // so the tip is only as much as the lift allows: no claw goes under the floor.
+      const tip = Math.asin(Math.min(1, foot.lift / (footReach * scale))) * 0.8 * Math.cos(Math.PI * foot.swing)
+      leg.hip.updateMatrixWorld(true)
+      leg.knee.getWorldQuaternion(turn).invert()
+      level.setFromAxisAngle(vertical, foot.yaw - bodyYaw).multiply(turned.getWorldQuaternion(scratch.turnedWorld)).multiply(scratch.tip.setFromAxisAngle(across, tip))
+      leg.foot.quaternion.copy(turn.multiply(level))
+    })
+  }
   const turns = Math.abs(stanceYaw) > 1e-3
   const faceJoints = bodyJoints ? findFaceJoints(scene) : undefined
   const eyes = findEyes(scene)
@@ -384,7 +512,10 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
      * It exists only for a file with every body joint at an identity rest rotation.
      */
     pose: bodyJoints ? (input: MascotPoseInput, look?: MeshMascotLook, heading = stanceYaw) => {
-      const { body, depth } = turnJoints(input)
+      const gait = unit(input.gait ?? 0)
+      // One cycle moves his feet, so his walk and his steps in place add up to it. The rest of his body keeps time with his feet.
+      const cycle = (input.walkPhase ?? (gait > 0 ? input.time * 3.6 : 0)) + (input.stepPhase ?? 0)
+      const { body, depth } = turnJoints(legs ? { ...input, walkPhase: cycle, stepPhase: cycle } : input)
       pivot.rotation.y = body.root.rotationY
       pivot.position.set(depth.rootX, 0, 0)
       pivot.scale.y = body.root.scaleY
@@ -393,7 +524,7 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
       // While he walks, the head keeps half of the turn, so he looks along his path.
       const yaw = turns ? heading : 0
       if (turns && stanceNode && stanceRest) stanceNode.quaternion.setFromAxisAngle(vertical, yaw).multiply(stanceRest)
-      bodyJoints.get('head')!.rotation.y -= yaw * (1 - Math.min(1, Math.max(0, input.gait ?? 0)) * 0.5)
+      bodyJoints.get('head')!.rotation.y -= yaw * (1 - gait * 0.5)
       // His voice moves the jaw and the cheeks, and a raised brow lifts the skin over each eye, by the relief rig's numbers.
       if (faceJoints) {
         const { jaw, cheekLeft, cheekRight, brows } = faceJoints
@@ -413,8 +544,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
           0, Math.sin(phase + index * 1.7) * 0.07 * body.calm)
         tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2 + depth.bounce * 0.09, 0, 0)
       })
-      // The legs set his height: his body rises as they straighten and settles as each foot lands.
-      standOnFoot(plantFeet(), input.time, Math.min(1, Math.max(0, input.gait ?? 0)))
+      if (legs) placeLegs(input, cycle, gait)
+      else plantFeet()
       turnHead(look, input.mannerism?.turns.head)
       aimEyes(input.time, input.eyes ?? { _tag: 'Ahead' })
       // The relief rig's lids blink when the host supplied them. The file's own lid joints then stay at rest.

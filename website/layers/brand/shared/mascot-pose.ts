@@ -20,6 +20,12 @@ export type MascotPoseInput = {
   gait?: number, walkPhase?: number, gaze?: { yaw: number, tilt: number }
   /** Steps in place, for a full body that turns where it stands: how far each foot lifts, from 0 to 1, and the cycle of those steps. */
   stepInPlace?: number, stepPhase?: number
+  /**
+   * The ground he covers while one foot carries him, in world units: x to screen right and z toward the viewer. Only a full body uses it.
+   * With it, each foot holds its place on the floor from frame to frame and steps to where his travel takes it.
+   * Without it, the pose depends on this input alone: he walks on the spot, as on a treadmill.
+   */
+  stance?: readonly [x: number, z: number]
   speaking?: number, blink?: number, brow?: number, squint?: number, eyes?: EyeFocus, mannerism?: MannerismPose
 }
 /** Whole-figure motion and face inputs that the pose produces beside the joint turns. */
@@ -182,8 +188,13 @@ export function addBodyDepth(joint: (name: BodyJointName) => Turnable, input: Ma
   // Spine: the pelvis follows the leading leg and drops over the lifted one. The chest twists against it and leans into the walk.
   turn('pelvis', 0, stride * 0.06, stride * 0.03)
   turn('chest', gait * 0.03, -stride * 0.11, 0)
-  // The head undoes part of the chest's twist and lean, so his eyes stay level and ahead.
-  turn('head', -gait * 0.03, stride * 0.05, 0)
+  // His weight shifts with each step: the hip of the leg in the air sinks, and his chest and shoulders tip the other way to balance it.
+  // The shift is still at the moment both feet stand, so a walk that ends there ends without a jolt.
+  const shifted = gait * Math.cos(walkPhase) * Math.abs(Math.cos(walkPhase))
+  turn('pelvis', 0, 0, shifted * 0.035)
+  turn('chest', 0, 0, -shifted * 0.045)
+  // The head undoes part of the chest's twist, tip, and lean, so his eyes stay level and ahead.
+  turn('head', -gait * 0.03, stride * 0.05, shifted * 0.01)
   // Arms: only the forearm swings forward, after the shoulder. A backward swing would bring a long hand into its own leg.
   turn('left-elbow', -Math.max(0, trail) * 0.12, 0, 0)
   turn('right-elbow', -Math.max(0, -trail) * 0.12, 0, 0)
