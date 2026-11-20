@@ -1,4 +1,4 @@
-import { AnimationMixer, Box3, BufferAttribute, Color, DataTexture, Euler, Group, Mesh, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three'
+import { AnimationMixer, Box3, BufferAttribute, Color, DataTexture, Euler, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three'
 import type { AnimationClip, Material } from 'three'
 import { fixationDrift, lookToward, pupilDirection, pupilSize, wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus, Look } from './eye-gaze.ts'
@@ -348,6 +348,16 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
     idleDuration: idle ? idle.duration : swayPeriod,
     /** Horizontal reach and height in root units. The feet are at zero. */
     extent: { left: bounds.min.x * scale, right: bounds.max.x * scale, height },
+    /**
+     * Where each foot is, in world space, and how firmly it stands: 1 on the floor, 0 once it is clear of it.
+     * The host draws a contact shadow under each. A file without the relief rig's joints has no feet to report.
+     */
+    footContacts(visit: (place: Vector3, planted: number, index: number) => void) {
+      feet.forEach((foot, index) => {
+        const planted = 1 - Math.min(1, Math.max(0, (footHeight(foot) - footRest[index]!) / plantedBand))
+        visit(foot.getWorldPosition(footPoint), planted, index)
+      })
+    },
     /** World position of his face, for the conversation close-up. */
     facePoint: (target: Vector3) => faceAnchor.getWorldPosition(target),
     /** World position of the point between his eyes, for a shot that frames his head. A file without eye nodes gives the face point. */
@@ -441,11 +451,34 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   }
 }
 
+/** How a host shades a full-bodied model: a tint on its skin, the strength of its own occlusion map, and the materials that keep their colour. */
+export type MeshShading = { tint: readonly [number, number, number], occlusion: number, untinted: readonly string[] }
 /**
- * Places a loaded model where the relief rig stands. The model keeps its own materials.
+ * The lair's shading. The model's skin is painted flat, with no shadow in it, so light must give him his shape.
+ * The relief rig's artwork has its shadows painted in, and reads darker and redder under the lair's lights.
+ * `tint` brings the skin to that level and hue, and his own occlusion map counts for more. His wings keep their pale green, as on the relief rig.
+ */
+export const meshShading: MeshShading = { tint: [0.62, 0.54, 0.52], occlusion: 1.5, untinted: ['Brundlefly-wing'] }
+function shadeBody(scene: Object3D, shading: MeshShading) {
+  const tint = new Color(...shading.tint)
+  const shaded = new Set<Material>()
+  scene.traverse((object) => {
+    if (!(object instanceof Mesh)) return
+    for (const material of (Array.isArray(object.material) ? object.material : [object.material]) as Material[]) {
+      // The skin beside each eye is one of these materials, so the lids the site builds take the same tint.
+      if (!(material instanceof MeshStandardMaterial) || shaded.has(material)) continue
+      shaded.add(material)
+      if (!shading.untinted.includes(material.name)) material.color.multiply(tint)
+      if (material.aoMap) material.aoMapIntensity = shading.occlusion
+    }
+  })
+}
+
+/**
+ * Places a loaded model where the relief rig stands. The model keeps its own materials. A host can shade them for its own lights.
  * The function owns the source: it releases the model when the file is unusable.
  */
-export function createMeshMascot({ scene, animations }: MeshMascotSource, height = reliefStandingHeight): MeshMascotResult {
+export function createMeshMascot({ scene, animations }: MeshMascotSource, height = reliefStandingHeight, shading?: MeshShading): MeshMascotResult {
   // A figurine base changes the measured height and the floor contact. The site shows him without it.
   const base = scene.getObjectByName('Brundlefly-base')
   if (base) { releaseMeshSource(base); base.removeFromParent() }
@@ -455,6 +488,7 @@ export function createMeshMascot({ scene, animations }: MeshMascotSource, height
     releaseMeshSource(scene)
     return { _tag: 'Err', reason: 'The file contains no geometry with height.' }
   }
+  if (shading) shadeBody(scene, shading)
   return { _tag: 'Ok', mascot: assemble(scene, animations, bounds, height) }
 }
 
@@ -462,8 +496,8 @@ export function createMeshMascot({ scene, animations }: MeshMascotSource, height
  * Loads the served model and places it. A missing or unreadable file is an error value, so the caller can show the relief rig.
  * The GLB reader loads on demand, because only the mesh mode needs it.
  */
-export const loadMeshMascot = (url = meshMascotUrl, height = reliefStandingHeight): Promise<MeshMascotResult> =>
+export const loadMeshMascot = (url = meshMascotUrl, height = reliefStandingHeight, shading?: MeshShading): Promise<MeshMascotResult> =>
   import('three/addons/loaders/GLTFLoader.js')
     .then(({ GLTFLoader }) => new GLTFLoader().loadAsync(url))
-    .then(file => createMeshMascot(file, height),
+    .then(file => createMeshMascot(file, height, shading),
       (cause: unknown): MeshMascotResult => ({ _tag: 'Err', reason: cause instanceof Error ? cause.message : String(cause) }))

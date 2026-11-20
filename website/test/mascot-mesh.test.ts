@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { AnimationClip, Bone, Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, ShaderLib, SphereGeometry, Texture, UniformsUtils, Vector2, Vector3, VectorKeyframeTrack } from 'three'
+import { AnimationClip, Bone, Box3, BoxGeometry, Color, Group, Mesh, MeshStandardMaterial, Object3D, Quaternion, QuaternionKeyframeTrack, ShaderLib, SphereGeometry, Texture, UniformsUtils, Vector2, Vector3, VectorKeyframeTrack } from 'three'
 import type { WebGLRenderer } from 'three'
 import { poseMannerisms } from '../layers/brand/shared/mannerism.ts'
+import { meshShading } from '../layers/brand/shared/mascot-mesh.ts'
 import { createMeshMascot, loadMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
 import { bodyJointNames } from '../layers/brand/shared/mascot-pose.ts'
 
@@ -619,6 +620,55 @@ test('a pose without steps in place is the pose it was', () => {
   ok(createMeshMascot({ scene: plain.scene, animations: [] }, 2.5)).pose!({ ...standing, time: 1.3 })
   ok(createMeshMascot({ scene: stepping.scene, animations: [] }, 2.5)).pose!({ ...standing, time: 1.3, stepInPlace: 0, stepPhase: 2 })
   for (const name of bodyJointNames) assert.deepEqual(stepping.joint(name).quaternion.toArray(), plain.joint(name).quaternion.toArray(), name)
+})
+
+test('a host can shade a model\'s skin once: darker and redder, with more of its own occlusion, and the wings keep their colour', () => {
+  const { scene, node } = millimetreModel()
+  const skin = new MeshStandardMaterial({ color: '#ffffff', aoMap: new Texture() })
+  const plain = new MeshStandardMaterial({ color: '#808080' })
+  const wing = new MeshStandardMaterial({ color: '#8fa07a', name: 'Brundlefly-wing', aoMap: new Texture() })
+  const [grey, green] = [plain.color.clone(), wing.color.clone()]
+  for (const [material, x] of [[skin, 30], [skin, -30], [plain, 0], [wing, 15]] as const) {
+    const part = new Mesh(new BoxGeometry(10, 10, 10), material)
+    part.position.set(x, 30, 0)
+    node.add(part)
+  }
+  ok(createMeshMascot({ scene, animations: [] }, 2.5, meshShading))
+  // Two parts share the skin material. It takes the tint once.
+  assert.deepEqual(skin.color.toArray().map(value => Number(value.toFixed(4))), [...meshShading.tint])
+  assert.ok(skin.color.r > skin.color.g && skin.color.g > skin.color.b, 'The tint must redden the skin.')
+  close(skin.aoMapIntensity, meshShading.occlusion)
+  // A material with no occlusion map keeps its occlusion setting, and takes the same tint.
+  close(plain.aoMapIntensity, 1)
+  close(plain.color.g, grey.g * meshShading.tint[1])
+  // The wings keep their pale green and still take the stronger occlusion.
+  assert.deepEqual(wing.color.toArray(), green.toArray())
+  close(wing.aoMapIntensity, meshShading.occlusion)
+  // A host that passes no shading, such as the inspector, shows the model's own materials.
+  const own = millimetreModel()
+  const untouched = new MeshStandardMaterial({ color: '#ffffff', aoMap: new Texture() })
+  own.body.material = untouched
+  ok(createMeshMascot({ scene: own.scene, animations: [] }, 2.5))
+  assert.deepEqual(untouched.color.toArray(), [1, 1, 1])
+  close(untouched.aoMapIntensity, 1)
+})
+
+test('he reports each foot\'s place and how firmly it stands, for a contact shadow', () => {
+  const { scene } = leggedModel()
+  const mascot = ok(createMeshMascot({ scene, animations: [] }, 2.5))
+  const contacts = (input: Parameters<NonNullable<typeof mascot.pose>>[0]) => {
+    mascot.pose!(input, undefined, 0.5)
+    const seen: { planted: number, x: number }[] = []
+    mascot.footContacts((place, planted) => seen.push({ planted, x: place.x }))
+    return seen
+  }
+  const standingFeet = contacts(standing)
+  assert.equal(standingFeet.length, 2)
+  assert.ok(standingFeet.every(foot => foot.planted > 0.9), 'Both feet stand on the floor at rest.')
+  assert.ok(Math.abs(standingFeet[0]!.x - standingFeet[1]!.x) > 0.1, 'Each foot reports its own place.')
+  // In a step in place, one foot carries him and the other is clear of the floor.
+  const stepping = contacts({ ...standing, time: 0.1, stepInPlace: 1, stepPhase: 0 }).map(foot => foot.planted).sort()
+  assert.ok(stepping[0]! < 0.7 && stepping[1]! > 0.99, `One foot must be lifting and one planted, not ${stepping}.`)
 })
 
 test('through a long stand he stays where he is, though the foot that carries him changes', () => {
