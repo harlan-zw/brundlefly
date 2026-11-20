@@ -14,7 +14,7 @@ function stage() {
   const count = { steady: 0, shots: 0, rooms: 0, timer: 0 }
   let state = 'suspended'
   const param = () => ({
-    value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setValueCurveAtTime() {},
+    value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setValueCurveAtTime() {}, cancelScheduledValues() {},
     setTargetAtTime(value: number, time: number, constant: number) { targets.push({ value, time, constant }) },
   })
   const node = () => {
@@ -173,7 +173,8 @@ test('the tube buzzes at the scene times its light is down, and is silent when t
   clock(5)
   const after = targets.slice(before)
   assert.ok(buzzes(after).length > 0)
-  assert.ok(buzzes(after).every(buzz => buzz.time < reported + 1.85), 'No buzz is set after the clock stands still.')
+  // The clock stands still 1.6 seconds after its last report. The graph had set the buzz at most 0.4 seconds ahead.
+  assert.ok(buzzes(after).every(buzz => buzz.time < reported + 2), 'No buzz is set after the clock stands still.')
   const silence = after.findLast(target => target.constant === 0.02)
   assert.deepEqual(silence && { value: silence.value, late: silence.time > reported + 1.5 }, { value: 0, late: true })
   await audio.dispose()

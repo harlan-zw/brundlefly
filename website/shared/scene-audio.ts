@@ -87,6 +87,9 @@ const rooms: Record<Ambience, { send: number, voice: number }> = {
   Cave: { send: 0.6, voice: 0.18 },
   Office: { send: officeLevels.room, voice: officeLevels.voiceRoom },
 }
+// Seconds between the steps of a cross-fade, and how far ahead the office sets its events. A late tick loses nothing inside the lookahead.
+const fadeStep = 0.05
+const lookahead = 0.4
 // Formant pairs for a, e, o, u, and a neutral vowel, set low for a large throat.
 const vowels = [[660, 1100], [460, 1650], [500, 860], [360, 900], [560, 1200]] as const
 // Soft clipping strains the voice without a harsh digital edge.
@@ -266,17 +269,22 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     ambience.input.gain.setValueAtTime(1, now)
     ambience.voiceSend.gain.setValueAtTime(rooms[name].voice, now)
   }
-  // The shares follow the fade in small smooth steps. A late step makes no jump, and a fade that turns back needs no undo.
+  // The shares follow the fade in small smooth steps, so no step makes a jump and a fade that turns back needs no undo.
+  // Each tick sets every step that is left on the audio clock, and replaces the steps the last tick set. A busy page cannot stall the fade.
   function followFade(current: Graph, now: number) {
     if (fade.from === fade.to) return
-    const shares = ambienceShares(fade, now + 0.05)
-    for (const [name, ambience] of current.ambiences) {
-      const share = shares[name] ?? 0
-      ambience.input.gain.setTargetAtTime(share, now, 0.03)
-      ambience.voiceSend.gain.setTargetAtTime(rooms[name].voice * share, now, 0.03)
-    }
+    const end = fadeEnd(fade)
     // The old ambience is silent a moment after the fade ends. Its layers then stop, so one set costs one ambience.
-    if (now > fadeEnd(fade) + 0.3) snapAmbience(current, fade.to)
+    if (now > end + 0.3) { snapAmbience(current, fade.to); return }
+    for (const [name, ambience] of current.ambiences) {
+      ambience.input.gain.cancelScheduledValues(now)
+      ambience.voiceSend.gain.cancelScheduledValues(now)
+      for (let at = now; at < end + fadeStep; at += fadeStep) {
+        const share = ambienceShares(fade, at + fadeStep)[name] ?? 0
+        ambience.input.gain.setTargetAtTime(share, at, 0.03)
+        ambience.voiceSend.gain.setTargetAtTime(rooms[name].voice * share, at, 0.03)
+      }
+    }
   }
   function duck(current: Graph, ducked: boolean, at: number, constant: number) {
     for (const ambience of current.ambiences.values()) ambience.level.gain.setTargetAtTime(ambienceLevel(ducked), at, constant)
@@ -413,13 +421,13 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
   // The office keeps time by the audio clock, so its events come at the same times on every visit.
   // The tube's buzz keeps time by the scene clock, so it lands on the flashes of the light.
   function officeTick(current: Graph, office: AmbienceGraph, now: number) {
-    const horizon = now + 0.2
+    const horizon = now + lookahead
     for (const event of officeEvents(Math.max(officeUntil, now), horizon)) shot(current, event.shot, office.input, event.time - now)
     officeUntil = horizon
     if (!office.flicker) return
     if (!sceneClockRuns(clock, now)) {
       // A scene that stands still shows a still tube. A held buzz would only annoy.
-      if (buzzLevel !== 0) { buzzLevel = 0; office.flicker.gain.setTargetAtTime(0, now, 0.02) }
+      if (buzzLevel !== 0) { buzzLevel = 0; office.flicker.gain.cancelScheduledValues(now); office.flicker.gain.setTargetAtTime(0, now, 0.02) }
       buzzUntil = now
       return
     }
