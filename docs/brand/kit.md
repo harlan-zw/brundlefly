@@ -328,7 +328,7 @@ The portable ZIP supplies runtime art and source. GLB interchange artifacts have
 
 ## Mascot mesh
 
-Use ?mascot=mesh on the homepage to show the full 3D model in place of the relief rig.
+The homepage shows the full 3D model. Use ?mascot=relief to show the relief rig in its place.
 The model is the web export of the figurine. The relief rig stays the default mascot.
 The site fits the model to the height of the relief rig and puts its lowest point on the chamber floor.
 The model keeps its own origin, facing, and materials: +Y is up and the face points to +Z.
@@ -511,7 +511,7 @@ The floor keeps its own tissue map. Both surfaces breathe under scene lighting.
 | assets/prompts/body-projection.json | Exact prompt and canonical references |
 
 Use ?mascot=sprite on the homepage to compare the canonical sprite relief.
-Use ?mascot=mesh to compare the full 3D model.
+Use ?mascot=relief to compare the relief rig. With no query value the homepage shows the full 3D model.
 The normal homepage uses the detailed body and articulated head.
 
 ## Rig inspection
