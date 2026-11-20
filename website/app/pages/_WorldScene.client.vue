@@ -14,6 +14,8 @@ import { advanceStroll, advanceTurn, settleTurn, startStroll, startTurn, strollP
 import { createWetEnvironment } from '@brundlefly/brand/shared/wet-environment'
 import { defaultSceneSettings } from '@brundlefly/brand/shared/scene-settings'
 import { resolveSceneQuality } from '@brundlefly/brand/shared/scene-quality'
+import { resolveMascotMode } from '@brundlefly/brand/shared/mascot-mode'
+import type { MascotMode } from '@brundlefly/brand/shared/mascot-mode'
 import { createSceneFinish } from '@brundlefly/brand/shared/scene-finish'
 import { createFloorReflection } from '@brundlefly/brand/shared/floor-reflection'
 import { sceneLayout } from '@brundlefly/brand/shared/scene-layout'
@@ -27,9 +29,8 @@ import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
 const { paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
-type MascotMode = 'relief' | 'sprite' | 'mesh'
 const requestedMascot = useRoute().query.mascot
-const mascotMode: MascotMode = requestedMascot === 'sprite' || requestedMascot === 'mesh' ? requestedMascot : 'relief'
+const mascotMode = resolveMascotMode(requestedMascot)
 const spriteMascot = mascotMode === 'sprite'
 // `?quality=low`, `medium`, or `high` overrides the tier that the device would get.
 const requestedQuality = useRoute().query.quality
