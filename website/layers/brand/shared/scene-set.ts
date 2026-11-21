@@ -1,4 +1,3 @@
-import type { BoardWriting } from './office-writing.ts'
 import type { Object3D, Vector3 } from 'three'
 import type { MannerismTag } from './mannerism.ts'
 import type { MeshShading } from './mascot-mesh.ts'
@@ -88,7 +87,7 @@ export function mascotInLight(look: SetMascot, light: number): SetMascot {
  * `time` is scene time in seconds. It stands still under reduced motion, so a set that follows it stands still too.
  * `light` is how bright the set's own lamps are, from 0 to 1. A set whose lamps can go out follows it.
  */
-export type SetInput = { time: number, pressure: number, settings: SceneSettings, light: number, writing?: BoardWriting }
+export type SetInput = { time: number, pressure: number, settings: SceneSettings, light: number }
 
 /** A set in the scene. `dispose` releases its geometry, its materials, and the artwork it loaded. */
 export type BuiltSet = { root: Object3D, cues: SetCues, update: (input: SetInput) => void, dispose: () => void }

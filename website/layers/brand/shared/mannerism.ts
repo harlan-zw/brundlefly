@@ -94,7 +94,7 @@ const shapes: Record<MannerismTag, Shape> = {
   // `markerStrokes` gives the count of lines, so the marker's squeak can follow them.
   WriteBoard: { duration: 6.2, attack: 0.7, release: 0.8, motion: (e, age, side) => {
     const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
-    const line = markerProgress(age)
+    const line = clamp01((age - strokeStart) / strokeTime / strokeCount) * strokeCount
     const along = Math.sin((line % 1) * Math.PI * 2 - Math.PI / 2)
     const writing = age > strokeStart && line < strokeCount ? 1 : 0
     return { cue: side === 1 ? 'Claw' : 'Palm', calm: e * 0.5, turns: {
@@ -125,10 +125,8 @@ export function keyTaps(age: number) {
 
 // He writes four lines on the board, one after the other.
 const strokeStart = 0.9, strokeTime = 1.1, strokeCount = 4
-/** Progress through the four strokes, shared by the hand, ink, and sound. */
-export const markerProgress = (age: number) => clamp01((age - strokeStart) / strokeTime / strokeCount) * strokeCount
 /** How many lines he has begun on the whiteboard by `age` seconds of the writing habit. The scene plays a squeak each time the count rises. */
-export const markerStrokes = (age: number) => age < strokeStart ? 0 : Math.min(strokeCount, Math.floor(markerProgress(age)) + 1)
+export const markerStrokes = (age: number) => age < strokeStart ? 0 : Math.min(strokeCount, Math.floor((age - strokeStart) / strokeTime) + 1)
 
 /**
  * The habits of his round for this visit to each walk point. `visits` counts his stops at each point so far, this one included.
