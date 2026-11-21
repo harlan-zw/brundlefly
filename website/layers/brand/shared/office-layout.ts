@@ -100,11 +100,12 @@ export const officePlan: OfficePlan = {
   start: [0.35, -0.4],
   exit: [3.1, -1],
   // He works a round: he types at the desk, tends the jars, reads his palm on the way back, and listens to the failing tube.
-  // At the two stations he turns to his work, so the viewer sees his shoulder and his hands on it. He stays there longest.
+  // At the two stations he turns side-on to the viewer, so his hands are on his work and his face stays in view. He stays there longest.
+  // A turn further round hides his face behind a wing, and a lifted arm then seems to grow from his neck.
   stops: [
     // The whiteboard hangs above the desk. On every second round he writes on it and leaves the keys.
-    { position: [-0.9, -1.5], pause: 9, habit: 'TypeKeys', facing: -2.35, alternate: 'WriteBoard', works: ['desk'] },
-    { position: [0.9, -1.5], pause: 8, habit: 'TendJar', facing: 2.3, works: ['jar-shelf'] },
+    { position: [-0.9, -1.5], pause: 9, habit: 'TypeKeys', facing: -1.5, alternate: 'WriteBoard', works: ['desk'] },
+    { position: [0.9, -1.5], pause: 8, habit: 'TendJar', facing: 1.5, works: ['jar-shelf'] },
     { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
     { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
   ],

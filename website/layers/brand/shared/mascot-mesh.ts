@@ -1,4 +1,4 @@
-import { AnimationMixer, Box3, BufferAttribute, Color, DataTexture, Euler, Group, Matrix4, Mesh, MeshStandardMaterial, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector3 } from 'three'
+import { AnimationMixer, Box3, BufferAttribute, Color, CylinderGeometry, DataTexture, Euler, Group, Matrix4, Mesh, MeshStandardMaterial, Object3D, Quaternion, SkinnedMesh, SRGBColorSpace, Texture, Vector3 } from 'three'
 import type { AnimationClip, Material } from 'three'
 import { fixationDrift, lookToward, pupilDirection, pupilSize, wanderingLook } from './eye-gaze.ts'
 import type { EyeFocus, Look } from './eye-gaze.ts'
@@ -50,6 +50,47 @@ function findMouthparts(scene: Object3D) {
     const tip = scene.getObjectByName(`mouthpart-${index}-tip`)
     mouthparts.push({ base, tip: tip && atRest(tip) ? tip : undefined })
   }
+}
+/** How far a finger closes at a full curl, in radians: at its root and at its tip. The fingers close about their own x axis. */
+export const fingerCurl = { root: 0.9, tip: 0.8 }
+type Finger = { root: Object3D, tip: Object3D | undefined, rootRest: Euler, tipRest: Euler | undefined }
+/** The five fingers of each long hand, when the file has them. A hand without finger joints keeps the shape of the model. */
+function findFingers(scene: Object3D) {
+  const hand = (side: 'left' | 'right') => Array.from({ length: 5 }, (_, index): Finger | undefined => {
+    const root = scene.getObjectByName(`${side}-finger-${index}`)
+    if (!root) return undefined
+    const tip = scene.getObjectByName(`${side}-finger-${index}-tip`)
+    return { root, tip, rootRest: root.rotation.clone(), tipRest: tip?.rotation.clone() }
+  })
+  return { left: hand('left'), right: hand('right') }
+}
+/**
+ * A marker for one long hand, hidden until a habit has the hand hold it. It lies along the middle finger, with its tip past the knuckle.
+ * A hand without a middle finger joint gets none.
+ */
+/** How far the marker lies from the middle of his hand toward his palm, as a share of its own length. */
+export const markerInPalm = 0.22
+function createMarker(middle: Finger | undefined) {
+  const hand = middle?.root.parent
+  if (!middle || !hand) return undefined
+  const along = middle.root.position.clone()
+  const length = along.length() * 1.6
+  const body = new Mesh(new CylinderGeometry(length * 0.06, length * 0.06, length, 8), new MeshStandardMaterial({ color: '#20292b', roughness: 0.55 }))
+  const tip = new Mesh(new CylinderGeometry(length * 0.035, length * 0.05, length * 0.16, 8), new MeshStandardMaterial({ color: '#3f9aa3', roughness: 0.5 }))
+  tip.position.y = length * 0.58
+  const marker = new Group()
+  marker.name = 'held-marker'
+  marker.add(body, tip)
+  // A cylinder stands along y. The marker points the way the middle finger does.
+  marker.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), along.clone().normalize())
+  // It lies against his palm, not through his hand. His fingers close about their own x axis, so a fingertip that curls moves toward the palm:
+  // that way is the finger's x axis crossed with the way the finger points.
+  const palm = new Vector3(1, 0, 0).applyQuaternion(middle.root.quaternion).cross(along.clone().normalize()).normalize()
+  marker.position.copy(along).multiplyScalar(0.9).addScaledVector(palm, length * markerInPalm)
+  marker.visible = false
+  hand.add(marker)
+  // The model's own release frees the marker with every other mesh under the scene.
+  return marker
 }
 type FaceJoint = { joint: Object3D, rest: Vector3, unit: number }
 /**
@@ -178,6 +219,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   // Any rest rotation that is not the vertical turn stays as the file has it.
   const stanceRest = stanceNode ? sideTurn.setFromAxisAngle(vertical, stanceYaw).invert().multiply(stanceNode.quaternion).clone() : undefined
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
+  const fingers = bodyJoints ? findFingers(scene) : undefined
+  const markers = fingers ? { left: createMarker(fingers.left[2]), right: createMarker(fingers.right[2]) } : undefined
   // The fit is in place, so each joint's parent has its final scale inside the mascot.
   root.updateMatrixWorld(true)
   const feet = bodyJoints ? [bodyJoints.get('left-foot')!, bodyJoints.get('right-foot')!] : []
@@ -544,6 +587,19 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
           0, Math.sin(phase + index * 1.7) * 0.07 * body.calm)
         tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2 + depth.bounce * 0.09, 0, 0)
       })
+      // A habit closes his fingers: on a marker, round a jar, or one at a time on the keys.
+      if (fingers) for (const side of ['left', 'right'] as const) {
+        const hand = input.mannerism?.hands[side]
+        const marker = markers?.[side]
+        if (marker) marker.visible = hand?.holds === 'Marker'
+        fingers[side].forEach((finger, index) => {
+          if (!finger) return
+          const close = Math.min(1, Math.max(0, (hand?.curl ?? 0) + (hand?.taps?.[index] ?? 0)))
+          finger.root.rotation.copy(finger.rootRest)
+          finger.root.rotation.x += close * fingerCurl.root
+          if (finger.tip && finger.tipRest) { finger.tip.rotation.copy(finger.tipRest); finger.tip.rotation.x += close * fingerCurl.tip }
+        })
+      }
       if (legs) placeLegs(input, cycle, gait)
       else plantFeet()
       turnHead(look, input.mannerism?.turns.head)

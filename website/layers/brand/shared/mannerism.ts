@@ -12,12 +12,20 @@ export type MannerismJoint = 'chest' | 'head' | 'left-shoulder' | 'left-elbow' |
   | 'left-small-elbow' | 'right-small-elbow' | 'left-wing' | 'right-wing'
 type Turn = [x: number, y: number, z: number]
 /** Rotations add to the walking and idle pose. Scalars override idle habits; `calm` damps idle motion. */
+/**
+ * How one long hand closes. `curl` closes every finger, from 0, the open hand of the model, to 1, a fist.
+ * `taps` adds to single fingers, in the order of the model's finger joints, so a hand can strike keys one finger at a time.
+ * `holds` names a thing in the hand. The model shows it while the hand holds it.
+ */
+export type HandPose = { curl: number, taps?: readonly number[], holds?: 'Marker' }
+export type HandPoses = { left?: HandPose, right?: HandPose }
 export type MannerismPose = {
   turns: Partial<Record<MannerismJoint, Turn>>
+  hands: HandPoses
   eyes: { cue: EyeCue, weight: number } | undefined
   buzz: number, rub: number, jaw: number, blink: number, calm: number
 }
-type Motion = { turns?: Partial<Record<MannerismJoint, Turn>>, cue?: EyeCue, buzz?: number, rub?: number, jaw?: number, blink?: number, calm?: number }
+type Motion = { turns?: Partial<Record<MannerismJoint, Turn>>, hands?: HandPoses, cue?: EyeCue, buzz?: number, rub?: number, jaw?: number, blink?: number, calm?: number }
 type Shape = { duration: number, attack: number, release: number, motion: (envelope: number, age: number, side: 1 | -1) => Motion }
 
 const beatMannerisms: Record<string, MannerismTag> = {
@@ -75,7 +83,9 @@ const shapes: Record<MannerismTag, Shape> = {
   TypeKeys: { duration: 6.4, attack: 0.6, release: 0.7, motion: (e, age) => {
     const typing = typingShare(age)
     const tap = (offset: number) => Math.max(0, Math.sin(age * keyTapRate * Math.PI + offset)) * typing
-    return { calm: e * 0.4, turns: {
+    // Each finger strikes in its own turn, so the hands play over the keys and do not flap as one.
+    const strikes = (offset: number) => Array.from({ length: 5 }, (_, finger) => tap(offset + finger * 1.3) * 0.55 * e)
+    return { calm: e * 0.4, hands: { left: { curl: 0.25 * e, taps: strikes(0) }, right: { curl: 0.25 * e, taps: strikes(Math.PI) } }, turns: {
       'left-shoulder': [-0.62 * e, 0, -0.1 * e], 'right-shoulder': [-0.62 * e, 0, 0.1 * e],
       'left-elbow': [(-0.7 - tap(0) * 0.12) * e, 0, 0], 'right-elbow': [(-0.7 - tap(Math.PI) * 0.12) * e, 0, 0],
       'left-hand': [(0.1 + tap(0) * 0.4) * e, 0, 0], 'right-hand': [(0.1 + tap(Math.PI) * 0.4) * e, 0, 0],
@@ -86,7 +96,7 @@ const shapes: Record<MannerismTag, Shape> = {
   TendJar: { duration: 5.4, attack: 0.7, release: 0.8, motion: (e, age, side) => {
     const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
     const turn = Math.sin(age * 1.7)
-    return { cue: 'Eggs', calm: e * 0.5, turns: {
+    return { cue: 'Eggs', calm: e * 0.5, hands: { [side === 1 ? 'left' : 'right']: { curl: 0.5 * e } }, turns: {
       [shoulder]: [-0.5 * e, 0, 0.08 * e * side], [elbow]: [-0.95 * e, 0, 0], [hand]: [-0.15 * e, turn * 0.3 * e, 0],
       head: [0.26 * e, 0.1 * e * side, turn * 0.05 * e * side], chest: [0.14 * e, 0.04 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
   } },
@@ -97,7 +107,8 @@ const shapes: Record<MannerismTag, Shape> = {
     const line = clamp01((age - strokeStart) / strokeTime / strokeCount) * strokeCount
     const along = Math.sin((line % 1) * Math.PI * 2 - Math.PI / 2)
     const writing = age > strokeStart && line < strokeCount ? 1 : 0
-    return { cue: side === 1 ? 'Claw' : 'Palm', calm: e * 0.5, turns: {
+    // His fingers close on the marker for as long as the arm is up.
+    return { cue: side === 1 ? 'Claw' : 'Palm', calm: e * 0.5, hands: { [side === 1 ? 'left' : 'right']: { curl: 0.85 * e, holds: e > 0.35 ? 'Marker' as const : undefined } }, turns: {
       [shoulder]: [(-1.05 + Math.floor(line) * 0.05) * e, 0, (0.04 + along * 0.1 * writing) * e * side], [elbow]: [-0.85 * e, 0, along * 0.08 * writing * e * side],
       [hand]: [-0.1 * e, 0, along * 0.2 * writing * e * side],
       head: [-0.12 * e, 0.1 * e * side, 0.04 * e * side], chest: [-0.03 * e, 0.04 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
@@ -152,7 +163,7 @@ export const mannerismDuration = (mannerism: Mannerism) => mannerism._tag === 'N
 
 /** Sums every layer into one pose. The strongest eye cue wins. */
 export function poseMannerisms(layers: readonly MannerismLayer[]): MannerismPose {
-  const pose: MannerismPose = { turns: {}, eyes: undefined, buzz: 0, rub: 0, jaw: 0, blink: 0, calm: 0 }
+  const pose: MannerismPose = { turns: {}, hands: {}, eyes: undefined, buzz: 0, rub: 0, jaw: 0, blink: 0, calm: 0 }
   for (const { mannerism, age, weight = 1, side = 1 } of layers) {
     if (mannerism._tag === 'None') continue
     const shape = shapes[mannerism._tag]
@@ -169,6 +180,14 @@ export function poseMannerisms(layers: readonly MannerismLayer[]): MannerismPose
     pose.jaw = Math.max(pose.jaw, motion.jaw ?? 0)
     pose.blink = Math.max(pose.blink, motion.blink ?? 0)
     pose.calm = Math.max(pose.calm, motion.calm ?? 0)
+    // The tighter grip wins, finger by finger.
+    for (const side of ['left', 'right'] as const) {
+      const hand = motion.hands?.[side]
+      if (!hand) continue
+      const held = pose.hands[side]
+      const taps = Array.from({ length: Math.max(hand.taps?.length ?? 0, held?.taps?.length ?? 0) }, (_, finger) => Math.max(hand.taps?.[finger] ?? 0, held?.taps?.[finger] ?? 0))
+      pose.hands[side] = { curl: Math.max(hand.curl, held?.curl ?? 0), taps, holds: hand.holds ?? held?.holds }
+    }
   }
   return pose
 }
