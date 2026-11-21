@@ -1,6 +1,5 @@
-import type { BoardWriting } from './office-writing.ts'
 import type { Object3D, Vector3 } from 'three'
-import type { MannerismPose, MannerismTag } from './mannerism.ts'
+import type { MannerismTag } from './mannerism.ts'
 import type { MeshShading } from './mascot-mesh.ts'
 import type { SceneQuality } from './scene-quality.ts'
 import type { SceneSettings } from './scene-settings.ts'
@@ -51,7 +50,7 @@ export type SetFog = { _tag: 'None' } | { _tag: 'Exponential', colour: string, s
 export type SetEffect = 'Finish' | 'FloorMirror' | 'WetEnvironment'
 
 /** The world points his habits and dialogue beats look at. `eggs` holds one point or more, and he looks at the nearest. */
-export type SetCues = { light: Vector3, eggs: readonly Vector3[], ceiling: (from: Vector3) => Vector3, jar?: (turn: number) => Vector3 }
+export type SetCues = { light: Vector3, eggs: readonly Vector3[], ceiling: (from: Vector3) => Vector3 }
 
 /** A stage light of his: its colour, its level between talks, and the level a close shot adds. */
 export type StageLight = { colour: string, rest: number, talk: number }
@@ -88,7 +87,7 @@ export function mascotInLight(look: SetMascot, light: number): SetMascot {
  * `time` is scene time in seconds. It stands still under reduced motion, so a set that follows it stands still too.
  * `light` is how bright the set's own lamps are, from 0 to 1. A set whose lamps can go out follows it.
  */
-export type SetInput = { time: number, pressure: number, settings: SceneSettings, light: number, mannerism?: MannerismPose, writing?: BoardWriting }
+export type SetInput = { time: number, pressure: number, settings: SceneSettings, light: number }
 
 /** A set in the scene. `dispose` releases its geometry, its materials, and the artwork it loaded. */
 export type BuiltSet = { root: Object3D, cues: SetCues, update: (input: SetInput) => void, dispose: () => void }

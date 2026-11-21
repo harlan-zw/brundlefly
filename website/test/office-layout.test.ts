@@ -39,8 +39,8 @@ test('a prop beside his walk is reported with the clearance it leaves', () => {
 })
 
 test('a prop that a diagonal leg crosses is reported, even when it is far from every stop', () => {
-  const [from, to] = [officePlan.stops[1]!.position, officePlan.stops[2]!.position]
-  const blocked = checkOfficePlan(withProp(crate('stool', (from[0] + to[0]) / 2, (from[1] + to[1]) / 2, 0.2)), rules).filter(problem => problem._tag === 'RouteBlocked')
+  // The loop is a figure of eight. Its diagonals cross near the middle of the room.
+  const blocked = checkOfficePlan(withProp(crate('stool', 0.1, -0.2, 0.2)), rules).filter(problem => problem._tag === 'RouteBlocked')
   assert.ok(blocked.some(problem => problem._tag === 'RouteBlocked' && problem.clearance === -meshBody.reach))
 })
 
@@ -71,8 +71,7 @@ test('the monitor and the whiteboard must face the cameras with nothing in front
   const turned: OfficePlan = { ...officePlan, props: officePlan.props.map(prop => prop.id === 'monitor' ? { ...prop, facing: '-z' as const } : prop) }
   assert.ok(checkOfficePlan(turned, rules).some(problem => problem._tag === 'Unreadable' && problem.prop === 'monitor' && problem.reason === 'faces-away'))
   // A cabinet in front of the desk hides the monitor's screen.
-  const monitor = officePlan.props.find(prop => prop._tag === 'Monitor')!
-  const hidden = checkOfficePlan(withProp({ ...crate('stack', monitor.position[0], -2.75, 0.4), position: [monitor.position[0], -0.7, -2.75], size: [1.2, 3, 0.4] }), rules)
+  const hidden = checkOfficePlan(withProp({ ...crate('stack', -1.6, -2.75, 0.4), position: [-1.6, -0.7, -2.75], size: [1.2, 3, 0.4] }), rules)
   assert.ok(hidden.some(problem => problem._tag === 'Unreadable' && problem.prop === 'monitor' && typeof problem.reason === 'object' && problem.reason.hiddenBy === 'stack'))
   const gone: OfficePlan = { ...officePlan, props: officePlan.props.filter(prop => prop.id !== 'whiteboard') }
   assert.ok(checkOfficePlan(gone, rules).some(problem => problem._tag === 'Unreadable' && problem.prop === 'whiteboard' && problem.reason === 'missing'))
@@ -144,13 +143,13 @@ test('a prop beside a curve of his path is reported with the point that comes ne
   // A crate behind the first stop, clear of the straight legs by the leg clearance and a hair.
   const crowded = withProp(crate('crate', stopX, stopZ - meshBody.reach - 0.3 - 0.3 - 0.005))
   assert.ok(!checkOfficePlan(crowded, rules).some(problem => problem._tag === 'RouteBlocked'))
-  const path: Point[] = [[stopX, stopZ], [stopX + 0.4, stopZ - 0.02], [stopX + 0.9, stopZ]]
+  const path: Point[] = [[stopX, stopZ], [-0.5, stopZ - 0.02], [0, stopZ]]
   const problems = checkWalkedPath(crowded, rules, path)
   assert.equal(problems.length, 1)
   const blocked = problems[0]!
-  assert.ok(blocked._tag === 'PathBlocked' && blocked.prop === 'crate' && blocked.at[0] === stopX + 0.4 && blocked.clearance < 0.3 && blocked.clearance > 0.25)
+  assert.ok(blocked._tag === 'PathBlocked' && blocked.prop === 'crate' && blocked.at[0] === -0.5 && blocked.clearance < 0.3 && blocked.clearance > 0.25)
   // A path of the straight legs only is clear of it.
-  assert.deepEqual(checkWalkedPath(crowded, rules, [[stopX, stopZ], [stopX + 1.8, stopZ]]), [])
+  assert.deepEqual(checkWalkedPath(crowded, rules, [[stopX, stopZ], [0.9, stopZ]]), [])
 })
 
 test('he stands within reach of furniture he works at, and keeps his whole reach clear of every other prop', () => {

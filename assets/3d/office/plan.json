@@ -12,12 +12,12 @@
       "_tag": "Desk",
       "id": "desk",
       "position": [
-        -2.625,
+        -2.075,
         -1.575,
         -3.75
       ],
       "size": [
-        1.95,
+        3.05,
         1.25,
         1.5
       ],
@@ -28,7 +28,7 @@
       "_tag": "Monitor",
       "id": "monitor",
       "position": [
-        -2.4,
+        -1.6,
         -0.55,
         -3.76
       ],
@@ -46,7 +46,7 @@
       "_tag": "Keyboard",
       "id": "keyboard",
       "position": [
-        -2.37,
+        -1.57,
         -0.91,
         -3.2
       ],
@@ -64,7 +64,7 @@
       "_tag": "Mug",
       "id": "mug",
       "position": [
-        -1.78,
+        -0.81,
         -0.825,
         -3.28
       ],
@@ -132,7 +132,7 @@
       "_tag": "Papers",
       "id": "papers",
       "position": [
-        -3.25,
+        -2.75,
         -0.92,
         -3.45
       ],
@@ -150,9 +150,9 @@
       "_tag": "WasteBin",
       "id": "waste-bin",
       "position": [
-        -1.1,
+        -0.2,
         -1.95,
-        -4.2
+        -3.7
       ],
       "size": [
         0.4,
@@ -230,12 +230,12 @@
       "_tag": "JarShelf",
       "id": "jar-shelf",
       "position": [
-        3,
+        2.27,
         -1.41,
         -3.765
       ],
       "size": [
-        2.2,
+        3.68,
         1.58,
         1.47
       ],
@@ -247,7 +247,7 @@
       "contents": "specimen",
       "id": "jar-1",
       "position": [
-        2.1,
+        1.25,
         -0.345,
         -3.75
       ],
@@ -266,7 +266,7 @@
       "contents": "specimen",
       "id": "jar-2",
       "position": [
-        2.5,
+        1.71,
         -0.345,
         -3.75
       ],
@@ -285,7 +285,7 @@
       "contents": "empty",
       "id": "jar-3",
       "position": [
-        2.9,
+        2.17,
         -0.345,
         -3.75
       ],
@@ -304,7 +304,7 @@
       "contents": "specimen",
       "id": "jar-4",
       "position": [
-        3.3,
+        2.7,
         -0.345,
         -3.75
       ],
@@ -323,7 +323,7 @@
       "contents": "specimen",
       "id": "jar-5",
       "position": [
-        3.7,
+        3.4,
         -0.345,
         -3.75
       ],
@@ -677,44 +677,29 @@
     3.1,
     -1
   ],
-  "writing": {
-    "via": [
-      [
-        0.15,
-        -1.2
-      ]
-    ],
-    "stance": [
-      -0.15,
-      -3.65
-    ]
-  },
   "stops": [
     {
       "position": [
         -0.9,
         -0.95
       ],
-      "pause": 7.5,
-      "habit": "TypeKeys",
-      "facing": -2.35,
-      "alternate": "WriteBoard"
+      "pause": 3.2,
+      "habit": "AirWriting"
     },
     {
       "position": [
         0.9,
         -0.95
       ],
-      "pause": 6.5,
-      "habit": "TendJar",
-      "facing": 2.3
+      "pause": 3.8,
+      "habit": "GlanceEggs"
     },
     {
       "position": [
         -0.7,
         0.4
       ],
-      "pause": 2.6,
+      "pause": 2.8,
       "habit": "CheckPalm"
     },
     {
@@ -722,13 +707,13 @@
         0.7,
         0.7
       ],
-      "pause": 3.2,
+      "pause": 4.1,
       "habit": "ListenCeiling"
     }
   ],
   "cues": {
     "jars": [
-      2.9,
+      2.17,
       -0.345,
       -3.75
     ],
@@ -750,12 +735,12 @@
   ],
   "entrance": {
     "start": [
-      1.75,
-      -0.9
+      1.9,
+      -1.2
     ],
     "stand": [
-      4.14,
-      -0.98
+      4.27,
+      -1.43
     ],
     "facing": 1.3
   },
