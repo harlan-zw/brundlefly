@@ -87,8 +87,8 @@ const shapes: Record<MannerismTag, Shape> = {
     const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
     const turn = Math.sin(age * 1.7)
     return { cue: 'Eggs', calm: e * 0.5, turns: {
-      [shoulder]: [-0.95 * e, 0, 0.18 * e * side], [elbow]: [-0.42 * e, 0, 0], [hand]: [-0.1 * e, turn * 0.35 * e, 0],
-      head: [0.12 * e, 0.16 * e * side, (0.14 + turn * 0.08) * e * side], chest: [0.12 * e, 0.06 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
+      [shoulder]: [-0.5 * e, 0, 0.08 * e * side], [elbow]: [-0.95 * e, 0, 0], [hand]: [-0.15 * e, turn * 0.3 * e, 0],
+      head: [0.26 * e, 0.1 * e * side, turn * 0.05 * e * side], chest: [0.14 * e, 0.04 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
   } },
   // He stands turned to the whiteboard. The long arm on `side` lifts high and writes four short lines, each a little lower, and his head follows the hand.
   // `markerStrokes` gives the count of lines, so the marker's squeak can follow them.
@@ -98,9 +98,9 @@ const shapes: Record<MannerismTag, Shape> = {
     const along = Math.sin((line % 1) * Math.PI * 2 - Math.PI / 2)
     const writing = age > strokeStart && line < strokeCount ? 1 : 0
     return { cue: side === 1 ? 'Claw' : 'Palm', calm: e * 0.5, turns: {
-      [shoulder]: [(-1.55 + Math.floor(line) * 0.07) * e, 0, (0.2 + along * 0.14 * writing) * e * side], [elbow]: [-0.3 * e, 0, along * 0.1 * writing * e * side],
-      [hand]: [-0.2 * e, 0, along * 0.25 * writing * e * side],
-      head: [-0.2 * e, 0.14 * e * side, 0.06 * e * side], chest: [-0.05 * e, 0.06 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
+      [shoulder]: [(-1.05 + Math.floor(line) * 0.05) * e, 0, (0.04 + along * 0.1 * writing) * e * side], [elbow]: [-0.85 * e, 0, along * 0.08 * writing * e * side],
+      [hand]: [-0.1 * e, 0, along * 0.2 * writing * e * side],
+      head: [-0.12 * e, 0.1 * e * side, 0.04 * e * side], chest: [-0.03 * e, 0.04 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
   } },
   // A small hello: his head tips, and the long claw on `side` lifts beside his face and opens twice. The wings give one short buzz.
   Greet: { duration: 1.7, attack: 0.3, release: 0.5, motion: (e, age, side) => {
@@ -134,6 +134,9 @@ export const markerStrokes = (age: number) => age < strokeStart ? 0 : Math.min(s
  */
 export const roundHabits = (habits: readonly MannerismTag[], alternates: readonly (MannerismTag | undefined)[] | undefined, visits: readonly number[]): MannerismTag[] =>
   habits.map((habit, point) => (visits[point] ?? 0) % 2 === 0 && (visits[point] ?? 0) > 0 ? alternates?.[point] ?? habit : habit)
+
+/** Every habit by name, for a host that lets a person choose one. */
+export const mannerismTags = Object.keys(shapes) as MannerismTag[]
 
 const smooth = (value: number) => value * value * (3 - 2 * value)
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
@@ -180,4 +183,17 @@ export function pauseMannerism(stroll: Stroll, habits: readonly MannerismTag[]):
   const mannerism: Mannerism = { _tag: habits[waypoint % habits.length]! }
   const rate = Math.max(1, mannerismDuration(mannerism) / Math.max(0.1, duration - settle - lastStep))
   return { mannerism, age: (age - settle) * rate }
+}
+
+/**
+ * The habit at a station, where he first turns to his work. It waits until he faces his work, so a lifted arm never crosses his own head on the way round.
+ * `readyAge` is the age of the stop at the moment he faced his work, and nothing while he still turns. The habit then plays in the time the stop has left, faster if that is short.
+ * `facing` fades it: 1 while he faces his work, down to 0 when a visitor has turned him away.
+ */
+export function stationMannerism(stroll: Stroll, habits: readonly MannerismTag[], readyAge: number | undefined, facing: number): MannerismLayer | undefined {
+  if (stroll.activity._tag !== 'Pausing' || habits.length === 0 || readyAge === undefined) return undefined
+  const { waypoint, duration, age } = stroll.activity
+  const mannerism: Mannerism = { _tag: habits[waypoint % habits.length]! }
+  const rate = Math.max(1, mannerismDuration(mannerism) / Math.max(0.5, duration - readyAge - lastStep))
+  return { mannerism, age: (age - readyAge) * rate, weight: clamp01(facing) }
 }

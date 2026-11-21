@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { mannerismDuration, mannerismTags } from '@brundlefly/brand/shared/mannerism'
+import type { MannerismTag } from '@brundlefly/brand/shared/mannerism'
 
-const texture = ref<'mapped' | 'sprite' | 'mesh'>('mapped')
+// A link can open the inspector on one moment of a habit: ?texture=mesh&habit=TendJar&age=2.5&side=1&turn=2.3
+const query = useRoute().query
+const asked = (name: string) => typeof query[name] === 'string' ? query[name] : undefined
+const texture = ref<'mapped' | 'sprite' | 'mesh'>(asked('texture') === 'mesh' ? 'mesh' : asked('texture') === 'sprite' ? 'sprite' : 'mapped')
+// A habit of his, held at one moment. `turn` turns his body as it stands at his work, and `side` is the side his work is on.
+const habit = ref<MannerismTag | 'None'>(mannerismTags.find(tag => tag === asked('habit')) ?? 'None')
+const habitTime = ref(Number(asked('age')) || 0)
+const habitSide = ref<1 | -1>(asked('side') === '-1' ? -1 : 1)
+const turn = ref(Number(asked('turn')) || 0)
+const habitDuration = computed(() => habit.value === 'None' ? 0 : mannerismDuration({ _tag: habit.value }))
 // The stage reports what it shows. A mesh that cannot load shows the relief rig, which keeps every control.
 const shown = ref<'relief' | 'sprite' | 'mesh'>('relief')
 const rigged = ref(true)
@@ -42,7 +53,7 @@ function loadClips(available: Record<string, number>) {
       <section class="inspector-stage" aria-label="Brundlefly">
         <LazyBrandOrganism :key="texture" v-model:clip-time="time" mascot inspector exportable :interactive="false" motion-off
           :texture-mode="texture" :clip="clip" :playing="playing" :playback-speed="speed" :bones="bones" :wireframe="wireframe"
-          :speaking="speech" :blink="blink" :brow="brow" :squint="squint" @clips="loadClips" @shown="loadShown" />
+          :speaking="speech" :blink="blink" :brow="brow" :squint="squint" :habit="habit" :habit-time="habitTime" :habit-side="habitSide" :turn="shown === 'mesh' ? turn : undefined" @clips="loadClips" @shown="loadShown" />
         <p>Drag to orbit. Scroll to zoom.</p>
       </section>
       <aside class="inspector-controls">
@@ -60,6 +71,14 @@ function loadClips(available: Record<string, number>) {
         <label for="inspector-blink">Blink <output>{{ blink.toFixed(2) }}</output></label><input id="inspector-blink" v-model.number="blink" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
         <label for="inspector-brow">Brow <output>{{ brow.toFixed(2) }}</output></label><input id="inspector-brow" v-model.number="brow" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
         <label for="inspector-squint">Squint <output>{{ squint.toFixed(2) }}</output></label><input id="inspector-squint" v-model.number="squint" :disabled="!posable" type="range" min="0" max="1" step="0.05" @input="manual">
+        <label for="inspector-habit">Habit</label>
+        <select id="inspector-habit" v-model="habit" :disabled="shown !== 'mesh'" @change="manual(); habitTime = 0"><option>None</option><option v-for="tag in mannerismTags" :key="tag">{{ tag }}</option></select>
+        <label for="inspector-habit-time">Habit time <output>{{ habitTime.toFixed(2) }} / {{ habitDuration.toFixed(2) }}</output></label>
+        <input id="inspector-habit-time" v-model.number="habitTime" :disabled="habit === 'None'" type="range" min="0" :max="habitDuration" step="0.05">
+        <label for="inspector-habit-side">Side</label>
+        <select id="inspector-habit-side" v-model.number="habitSide" :disabled="habit === 'None'"><option :value="1">Screen right</option><option :value="-1">Screen left</option></select>
+        <label for="inspector-turn">Turn <output>{{ turn.toFixed(2) }}</output></label>
+        <input id="inspector-turn" v-model.number="turn" :disabled="shown !== 'mesh'" type="range" min="-2.5" max="2.5" step="0.05">
       </aside>
     </div>
   </main>

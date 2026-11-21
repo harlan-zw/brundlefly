@@ -26,7 +26,7 @@ import { advanceEntrance, entranceAct, entranceLight, startEntrance } from '@bru
 import type { Entrance } from '@brundlefly/brand/shared/office-entrance'
 import { advanceTravel, startTravel, travelShade } from '@brundlefly/brand/shared/set-travel'
 import type { Travel } from '@brundlefly/brand/shared/set-travel'
-import { beatMannerism, keyTaps, markerStrokes, pauseMannerism, poseMannerisms, roundHabits } from '@brundlefly/brand/shared/mannerism'
+import { beatMannerism, keyTaps, markerStrokes, pauseMannerism, poseMannerisms, roundHabits, stationMannerism } from '@brundlefly/brand/shared/mannerism'
 import type { EyeCue, MannerismLayer } from '@brundlefly/brand/shared/mannerism'
 import { advanceConversationFocus, blendCameraShot, defaultCameraView, followTiltRest, moveCameraView, resolveCameraView, resolveConversationCloseUp, resolveConversationFocus, resolveDialogClearance, resolveFollowYaw, resolveResponsiveCameraFraming, resolveTiltView, rotateCameraView, tiltCameraView, tiltPose } from '@brundlefly/brand/shared/camera-view'
 import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
@@ -354,6 +354,8 @@ watch(canvas, async (element) => {
   // His stops at each walk point so far. A point with a second habit takes it on every second visit.
   let stopVisits: number[] = []
   let stoppedAt: number | undefined
+  // The age of his stop at a station when he first faced his work there. His habit waits for it.
+  let stationReady: number | undefined
   // The walk point he stands at, or nothing while he walks.
   const stopNow = () => stroll.activity._tag === 'Pausing' ? stroll.activity.waypoint % standing.stage.layout.walkPauses.length : undefined
   let workTending = false
@@ -639,14 +641,20 @@ watch(canvas, async (element) => {
       if (stop !== stoppedAt) {
         if (stop !== undefined) stopVisits = Object.assign([...stopVisits], { [stop]: (stopVisits[stop] ?? 0) + 1 })
         stoppedAt = stop
+        stationReady = undefined
       }
-      const habit = faceMotion && !journey && !act.held ? pauseMannerism(stroll, roundHabits(layout.walkHabits, layout.walkAlternates, stopVisits)) : undefined
+      // At a station he is turned to his work, so his working arm is the one on the side he turned to.
+      const station = stop === undefined || !meshPose ? undefined : layout.walkFacings?.[stop]
+      // He begins his work only when he faces it. Before that his body still turns, and a lifted arm would cross his head.
+      const away = station === undefined ? 0 : Math.abs(turn.heading - station)
+      if (station !== undefined && stationReady === undefined && away < 0.2 && stroll.activity._tag === 'Pausing') stationReady = stroll.activity.age
+      const habits = roundHabits(layout.walkHabits, layout.walkAlternates, stopVisits)
+      const habit = !faceMotion || journey || act.held ? undefined
+        : station === undefined ? pauseMannerism(stroll, habits) : stationMannerism(stroll, habits, stationReady, 1 - (away - 0.2) / 0.5)
       // A habit turns his head away: to the ceiling, to a palm, to the eggs. In a conversation he faces the visitor.
       // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
       habitWeight = faceMotion ? habitWeight + ((talking ? 0 : 1) - habitWeight) * Math.min(1, delta * 5) : 1
-      // At a station he is turned to his work, so his working arm is the one on the side he turned to.
-      const station = stop === undefined ? undefined : layout.walkFacings?.[stop]
-      if (habit) layers.push({ ...habit, weight: habitWeight, side: station === undefined ? undefined : station < 0 ? -1 : 1 })
+      if (habit) layers.push({ ...habit, weight: habitWeight * (habit.weight ?? 1), side: station === undefined ? undefined : station < 0 ? -1 : 1 })
       // His work makes its own sound: a click for each key, and the jar bubbles once as he turns it.
       const taps = habit?.mannerism._tag === 'TypeKeys' && !talking ? keyTaps(habit.age) : 0
       if (taps > workTaps) emit('action', 'KeyClick')
