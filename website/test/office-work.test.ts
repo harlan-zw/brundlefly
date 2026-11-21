@@ -135,3 +135,12 @@ test('the jar and the board keep his working arm bent and in front of him', () =
   assert.ok(board['right-shoulder']![0] > -1.3 && board['right-elbow']![0] < -0.6)
   assert.ok(Math.abs(board['right-shoulder']![2]) < 0.2)
 })
+
+test('at a station he turns side-on, far enough to work and not so far that his face is hidden', () => {
+  for (const stop of officePlan.stops.filter(stop => stop.facing !== undefined)) {
+    const turn = Math.abs(stop.facing!)
+    assert.ok(turn > 1.3 && turn <= 1.6, `the stop for ${stop.habit} turns him ${turn}`)
+    // His head still turns most of the way back to the viewer.
+    assert.ok(Math.abs(headCounterTurn(stop.facing!, 0)) > 1)
+  }
+})

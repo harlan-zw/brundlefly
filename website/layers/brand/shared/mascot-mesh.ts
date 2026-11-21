@@ -68,6 +68,8 @@ function findFingers(scene: Object3D) {
  * A marker for one long hand, hidden until a habit has the hand hold it. It lies along the middle finger, with its tip past the knuckle.
  * A hand without a middle finger joint gets none.
  */
+/** How far the marker lies from the middle of his hand toward his palm, as a share of its own length. */
+export const markerInPalm = 0.22
 function createMarker(middle: Finger | undefined) {
   const hand = middle?.root.parent
   if (!middle || !hand) return undefined
@@ -81,7 +83,10 @@ function createMarker(middle: Finger | undefined) {
   marker.add(body, tip)
   // A cylinder stands along y. The marker points the way the middle finger does.
   marker.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), along.clone().normalize())
-  marker.position.copy(along).multiplyScalar(0.9)
+  // It lies against his palm, not through his hand. His fingers close about their own x axis, so a fingertip that curls moves toward the palm:
+  // that way is the finger's x axis crossed with the way the finger points.
+  const palm = new Vector3(1, 0, 0).applyQuaternion(middle.root.quaternion).cross(along.clone().normalize()).normalize()
+  marker.position.copy(along).multiplyScalar(0.9).addScaledVector(palm, length * markerInPalm)
   marker.visible = false
   hand.add(marker)
   // The model's own release frees the marker with every other mesh under the scene.
