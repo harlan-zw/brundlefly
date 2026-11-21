@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { officePlan } from '../layers/brand/shared/office-layout.ts'
-import { keyTaps, mannerismDuration, markerStrokes, poseMannerisms, roundHabits } from '../layers/brand/shared/mannerism.ts'
+import { keyTaps, mannerismDuration, markerStrokes, poseMannerisms, roundHabits, stationMannerism } from '../layers/brand/shared/mannerism.ts'
 import { advanceTurn, settleTurn, startStroll, startTurn, workLimit } from '../layers/brand/shared/mascot-stroll.ts'
 import type { Stroll } from '../layers/brand/shared/mascot-stroll.ts'
 import { headCounterTurn, neckLimit } from '../layers/brand/shared/mascot-mesh.ts'
@@ -50,9 +50,9 @@ test('typing lifts both long arms, and tending a jar lifts the arm on the side t
   assert.ok(typing['left-shoulder']![0] < -0.4 && typing['right-shoulder']![0] < -0.4)
   const right = poseMannerisms([{ mannerism: { _tag: 'TendJar' }, age: 2.5, side: 1 }]).turns
   const left = poseMannerisms([{ mannerism: { _tag: 'TendJar' }, age: 2.5, side: -1 }]).turns
-  assert.ok(right['left-shoulder']![0] < -0.6)
+  assert.ok(right['left-shoulder']![0] < -0.3)
   assert.equal(right['right-shoulder'], undefined)
-  assert.ok(left['right-shoulder']![0] < -0.6)
+  assert.ok(left['right-shoulder']![0] < -0.3)
 })
 
 test('the two stations have a work habit, a facing, and the longest stops of his round', () => {
@@ -105,4 +105,33 @@ test('his head stays on the viewer up to the neck limit, and goes with his body 
   }
   // While he walks the head keeps half of the turn.
   assert.ok(Math.abs(headCounterTurn(1, 1) - 0.5) < 1e-9)
+})
+
+test('at a station his habit waits until he faces his work, then fits the time the stop has left', () => {
+  const habits = ['WriteBoard'] as const
+  const stop = (age: number): Stroll => ({ ...startStroll([0, 0], 0), activity: { _tag: 'Pausing', remaining: 9 - age, duration: 9, waypoint: 0, age } })
+  // While he still turns, no habit plays.
+  assert.equal(stationMannerism(stop(1), habits, undefined, 1), undefined)
+  // He faced his work 2 seconds into the stop. The habit starts from its beginning there.
+  const begun = stationMannerism(stop(2), habits, 2, 1)!
+  assert.equal(begun.age, 0)
+  // It ends before he walks on, however late he began.
+  for (const ready of [1, 2, 4, 6]) {
+    const last = stationMannerism(stop(9 - 0.15), habits, ready, 1)!
+    assert.ok(last.age >= mannerismDuration({ _tag: 'WriteBoard' }) - 1e-9, `the habit is cut short when he is ready at ${ready}`)
+  }
+  // A visitor who turns him away fades the habit out.
+  assert.equal(stationMannerism(stop(4), habits, 2, 0.4)!.weight, 0.4)
+  assert.equal(stationMannerism(stop(4), habits, 2, -1)!.weight, 0)
+  assert.equal(poseMannerisms([stationMannerism(stop(4), habits, 2, -1)!]).turns['right-shoulder'], undefined)
+})
+
+test('the jar and the board keep his working arm bent and in front of him', () => {
+  // A straight arm at shoulder height read as broken. The upper arm stays below the horizontal for a jar, and the elbow carries the reach.
+  const jar = poseMannerisms([{ mannerism: { _tag: 'TendJar' }, age: 2.6, side: 1 }]).turns
+  assert.ok(jar['left-shoulder']![0] > -0.7 && jar['left-elbow']![0] < -0.7)
+  // At the board the arm lifts forward and the elbow bends, so the hand writes in front of his face and never behind his head.
+  const board = poseMannerisms([{ mannerism: { _tag: 'WriteBoard' }, age: 3.2, side: -1 }]).turns
+  assert.ok(board['right-shoulder']![0] > -1.3 && board['right-elbow']![0] < -0.6)
+  assert.ok(Math.abs(board['right-shoulder']![2]) < 0.2)
 })

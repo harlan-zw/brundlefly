@@ -10,9 +10,11 @@ import { createOrganismModel } from '../../shared/organism'
 import { createMascotModel } from '../../shared/mascot'
 import { loadMeshMascot, reliefStandingHeight } from '../../shared/mascot-mesh'
 import { clipPoses } from '../../shared/mascot-pose'
+import { poseMannerisms } from '../../shared/mannerism'
+import type { MannerismTag } from '../../shared/mannerism'
 import type { Presentation, Transform } from '../../shared/organism'
 
-const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform = 'squeeze', presentation = 'specimen', interactive = true, motionOff = false, exportable = false, mascot = false, framing = 'center', distance, speaking = 0, blink, brow, squint, inspector = false, bones = false, wireframe = false, clip = 'Manual', playing = false, playbackSpeed = 1, textureMode = 'mapped' } = defineProps<{
+const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform = 'squeeze', presentation = 'specimen', interactive = true, motionOff = false, exportable = false, mascot = false, framing = 'center', distance, speaking = 0, blink, brow, squint, inspector = false, bones = false, wireframe = false, clip = 'Manual', playing = false, playbackSpeed = 1, textureMode = 'mapped', habit = 'None', habitTime = 0, habitSide = 1, turn } = defineProps<{
   wetness?: number, viscosity?: number, pressure?: number, motionOff?: boolean, exportable?: boolean
   opening?: number, transform?: Transform, presentation?: Presentation, interactive?: boolean
   mascot?: boolean
@@ -22,6 +24,8 @@ const { wetness = 0.75, viscosity = 0.6, pressure = 0, opening = 0.5, transform 
   inspector?: boolean, bones?: boolean, wireframe?: boolean
   clip?: 'Manual' | 'Idle' | 'Walk' | 'Speaking'
   playing?: boolean, playbackSpeed?: number, textureMode?: 'mapped' | 'sprite' | 'mesh'
+  /** The inspector can hold the mesh in one moment of a habit, turned as he stands at his work. `turn` is his turn about the vertical, in radians. */
+  habit?: MannerismTag | 'None', habitTime?: number, habitSide?: 1 | -1, turn?: number
 }>()
 const clipTime = defineModel<number>('clipTime', { default: 0 })
 type ShownMascot = 'relief' | 'sprite' | 'mesh'
@@ -74,7 +78,7 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
   status.value = { _tag: 'Fallback', reason: 'context' }
 })
 watch([() => wetness, () => viscosity, () => pressure, () => opening, () => transform, () => motionOff, () => distance, () => framing, () => speaking, () => blink, () => brow, () => squint, pressed, animate, width, height], () => refresh?.())
-watch([() => bones, () => wireframe, () => clip, () => playbackSpeed, clipTime], () => refresh?.())
+watch([() => bones, () => wireframe, () => clip, () => playbackSpeed, clipTime, () => habit, () => habitTime, () => habitSide, () => turn], () => refresh?.())
 watch(scrollY, () => { if (presentation === 'lair' && animate.value) refresh?.() })
 onScopeDispose(() => { alive = false; cleanup?.() })
 
@@ -253,7 +257,8 @@ watch(canvas, async (element) => {
       if (inspector && idle && delta && animate.value) clipTime.value = (clipTime.value + delta * playbackSpeed) % meshMascot.idleDuration
       meshMascot.update(!idle ? 0 : inspector ? clipTime.value : elapsed)
       // Manual shows the pose the controls set, when the file can take the relief rig's pose code.
-      if (!idle) meshMascot.pose?.({ time: 0, pressure: currentPressure, pointer, transform, speaking, blink: blink ?? 0, brow, squint })
+      if (!idle) meshMascot.pose?.({ time: 0, pressure: currentPressure, pointer, transform, speaking, blink: blink ?? 0, brow, squint,
+        mannerism: habit === 'None' ? undefined : poseMannerisms([{ mannerism: { _tag: habit }, age: habitTime, side: habitSide }]) }, undefined, turn)
     }
     else if (mixer && clips && clip !== 'Manual') {
       if (activeClip !== clip) {
