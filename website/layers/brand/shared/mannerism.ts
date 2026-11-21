@@ -13,7 +13,6 @@ export type MannerismJoint = 'chest' | 'head' | 'left-shoulder' | 'left-elbow' |
 type Turn = [x: number, y: number, z: number]
 /** Rotations add to the walking and idle pose. Scalars override idle habits; `calm` damps idle motion. */
 export type MannerismPose = {
-  jar?: { weight: number, turn: number }
   turns: Partial<Record<MannerismJoint, Turn>>
   eyes: { cue: EyeCue, weight: number } | undefined
   buzz: number, rub: number, jaw: number, blink: number, calm: number
@@ -89,7 +88,7 @@ const shapes: Record<MannerismTag, Shape> = {
     const turn = Math.sin(age * 1.7)
     return { cue: 'Eggs', calm: e * 0.5, turns: {
       [shoulder]: [-0.95 * e, 0, 0.18 * e * side], [elbow]: [-0.42 * e, 0, 0], [hand]: [-0.1 * e, turn * 0.35 * e, 0],
-      head: [0.12 * e, 0.16 * e * side, (0.14 + turn * 0.08) * e * side], chest: [0.8 * e, 0.06 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
+      head: [0.12 * e, 0.16 * e * side, (0.14 + turn * 0.08) * e * side], chest: [0.12 * e, 0.06 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
   } },
   // He stands turned to the whiteboard. The long arm on `side` lifts high and writes four short lines, each a little lower, and his head follows the hand.
   // `markerStrokes` gives the count of lines, so the marker's squeak can follow them.
@@ -159,8 +158,6 @@ export function poseMannerisms(layers: readonly MannerismLayer[]): MannerismPose
     const strength = envelope(shape, age) * clamp01(weight)
     if (strength <= 0) continue
     const motion = shape.motion(strength, age, side)
-    if (mannerism._tag === 'TendJar') pose.jar = { weight: strength,
-      turn: Math.sin((age - 2.3) * 3) * 0.35 * strength * smooth(clamp01((age - 2.3) / 0.3)) * smooth(clamp01((4.4 - age) / 0.3)) }
     for (const [name, turn] of Object.entries(motion.turns ?? {}) as [MannerismJoint, Turn][]) {
       const total = pose.turns[name] ?? [0, 0, 0]
       pose.turns[name] = [total[0] + turn[0], total[1] + turn[1], total[2] + turn[2]]

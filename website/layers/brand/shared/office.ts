@@ -2,10 +2,9 @@ import { createOfficeWriting } from './office-writing.ts'
 import type { BoardWriting } from './office-writing.ts'
 import { markerProgress, markerStrokes } from './mannerism.ts'
 import {
-  AdditiveBlending, Box3, CanvasTexture, Color, DirectionalLight, Float32BufferAttribute, Group, HemisphereLight, Mesh, NearestFilter, NormalBlending, PointLight, ShaderMaterial, SRGBColorSpace, Vector3,
+  AdditiveBlending, CanvasTexture, Color, DirectionalLight, Group, HemisphereLight, NearestFilter, NormalBlending, PointLight, ShaderMaterial, SRGBColorSpace,
 } from 'three'
-import type { BufferGeometry, Material, Object3D, Texture } from 'three'
-import type { MannerismPose } from './mannerism.ts'
+import type { BufferGeometry, Material, Mesh, Object3D, Texture } from 'three'
 import { officePlan } from './office-layout.ts'
 import type { OfficePlan } from './office-layout.ts'
 import { marksSize, paintOfficeMarks } from './office-marks.ts'
@@ -19,7 +18,7 @@ import { tubeFlicker } from './office-flicker.ts'
  */
 export type OfficeArt = { model: Object3D, lightMax: number, atlas: Texture, floor: Texture, wall: Texture, ceiling: Texture, concrete: Texture, light: Texture }
 /** `light` is how bright the room's tubes are, from 0 to 1. Zero is a dark room: only the things with their own light show. */
-export type OfficeInput = { time: number, settings: SceneSettings, light: number, mannerism?: MannerismPose, writing?: BoardWriting }
+export type OfficeInput = { time: number, settings: SceneSettings, light: number, writing?: BoardWriting }
 
 /** How a surface gets its light and its edge. Each look is one shader program. */
 type Look = 'Mapped' | 'Baked' | 'Cut' | 'Glass' | 'Beam'
@@ -104,47 +103,6 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
   root.name = 'Brundlefly office'
   root.add(art.model)
 
-  // The baked file batches props by surface. Separate this jar's triangles without rebuilding its light.
-  const prop = plan.props.find(prop => prop.id === 'jar-1')!
-  const shelf = plan.props.find(prop => prop.id === 'jar-shelf')!
-  const centre = new Vector3(...prop.position)
-  const box = new Box3().setFromCenterAndSize(centre, new Vector3(...prop.size).addScalar(0.004))
-  const jar = new Group()
-  jar.name = 'working-jar'
-  jar.position.copy(centre)
-  // He keeps this jar at the front of the counter, within reach of his rear arm.
-  jar.position.z = shelf.position[2] + shelf.size[2] / 2 - prop.size[2] / 2 - 0.02
-  art.model.updateMatrixWorld(true)
-  const surfaces: Mesh<BufferGeometry, Material>[] = []
-  art.model.traverse(object => { if (isMesh(object)) surfaces.push(object) })
-  for (const object of surfaces) {
-    const geometry = object.geometry
-    const index = geometry.getIndex()
-    if (!index) continue
-    const positions = geometry.getAttribute('position')
-    const selected: number[] = [], remaining: number[] = []
-    for (let i = 0; i < index.count; i += 3) {
-      const triangle = [index.getX(i), index.getX(i + 1), index.getX(i + 2)]
-      const aboveShelf = triangle.some(vertex => new Vector3().fromBufferAttribute(positions, vertex).applyMatrix4(object.matrixWorld).y > box.min.y + 0.006)
-      const inside = aboveShelf && triangle.every(vertex => box.containsPoint(new Vector3().fromBufferAttribute(positions, vertex).applyMatrix4(object.matrixWorld)))
-      ;(inside ? selected : remaining).push(...triangle)
-    }
-    if (!selected.length) continue
-    const part = geometry.clone()
-    part.setIndex(selected)
-    const unpacked = new Float32Array(positions.count * 3)
-    for (let i = 0; i < positions.count; i++) new Vector3().fromBufferAttribute(positions, i).toArray(unpacked, i * 3)
-    part.setAttribute('position', new Float32BufferAttribute(unpacked, 3))
-    part.applyMatrix4(object.matrixWorld)
-    part.translate(-centre.x, -centre.y, -centre.z)
-    part.computeBoundingBox()
-    part.computeBoundingSphere()
-    geometry.setIndex(remaining)
-    jar.add(new Mesh(part, object.material.clone()))
-  }
-  art.model.add(jar)
-  const jarGrip = (turn: number) => new Vector3(0, 0.165, 0.18).applyAxisAngle(new Vector3(0, 1, 0), turn).add(jar.position)
-
   // The drawn sheet: the whiteboard, the clock face, the door sign, the mug's label, and the keys.
   const sheet = document.createElement('canvas')
   sheet.width = sheet.height = marksSize
@@ -224,9 +182,7 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
 
   return {
     root,
-    jarGrip,
-    update({ time, settings, light, mannerism, writing }: OfficeInput) {
-      jar.rotation.y = mannerism?.jar?.turn ?? 0
+    update({ time, settings, light, writing }: OfficeInput) {
       writingProp.update(writing)
       if (writing) {
         const along = markerProgress(writing.age)

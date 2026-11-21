@@ -39,8 +39,8 @@ test('a prop beside his walk is reported with the clearance it leaves', () => {
 })
 
 test('a prop that a diagonal leg crosses is reported, even when it is far from every stop', () => {
-  const [from, to] = [officePlan.stops[1]!.position, officePlan.stops[2]!.position]
-  const blocked = checkOfficePlan(withProp(crate('stool', (from[0] + to[0]) / 2, (from[1] + to[1]) / 2, 0.2)), rules).filter(problem => problem._tag === 'RouteBlocked')
+  // The loop is a figure of eight. Its diagonals cross near the middle of the room.
+  const blocked = checkOfficePlan(withProp(crate('stool', 0.1, -0.2, 0.2)), rules).filter(problem => problem._tag === 'RouteBlocked')
   assert.ok(blocked.some(problem => problem._tag === 'RouteBlocked' && problem.clearance === -meshBody.reach))
 })
 
