@@ -497,6 +497,8 @@ watch(canvas, async (element) => {
   const officeEye = new Vector3()
   const officeAim = new Vector3()
   let inExperiment = false
+  let counting = false
+  const countFrom = [[.85, -1.8]] as const
   const projected = new Vector3()
   propAt = (point) => {
     for (const [name, centre] of [['board', board], ['computer', computer]] as const) {
@@ -557,7 +559,12 @@ watch(canvas, async (element) => {
     const talking = paused && !journey
     const layout = standing.stage.layout
     const { fog, world, finish, reflection } = standing
-    const route = way ?? loop()
+    const atCounter = Boolean(experiment && standing.stage.name === 'office' && !journey && !act.held)
+    if (atCounter !== counting) {
+      stroll = startStroll(!faceMotion && atCounter ? countFrom[0] : stroll.position, 0)
+      counting = atCounter
+    }
+    const route = counting ? countFrom : way ?? loop()
     const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(layout.camera.desktop, layout.camera.portrait, aspect)
     focusProgress = advanceConversationFocus(focusProgress, talking, delta, reduced.value === 'reduce')
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
@@ -632,8 +639,8 @@ watch(canvas, async (element) => {
       fountain.update(experiment, officeClock(), !faceMotion)
       if (!inExperiment) { officeEye.copy(camera.position); camera.getWorldDirection(officeAim).add(camera.position) }
       inExperiment = true
-      const target = station === 'board' ? board : station === 'computer' ? computer : new Vector3(-1.3, -.77, -2.7)
-      const distance = (station === 'desk' ? 4.8 : station === 'board' ? 2.4 : 1.65) / Math.min(1, aspect)
+      const target = station === 'board' ? board : station === 'computer' ? computer : new Vector3(-1.14, -.9, -2.48)
+      const distance = (station === 'desk' ? 5.9 : station === 'board' ? 2.4 : 1.65) / Math.min(1, aspect)
       const eye = new Vector3(target.x, target.y + (station === 'desk' ? 1.05 : .08), target.z + distance)
       const ease = faceMotion ? 1 - Math.exp(-delta * 7) : 1
       officeEye.lerp(eye, ease); officeAim.lerp(target, ease)
@@ -661,11 +668,11 @@ watch(canvas, async (element) => {
     const attentionNow = journey ? 'free' as const : talking ? 'talking' as const
       : entrance._tag === 'Dark' ? 'noticed' as const : act.held ? 'free' as const : hovered.value ? 'noticed' as const : 'free' as const
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
-      pauses: journey || act.held ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
+      pauses: journey || act.held || counting ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
       cadence: meshCadence, facing: meshPose ? turn.heading : undefined })
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
       // At a station of his round he faces his work, until a visitor has his attention. At the switch he faces it. After the strike he turns back to the visitor on his feet.
-      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing : workFacing(attentionNow) }
+      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing : counting ? -.85 : workFacing(attentionNow) }
       // With motion off he has no steps to turn with, so he stands where the turn would end.
       turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
     }
@@ -690,7 +697,7 @@ watch(canvas, async (element) => {
       const layers: MannerismLayer[] = faceMotion ? [{ mannerism: beatMannerism(beat), age: faceElapsed - reactionStarted }] : []
       // He performs no habit on a journey: its one stop is the way out.
       // His stop at the switch is no stop of his loop, so it has no habit either.
-      const stop = journey || act.held ? undefined : stopNow()
+      const stop = journey || act.held || counting ? undefined : stopNow()
       if (stop !== stoppedAt) {
         if (stop !== undefined) stopVisits = Object.assign([...stopVisits], { [stop]: (stopVisits[stop] ?? 0) + 1 })
         stoppedAt = stop
@@ -724,6 +731,7 @@ watch(canvas, async (element) => {
       // The entrance has two gestures of its own: his reach for the switch, and his greeting after the turn.
       if (faceMotion && act.reach !== undefined) sided.push({ mannerism: { _tag: 'ReachSwitch' }, age: act.reach, side: switchSide })
       if (faceMotion && act.greet !== undefined) sided.push({ mannerism: { _tag: 'Greet' }, age: act.greet, side: switchSide })
+      if (counting && faceMotion && dispensed > 0) sided.push({ mannerism: { _tag: 'CheckPalm' }, age: faceElapsed % 5 })
       const mannerism = poseMannerisms(sided)
       // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
       const eyes = !faceMotion ? { _tag: 'Ahead' } as const

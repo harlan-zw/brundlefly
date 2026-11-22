@@ -1,7 +1,10 @@
 import { computed, onMounted, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useIntervalFn, useLocalStorage } from '@vueuse/core'
-import { emptyRun, phase, release, specimenCount, voteIntervalMs } from '#shared/office-experiment'
+import { calibrationMs, emptyRun, phase, release, specimenCount, voteIntervalMs } from '#shared/office-experiment'
 import type { Command, Creature, RoomMessage, Run, Station } from '#shared/office-experiment'
+
+// Phones on a venue LAN can open an HTTP preview. getRandomValues also works there.
+const ticket = () => Array.from(crypto.getRandomValues(new Uint32Array(4)), word => word.toString(16).padStart(8, '0')).join('')
 
 export function useOfficeExperiment(office: () => boolean, mode: () => 'present' | 'rehearse' | 'guest') {
   const room = shallowRef<Run | null>(null)
@@ -52,7 +55,7 @@ export function useOfficeExperiment(office: () => boolean, mode: () => 'present'
     online.value = false
   }
   function connect() {
-    if (!device.value) device.value = crypto.randomUUID()
+    if (!device.value) device.value = ticket()
     const endpoint = new URL('/api/office', location.href)
     endpoint.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
     endpoint.searchParams.set('device', device.value)
@@ -72,8 +75,15 @@ export function useOfficeExperiment(office: () => boolean, mode: () => 'present'
     now.value = clock()
     if (rehearsal.value && room.value && phase(room.value, now.value) === 'running') {
       const kinds = ['beetle', 'fly', 'cricket', 'snail'] as const
-      const turn = room.value.drops.length
-      room.value = release(room.value, kinds[turn % kinds.length]!, 'rehearsal-' + turn, false, now.value)
+      let run = room.value
+      const start = run.drops[0]!.at + calibrationMs
+      // Restore missed simulated taps after a slow frame, using their original release times.
+      for (let turn = run.drops.length; start + turn * 100 <= now.value; turn++) {
+        const next = release(run, kinds[turn % kinds.length]!, 'rehearsal-' + turn, false, start + turn * 100)
+        if (next === run) break
+        run = next
+      }
+      room.value = run
     }
   }, 100, { immediate: false })
   watch(() => room.value?.id, id => {
@@ -95,7 +105,7 @@ export function useOfficeExperiment(office: () => boolean, mode: () => 'present'
   onScopeDispose(() => { stop?.(); disconnect() })
   function authenticate(value: string) { key = value; send({ op: 'host', key }) }
   function open() {
-    if (rehearsal.value) { room.value = emptyRun(crypto.randomUUID()); now.value = clock() }
+    if (rehearsal.value) { room.value = emptyRun(ticket()); now.value = clock() }
     else send({ op: 'open' })
   }
   function close() {
@@ -106,7 +116,7 @@ export function useOfficeExperiment(office: () => boolean, mode: () => 'present'
   function tap(kind: Creature) {
     if (!room.value || !online.value || clock() < readyAt.value) return
     readyAt.value = clock() + voteIntervalMs
-    const id = crypto.randomUUID()
+    const id = ticket()
     if (rehearsal.value) room.value = release(room.value, kind, id, true, clock())
     else send({ op: 'tap', kind, id, run: room.value.id })
   }
