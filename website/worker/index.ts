@@ -113,6 +113,7 @@ export const handleApi = async (request: Request, env: Env): Promise<Response> =
   const url = new URL(request.url)
   const origin = request.headers.get('origin')
   if ((origin && origin !== url.origin) || request.headers.get('sec-fetch-site') === 'cross-site') return failure(403)
+  if (url.pathname === '/api/office') return env.OFFICE_ROOM.getByName('presentation').fetch(request)
   const now = Date.now()
   if (url.pathname === '/api/visit') return request.method === 'GET' ? visit(request, env, now) : failure(405)
   if (url.pathname !== '/api/dialogue') return failure(404)

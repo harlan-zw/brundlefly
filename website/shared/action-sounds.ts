@@ -3,7 +3,7 @@ import { shotChance } from './audio-shot.ts'
 import type { Shot, ShotPoint } from './audio-shot.ts'
 
 /** A short sound for something he does. The scene asks for the switch and the strike in the office entrance. Nothing asks for the others yet. */
-export type ActionSound = 'KeyClick' | 'MarkerSqueak' | 'JarBubbles' | 'LightSwitch' | 'TubeStrike'
+export type ActionSound = 'KeyClick' | 'MarkerSqueak' | 'JarBubbles' | 'LightSwitch' | 'TubeStrike' | 'FlyBuzz' | 'CricketChirp'
 
 // Stage gains for the action sounds, set by offline rendering at the default mix. Each peaks between -38 and -29 dBFS, far below his voice.
 // The switch and the strike are set by ear against them, and no offline render has measured them.
@@ -88,4 +88,7 @@ export function tubeStrike(index: number): Shot {
 }
 
 /** The sound of each action, by name. */
-export const actionSounds: Record<ActionSound, (index: number) => Shot> = { KeyClick: keyClick, MarkerSqueak: markerSqueak, JarBubbles: jarBubbles, LightSwitch: lightSwitch, TubeStrike: tubeStrike }
+export const actionSounds: Record<ActionSound, (index: number) => Shot> = {
+  FlyBuzz: () => ({ duration: .16, pan: .15, voices: [{ _tag: 'Tone', wave: 'sawtooth', pitch: [[0, 155], [.15, 235]], level: [[0, 0], [.018, .035], [.15, 0]] }] }),
+  CricketChirp: () => ({ duration: .13, pan: -.13, voices: [{ _tag: 'Tone', wave: 'sine', pitch: [[0, 2200], [.13, 3150]], level: [[0, 0], [.012, .07], [.054, 0], [.073, .06], [.13, 0]] }] }),
+  KeyClick: keyClick, MarkerSqueak: markerSqueak, JarBubbles: jarBubbles, LightSwitch: lightSwitch, TubeStrike: tubeStrike }

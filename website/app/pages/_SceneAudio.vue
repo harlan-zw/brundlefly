@@ -8,7 +8,7 @@ import type { ActionSound } from '#shared/action-sounds'
 import type { SetName } from '@brundlefly/brand/shared/scene-set'
 
 // `set` is the set that stands. The sound follows it: each set names its ambience, and a change of set is a cross-fade.
-const { talking, replyCount, replyLength = 120, mix = defaultSceneAudioMix, set = 'lair' } = defineProps<{ talking: boolean, replyCount: number, replyLength?: number, mix?: SceneAudioMix, set?: SetName }>()
+const { audience = false, talking, replyCount, replyLength = 120, mix = defaultSceneAudioMix, set = 'lair' } = defineProps<{ audience?: boolean, talking: boolean, replyCount: number, replyLength?: number, mix?: SceneAudioMix, set?: SetName }>()
 const emit = defineEmits<{ state: [value: SceneAudioState], voice: [envelope: number] }>()
 const state = shallowRef<SceneAudioState>({ muted: false, status: { _tag: 'Idle' } })
 const visibility = useDocumentVisibility()
@@ -66,6 +66,7 @@ function gesture(event: PointerEvent | KeyboardEvent) {
 }
 useEventListener('pointerdown', gesture, { capture: true })
 useEventListener('keydown', gesture, { capture: true })
+watch(() => audience, value => audio?.setMuted(value))
 watch(visibility, value => audio?.setVisible(value === 'visible'))
 watch(() => talking, value => {
   audio?.setTalking(value)
@@ -95,6 +96,7 @@ onMounted(() => {
     onVoice: (envelope) => { if (!mime) emit('voice', envelope) },
     onError: error => console.error('Brundlefly scene audio failed.', error),
   })
+  if (audience) audio.setMuted(true)
   audio.setVisible(visibility.value === 'visible')
   audio.setMix(mix)
   audio.setAmbience(ambienceForSet(set))

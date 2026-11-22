@@ -189,3 +189,14 @@ Panel actions use “Close”, “Reset”, and “Copy settings”.
 The copy fallback label is “Settings JSON”.
 Its error is “Clipboard access failed. Select and copy the settings.”
 Copy success uses “Copied.”
+
+## Office experiment
+
+The presenter controls the room at “Board”, “Computer”, and “Desk”. The sign-in field is “Presenter key”.
+The presenter starts with “Open the office” and ends with “Reset experiment”. Guests finish with “Explore the cave”.
+The computer reads “Specimen counter”, “Warning”, “Critical”, and “Votes”. Its presence line reads “{count} connected”.
+During solo rehearsal, the presence line reads “20 simulated”. During reconnection, it reads “Reconnecting…”.
+Each emoji button has the spoken label “Add a {creature}, {count} votes”. Its recovery reads “Next vote in {seconds}s”.
+The experiment uses the approved “Sound on” and “Sound off” actions.
+Only accepted audience choices count as votes. The calibration and unexpected specimens carry no votes.
+Brundlefly’s event lines follow the office experiment script in the scene. The controls never announce the fault.

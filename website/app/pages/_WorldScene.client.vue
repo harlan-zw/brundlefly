@@ -33,10 +33,13 @@ import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ActionSound } from '#shared/action-sounds'
 import type { ConversationMood } from '#shared/conversation'
+import { board, computer, createFountain } from '../office-fountain'
+import { critical, specimenCount, warning } from '#shared/office-experiment'
+import type { Run, Station } from '#shared/office-experiment'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
-const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
+const { experiment = null, station = 'desk', officeClock = Date.now, set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ experiment?: Run | null, station?: Station, officeClock?: () => number, set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
 // `set` is the place the page wants him in. The scene reports the set that stands, and travels when the two differ.
 const shownSet = ref<SetName>(set)
 const travelPhase = ref<Travel['_tag']>('Home')
@@ -60,7 +63,7 @@ const shownMascot = ref<MascotMode>()
 const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
 // `shown` names the set that stands after a journey. `stayed` means the other set's artwork did not load.
 // `entrance` says whether this visit found the set dark. `action` names a short sound for something he does.
-const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number],
+const emit = defineEmits<{ talk: [], station: [station: Station], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number],
   entrance: [dark: boolean], action: [sound: ActionSound] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
@@ -101,6 +104,7 @@ let alive = true
 let cleanup: (() => void) | undefined
 let refresh: (() => void) | undefined
 let hit: ((pointer: Vector2) => boolean) | undefined
+let propAt: ((point: Vector2) => Station | undefined) | undefined
 let bounds = { left: 0, right: 0, top: 0, bottom: 0 }
 /** The hover area in host pixels. The pointer cursor shows over it. */
 const overMascot = (x: number, y: number) => x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
@@ -153,6 +157,11 @@ function select(event: MouseEvent) {
   if (!rect) return
   if (event.detail === 0) { emit('talk'); return }
   const position = new Vector2((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2)
+  if (experiment) {
+    const prop = propAt?.(position)
+    if (prop) emit('station', prop)
+    return
+  }
   if (status.value._tag !== 'Ready' || hit?.(position)) emit('talk')
 }
 useEventListener('keydown', (event: KeyboardEvent) => {
@@ -175,6 +184,7 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
   hit = undefined
   status.value = { _tag: 'Fallback', reason: 'context' }
 })
+watch(() => [experiment, station], () => refresh?.())
 watch([animate, width, height], () => refresh?.())
 watch(settings, () => refresh?.(), { deep: true })
 watch(() => [speaking, mood, thinking, reaction], () => refresh?.())
@@ -483,7 +493,18 @@ watch(canvas, async (element) => {
   let tiltRest: Quaternion | undefined
   const tilt = { yaw: 0, pitch: 0 }
   // A journey needs frames to its end, even without motion: its dark hold is counted in frames.
-  const needsFrames = () => visibility.value === 'visible' && (animate.value || (!paused && cameraKeys.size > 0)
+  let fountain: ReturnType<typeof createFountain> | undefined
+  const officeEye = new Vector3()
+  const officeAim = new Vector3()
+  let inExperiment = false
+  const projected = new Vector3()
+  propAt = (point) => {
+    for (const [name, centre] of [['board', board], ['computer', computer]] as const) {
+      projected.copy(centre).project(camera)
+      if (Math.abs(projected.x - point.x) < .18 && Math.abs(projected.y - point.y) < .15) return name
+    }
+  }
+  const needsFrames = () => visibility.value === 'visible' && (Boolean(experiment) || animate.value || (!paused && cameraKeys.size > 0)
     || (paused && moving()) || travel._tag !== 'Home' || set !== standing.stage.name || entrance._tag !== 'Lit'
     || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001)
   function render(delta: number) {
@@ -493,7 +514,7 @@ watch(canvas, async (element) => {
     // The entrance in the dark. A visitor who asks for him, or who leaves for another set, ends it at once: the light comes and he is free.
     const entered = entranceAct(entrance)
     const phaseBefore = entrance._tag
-    entrance = advanceEntrance(entrance, { delta, arrived: stroll.activity._tag === 'Pausing', skip: paused || set !== standing.stage.name, still: !faceMotion })
+    entrance = advanceEntrance(entrance, { delta, arrived: stroll.activity._tag === 'Pausing', skip: paused || Boolean(experiment?.drops.length) || set !== standing.stage.name, still: !faceMotion })
     const act = entranceAct(entrance)
     if (entrance._tag !== phaseBefore) {
       entrancePhase.value = entrance._tag
@@ -503,7 +524,12 @@ watch(canvas, async (element) => {
     }
     // Free again, he takes up his loop from where he stands.
     if (entered.held && !act.held) { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
-    const light = entranceLight(entrance)
+    const dispensed = specimenCount(experiment)
+    const failureAge = experiment && dispensed === critical ? officeClock() - experiment.drops.at(-1)!.at : -1
+    const failing = standing.stage.name === 'office' && failureAge >= 0 && faceMotion
+    const light = entranceLight(entrance) * (failing && failureAge > 3300 ? .32 : failing && failureAge > 2000 ? .7 : 1)
+    if (experiment && dispensed >= warning && set === 'office' && standing.stage.name === 'office' && !incoming)
+      incoming = { name: 'lair', art: sceneSets.lair.load() }
     const look = mascotInLight(standing.stage.mascot, light)
     shadowMaterial.uniforms.uStrength!.value = look.shadow.body
     for (const patch of footShadows) patch.material.uniforms.uDark!.value = look.shadow.foot
@@ -514,12 +540,12 @@ watch(canvas, async (element) => {
     if (travel._tag === 'Home' && set !== standing.stage.name) {
       travel = startTravel(travel)
       swapped = false
-      incoming = { name: set, art: sceneSets[set].load() }
+      if (incoming?.name !== set) { forget(incoming); incoming = { name: set, art: sceneSets[set].load() } }
       way = [standing.stage.layout.exit]
       stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } }
     }
     const phase = travel._tag
-    travel = advanceTravel(travel, { delta, still: !faceMotion, swapped, settled: stroll.activity._tag === 'Pausing' })
+    travel = advanceTravel(travel, { delta, still: !faceMotion || Boolean(experiment), swapped, settled: stroll.activity._tag === 'Pausing' })
     if (travel._tag === 'Dark' && phase !== 'Dark') void changeSet()
     // At home again he takes up his loop from where he stands.
     if (travel._tag === 'Home' && phase !== 'Home') { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
@@ -598,6 +624,33 @@ watch(canvas, async (element) => {
     const shot = blendCameraShot({ position: basePosition, target: baseTarget }, focus, blend)
     camera.position.copy(shot.position)
     camera.quaternion.copy(shot.quaternion)
+    if (experiment && standing.stage.name === 'office') {
+      if (!fountain) { fountain = createFountain(); scene.add(fountain.group, fountain.keepsake) }
+      fountain.boardSheet.visible = station !== 'board'
+      fountain.keepsake.visible = false
+      fountain.group.visible = true
+      fountain.update(experiment, officeClock(), !faceMotion)
+      if (!inExperiment) { officeEye.copy(camera.position); camera.getWorldDirection(officeAim).add(camera.position) }
+      inExperiment = true
+      const target = station === 'board' ? board : station === 'computer' ? computer : new Vector3(-1.3, -.77, -2.7)
+      const distance = (station === 'desk' ? 4.8 : station === 'board' ? 2.4 : 1.65) / Math.min(1, aspect)
+      const eye = new Vector3(target.x, target.y + (station === 'desk' ? 1.05 : .08), target.z + distance)
+      const ease = faceMotion ? 1 - Math.exp(-delta * 7) : 1
+      officeEye.lerp(eye, ease); officeAim.lerp(target, ease)
+      camera.position.copy(officeEye); camera.lookAt(officeAim)
+      if (failing && failureAge > 1600 && failureAge < 4400)
+        camera.rotateZ(.012 * Math.sin(failureAge / 130))
+    } else {
+      inExperiment = false
+      if (fountain) {
+        fountain.group.visible = false
+        fountain.keepsake.visible = Boolean(experiment && dispensed === critical && standing.stage.name === 'lair')
+        if (fountain.keepsake.visible) {
+          camera.position.set(-1.3, -1.48, 4.6)
+          camera.lookAt(-2.15, -1.73, 2.25)
+        }
+      }
+    }
     camera.updateMatrixWorld()
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
     // A mesh without the relief rig's joints stands where the relief rig starts.
@@ -703,6 +756,12 @@ watch(canvas, async (element) => {
     const corners = reach.map(value => figure.localToWorld(value).project(camera))
     bounds = { left: (corners[0]!.x + 1) * renderWidth / 2, right: (corners[1]!.x + 1) * renderWidth / 2,
       top: (1 - corners[1]!.y) * renderHeight / 2, bottom: (1 - corners[0]!.y) * renderHeight / 2 }
+    if (experiment && host.value?.parentElement) {
+      const middle = Math.max(14, Math.min(86, (bounds.left + bounds.right) * 50 / renderWidth))
+      const top = Math.max(9, Math.min(46, bounds.top * 100 / renderHeight - 4))
+      host.value.parentElement.style.setProperty('--speaker-x', middle.toFixed(1) + '%')
+      host.value.parentElement.style.setProperty('--speaker-y', top.toFixed(1) + '%')
+    }
     reflection?.update(settings.value.wetness)
     if (finish) finish.render({ time: elapsed, focus: blend, focusDistance: camera.position.distanceTo(staging ? staging.face : face) })
     else renderer.render(scene, camera)
@@ -734,6 +793,7 @@ watch(canvas, async (element) => {
     endView()
     renderer.setAnimationLoop(null)
     forget(incoming)
+    fountain?.dispose(); propAt = undefined
     strike(standing); mirror?.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
     staging?.key.dispose(); staging?.rim.dispose()
     shadowGeometry.dispose(); shadowMaterial.dispose(); renderer.dispose()

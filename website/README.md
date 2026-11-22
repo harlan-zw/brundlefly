@@ -113,3 +113,17 @@ The tool app extends the same layer.
 
 The build uses explicit Vite packaging and validates cf deploy --prebuilt --dry-run.
 The production workflow uses cf deploy --prebuilt for the same build output.
+
+## Present the office experiment
+
+Set the Worker's secret `OFFICE_PRESENTER_KEY` before the first live talk. Keep the key on the presenter’s device.
+Open `/office?present`, enter the key, then choose **Open the office**.
+Leave the board up for about 20 seconds. The QR code takes phones to `https://brundlefly.dev/office`.
+Choose **Computer**, then tap the snail once. The four buttons open for everyone after three seconds.
+
+Each device gets one vote every two seconds. Twenty regular voters fill the counter in about thirty seconds.
+Allow six seconds for the blackout and waking in the cave. **Reset experiment** closes the shared run.
+An unattended run closes after thirty minutes. Between runs, `/office` shows the usual office.
+
+For a solo rehearsal, use `/office?rehearse`. This simulates twenty voters in the browser after calibration.
+For a shared local rehearsal, use the Cloudflare preview with a local presenter key. Open its local address on each device.
