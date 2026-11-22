@@ -6,7 +6,7 @@ import type { Creature } from '#shared/office-experiment'
 import type { useOfficeExperiment } from '../composables/useOfficeExperiment'
 const props = defineProps<{ office: ReturnType<typeof useOfficeExperiment>, presenter: boolean, muted: boolean, awakeInCave: boolean }>()
 const emit = defineEmits<{ sound: [], wake: [], leave: [], reset: [] }>()
-const { room, readyAt, host, stage, station, count, connected, online, error, now, rehearsal, tap } = props.office
+const { room, readyAt, host, stage, station, count, connected, online, error, now, presence, tap } = props.office
 const key = ref('')
 const dismissed = ref('')
 const awakeAt = ref(0)
@@ -38,22 +38,22 @@ function authenticate() { props.office.authenticate(key.value); key.value = '' }
 useEventListener('keydown', event => { if (event.key === 'Escape' && show.value) station.value = 'desk' })
 </script>
 <template>
-  <section v-if="show || presenter" class="experiment" aria-label="Office experiment" :data-phase="stage" :data-view="station" :data-warning="count >= warning">
+  <section v-if="show || presenter" class="experiment" aria-label="Office experiment" :data-phase="stage" :data-view="station" :data-warning="count >= warning" :data-host="host">
     <template v-if="show">
       <div v-if="stage === 'critical'" class="outage" :class="{ dark: age > 4250, shake: age > 1900 && age < 4100 }" aria-hidden="true" />
-      <p v-if="line" class="voice" role="status"><b>Brundlefly</b>{{ line }}</p>
+      <p v-if="line" class="voice" role="status"><b>Brundlefly</b><span>{{ line }}</span></p>
       <div v-if="station === 'board' && (stage === 'lobby' || stage === 'running')" class="board">
         <img src="/brand/office/experiment/whiteboard-join.png" alt="Scan to join the office">
-        <a href="/office" target="_blank" rel="noopener">brundlefly.dev/office</a>
+        <a href="/office" target="_blank" rel="noopener" aria-label="brundlefly.dev/office"><span>brundlefly.dev/office</span></a>
       </div>
-      <article v-if="stage !== 'awake'" class="console" :class="{ compact: station !== 'computer' }" aria-label="Specimen counter">
-        <header><strong>Specimen counter</strong><span><i :class="{ live: online }" />{{ rehearsal ? '20 simulated' : online ? connected + ' connected' : 'Reconnecting…' }}</span></header>
+      <article v-if="stage !== 'awake' && (station === 'computer' || (!host && station !== 'board'))" class="console" :class="{ compact: station !== 'computer' }" aria-label="Specimen counter">
+        <header><strong>Specimen counter</strong><span><i :class="{ live: online }" />{{ presence }}</span></header>
         <div class="meter" :aria-label="count + ' specimens'">
           <strong>{{ count }} <small>/ {{ critical }}</small></strong>
           <dl class="limits"><div><dt>Warning</dt><dd>{{ warning }}</dd></div><div><dt>Critical</dt><dd>{{ critical }}</dd></div></dl>
         </div>
         <div class="track" aria-hidden="true"><i :style="{ width: 100 * count / critical + '%' }" /><u /></div>
-          <footer><span>Votes</span><span v-if="stage === 'running' && now < readyAt">Next vote in {{ Math.ceil((readyAt - now) / 1000) }}s</span></footer>
+        <footer><span>Votes</span><span v-if="stage === 'running' && now < readyAt">Next vote in {{ Math.ceil((readyAt - now) / 1000) }}s</span></footer>
         <div class="votes">
           <button v-for="(emoji, kind) in creatures" :key="kind" type="button"
             :disabled="!online || now < readyAt || !(stage === 'running' || (host && stage === 'lobby' && station === 'computer' && kind === 'snail'))"
@@ -91,11 +91,8 @@ button:enabled:hover, button:enabled:focus-visible { background: #365347; }
 .setup { position: absolute; top: 52%; left: 50%; transform: translate(-50%,-50%); padding: 1.6rem; display: grid; gap: 1rem; }
 .setup h2 { font: bold 1.3rem var(--font-mono,monospace); margin: 0; }
 .setup label, .setup input { display: block; }
-.voice { position: absolute; z-index: 2; left: clamp(.5rem, calc(var(--speaker-x,42%) - min(15.5ch,41vw)), calc(100% - min(31ch,82vw) - .5rem)); top: var(--speaker-y,12%); width: min(31ch,82vw); box-sizing: border-box; margin: 0; padding: .62rem .9rem; background: #efe8ce; color: #222821; border: 2px solid #252a23; box-shadow: 3px 3px #191d18; font: 600 clamp(14px,1.65vw,23px)/1.24 system-ui,sans-serif; }
-.voice b { display: block; font: 700 10px/1.5 monospace; text-transform: uppercase; color: #52624c; letter-spacing: .08em; }
-.voice::after { content: ''; position: absolute; bottom: -8px; left: 44%; border: 8px solid transparent; border-top-color: #efe8ce; border-bottom: 0; }
 .board { position: absolute; top: 46%; left: 50%; transform: translate(-50%,-50%); display: grid; justify-items: center; width: min(47vh, 76vw); }
-.board img { width: 100%; image-rendering: pixelated; box-shadow: 0 1px 6px #111; }
+.board img { width: 100%; box-shadow: 0 1px 6px #111; }
 .board a { background: #eee5cb; color: #15201a; font-weight: bold; }
 .console { position: absolute; bottom: max(4.1rem,env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); padding: 1.05rem 1.3rem .65rem; width: min(26rem,calc(100% - 1rem)); box-sizing: border-box; }
 .console.compact { left: auto; right: .8rem; transform: none; bottom: 1rem; width: min(19rem,95vw); }
@@ -111,10 +108,9 @@ header i { display: inline-block; width: 6px; height: 6px; margin-right: 5px; bo
 @keyframes sprinkle { from { opacity:.98; transform:translate(-50%,0) scale(.7); } to { opacity:0; transform:translate(calc(-50% + var(--drift)),-3rem) rotate(var(--turn)); } }
 nav, .finish { position:absolute; bottom:1rem; left:.8rem; } nav { display:flex; gap:3px; }
 .outage { position:absolute; inset:0; background: transparent; z-index:3; transition:background .35s; } .outage.shake { background:rgb(80 130 62 / .18); } .outage.dark { background:#050805; }
-.experiment[data-phase=awake] .voice { top:20%; left:50%; transform:translateX(-50%); }
 @media(min-width:721px) and (min-height:541px) { .experiment[data-view=computer] .console { top:51%; bottom:auto; transform:translate(-50%,-50%); } }
-@media(max-width:720px) { .console,.console.compact { bottom:3.6rem; width:calc(100% - 1rem); left:.5rem; right:auto; transform:none; padding:.75rem .85rem .4rem; } nav { bottom:.5rem; } .board { top:36%; width:min(32vh,64vw); } .voice { top:7%; left:50%; transform:translateX(-50%); } }
-@media(max-height:540px) and (orientation:landscape) { .console,.console.compact { width:17rem; left:auto; right:.5rem; transform:none; bottom:.5rem; } .board { left:27%; width:min(52vh,34vw); } .voice { top:3%; } }
+@media(max-width:720px) { .console,.console.compact { bottom:3.6rem; width:calc(100% - 1rem); left:.5rem; right:auto; transform:none; padding:.75rem .85rem .4rem; } nav { bottom:.5rem; } .board { top:36%; width:min(32vh,64vw); } }
+@media(max-height:540px) and (orientation:landscape) { .console,.console.compact { width:17rem; left:auto; right:.5rem; transform:none; bottom:.5rem; } .board { left:27%; width:min(52vh,34vw); } }
 @media(prefers-reduced-motion:reduce) { .confetti { inset:0; border:2px solid #c9ebba; animation:picked .45s step-end both; } .confetti i { display:none; } @keyframes picked { to { opacity:0; } } .outage { transition:none; } .outage.shake { background:transparent; } }
 
 /* The close view lives in the CRT aperture. Keep the desk controls large enough for a phone. */
@@ -136,7 +132,6 @@ nav, .finish { position:absolute; bottom:1rem; left:.8rem; } nav { display:flex;
 .experiment[data-phase=lobby] .votes button:enabled { background:#3d5d40; outline:1px solid #b0cd8c; }
 .console button:focus-visible, nav button:focus-visible { outline:2px solid #e8d293; outline-offset:2px; }
 .experiment[data-warning=true] .track i { background:#e8bd77; }
-nav button[aria-pressed=true], nav button[aria-pressed=true]:enabled:hover, nav button[aria-pressed=true]:enabled:focus-visible { color:#17251c; background:#ccdbc0; }
 .experiment[data-view=computer] .console:not(.compact) { left:var(--crt-left,50%); top:var(--crt-top,32%); bottom:auto; right:auto;
   width:var(--crt-width,min(78vw,34rem)); height:var(--crt-height,auto); transform:none; visibility:var(--crt-visible,visible);
   container-type:inline-size; border:0; border-radius:2.5% / 3.5%; overflow:hidden; box-shadow:inset 0 0 1rem #05140b99;
@@ -154,11 +149,39 @@ nav button[aria-pressed=true], nav button[aria-pressed=true]:enabled:hover, nav 
 .experiment[data-view=computer] .votes button { min-height:44px; height:14.5cqw; padding:1cqw .5cqw; display:flex; flex-direction:column; justify-content:center; align-items:center; }
 .experiment[data-view=computer] .glyph { font-size:6.2cqw; line-height:1.1; }
 .experiment[data-view=computer] .votes small { font-size:max(11px,3.25cqw); }
-.experiment[data-view=computer] .voice { left:50%; top:auto; bottom:calc(100% - var(--crt-top,32%) + 1rem); transform:translateX(-50%); width:min(39ch,92vw); }
-.experiment[data-view=computer] .voice::after { left:auto; right:1.3rem; bottom:50%; border:0; width:0; height:0; transform:translate(2.05rem,50%); border-top:6px solid transparent; border-bottom:6px solid transparent; border-left:11px solid #efe8ce; }
-.board img { image-rendering:auto; }
 :global(main:has(.world-scene[data-renderer=Ready]) .experiment .board) { top:var(--board-bottom,75%); left:var(--board-x,50%); width:max-content; transform:translateX(-50%); }
 :global(main:has(.world-scene[data-renderer=Ready]) .experiment .board img) { display:none; }
 .board a { font-size:clamp(12px,1.25vw,19px); padding:.25em .7em; }
 :global(main:has(.world-scene[data-renderer=Fallback]) .experiment[data-view=computer] .console) { left:50%; top:50%; height:auto; transform:translate(-50%,-50%); padding:1rem 0; visibility:visible; }
+
+/* The presenter watches the room. Captions share the dialogue's footlight and leave the props clear. */
+.experiment .voice {
+  position:absolute; box-sizing:border-box; z-index:2;
+  top:auto; bottom:clamp(3.7rem,7.5vh,5.5rem); left:50%; transform:translateX(-50%);
+  width:max-content; max-width:min(82vw,62ch); margin:0; border:0; padding:.4em 1.5em .65em;
+  background:radial-gradient(ellipse at center, #10100ddc 0%,#11120fba 43%,transparent 73%);
+  box-shadow:none; color:#f4efdb; text-shadow:0 1px 3px #070907,0 0 6px #080a08,0 0 12px #080a08;
+  font:normal clamp(17px,1.65vw,24px)/1.3 Georgia,serif; text-align:center; }
+.experiment .voice b { display:block; color:#e0cd96; font:600 .66em/1.6 Georgia,serif; letter-spacing:.13em; text-transform:uppercase; }
+@media(min-width:900px) { .experiment[data-view=board] .voice { bottom:2.1rem; } }
+.experiment[data-view=computer] .voice { bottom:auto; top:max(.35rem,calc(var(--crt-top,30%) - 5em)); }
+.experiment nav { gap:1rem; align-items:center; bottom:max(.45rem,env(safe-area-inset-bottom)); padding:0 .55rem;
+  background:radial-gradient(ellipse,#0a100cc9 10%,transparent 74%); }
+.experiment nav button, .experiment nav button[aria-pressed=true], .experiment nav button[aria-pressed=true]:enabled:hover {
+  min-height:44px; padding:.2rem 0; border:0; background:transparent; color:#e5e0cb;
+  font:normal .86rem/1.25 Georgia,serif; text-shadow:0 1px 3px #000,0 0 5px #000; }
+.experiment nav button[aria-pressed=true] { color:#f6dfa1; text-decoration:underline; text-underline-offset:.35em; }
+.experiment nav button:hover { text-decoration:underline; text-underline-offset:.35em; }
+:global(main:has(.world-scene[data-renderer=Ready]) .experiment .board a) {
+  display:grid; place-items:center; min-width:10rem; min-height:32px; transform:translateY(-50%) rotate(2deg);
+  background:transparent; border:0; color:transparent; }
+:global(main:has(.world-scene[data-renderer=Ready]) .experiment .board a:focus-visible) { outline:2px dashed #473a23; }
+@media(max-width:720px) {
+  .experiment .voice { max-width:96vw; padding:.45em 1em; }
+  .experiment[data-host=false][data-view=desk] .voice { top:5%; bottom:auto; }
+  .experiment nav { gap:.85rem; }
+}
+@media(max-height:540px) and (orientation:landscape) {
+  .experiment[data-view=computer] .voice { top:.15rem; font-size:15px; }
+}
 </style>

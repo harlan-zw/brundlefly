@@ -302,90 +302,72 @@ onBeforeUnmount(() => { cancel(); if (dialog.value?.open) dialog.value.close() }
 </template>
 
 <style scoped>
-.speech-pocket { position: fixed; inset: auto; bottom: 20px; left: 50%; translate: -50% 0; box-sizing: border-box; width: min(720px, calc(100vw - 32px)); max-height: min(460px, 46dvh); max-width: none; margin: 0; padding: 14px 18px 12px; overflow: visible; color: #e8d4a6; background: linear-gradient(#151912f2, #0a0d0af7); border: 1px solid #69404b; border-radius: 30px 12px 26px 8px; box-shadow: 0 15px 80px #0009, inset 0 0 35px #69404b22;
-  /* A second inset line frames the pocket like a tabletop dialogue box. */
-  outline: 1px solid #e8d4a61a; outline-offset: -6px;
-  transition: opacity .2s cubic-bezier(0.23, 1, 0.32, 1), transform .2s cubic-bezier(0.23, 1, 0.32, 1), display .2s allow-discrete, overlay .2s allow-discrete; }
-.speech-pocket[open] { display: flex; flex-direction: column; gap: 10px; transition-duration: .25s; }
-/* The pocket rises into place with the camera and sinks out the same way. It keeps rendering until the fade ends. */
-.speech-pocket:not([open]) { opacity: 0; transform: translateY(16px); pointer-events: none; }
-@starting-style { .speech-pocket[open] { opacity: 0; transform: translateY(16px); } }
-.speech-pocket::backdrop { background: #080b0812; }
-/* A rust hairline runs along the top edge and fades toward both ends. One small bead sits at its middle. Both are drawn, so no image loads. */
-.speech-pocket::before { content: ''; position: absolute; top: -1px; left: 9%; right: 9%; height: 1px; pointer-events: none; background: linear-gradient(90deg, transparent, #aa604b8c 30%, #aa604b8c 70%, transparent); }
-.speech-pocket::after { content: ''; position: absolute; top: -3px; left: 50%; width: 5px; height: 5px; translate: -50% 0; rotate: 45deg; pointer-events: none; background: #10130f; border: 1px solid #aa604b; }
-header { display: flex; justify-content: space-between; align-items: center; column-gap: 12px; flex-shrink: 0; }
-.speech-name { position: relative; display: flex; align-items: center; min-width: 0; }
-h2 { margin: 0; font: 600 22px/1.1 var(--font-display, sans-serif); letter-spacing: .02em; }
-/* A 44px target around a small ring. It overhangs the row so the header stays short. */
-.speech-notice { display: grid; place-items: center; width: 44px; height: 44px; margin: -10px -10px -10px -4px; padding: 0; border: 0; background: transparent; color: #a4b5a0; }
-.speech-notice span { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 50%; font: 700 12px/1 var(--font-display, sans-serif); }
-.speech-notice:hover, .speech-notice[aria-expanded='true'] { color: #e8d4a6; }
-.speech-notice:focus-visible { outline-offset: -8px; }
-/* The dialog still names this note as its description, so screen readers hear it on open. */
-.speech-scope { position: absolute; z-index: 2; top: calc(100% + 8px); left: 0; width: max-content; max-width: min(300px, calc(100vw - 64px)); margin: 0; padding: 8px 10px; color: #e8d4a6; background: #080b08; border: 1px solid #69404b; border-radius: 3px 8px 3px 8px; box-shadow: 0 8px 24px #000a; font-size: 12px; line-height: 1.4;
-  opacity: 0; visibility: hidden; translate: 0 -4px; transition: opacity .15s ease-out, translate .15s ease-out, visibility .15s; }
-.speech-scope-open { opacity: 1; visibility: visible; translate: 0 0; }
-/* Touch screens keep :hover after a tap, so only a real pointer previews the note. */
-@media (hover: hover) { .speech-notice:hover + .speech-scope { opacity: 1; visibility: visible; translate: 0 0; } }
-button { font: inherit; cursor: pointer; }
-button:disabled { cursor: wait; opacity: .5; }
-.speech-tools { display: flex; align-items: center; margin: -10px -12px -10px 0; }
-/* The tools overhang their row to keep 44px targets. An inset ring stays inside the pocket. */
-.speech-tools button:focus-visible { outline-offset: -6px; }
-.speech-sound { min-height: 44px; padding: 0 10px; border: 0; color: #a4b5a0; background: transparent; font-size: 13px; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; }
-.speech-sound:hover { color: #e8d4a6; }
-.speech-close { width: 44px; height: 44px; border: 0; background: transparent; color: #e8d4a6; font-size: 26px; line-height: 1; }
-.speech-conversation { display: flex; flex-direction: column; gap: 6px; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-color: #69404b #10130f; }
-.speech-more { mask-image: linear-gradient(#000 calc(100% - 32px), transparent); }
-.speech-utterance { margin: 0; font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
-/* Words he has not said yet keep their place, so the pocket holds its size while the line arrives. */
-.speech-utterance span { transition: opacity .25s ease-out; }
-.speech-utterance .speech-unsaid { opacity: 0; transition: none; }
-.speech-beat { margin: -2px 0 0; color: #a4b5a0; font-size: 13px; font-style: italic; line-height: 1.4; }
-.speech-pending { margin: 0; color: #a4b5a0; font-size: 13px; }
-.speech-links { display: flex; flex-wrap: wrap; gap: 4px 18px; }
-.speech-links a { display: inline-flex; align-items: center; min-height: 32px; color: #a4b5a0; font-size: 13px; line-height: 1.4; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; }
-.speech-links a:hover { color: #e8d4a6; text-decoration-color: currentColor; }
-@media (pointer: coarse) { .speech-links { row-gap: 0; } .speech-links a { min-height: 44px; } }
-/* Three choices and "Your text" fill a two by two grid of numbered lines under a fading rule. */
-.speech-choices { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; list-style: none; margin: 4px 0 0; padding: 8px 0 0; background: linear-gradient(90deg, transparent, #e8d4a64d 25%, #e8d4a64d 75%, transparent) top / 100% 1px no-repeat; }
-.speech-choices::before { content: ''; position: absolute; top: -3px; left: 50%; width: 5px; height: 5px; translate: -50% 0; rotate: 45deg; background: #10130f; border: 1px solid #e8d4a680; }
-/* A grid centres short labels when the neighbouring choice wraps and stretches the row. */
-.speech-choices button { display: grid; grid-template-columns: auto 1fr; align-items: baseline; align-content: center; column-gap: 8px; width: 100%; height: 100%; min-height: 44px; padding: 6px 10px; text-align: left; border: 0; border-radius: 2px; color: #e8d4a6c0; background: transparent; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; transition: color .15s ease-out, background-color .15s ease-out; }
-/* The hovered line brightens over a rust band that fades to the right. */
-.speech-choices button:hover:not(:disabled), .speech-choices button:focus-visible { color: #e8d4a6; background: linear-gradient(90deg, #aa604b40, #aa604b0d 70%, transparent); }
-.speech-choices button:focus-visible { outline: 1px solid #e8d4a680; outline-offset: -1px; }
-.speech-choices span { color: #aa604b; font: 600 1em/1 var(--font-display, sans-serif); font-variant-numeric: tabular-nums; }
-/* The choices wait, dimmed, until his line ends. */
-.speech-choices li { transition: opacity .2s ease-out; }
-.speech-waiting li { opacity: .5; }
-/* The visitor's chosen line stays lit while he takes it in. The other lines fall back. */
-.speech-choices button:disabled { opacity: .3; }
-.speech-choices button.speech-chosen:disabled { opacity: 1; cursor: default; color: #e8d4a6; background: linear-gradient(90deg, #aa604b40, #aa604b0d 70%, transparent); }
-/* Italics set the free text choice apart from his suggestions, like an action line. */
-.speech-choices .speech-own { color: #a4b5a0; font-style: italic; }
-/* The travel action stands apart from his suggestions: one quiet line under its own rule, in every state of the dialog. */
-.speech-travel { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin: -4px 0 -6px; padding: 6px 10px; border: 0; border-radius: 2px; color: #a4b5a0; background: transparent; font-size: 14px; text-align: left; text-decoration: underline; text-decoration-color: #a4b5a066; text-underline-offset: 4px; transition: color .15s ease-out; }
-.speech-travel:hover:not([aria-disabled='true']), .speech-travel:focus-visible { color: #e8d4a6; text-decoration-color: currentColor; }
-.speech-travel[aria-disabled='true'] { opacity: .5; cursor: wait; }
-.speech-travel:focus-visible { outline: 1px solid #e8d4a680; outline-offset: -1px; }
-form { flex-shrink: 0; position: relative; z-index: 1; }
-/* The accessible name stays "Your text". A chat composer needs no visible caption. */
-.speech-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.speech-compose { display: flex; align-items: flex-end; gap: 8px; }
-textarea { flex: 1; min-width: 0; box-sizing: border-box; min-height: 44px; max-height: 120px; field-sizing: content; padding: 10px 12px; resize: none; background: #080b08; color: #e8d4a6; border: 1px solid #777648; border-radius: 12px 4px 16px 4px; font: inherit; font-size: 16px; line-height: 1.4; }
-textarea::placeholder { color: #a4b5a0aa; }
-textarea:focus-visible { border-color: #e8d4a6; outline-offset: 2px; }
-.speech-error { margin: 6px 0 0; color: #e8d4a6; font-size: 13px; line-height: 1.4; }
-.speech-send, .speech-retry, .speech-back { flex-shrink: 0; min-height: 44px; padding: 10px 18px; background: #e8d4a6; color: #080b08; border: 0; border-radius: 8px 3px 12px 3px; font-size: 14px; }
-.speech-retry { background: #343c3b; color: #e8d4a6; }
-.speech-back { padding: 10px 12px; background: transparent; color: #a4b5a0; }
-.speech-back:hover { color: #e8d4a6; background: linear-gradient(90deg, #aa604b40, transparent); }
-.speech-send:hover:not(:disabled) { background: #a4b5a0; }
-.speech-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-@media (max-height: 540px) { .speech-pocket { bottom: 12px; max-height: calc(100dvh - 24px); padding: 12px 16px 10px; gap: 8px; } }
-@media (max-width: 600px) { .speech-pocket { bottom: 10px; width: calc(100vw - 20px); max-height: 52dvh; padding: 12px 12px 10px; gap: 8px; } h2 { font-size: 20px; } .speech-utterance { font-size: 15px; } .speech-choices button { column-gap: 6px; padding: 6px 8px; font-size: 14px; } }
-/* Short landscape screens keep his face beside the pocket. resolveConversationFocus pans the scene to match. */
-@media (orientation: landscape) and (max-height: 540px) { .speech-pocket { left: auto; right: 12px; translate: none; width: min(400px, 50vw); max-height: calc(100dvh - 24px); } }
+.speech-pocket {
+  --ivory: #f5efdf; --gold: #e4cb92; --muted: #d2cbbc;
+  position:fixed; inset:auto auto max(1.25rem,env(safe-area-inset-bottom)) 50%; translate:-50% 0;
+  display:none; box-sizing:border-box; width:min(44rem,84vw); max-height:min(56dvh,32rem);
+  margin:0; padding:0 .75rem; border:0; background:transparent; color:var(--ivory); overflow:visible;
+  font:normal clamp(16px,1.22vw,19px)/1.38 Georgia,serif; text-shadow:0 1px 3px #080907,0 0 7px #11130d;
+}
+.speech-pocket[open] { display:flex; flex-direction:column; gap:.3rem; }
+.speech-pocket::backdrop {
+  background:linear-gradient(to top, #0a0b09fa 0%, #0a0b09eb 18%, #0c0e0cb3 34%, #0c0d0b45 48%, transparent 64%);
+}
+.speech-pocket header,.speech-name,.speech-tools { display:flex; align-items:center; }
+.speech-pocket header { flex:none; justify-content:space-between; gap:.75rem; }
+.speech-name { position:relative; }
+h2 { margin:0; color:var(--gold); font:600 .84em/1.3 Georgia,serif; letter-spacing:.14em; text-transform:uppercase; }
+button { font:inherit; color:inherit; cursor:pointer; border:0; background:transparent; text-shadow:inherit; }
+button:disabled { cursor:wait; }
+button:focus-visible,a:focus-visible,textarea:focus-visible { outline:1px solid var(--gold); outline-offset:1px; }
+.speech-tools button,.speech-notice { min-width:44px; min-height:44px; font-size:.8em; color:var(--muted); }
+.speech-tools .speech-close { font-size:1.5em; }
+.speech-notice { display:grid; place-content:center; }
+.speech-notice span { width:15px; height:15px; border:1px solid #c7ba93a8; border-radius:50%; font:normal 12px/15px Georgia,serif; }
+.speech-tools button:hover,.speech-notice:hover { color:var(--gold); }
+.speech-scope { position:absolute; z-index:3; bottom:100%; left:0; width:min(29ch,75vw); margin:0; padding:.8em 1em;
+  background:#12140ff5; color:var(--ivory); font:normal .85em/1.45 system-ui,sans-serif; visibility:hidden; }
+.speech-scope-open { visibility:visible; }
+@media(hover:hover) { .speech-notice:hover + .speech-scope { visibility:visible; } }
+.speech-conversation { min-height:0; overflow:auto; overscroll-behavior:contain; padding:2px 6px 2px 1px; scrollbar-width:thin; scrollbar-color:#90846b transparent; }
+.speech-more { mask-image:linear-gradient(#000 calc(100% - 14px),transparent); }
+.speech-utterance { margin:0; line-height:1.42; font-size:1.12em; white-space:pre-wrap; overflow-wrap:anywhere; }
+.speech-utterance span { transition:opacity .18s ease-out; }
+.speech-utterance .speech-unsaid { opacity:0; transition:none; }
+.speech-beat,.speech-pending { margin:.25em 0 0; color:var(--muted); font-size:.88em; font-style:italic; }
+.speech-links { display:flex; flex-wrap:wrap; gap:0 1em; }
+.speech-links a,.speech-travel { color:var(--gold); text-underline-offset:.25em; }
+.speech-links a { display:inline-flex; align-items:center; min-height:36px; font-size:.9em; }
+.speech-choices { display:grid; gap:0; list-style:none; padding:0; margin:.65em 0 0; }
+.speech-choices button { position:relative; display:grid; width:100%; grid-template-columns:2ch 1fr; gap:.5em; align-content:center; min-height:35px;
+  padding:.22em .5em; text-align:left; color:var(--ivory); line-height:1.28; overflow-wrap:anywhere; }
+.speech-choices button span { color:var(--gold); text-align:right; font-variant-numeric:tabular-nums; }
+.speech-choices button:hover:not(:disabled),.speech-choices button:focus-visible,.speech-choices .speech-chosen { color:#ffdfa2;
+  background:linear-gradient(90deg,#c9a05a25,transparent 85%); }
+.speech-choices button:focus-visible { outline:0; box-shadow:inset 2px 0 #e4cb92; }
+.speech-choices button:disabled:not(.speech-chosen) { color:#b5b0a4; }
+.speech-own { font-style:italic; }
+.speech-travel { flex:none; align-self:flex-start; padding:.3em .5em; min-height:34px; font-size:.85em; }
+.speech-travel:hover,.speech-sound:hover,.speech-back:hover { text-decoration:underline; }
+.speech-travel[aria-disabled=true] { opacity:.55; }
+form { flex:none; }
+.speech-compose { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:.2rem .55rem; }
+textarea { grid-column:1/-1; grid-row:1; width:100%; min-width:0; box-sizing:border-box; resize:none; min-height:44px; max-height:16dvh;
+  field-sizing:content; padding:.55em .65em; font:inherit; font-size:max(16px,1em); color:var(--ivory);
+  background:#141610a8; border:0; border-bottom:1px solid #b79b6da6; border-radius:0; }
+textarea::placeholder { color:#d0c7b6; }
+.speech-back,.speech-retry,.speech-send { min-height:44px; min-width:44px; padding:0 .45em; color:var(--gold); }
+.speech-back { grid-column:1; justify-self:start; } .speech-retry { grid-column:2; } .speech-send { grid-column:3; }
+.speech-compose button:disabled { color:#ada79a; } .speech-error { margin:.2em 0; font-size:.86em; color:#f1d1a3; }
+.speech-announcement,.speech-label { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+@media(max-width:600px) {
+  .speech-pocket { width:100%; bottom:max(.4rem,env(safe-area-inset-bottom)); padding:0 1.1rem; max-height:55dvh; }
+  .speech-utterance { font-size:1.07em; } .speech-choices { margin-top:.5rem; }
+  .speech-choices button,.speech-travel,.speech-links a { min-height:44px; }
+}
+@media(orientation:landscape) and (max-height:540px) {
+  .speech-pocket { left:auto; right:1vw; bottom:.25rem; width:min(430px,53vw); max-height:94dvh; translate:none; }
+  .speech-pocket::backdrop { background:linear-gradient(to left,#0b0e09ef 0%,#0b0d09d9 38%,#0b0c0870 57%,transparent 78%); }
+}
+@media(prefers-reduced-motion:reduce) { .speech-utterance span { transition:none; } }
 </style>

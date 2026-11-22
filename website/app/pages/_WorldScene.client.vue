@@ -33,13 +33,13 @@ import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ActionSound } from '#shared/action-sounds'
 import type { ConversationMood } from '#shared/conversation'
-import { board, computer, createFountain, screenHeight, screenWidth } from '../office-fountain'
+import { board, computer, createFountain, printHeight, screenHeight, screenWidth } from '../office-fountain'
 import { critical, specimenCount, warning } from '#shared/office-experiment'
 import type { Run, Station } from '#shared/office-experiment'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
-const { experiment = null, station = 'desk', officeClock = Date.now, set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ experiment?: Run | null, station?: Station, officeClock?: () => number, set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
+const { experiment = null, station = 'desk', officeClock = Date.now, presence = '', set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ experiment?: Run | null, station?: Station, officeClock?: () => number, presence?: string, set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
 // `set` is the place the page wants him in. The scene reports the set that stands, and travels when the two differ.
 const shownSet = ref<SetName>(set)
 const travelPhase = ref<Travel['_tag']>('Home')
@@ -642,14 +642,14 @@ watch(canvas, async (element) => {
       if (!fountain) { fountain = createFountain(); scene.add(fountain.group, fountain.keepsake) }
       fountain.keepsake.visible = false
       fountain.group.visible = true
-      fountain.update(experiment, officeClock(), !faceMotion)
+      fountain.update(experiment, officeClock(), !faceMotion, presence)
       if (!inExperiment) { officeEye.copy(camera.position); camera.getWorldDirection(officeAim).add(camera.position) }
       inExperiment = true
       const target = station === 'board' ? board : station === 'computer' ? computer : new Vector3(-1.14, -.9, -2.48)
       const glassPixels = Math.min(600, renderWidth * .79, renderHeight * .70)
       const focal = renderHeight / (2 * Math.tan(camera.fov * Math.PI / 360))
       const distance = station === 'computer' ? screenWidth * focal / glassPixels
-        : station === 'board' ? 1.54 * focal / Math.min(renderHeight * .54, renderWidth * .7)
+        : station === 'board' ? printHeight * focal / Math.min(renderHeight * .56, renderWidth * .88)
           : 5.9 / Math.min(1, aspect)
       const eye = new Vector3(target.x, target.y + (station === 'desk' ? 1.05 : 0), target.z + distance)
       const ease = faceMotion ? 1 - Math.exp(-delta * 7) : 1
@@ -686,7 +686,7 @@ watch(canvas, async (element) => {
     }
     if (inExperiment && station === 'board' && host.value?.parentElement) {
       projected.copy(board)
-      projected.y -= .77
+      projected.y -= printHeight * .425
       projected.project(camera)
       const style = host.value.parentElement.style
       style.setProperty('--board-bottom', ((1 - projected.y) * renderHeight / 2).toFixed(1) + 'px')
@@ -797,12 +797,6 @@ watch(canvas, async (element) => {
     const corners = reach.map(value => figure.localToWorld(value).project(camera))
     bounds = { left: (corners[0]!.x + 1) * renderWidth / 2, right: (corners[1]!.x + 1) * renderWidth / 2,
       top: (1 - corners[1]!.y) * renderHeight / 2, bottom: (1 - corners[0]!.y) * renderHeight / 2 }
-    if (experiment && host.value?.parentElement) {
-      const middle = Math.max(14, Math.min(86, (bounds.left + bounds.right) * 50 / renderWidth))
-      const top = Math.max(9, Math.min(46, bounds.top * 100 / renderHeight - 4))
-      host.value.parentElement.style.setProperty('--speaker-x', middle.toFixed(1) + '%')
-      host.value.parentElement.style.setProperty('--speaker-y', top.toFixed(1) + '%')
-    }
     reflection?.update(settings.value.wetness)
     if (finish) finish.render({ time: elapsed, focus: blend, focusDistance: camera.position.distanceTo(staging ? staging.face : face) })
     else renderer.render(scene, camera)

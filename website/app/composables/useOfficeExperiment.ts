@@ -24,6 +24,7 @@ export function useOfficeExperiment(office: () => boolean, mode: () => 'present'
   const stage = computed(() => phase(room.value, now.value))
   const count = computed(() => specimenCount(room.value))
   const rehearsal = computed(() => mode() === 'rehearse')
+  const presence = computed(() => rehearsal.value ? '20 simulated' : online.value ? connected.value + ' connected' : 'Reconnecting…')
   const send = (command: Command) => {
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(command))
   }
@@ -123,5 +124,5 @@ export function useOfficeExperiment(office: () => boolean, mode: () => 'present'
   watch(stage, next => {
     if (next === 'running' || next === 'critical') station.value = 'desk'
   })
-  return { room, readyAt, host, stage, station, count, connected, online, error, now, clock, rehearsal, authenticate, open, close, tap }
+  return { room, readyAt, host, stage, station, count, connected, presence, online, error, now, clock, rehearsal, authenticate, open, close, tap }
 }

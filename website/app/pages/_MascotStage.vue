@@ -65,7 +65,7 @@ const talk = () => { if (!room.value || exploring.value) talking.value = true }
 <template>
   <main aria-label="Brundlefly" :data-found-dark="foundDark">
     <ClientOnly>
-      <WorldScene :experiment="exploring ? null : room" :station="station" :office-clock="office.clock" @station="station = $event" :set="wanted" :paused="talking" :speaking="voice" :mood="mood" :thinking="thinking" :beat="beat" :reaction="reaction" @talk="talk" @mix="mix = $event" @shown="arrive" @time="audio?.keepTime($event)" @entrance="foundDark = $event" @action="audio?.playAction($event)" />
+      <WorldScene :experiment="exploring ? null : room" :station="station" :office-clock="office.clock" :presence="office.presence.value" @station="station = $event" :set="wanted" :paused="talking" :speaking="voice" :mood="mood" :thinking="thinking" :beat="beat" :reaction="reaction" @talk="talk" @mix="mix = $event" @shown="arrive" @time="audio?.keepTime($event)" @entrance="foundDark = $event" @action="audio?.playAction($event)" />
       <SceneAudio ref="audio" :audience="!!room && mode() === 'guest' && !exploring" :set="shown" :talking="talking" :reply-count="replies" :reply-length="replyLength" :mix="mix" @state="sound = $event" @voice="voice = $event" />
       <template #fallback><SceneLoading /></template>
     </ClientOnly>

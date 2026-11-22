@@ -1,9 +1,11 @@
 import { AdditiveBlending, BufferGeometry, CanvasTexture, CylinderGeometry, DoubleSide, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial, NearestFilter, Object3D, PlaneGeometry, SRGBColorSpace, TextureLoader, TorusGeometry, Vector3 } from 'three'
 import { specimenGeometry } from './office-specimens'
-import { creatures, critical, specimenCount, warning } from '#shared/office-experiment'
+import { creatures, critical, specimenCount, voteTotals, warning } from '#shared/office-experiment'
 import type { Creature, Run } from '#shared/office-experiment'
 
-export const board = new Vector3(-1.9, .78, -4.32)
+export const board = new Vector3(-1.73, .80, -4.372)
+export const printHeight = 1.43
+const printWidth = printHeight * 592 / 690
 // Front centre and aperture of the glass in build_monitor. Clear its convex centre by 2 mm.
 export const computer = new Vector3(-1.6, -.4, -3.363)
 export const screenWidth = .56
@@ -32,8 +34,41 @@ export function createFountain() {
     group.add(mesh)
     return mesh
   }
-  // A square sheet keeps the QR modules square on the wide existing board.
-  const boardSheet = panel('whiteboard-join', 1.54, 1.54, board)
+  // The paper sits just ahead of the enamel face. Its free corners lift from the board.
+  const paper = new PlaneGeometry(printWidth, printHeight, 10, 12)
+  const positions = paper.attributes.position!
+  for (let i = 0; i < positions.count; i++) {
+    const u = positions.getX(i) / printWidth + .5
+    const v = .5 - positions.getY(i) / printHeight
+    positions.setZ(i, .001 + .022 * v ** 4 * (u ** 5 + (1 - u) ** 7))
+  }
+  paper.computeVertexNormals()
+  const boardSheet = new Mesh(paper, new MeshStandardMaterial({
+    map: texture('whiteboard-join'), roughness: 1, metalness: 0, envMapIntensity: .08,
+  }))
+  boardSheet.position.copy(board)
+  boardSheet.rotation.z = -.039
+  group.add(boardSheet)
+
+  const shade = document.createElement('canvas')
+  shade.width = shade.height = 128
+  const brush = shade.getContext('2d')!
+  brush.shadowColor = '#000'
+  brush.shadowBlur = 2
+  brush.fillRect(3, 3, 122, 122)
+  const shadowMap = new CanvasTexture(shade)
+  const shadow = new Mesh(quad, new MeshBasicMaterial({
+    map: shadowMap, color: 0x29271e, opacity: .3, transparent: true, depthWrite: false,
+  }))
+  shadow.position.copy(board).add(new Vector3(.008, -.009, -.003))
+  shadow.scale.set(printWidth * 1.045, printHeight * 1.045, 1)
+  shadow.rotation.z = boardSheet.rotation.z
+  group.add(shadow)
+
+  const magnet = new Mesh(new CylinderGeometry(.033, .037, .021, 14), new MeshStandardMaterial({ color: 0x694434, roughness: .65 }))
+  magnet.position.set(-.18, printHeight / 2 - .035, .013)
+  magnet.rotation.x = Math.PI / 2
+  boardSheet.add(magnet)
   const raster = document.createElement('canvas')
   raster.width = 224
   raster.height = 164
@@ -45,8 +80,11 @@ export function createFountain() {
   tube.scale.set(screenWidth, screenHeight, 1)
   group.add(tube)
   let displayed = -1
-  function drawCounter(count: number) {
-    if (displayed === count) return
+  let displayedPresence = ''
+  function drawCounter(run: Run, presence: string) {
+    const count = specimenCount(run)
+    if (displayed === count && displayedPresence === presence) return
+    displayedPresence = presence
     displayed = count
     phosphor.fillStyle = '#10251e'
     phosphor.fillRect(0, 0, raster.width, raster.height)
@@ -62,7 +100,12 @@ export function createFountain() {
     phosphor.fillRect(12, 108, 200, 8)
     phosphor.fillStyle = count >= warning ? '#ecc579' : '#9ddaa5'
     phosphor.fillRect(12, 108, count / critical * 200, 8)
-    phosphor.fillText('Warning ' + warning, 12, 145)
+    phosphor.font = '11px monospace'
+    phosphor.fillText('Warning ' + warning, 12, 130)
+    phosphor.fillText(presence, 124, 130)
+    const votes = voteTotals(run)
+    for (const [index, kind] of (Object.keys(creatures) as Creature[]).entries())
+      phosphor.fillText(creatures[kind] + ' ' + votes[kind], 12 + 52 * index, 151)
     display.needsUpdate = true
   }
   const trail = panel('snail-trail', 1.3, .45, new Vector3(-1.6, -.941, -3.36))
@@ -104,8 +147,8 @@ export function createFountain() {
   const pose = new Object3D()
   let id = ''
   let processed = 0
-  function update(run: Run, now: number, still: boolean) {
-    drawCounter(specimenCount(run))
+  function update(run: Run, now: number, still: boolean, presence: string) {
+    drawCounter(run, presence)
     if (id !== run.id) {
       id = run.id; processed = 0; bodies.length = 0; pile.clear()
       for (const layer of layers.values()) layer.count = 0
@@ -156,6 +199,7 @@ export function createFountain() {
       child.material.dispose()
       if (child instanceof InstancedMesh) { child.geometry.dispose(); child.dispose() }
     }
+    magnet.geometry.dispose(); magnet.material.dispose(); paper.dispose()
     survivor.geometry.dispose(); cup.geometry.dispose(); handle.geometry.dispose(); ceramic.dispose(); keepsake.removeFromParent()
     quad.dispose(); glass.geometry.dispose(); group.removeFromParent()
   }
