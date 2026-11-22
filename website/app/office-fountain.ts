@@ -1,4 +1,5 @@
-import { AdditiveBlending, CanvasTexture, CylinderGeometry, DoubleSide, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial, NearestFilter, Object3D, PlaneGeometry, SRGBColorSpace, TextureLoader, TorusGeometry, Vector3 } from 'three'
+import { AdditiveBlending, BufferGeometry, CylinderGeometry, DoubleSide, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial, NearestFilter, Object3D, PlaneGeometry, SRGBColorSpace, TextureLoader, TorusGeometry, Vector3 } from 'three'
+import { specimenGeometry } from './office-specimens'
 import { creatures, critical } from '#shared/office-experiment'
 import type { Creature, Run } from '#shared/office-experiment'
 
@@ -10,7 +11,7 @@ const noise = (id: number, salt: number) => {
   const value = Math.sin(id * 48.913 + salt * 17.23) * 43758.5453
   return value - Math.floor(value)
 }
-type Body = { kind: Creature, slot: number, at: number, x: number, y: number, z: number, flight: number, lift: number, hop: number, size: number }
+type Body = { kind: Creature, slot: number, at: number, x: number, y: number, z: number, flight: number, lift: number, hop: number, size: number, yaw: number, spin: number }
 export function createFountain() {
   const group = new Group()
   const quad = new PlaneGeometry(1, 1)
@@ -44,29 +45,25 @@ export function createFountain() {
   }))
   glass.position.set(spout.x, spout.y - .19, spout.z)
   group.add(glass)
-  const layers = new Map<Creature, InstancedMesh<PlaneGeometry, MeshBasicMaterial>>()
-  for (const [name, emoji] of Object.entries(creatures)) {
-    const canvas = document.createElement('canvas')
-    canvas.width = canvas.height = 96
-    const ctx = canvas.getContext('2d')!
-    ctx.font = '76px "Apple Color Emoji","Noto Color Emoji","Segoe UI Emoji",sans-serif'
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(emoji, 48, 49)
-    const map = new CanvasTexture(canvas)
-    map.colorSpace = SRGBColorSpace
-    const layer = new InstancedMesh(quad, new MeshBasicMaterial({ map, alphaTest: .22, side: DoubleSide, toneMapped: false }), critical)
+  const layers = new Map<Creature, InstancedMesh<BufferGeometry, MeshStandardMaterial>>()
+  for (const kind of Object.keys(creatures) as Creature[]) {
+    const material = new MeshStandardMaterial({ vertexColors: true, roughness: kind === 'beetle' ? .28 : .68, metalness: kind === 'beetle' ? .24 : .04 })
+    const layer = new InstancedMesh(specimenGeometry(kind, false), material, critical)
     layer.count = 0
     layer.frustumCulled = false
     group.add(layer)
-    layers.set(name as Creature, layer)
+    layers.set(kind, layer)
   }
   const keepsake = new Group()
   const ceramic = new MeshStandardMaterial({ color: 0xab6651, roughness: .6, side: DoubleSide })
   const cup = new Mesh(new CylinderGeometry(.115, .10, .25, 8, 1, true), ceramic)
   const handle = new Mesh(new TorusGeometry(.066, .014, 4, 8), ceramic)
   handle.position.x = .118
-  const survivor = new Mesh(quad, layers.get('snail')!.material)
+  const snail = layers.get('snail')!
+  const survivor = new Mesh(specimenGeometry('snail'), snail.material)
   survivor.scale.setScalar(.2)
-  survivor.position.set(.05, .16, .06)
+  survivor.position.set(.05, .128, .06)
+  survivor.rotation.y = -.3
   keepsake.add(cup, handle, survivor)
   keepsake.position.set(-2.05, -2.07, 2.42)
   const bodies: Body[] = []
@@ -91,9 +88,9 @@ export function createFountain() {
         const height = pile.get(cell) ?? 0
         pile.set(cell, height + .047)
         const surface = z < -3 && x < -.55 && x > -3.6 ? -.95 : -2.2
-        bodies.push({ kind, slot: layer.count++, at: drop.at + i * 40, x, z, y: index === 1 ? mug.y : surface + .09 + height,
+        bodies.push({ kind, slot: layer.count++, at: drop.at + i * 40, x, z, y: index === 1 ? mug.y : surface + height,
           flight: .62 + noise(index, 3) * .32, lift: kind === 'fly' ? 1.65 : kind === 'snail' ? .65 : 1.05,
-          hop: kind === 'cricket' ? .44 : kind === 'beetle' ? .24 : .09, size: index === 1 ? .29 : .21 })
+          hop: kind === 'cricket' ? .44 : kind === 'beetle' ? .24 : .09, size: index === 1 ? .38 : .26, yaw: index === 1 ? -.25 : noise(index, 4) * Math.PI * 2, spin: (noise(index, 5) - .5) * 7 })
       }
     }
     // Resting specimens keep their last GPU matrix. Only airborne specimens need frames.
@@ -105,7 +102,7 @@ export function createFountain() {
       pose.position.set(spout.x + (b.x - spout.x) * t, spout.y + (b.y - spout.y) * t
         + 4 * b.lift * t * (1 - t) + 4 * b.hop * after * (1 - after), spout.z + (b.z - spout.z) * t)
       pose.scale.setScalar(age < 0 ? 0 : b.size)
-      pose.rotation.z = Math.sin(t * Math.PI * 2) * .4
+      pose.rotation.set(Math.sin(t * Math.PI) * b.spin, b.yaw + (1 - t) * b.spin, Math.sin(t * Math.PI * 2) * .55)
       pose.updateMatrix()
       const layer = layers.get(b.kind)!
       layer.setMatrixAt(b.slot, pose.matrix)
@@ -123,9 +120,9 @@ export function createFountain() {
       if (!(child instanceof Mesh)) continue
       child.material.map?.dispose()
       child.material.dispose()
-      if (child instanceof InstancedMesh) child.dispose()
+      if (child instanceof InstancedMesh) { child.geometry.dispose(); child.dispose() }
     }
-    cup.geometry.dispose(); handle.geometry.dispose(); ceramic.dispose(); keepsake.removeFromParent()
+    survivor.geometry.dispose(); cup.geometry.dispose(); handle.geometry.dispose(); ceramic.dispose(); keepsake.removeFromParent()
     quad.dispose(); glass.geometry.dispose(); group.removeFromParent()
   }
   return { group, boardSheet, keepsake, update, dispose }
