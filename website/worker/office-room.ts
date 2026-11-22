@@ -2,16 +2,21 @@ import { DurableObject } from 'cloudflare:workers'
 import { emptyRun, readCommand, release, voteIntervalMs } from '../shared/office-experiment.ts'
 import type { RoomMessage, Run } from '../shared/office-experiment.ts'
 
-type Visitor = { device: string, host: boolean }
+type Visitor = { device: string, participant: string, host: boolean }
 const send = (socket: WebSocket, data: RoomMessage) => {
   if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(data))
 }
 
 export class OfficeRoom extends DurableObject<Env> {
   private run: Run | null
+  private identityKey: Promise<CryptoKey>
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env)
     const storage = ctx.storage.sql
+    storage.exec('CREATE TABLE IF NOT EXISTS identity_key (id INTEGER PRIMARY KEY, secret TEXT NOT NULL)')
+    storage.exec('INSERT OR IGNORE INTO identity_key VALUES (1, ?)', crypto.randomUUID())
+    const secret = storage.exec<{ secret: string }>('SELECT secret FROM identity_key WHERE id=1').toArray()[0]!.secret
+    this.identityKey = crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
     storage.exec('CREATE TABLE IF NOT EXISTS experiment (id INTEGER PRIMARY KEY, run TEXT NOT NULL)')
     const row = storage.exec<{ run: string }>('SELECT run FROM experiment WHERE id=1').toArray()[0]
     this.run = row ? JSON.parse(row.run) as Run : null
@@ -34,13 +39,19 @@ export class OfficeRoom extends DurableObject<Env> {
     this.run = run
     this.ctx.storage.sql.exec('INSERT OR REPLACE INTO experiment VALUES (1, ?)', JSON.stringify(run))
   }
-  fetch(request: Request) {
+  async fetch(request: Request) {
     const device = new URL(request.url).searchParams.get('device')
-    if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket' || !device || !/^[\w-]{1,80}$/.test(device))
+    // Cloudflare sets this header at ingress. Client IDs, cookies, and forwarding headers cannot enroll another voter.
+    // One public network address shares a cooldown, including guests behind the same Wi-Fi router.
+    const address = request.headers.get('CF-Connecting-IP')
+    if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket' || !address || !device || !/^[\w-]{1,80}$/.test(device))
       return new Response('Invalid office connection.', { status: 400 })
+    // Keep addresses out of socket attachments, broadcasts, and saved runs. Persist the key across object restarts.
+    const signature = await crypto.subtle.sign('HMAC', await this.identityKey, new TextEncoder().encode(address))
+    const participant = 'network-' + Array.from(new Uint8Array(signature), byte => byte.toString(16).padStart(2, '0')).join('')
     const [client, server] = Object.values(new WebSocketPair())
     this.ctx.acceptWebSocket(server)
-    server.serializeAttachment({ device, host: false } satisfies Visitor)
+    server.serializeAttachment({ device, participant, host: false } satisfies Visitor)
     send(server, this.snapshot())
     this.broadcast({ op: 'presence', connected: this.connected() }, server)
     return new Response(null, { status: 101, webSocket: client })
@@ -49,6 +60,8 @@ export class OfficeRoom extends DurableObject<Env> {
     const command = typeof raw === 'string' && readCommand(raw)
     if (!command) { socket.close(1008, 'Invalid command'); return }
     const guest = socket.deserializeAttachment() as Visitor
+    // Connections accepted before identity binding must reconnect before sending commands.
+    if (!guest.participant) { socket.close(1008, 'Invalid command'); return }
     if (command.op === 'host') {
       const encode = new TextEncoder()
       const expected = this.env.OFFICE_PRESENTER_KEY
@@ -72,7 +85,7 @@ export class OfficeRoom extends DurableObject<Env> {
       this.broadcast(this.snapshot())
     } else if (command.op === 'tap' && this.run && command.run === this.run.id) {
       const now = Date.now()
-      const prefix = guest.device + ':'
+      const prefix = guest.participant + ':'
       const previous = this.run.drops.findLast(drop => drop.id.startsWith(prefix))
       if (previous && now - previous.at < voteIntervalMs) return
       const next = release(this.run, command.kind, prefix + command.id, guest.host, now)
