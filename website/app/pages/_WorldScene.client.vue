@@ -33,7 +33,7 @@ import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ActionSound } from '#shared/action-sounds'
 import type { ConversationMood } from '#shared/conversation'
-import { board, computer, createFountain } from '../office-fountain'
+import { board, computer, createFountain, screenHeight, screenWidth } from '../office-fountain'
 import { critical, specimenCount, warning } from '#shared/office-experiment'
 import type { Run, Station } from '#shared/office-experiment'
 import SceneControls from './_SceneControls.vue'
@@ -147,7 +147,7 @@ function move(event: PointerEvent) {
   }
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
-  hovered.value = overMascot(x, y)
+  hovered.value = experiment ? Boolean(propAt?.(pointer.set(x / rect.width * 2 - 1, 1 - y / rect.height * 2))) : overMascot(x, y)
 }
 function select(event: MouseEvent) {
   askForTilt()
@@ -155,11 +155,16 @@ function select(event: MouseEvent) {
   if (paused) return
   const rect = host.value?.getBoundingClientRect()
   if (!rect) return
-  if (event.detail === 0) { emit('talk'); return }
+  if (event.detail === 0) {
+    if (experiment) emit('station', station === 'computer' ? 'desk' : 'computer')
+    else emit('talk')
+    return
+  }
   const position = new Vector2((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2)
   if (experiment) {
     const prop = propAt?.(position)
     if (prop) emit('station', prop)
+    else if (station !== 'desk') emit('station', 'desk')
     return
   }
   if (status.value._tag !== 'Ready' || hit?.(position)) emit('talk')
@@ -500,11 +505,13 @@ watch(canvas, async (element) => {
   let counting = false
   const countFrom = [[.85, -1.8]] as const
   const projected = new Vector3()
+  const glassCorner = new Vector3(screenWidth / 2, screenHeight / 2, 0)
+  const propRay = new Raycaster()
   propAt = (point) => {
-    for (const [name, centre] of [['board', board], ['computer', computer]] as const) {
-      projected.copy(centre).project(camera)
-      if (Math.abs(projected.x - point.x) < .18 && Math.abs(projected.y - point.y) < .15) return name
-    }
+    if (!inExperiment || !fountain) return
+    propRay.setFromCamera(point, camera)
+    const hit = propRay.intersectObjects(fountain.stations, false)[0]
+    if (hit) return hit.object === fountain.stations[0] ? 'board' : 'computer'
   }
   const needsFrames = () => visibility.value === 'visible' && (Boolean(experiment) || animate.value || (!paused && cameraKeys.size > 0)
     || (paused && moving()) || travel._tag !== 'Home' || set !== standing.stage.name || entrance._tag !== 'Lit'
@@ -516,7 +523,7 @@ watch(canvas, async (element) => {
     // The entrance in the dark. A visitor who asks for him, or who leaves for another set, ends it at once: the light comes and he is free.
     const entered = entranceAct(entrance)
     const phaseBefore = entrance._tag
-    entrance = advanceEntrance(entrance, { delta, arrived: stroll.activity._tag === 'Pausing', skip: paused || Boolean(experiment?.drops.length) || set !== standing.stage.name, still: !faceMotion })
+    entrance = advanceEntrance(entrance, { delta, arrived: stroll.activity._tag === 'Pausing', skip: paused || Boolean(experiment) || set !== standing.stage.name, still: !faceMotion })
     const act = entranceAct(entrance)
     if (entrance._tag !== phaseBefore) {
       entrancePhase.value = entrance._tag
@@ -633,15 +640,18 @@ watch(canvas, async (element) => {
     camera.quaternion.copy(shot.quaternion)
     if (experiment && standing.stage.name === 'office') {
       if (!fountain) { fountain = createFountain(); scene.add(fountain.group, fountain.keepsake) }
-      fountain.boardSheet.visible = station !== 'board'
       fountain.keepsake.visible = false
       fountain.group.visible = true
       fountain.update(experiment, officeClock(), !faceMotion)
       if (!inExperiment) { officeEye.copy(camera.position); camera.getWorldDirection(officeAim).add(camera.position) }
       inExperiment = true
       const target = station === 'board' ? board : station === 'computer' ? computer : new Vector3(-1.14, -.9, -2.48)
-      const distance = (station === 'desk' ? 5.9 : station === 'board' ? 2.4 : 1.65) / Math.min(1, aspect)
-      const eye = new Vector3(target.x, target.y + (station === 'desk' ? 1.05 : .08), target.z + distance)
+      const glassPixels = Math.min(600, renderWidth * .79, renderHeight * .70)
+      const focal = renderHeight / (2 * Math.tan(camera.fov * Math.PI / 360))
+      const distance = station === 'computer' ? screenWidth * focal / glassPixels
+        : station === 'board' ? 1.54 * focal / Math.min(renderHeight * .54, renderWidth * .7)
+          : 5.9 / Math.min(1, aspect)
+      const eye = new Vector3(target.x, target.y + (station === 'desk' ? 1.05 : 0), target.z + distance)
       const ease = faceMotion ? 1 - Math.exp(-delta * 7) : 1
       officeEye.lerp(eye, ease); officeAim.lerp(target, ease)
       camera.position.copy(officeEye); camera.lookAt(officeAim)
@@ -659,6 +669,29 @@ watch(canvas, async (element) => {
       }
     }
     camera.updateMatrixWorld()
+    // Project both glass edges so the HTML keys stay inside the model when the viewport changes.
+    if (inExperiment && station === 'computer' && host.value?.parentElement) {
+      const style = host.value.parentElement.style
+      projected.copy(computer).addScaledVector(glassCorner, -1).project(camera)
+      const left = (1 + projected.x) * renderWidth / 2
+      const bottom = (1 - projected.y) * renderHeight / 2
+      projected.copy(computer).add(glassCorner).project(camera)
+      const top = (1 - projected.y) * renderHeight / 2
+      const w = (1 + projected.x) * renderWidth / 2 - left
+      style.setProperty('--crt-left', left.toFixed(1) + 'px')
+      style.setProperty('--crt-top', top.toFixed(1) + 'px')
+      style.setProperty('--crt-width', w.toFixed(1) + 'px')
+      style.setProperty('--crt-height', (bottom - top).toFixed(1) + 'px')
+      style.setProperty('--crt-visible', w >= Math.min(600, renderWidth * .79, renderHeight * .70) * .94 ? 'visible' : 'hidden')
+    }
+    if (inExperiment && station === 'board' && host.value?.parentElement) {
+      projected.copy(board)
+      projected.y -= .77
+      projected.project(camera)
+      const style = host.value.parentElement.style
+      style.setProperty('--board-bottom', ((1 - projected.y) * renderHeight / 2).toFixed(1) + 'px')
+      style.setProperty('--board-x', ((1 + projected.x) * renderWidth / 2).toFixed(1) + 'px')
+    }
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
     // A mesh without the relief rig's joints stands where the relief rig starts.
     // He walks a journey faster than his loop: he has somewhere to be.
@@ -819,7 +852,7 @@ watch(canvas, async (element) => {
     <div v-if="status._tag === 'Ready'" class="world-dark" :style="{ opacity: shade }" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
     <img v-if="status._tag === 'Fallback'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
-    <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" :disabled="status._tag === 'Loading'" aria-label="Talk to Brundlefly" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
+    <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" :disabled="status._tag === 'Loading'" :aria-label="experiment ? station === 'computer' ? 'Return to the desk' : 'Focus on the computer' : 'Talk to Brundlefly'" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
     <p v-if="status._tag === 'Fallback'" class="world-status" role="status">{{ status.reason === 'context' ? 'Static scene. WebGL is unavailable.' : 'The scene could not load.' }}</p>
     <SceneControls v-model="settings" />
   </div>

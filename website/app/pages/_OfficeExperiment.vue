@@ -38,7 +38,7 @@ function authenticate() { props.office.authenticate(key.value); key.value = '' }
 useEventListener('keydown', event => { if (event.key === 'Escape' && show.value) station.value = 'desk' })
 </script>
 <template>
-  <section v-if="show || presenter" class="experiment" aria-label="Office experiment" :data-phase="stage" :data-view="station">
+  <section v-if="show || presenter" class="experiment" aria-label="Office experiment" :data-phase="stage" :data-view="station" :data-warning="count >= warning">
     <template v-if="show">
       <div v-if="stage === 'critical'" class="outage" :class="{ dark: age > 4250, shake: age > 1900 && age < 4100 }" aria-hidden="true" />
       <p v-if="line" class="voice" role="status"><b>Brundlefly</b>{{ line }}</p>
@@ -50,9 +50,10 @@ useEventListener('keydown', event => { if (event.key === 'Escape' && show.value)
         <header><strong>Specimen counter</strong><span><i :class="{ live: online }" />{{ rehearsal ? '20 simulated' : online ? connected + ' connected' : 'Reconnecting…' }}</span></header>
         <div class="meter" :aria-label="count + ' specimens'">
           <strong>{{ count }} <small>/ {{ critical }}</small></strong>
-          <span>Warning {{ warning }}<br>Critical {{ critical }}</span>
+          <dl class="limits"><div><dt>Warning</dt><dd>{{ warning }}</dd></div><div><dt>Critical</dt><dd>{{ critical }}</dd></div></dl>
         </div>
         <div class="track" aria-hidden="true"><i :style="{ width: 100 * count / critical + '%' }" /><u /></div>
+          <footer><span>Votes</span><span v-if="stage === 'running' && now < readyAt">Next vote in {{ Math.ceil((readyAt - now) / 1000) }}s</span></footer>
         <div class="votes">
           <button v-for="(emoji, kind) in creatures" :key="kind" type="button"
             :disabled="!online || now < readyAt || !(stage === 'running' || (host && stage === 'lobby' && station === 'computer' && kind === 'snail'))"
@@ -64,10 +65,10 @@ useEventListener('keydown', event => { if (event.key === 'Escape' && show.value)
             </span>
           </button>
         </div>
-        <footer>{{ stage === 'running' && now < readyAt ? 'Next vote in ' + Math.ceil((readyAt - now) / 1000) + 's' : 'Votes' }}</footer>
+
       </article>
       <nav v-if="host && (stage === 'lobby' || stage === 'running')" aria-label="Office views">
-        <button @click="station = 'board'">Board</button><button @click="station = 'computer'">Computer</button><button @click="station = 'desk'">Desk</button>
+        <button :aria-pressed="station === 'board'" @click="station = 'board'">Board</button><button :aria-pressed="station === 'computer'" @click="station = 'computer'">Computer</button><button :aria-pressed="station === 'desk'" @click="station = 'desk'">Desk</button>
         <button @click="emit('sound')">{{ muted ? 'Sound on' : 'Sound off' }}</button>
       </nav>
       <button v-if="stage === 'awake' && awakeInCave" class="finish" @click="close">{{ host ? 'Reset experiment' : 'Explore the cave' }}</button>
@@ -115,4 +116,49 @@ nav, .finish { position:absolute; bottom:1rem; left:.8rem; } nav { display:flex;
 @media(max-width:720px) { .console,.console.compact { bottom:3.6rem; width:calc(100% - 1rem); left:.5rem; right:auto; transform:none; padding:.75rem .85rem .4rem; } nav { bottom:.5rem; } .board { top:36%; width:min(32vh,64vw); } .voice { top:7%; left:50%; transform:translateX(-50%); } }
 @media(max-height:540px) and (orientation:landscape) { .console,.console.compact { width:17rem; left:auto; right:.5rem; transform:none; bottom:.5rem; } .board { left:27%; width:min(52vh,34vw); } .voice { top:3%; } }
 @media(prefers-reduced-motion:reduce) { .confetti { inset:0; border:2px solid #c9ebba; animation:picked .45s step-end both; } .confetti i { display:none; } @keyframes picked { to { opacity:0; } } .outage { transition:none; } .outage.shake { background:transparent; } }
+
+/* The close view lives in the CRT aperture. Keep the desk controls large enough for a phone. */
+.console { background: radial-gradient(ellipse at 45% 35%,#20392c,#11251e 70%,#0b1914); color:#deecd4; font-family:monospace; }
+.console header { border-bottom:1px solid #658369; padding-bottom:.45em; gap:.4em; }
+.console header strong { color:#e0efd5; letter-spacing:-.025em; }
+.console header span { white-space:nowrap; }
+.limits { display:grid; gap:.13em; margin:0; font-size:.86em; }
+.limits div { display:flex; align-items:baseline; justify-content:space-between; gap:.75em; }
+.limits dt { color:#b8c9b5; }
+.limits dd { margin:0; font-weight:700; font-variant-numeric:tabular-nums; }
+.console .meter strong { color:#ddf4d4; line-height:1; }
+.console footer { display:flex; justify-content:space-between; align-items:baseline; text-align:left; margin:.05em 0 .32em; }
+.console footer span:first-child { text-transform:uppercase; letter-spacing:.13em; font-weight:bold; }
+.console .votes button { border-radius:3px; background:#263f32; box-shadow:inset 0 1px #82958033; }
+.console .votes button:enabled { border-color:#8ca88f; }
+.console .votes button:enabled:active { transform:translateY(1px); background:#406747; }
+.console .votes button:disabled .glyph { opacity:.62; }
+.experiment[data-phase=lobby] .votes button:enabled { background:#3d5d40; outline:1px solid #b0cd8c; }
+.console button:focus-visible, nav button:focus-visible { outline:2px solid #e8d293; outline-offset:2px; }
+.experiment[data-warning=true] .track i { background:#e8bd77; }
+nav button[aria-pressed=true], nav button[aria-pressed=true]:enabled:hover, nav button[aria-pressed=true]:enabled:focus-visible { color:#17251c; background:#ccdbc0; }
+.experiment[data-view=computer] .console:not(.compact) { left:var(--crt-left,50%); top:var(--crt-top,32%); bottom:auto; right:auto;
+  width:var(--crt-width,min(78vw,34rem)); height:var(--crt-height,auto); transform:none; visibility:var(--crt-visible,visible);
+  container-type:inline-size; border:0; border-radius:2.5% / 3.5%; overflow:hidden; box-shadow:inset 0 0 1rem #05140b99;
+  padding:0; display:flex; flex-direction:column; justify-content:center; }
+.experiment[data-view=computer] .console > * { margin-left:5.5%; margin-right:5.5%; }
+.experiment[data-view=computer] .console header { font-size:4.6cqw; line-height:1.2; }
+.experiment[data-view=computer] .console header span { font-size:max(11px,3.05cqw); }
+.experiment[data-view=computer] .meter { margin-top:3.4cqw; margin-bottom:2.5cqw; }
+.experiment[data-view=computer] .meter strong { font-size:13.4cqw; letter-spacing:-.055em; font-family:monospace; }
+.experiment[data-view=computer] .meter small { color:#98b39b; font-size:4cqw; letter-spacing:0; }
+.experiment[data-view=computer] .limits { font-size:max(11px,3.2cqw); }
+.experiment[data-view=computer] .track { height:1.25cqw; flex:none; margin-top:0; margin-bottom:2.5cqw; }
+.experiment[data-view=computer] footer { font-size:max(11px,3.1cqw); }
+.experiment[data-view=computer] .votes { gap:1.3cqw; }
+.experiment[data-view=computer] .votes button { min-height:44px; height:14.5cqw; padding:1cqw .5cqw; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+.experiment[data-view=computer] .glyph { font-size:6.2cqw; line-height:1.1; }
+.experiment[data-view=computer] .votes small { font-size:max(11px,3.25cqw); }
+.experiment[data-view=computer] .voice { left:50%; top:auto; bottom:calc(100% - var(--crt-top,32%) + 1rem); transform:translateX(-50%); width:min(39ch,92vw); }
+.experiment[data-view=computer] .voice::after { left:auto; right:1.3rem; bottom:50%; border:0; width:0; height:0; transform:translate(2.05rem,50%); border-top:6px solid transparent; border-bottom:6px solid transparent; border-left:11px solid #efe8ce; }
+.board img { image-rendering:auto; }
+:global(main:has(.world-scene[data-renderer=Ready]) .experiment .board) { top:var(--board-bottom,75%); left:var(--board-x,50%); width:max-content; transform:translateX(-50%); }
+:global(main:has(.world-scene[data-renderer=Ready]) .experiment .board img) { display:none; }
+.board a { font-size:clamp(12px,1.25vw,19px); padding:.25em .7em; }
+:global(main:has(.world-scene[data-renderer=Fallback]) .experiment[data-view=computer] .console) { left:50%; top:50%; height:auto; transform:translate(-50%,-50%); padding:1rem 0; visibility:visible; }
 </style>

@@ -1,10 +1,13 @@
-import { AdditiveBlending, BufferGeometry, CylinderGeometry, DoubleSide, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial, NearestFilter, Object3D, PlaneGeometry, SRGBColorSpace, TextureLoader, TorusGeometry, Vector3 } from 'three'
+import { AdditiveBlending, BufferGeometry, CanvasTexture, CylinderGeometry, DoubleSide, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial, NearestFilter, Object3D, PlaneGeometry, SRGBColorSpace, TextureLoader, TorusGeometry, Vector3 } from 'three'
 import { specimenGeometry } from './office-specimens'
-import { creatures, critical } from '#shared/office-experiment'
+import { creatures, critical, specimenCount, warning } from '#shared/office-experiment'
 import type { Creature, Run } from '#shared/office-experiment'
 
 export const board = new Vector3(-1.9, .78, -4.32)
-export const computer = new Vector3(-1.6, -.52, -3.32)
+// Front centre and aperture of the glass in build_monitor. Clear its convex centre by 2 mm.
+export const computer = new Vector3(-1.6, -.4, -3.363)
+export const screenWidth = .56
+export const screenHeight = .41
 const spout = new Vector3(-2.42, -.55, -3.22)
 const mug = new Vector3(-.81, -.68, -3.28)
 const noise = (id: number, salt: number) => {
@@ -31,7 +34,37 @@ export function createFountain() {
   }
   // A square sheet keeps the QR modules square on the wide existing board.
   const boardSheet = panel('whiteboard-join', 1.54, 1.54, board)
-  panel('crt-glass', .62, .47, computer)
+  const raster = document.createElement('canvas')
+  raster.width = 224
+  raster.height = 164
+  const phosphor = raster.getContext('2d')!
+  const display = new CanvasTexture(raster)
+  display.colorSpace = SRGBColorSpace
+  const tube = new Mesh(quad, new MeshBasicMaterial({ map: display, toneMapped: false }))
+  tube.position.copy(computer)
+  tube.scale.set(screenWidth, screenHeight, 1)
+  group.add(tube)
+  let displayed = -1
+  function drawCounter(count: number) {
+    if (displayed === count) return
+    displayed = count
+    phosphor.fillStyle = '#10251e'
+    phosphor.fillRect(0, 0, raster.width, raster.height)
+    phosphor.fillStyle = '#a9dcb3'
+    phosphor.font = 'bold 16px monospace'
+    phosphor.fillText('Specimen counter', 12, 29)
+    phosphor.font = 'bold 56px monospace'
+    phosphor.fillText(String(count), 11, 91)
+    phosphor.fillStyle = '#a0b7a1'
+    phosphor.font = '14px monospace'
+    phosphor.fillText('/ ' + critical, 144, 88)
+    phosphor.fillStyle = '#345648'
+    phosphor.fillRect(12, 108, 200, 8)
+    phosphor.fillStyle = count >= warning ? '#ecc579' : '#9ddaa5'
+    phosphor.fillRect(12, 108, count / critical * 200, 8)
+    phosphor.fillText('Warning ' + warning, 12, 145)
+    display.needsUpdate = true
+  }
   const trail = panel('snail-trail', 1.3, .45, new Vector3(-1.6, -.941, -3.36))
   trail.rotation.x = -Math.PI / 2
   trail.material.transparent = true
@@ -72,6 +105,7 @@ export function createFountain() {
   let id = ''
   let processed = 0
   function update(run: Run, now: number, still: boolean) {
+    drawCounter(specimenCount(run))
     if (id !== run.id) {
       id = run.id; processed = 0; bodies.length = 0; pile.clear()
       for (const layer of layers.values()) layer.count = 0
@@ -125,5 +159,5 @@ export function createFountain() {
     survivor.geometry.dispose(); cup.geometry.dispose(); handle.geometry.dispose(); ceramic.dispose(); keepsake.removeFromParent()
     quad.dispose(); glass.geometry.dispose(); group.removeFromParent()
   }
-  return { group, boardSheet, keepsake, update, dispose }
+  return { group, stations: [boardSheet, tube], keepsake, update, dispose }
 }

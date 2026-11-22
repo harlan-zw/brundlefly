@@ -193,6 +193,7 @@ Copy success uses “Copied.”
 ## Office experiment
 
 The presenter controls the room at “Board”, “Computer”, and “Desk”. The sign-in field is “Presenter key”.
+The scene’s keyboard action reads “Focus on the computer” or “Return to the desk”.
 The presenter starts with “Open the office” and ends with “Reset experiment”. Guests finish with “Explore the cave”.
 The computer reads “Specimen counter”, “Warning”, “Critical”, and “Votes”. Its presence line reads “{count} connected”.
 During solo rehearsal, the presence line reads “20 simulated”. During reconnection, it reads “Reconnecting…”.
