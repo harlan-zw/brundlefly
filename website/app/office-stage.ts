@@ -54,81 +54,70 @@ export function createExperimentStage(plan: OfficePlan = officePlan) {
   screen.position.copy(glass.centre)
   group.add(screen)
   let shownScreen = ''
-  // The colours of the desktop on the screen: its teal ground, the grey face of a window, and the navy of a title bar and a load bar.
-  const desk = { ground: '#008080', face: '#C0C0C0', light: '#FFFFFF', shade: '#808080', dark: '#0A0A0A', navy: '#000080', fault: '#0000AA' }
-  const bars: Record<Creature, string> = { snail: '#808000', beetle: '#008000', fly: '#000080', cricket: '#800000' }
+  // The colours of the dashboard on the screen: its dark ground, its panels, and one colour for each creature.
+  const palette = { ground: '#0A100E', panel: '#101A16', rule: '#24382F', text: '#CFE3D2', dim: '#7D9584', green: '#7EE787', amber: '#E3B341', cyan: '#56D4DD', rose: '#FF8B7E', fault: '#050706' }
+  const tints: Record<Creature, string> = { snail: palette.amber, beetle: palette.green, fly: palette.cyan, cricket: palette.rose }
   function drawScreen(experiment: Experiment, connected: number, crashed: boolean) {
     const count = specimenCount(experiment)
     const key = [experiment.run, count, experiment.target, connected, crashed, ...creatureKinds.map(kind => experiment.tally[kind])].join()
     if (key === shownScreen) return
     shownScreen = key
     const fill = (x: number, y: number, width: number, height: number, colour: string) => { phosphor.fillStyle = colour; phosphor.fillRect(x, y, width, height) }
-    // A raised face has light on its top and left edges. A sunken well has it on its bottom and right edges.
-    const bevel = (x: number, y: number, width: number, height: number, raised: boolean) => {
-      fill(x, y, width, height, raised ? desk.face : desk.light)
-      fill(x, y, width, 1, raised ? desk.light : desk.shade); fill(x, y, 1, height, raised ? desk.light : desk.shade)
-      fill(x, y + height - 1, width, 1, raised ? desk.dark : desk.light); fill(x + width - 1, y, 1, height, raised ? desk.dark : desk.light)
-    }
+    const panel = (x: number, y: number, width: number, height: number) => { fill(x, y, width, height, palette.rule); fill(x + 1, y + 1, width - 2, height - 2, palette.panel) }
     phosphor.textAlign = 'left'
     if (crashed) {
-      // The run went critical, and the computer failed as that desktop failed.
-      fill(0, 0, raster.width, raster.height, desk.fault)
-      fill(84, 30, 56, 13, '#AAAAAA')
-      phosphor.font = 'bold 10px monospace'
-      phosphor.fillStyle = desk.fault
-      phosphor.fillText('CHAMBER', 91, 40)
-      phosphor.fillStyle = desk.light
-      phosphor.font = '9px monospace'
-      const lines = ['A fatal exception 0E has occurred', 'in VXD CHAMBER(01). All specimens', 'will be loaded at once.', '', '* Hold still.', '', 'Loading everything _']
-      lines.forEach((line, index) => phosphor.fillText(line, 16, 64 + index * 12))
+      // The run went critical, and the computer failed as a home server fails.
+      fill(0, 0, raster.width, raster.height, palette.fault)
+      phosphor.font = '8px monospace'
+      const lines: [string, string][] = [[palette.text, 'chamber: load reached target'], [palette.rose, 'Kernel panic - not syncing:'], [palette.rose, 'All specimens will be loaded at once.'], [palette.text, '* Hold still.'], [palette.text, ''], [palette.text, 'Loading everything _']]
+      lines.forEach(([colour, text], index) => { phosphor.fillStyle = colour; phosphor.fillText(text, 12, 46 + index * 14) })
       display.needsUpdate = true
       return
     }
-    fill(0, 0, raster.width, raster.height, desk.ground)
-    bevel(4, 4, 216, 134, true)
-    const title = phosphor.createLinearGradient(7, 0, 217, 0)
-    title.addColorStop(0, desk.navy)
-    title.addColorStop(1, '#1084D0')
-    phosphor.fillStyle = title
-    phosphor.fillRect(7, 7, 210, 14)
-    phosphor.fillStyle = desk.light
-    phosphor.font = 'bold 10px sans-serif'
-    phosphor.fillText('Specimen Loader', 11, 18)
-    phosphor.fillStyle = desk.dark
-    phosphor.font = 'bold 30px sans-serif'
-    phosphor.fillText(`${loadedPercent(experiment)}%`, 12, 54)
-    phosphor.font = '10px sans-serif'
+    fill(0, 0, raster.width, raster.height, palette.ground)
+    fill(10, 12, 5, 5, palette.green)
+    phosphor.font = 'bold 10px monospace'
+    phosphor.fillStyle = palette.green
+    phosphor.fillText('chamber-01', 20, 18)
+    phosphor.font = '9px monospace'
+    phosphor.fillStyle = palette.cyan
     phosphor.textAlign = 'right'
-    phosphor.fillText('of specimens loaded', 212, 42)
-    phosphor.fillText(`${count} / ${experiment.target}`, 212, 54)
+    phosphor.fillText(`${connected} in the office`, 214, 18)
     phosphor.textAlign = 'left'
-    // The load bar fills in whole blocks.
-    bevel(12, 62, 200, 14, false)
-    const blocks = Math.min(24, Math.floor(24 * count / experiment.target))
-    for (let block = 0; block < blocks; block++) fill(15 + block * 8.1, 65, 7, 8, desk.navy)
+    panel(8, 26, 208, 62)
+    const percent = loadedPercent(experiment)
+    const level = percent >= 90 ? palette.rose : percent >= 75 ? palette.amber : palette.green
+    phosphor.fillStyle = palette.green
+    phosphor.font = 'bold 34px monospace'
+    phosphor.fillText(`${percent}%`, 15, 62)
+    phosphor.font = '9px monospace'
+    phosphor.fillStyle = palette.dim
+    phosphor.textAlign = 'right'
+    phosphor.fillText('of specimens loaded', 209, 46)
+    phosphor.fillStyle = palette.text
+    phosphor.fillText(`${count} / ${experiment.target}`, 209, 60)
+    phosphor.textAlign = 'left'
+    // The load bar is cut into cells.
+    const cells = Math.min(40, Math.floor(40 * count / experiment.target))
+    for (let cell = 0; cell < 40; cell++) fill(15 + cell * 4.9, 72, 4, 8, cell < cells ? level : '#18261F')
     // One bar for each creature, against the leader.
     const lead = Math.max(1, ...creatureKinds.map(kind => experiment.tally[kind]))
     creatureKinds.forEach((kind, index) => {
-      const left = 12 + index * 51
-      phosphor.fillStyle = desk.dark
-      phosphor.font = '13px sans-serif'
-      phosphor.fillText(creatures[kind], left, 99)
-      phosphor.font = '9px sans-serif'
-      phosphor.fillText(String(experiment.tally[kind]), left + 20, 97)
-      bevel(left, 106, 46, 8, false)
-      fill(left + 2, 108, Math.round(42 * experiment.tally[kind] / lead), 4, bars[kind])
+      const left = 8 + index * 53
+      panel(left, 96, 49, 44)
+      phosphor.font = '12px sans-serif'
+      phosphor.fillStyle = palette.text
+      phosphor.fillText(creatures[kind], left + 5, 113)
+      phosphor.font = '9px monospace'
+      phosphor.textAlign = 'right'
+      phosphor.fillText(String(experiment.tally[kind]), left + 44, 112)
+      phosphor.textAlign = 'left'
+      fill(left + 5, 126, 39, 6, '#18261F')
+      fill(left + 5, 126, Math.round(39 * experiment.tally[kind] / lead), 6, tints[kind])
     })
-    bevel(0, 142, raster.width, 22, true)
-    bevel(3, 145, 38, 16, true)
-    phosphor.fillStyle = desk.dark
-    phosphor.font = 'bold 9px sans-serif'
-    phosphor.fillText('Start', 10, 157)
-    bevel(148, 145, 73, 16, false)
-    fill(149, 146, 71, 14, desk.face)
-    phosphor.font = '9px sans-serif'
-    phosphor.textAlign = 'right'
-    phosphor.fillStyle = desk.dark
-    phosphor.fillText(`${connected} in the office`, 217, 157)
+    phosphor.font = '8px monospace'
+    phosphor.fillStyle = palette.dim
+    phosphor.fillText('$ tail -f chamber.log', 10, 156)
     display.needsUpdate = true
   }
 

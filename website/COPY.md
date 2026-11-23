@@ -193,14 +193,15 @@ Copy success uses “Copied.”
 
 ## Office experiment
 
-The desk computer shows a desktop from the late 1990s with one program, titled “Specimen Loader”. Its spoken name is “Specimen loader”.
-The load line reads “{percent}% of specimens loaded” and “{count} / {target}”.
+The desk computer shows the dashboard of a home lab. Its spoken name is “Specimen loader”.
+The header reads “chamber-01”, “loader”, and the presence line “{count} in the office”. During reconnection, the presence line reads “Reconnecting…”.
+The load reads “{percent}%”, “of specimens loaded”, “{count} / {target}”, and the rate “+{count}/s”.
 Each key has the spoken label “Add a {creature}. {count} so far.”
-The taskbar reads “Start”, “Specimen Loader”, and the presence line “{count} in the office”. During reconnection, the presence line reads “Reconnecting…”.
-When the run goes critical, the screen fails with this text:
-“CHAMBER”. “A fatal exception 0E has occurred at 0028:C0011E36 in VXD CHAMBER(01). All specimens will be loaded at once.”
+The log line reads “$ tail -f chamber.log”, then the last change, such as “+3 🪰”.
+When the run goes critical, the screen fails with this text. Each line starts with the count in brackets, as a kernel’s clock:
+“chamber: load reached target”. “Kernel panic - not syncing: All specimens will be loaded at once.”
 “* Hold still.” “* Do not press any key. It will not help.” “Loading everything _”
-The computer screen in the room shows the same desktop and the same fault, in fewer words.
+The computer screen in the room shows the same dashboard and the same fault, in fewer words.
 The join code shows its address in letters: “brundlefly.dev/join”.
 At the computer or the join code, the scene’s keyboard action reads “Return to the room”.
 The whiteboard shows the count with no letter and no number.
