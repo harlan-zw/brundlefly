@@ -202,7 +202,7 @@ At the computer or the join code, the scene’s keyboard action reads “Return 
 The whiteboard shows the count with no letter and no number.
 
 Brundlefly speaks these lines over his head. They open no dialog.
-`shared/office-script.ts` holds them. The owner reviews each line before a talk.
+`shared/office-script.ts` holds them. The owner approved these lines. A new or changed line needs the owner’s review.
 
 | Moment | Line |
 | --- | --- |
