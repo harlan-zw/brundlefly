@@ -1,9 +1,10 @@
 import { strikeLevels } from '../layers/brand/shared/office-entrance.ts'
 import { shotChance } from './audio-shot.ts'
+import { criticalTimes } from './office-critical.ts'
 import type { Shot, ShotPoint } from './audio-shot.ts'
 
 /** A short sound for something he does. The scene asks for the switch and the strike in the office entrance. Nothing asks for the others yet. */
-export type ActionSound = 'KeyClick' | 'MarkerSqueak' | 'JarBubbles' | 'LightSwitch' | 'TubeStrike' | 'FlyBuzz' | 'CricketChirp'
+export type ActionSound = 'KeyClick' | 'MarkerSqueak' | 'JarBubbles' | 'LightSwitch' | 'TubeStrike' | 'FlyBuzz' | 'CricketChirp' | 'ChamberHum'
 
 // Stage gains for the action sounds, set by offline rendering at the default mix. Each peaks between -38 and -29 dBFS, far below his voice.
 // The switch and the strike are set by ear against them, and no offline render has measured them.
@@ -99,6 +100,21 @@ export function cricketChirp(index: number): Shot {
   return { duration: 0.13, pan: shotChance(index, 42) * 0.6 - 0.3, voices: [{ _tag: 'Tone', wave: 'sine', pitch: [[0, pitch], [0.13, pitch * 1.4]], level: [[0, 0], [0.012, 0.07], [0.054, 0], [0.073, 0.06], [0.13, 0]] }] }
 }
 
+/**
+ * The hum of the test chamber in the critical scene of the office experiment. It is the one long action sound: it lasts `seconds`, from the moment the run goes critical to the moment the tubes go out.
+ * It starts low and quiet, rises with the chamber's light, and stops dead.
+ */
+export function chamberHum(seconds: number): Shot {
+  const end = seconds - 0.05
+  return { duration: seconds, pan: 0.25, voices: [
+    { _tag: 'Tone', wave: 'sawtooth', pitch: [[0, 46], [seconds * 0.75, 58], [end, 92]], level: [[0, 0], [seconds * 0.2, 0.04], [seconds * 0.75, 0.09], [end, 0.12], [seconds, 0]],
+      filter: { type: 'lowpass', frequency: [[0, 160], [seconds * 0.75, 420], [end, 1100]], q: 1 } },
+    { _tag: 'Tone', wave: 'sine', pitch: [[0, 92], [seconds * 0.75, 116], [end, 184]], level: [[0, 0], [seconds * 0.2, 0.02], [end, 0.06], [seconds, 0]] },
+  ] }
+}
+
 /** The sound of each action, by name. */
 export const actionSounds: Record<ActionSound, (index: number) => Shot> = { KeyClick: keyClick, MarkerSqueak: markerSqueak, JarBubbles: jarBubbles, LightSwitch: lightSwitch, TubeStrike: tubeStrike,
-  FlyBuzz: flyBuzz, CricketChirp: cricketChirp }
+  FlyBuzz: flyBuzz, CricketChirp: cricketChirp,
+  // The hum ends as the tubes go out, at the end of the strike of the critical scene.
+  ChamberHum: () => chamberHum(criticalTimes.surge + criticalTimes.pull + criticalTimes.strike) }

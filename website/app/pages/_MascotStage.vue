@@ -59,6 +59,8 @@ const { experiment } = office
 const station = ref<Station>(joined ? 'computer' : 'room')
 // The run whose critical scene took this visitor to the cave. The office is the plain office for them until the next run.
 const left = ref<number>()
+// The run this visitor saw while it counted. Its critical scene is theirs, also when they see the end of it late.
+let counted: number | undefined
 // A journey without the walk to the way out: the critical scene has made the picture dark already.
 const cut = ref(false)
 // The experiment is the way to the cave. A visitor who has been through its critical scene can follow him there again from the office.
@@ -92,6 +94,7 @@ function say(text: string) {
 }
 // He counts aloud at the first specimen and at each milestone. A state that arrives with a count already is no milestone.
 watch(run, (now, before) => {
+  if (now && now.criticalAt === null) counted = now.run
   if (!now || !before || now.run !== before.run || now.criticalAt !== null) return
   const text = countingLine(specimenCount(before), specimenCount(now), now.target)
   if (text && !talking.value) say(text)
@@ -124,10 +127,13 @@ watch(() => run.value?.criticalAt ?? null, (at) => {
   if (at === null || !state) return
   talking.value = false
   station.value = 'room'
-  // A visitor who joins after the scene goes straight to the cave. Any other late visitor finds the plain office.
-  if (phase(state, office.clock()) === 'Over') { if (joined) leave(state); else left.value = state.run; return }
+  // The scene is over. A visitor who joined by the code, or who saw this run count and lost the connection at its end, goes straight to the cave.
+  // Any other late visitor finds the plain office.
+  if (phase(state, office.clock()) === 'Over') { if (joined || counted === state.run) leave(state); else left.value = state.run; return }
   spoken = 0
   playScene()
+  // The chamber hums from the start of the scene. A visitor who comes in the middle of it hears no hum cut short.
+  if ((office.clock() - at) / 1000 < 1) audio.value?.playAction('ChamberHum')
 }, { immediate: true })
 watch(shown, (set) => { if (set === 'lair') cut.value = false })
 // He speaks once the visitor can see the cave.

@@ -69,7 +69,7 @@ const shownQuality = ref<string>()
 const shownMascot = ref<MascotMode>()
 // How the visible mascot moves: the relief rig's pose code, the file's own clip, or a whole-body sway.
 const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
-// `shown` names the set that stands after a journey. `stayed` means the other set's artwork did not load.
+// `shown` names the set that stands: at the first picture, and after a journey. `stayed` means the other set's artwork did not load.
 // `entrance` says whether this visit found the set dark. `action` names a short sound for something he does.
 // `station` asks for another view of the office. `landed` names a specimen that reached the pile. `view` says the picture is back after a journey.
 const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number],
@@ -224,13 +224,15 @@ watch(canvas, async (element) => {
   if (!element) return
   const context = element.getContext('webgl2', { alpha: false, antialias: true })
   if (!context) { status.value = { _tag: 'Fallback', reason: 'context' }; return }
+  // The page can ask for another set while the artwork loads. The scene raises the set it loaded, and travels to the other from there.
+  const first = set
   // A missing or broken model file is an error value. The relief rig then takes its place.
   const [results, setArt, meshResult] = await Promise.all([Promise.allSettled([
     new TextureLoader().loadAsync('/brand/character.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/face-skin-diffuse.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/head-projection.png'),
     new TextureLoader().loadAsync('/brand/kit/lair/body-projection.png'),
-  ]), sceneSets[set].load(), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, sceneSets[set].mascot.shading) : undefined])
+  ]), sceneSets[first].load(), mascotMode === 'mesh' ? loadMeshMascot(undefined, undefined, sceneSets[first].mascot.shading) : undefined])
   const [mascotResult, faceResult, projectionResult, bodyProjectionResult] = results
   if (mascotResult.status === 'rejected' || faceResult.status === 'rejected' || projectionResult.status === 'rejected' || bodyProjectionResult.status === 'rejected' || setArt._tag === 'Err') {
     for (const result of results) {
@@ -325,7 +327,7 @@ watch(canvas, async (element) => {
     scene.environment = null
     scene.fog = null
   }
-  let standing = raise(sceneSets[set], setArt)
+  let standing = raise(sceneSets[first], setArt)
   shownSet.value = standing.stage.name
   const figure = new Group()
   figure.scale.setScalar(1.25)
@@ -887,6 +889,9 @@ watch(canvas, async (element) => {
     footShadowGeometry.dispose(); footShadows.forEach(patch => patch.material.dispose())
   }
   status.value = { _tag: 'Ready' }
+  // The page can change the set it wants before the first picture, so the scene says which set it raised and that the visitor sees it.
+  emit('shown', standing.stage.name, 'arrived')
+  emit('view', standing.stage.name)
   refresh()
 }, { flush: 'post', once: true })
 </script>
