@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { criticalDarkAt, criticalFrame, criticalTimes } from '../shared/office-critical.ts'
+import { crashSeconds, criticalDarkAt, criticalFrame, criticalTimes } from '../shared/office-critical.ts'
 import type { CriticalFrame } from '../shared/office-critical.ts'
 import { criticalSceneSeconds } from '../shared/office-experiment.ts'
 
@@ -86,4 +86,10 @@ test('every value of every frame stays between 0 and 1, also for a clock that ru
       for (const [name, value] of Object.entries(frame)) assert.ok(value >= 0 && value <= 1, `${name} is ${value} at ${age} s, still: ${still}.`)
     }
   }
+})
+
+test('a visitor at the computer is back in the room before the chamber draws the specimens in', () => {
+  assert.ok(crashSeconds > 0.8, 'The failed screen stays long enough to read its first line')
+  assert.ok(crashSeconds <= criticalTimes.surge)
+  assert.equal(criticalFrame(crashSeconds, false).pull, 0)
 })

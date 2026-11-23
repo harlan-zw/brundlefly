@@ -28,6 +28,8 @@ export const criticalSceneSeconds = 9.5
 const emptyTally = (): Tally => ({ snail: 0, beetle: 0, fly: 0, cricket: 0 })
 export const emptyExperiment = (run = 0, target = targetLimits.initial): Experiment => ({ run, tally: emptyTally(), target, criticalAt: null })
 export const specimenCount = (experiment: Experiment) => creatureKinds.reduce((sum, kind) => sum + experiment.tally[kind], 0)
+/** The share of the target that is loaded, as a whole percent. It reads 100 only at the target. */
+export const loadedPercent = (experiment: Experiment) => Math.min(100, Math.floor(100 * specimenCount(experiment) / experiment.target))
 const clampTarget = (value: number) => Math.max(targetLimits.least, Math.min(targetLimits.most, Math.round(value)))
 
 /** `Quiet` has no specimens. `Counting` takes taps. `Critical` plays the scene. `Over` waits for a reset. */

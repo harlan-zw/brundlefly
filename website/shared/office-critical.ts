@@ -7,6 +7,9 @@ import { criticalSceneSeconds } from './office-experiment.ts'
  */
 export const criticalTimes = { surge: 1.4, pull: 3.4, strike: 1.3, flash: 1.4, dark: criticalSceneSeconds - 7.5 }
 
+/** Seconds of the scene that a visitor at the computer stays there. Its screen fails, and then the view returns to the room. */
+export const crashSeconds = 1.3
+
 export type CriticalFrame = {
   /** The level of the room's tubes, from 0 to 1. */
   light: number

@@ -35,7 +35,7 @@ import type { ActionSound } from '#shared/action-sounds'
 import type { ConversationMood } from '#shared/conversation'
 import { criticalSceneSeconds, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
-import { criticalFrame } from '#shared/office-critical'
+import { crashSeconds, criticalFrame } from '#shared/office-critical'
 import { createExperimentStage } from '../office-stage'
 import type { Station } from '../office-stage'
 import SceneControls from './_SceneControls.vue'
@@ -517,12 +517,11 @@ watch(canvas, async (element) => {
   // The office experiment: the specimens, the join code, and the counter's screen. The scene builds it when the first state arrives in the office.
   let stage: ReturnType<typeof createExperimentStage> | undefined
   let stageBusy = false
-  // He keeps the count at the whiteboard, which hangs over the first stop of his round. That stop is also the desk,
-  // so he gives it up to a visitor who sits at the computer and tends the jars at the second stop. In the critical scene he stands there, under the chamber window.
+  // During the count he stands by the door, clear of the desk, the whiteboard, and the chamber window, and watches the room.
+  // In the critical scene he stands at the second stop of his round, under the chamber window.
   let counting = false
-  let countStop = 0
+  let countSpot: 'door' | 'chamber' = 'door'
   let countAge = 0
-  let countStrokes = 0
   // How far the view has moved from the room to a station, from 0 to 1, and the station's shot as the view moves to it.
   let stationShare = 0
   const stationPlace = new Vector3()
@@ -606,15 +605,15 @@ watch(canvas, async (element) => {
     const { fog, world, finish, reflection } = standing
     // A run with specimens takes him off his round. He walks to the whiteboard and keeps the count there.
     const atCount = Boolean(run && !over && (critical || specimenCount(run) > 0) && !journey && !act.held)
-    const stopFor = critical || station === 'computer' ? 1 : 0
-    if (atCount !== counting || (counting && stopFor !== countStop)) {
+    const spotFor = critical ? 'chamber' as const : 'door' as const
+    const countPlace = spotFor === 'chamber' ? layout.walk[1]! : layout.entrance?.stand ?? layout.exit
+    if (atCount !== counting || (counting && spotFor !== countSpot)) {
       counting = atCount
-      countStop = stopFor
+      countSpot = spotFor
       countAge = 0
-      countStrokes = 0
-      stroll = faceMotion || !counting ? { ...stroll, destination: 0, activity: { _tag: 'Walking' } } : startStroll(layout.walk[countStop]!, 0)
+      stroll = faceMotion || !counting ? { ...stroll, destination: 0, activity: { _tag: 'Walking' } } : startStroll(countPlace, 0)
     }
-    const route = counting ? [layout.walk[countStop]!] : way ?? loop()
+    const route = counting ? [countPlace] : way ?? loop()
     const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(layout.camera.desktop, layout.camera.portrait, aspect)
     focusProgress = advanceConversationFocus(focusProgress, talking, delta, reduced.value === 'reduce')
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
@@ -684,7 +683,8 @@ watch(canvas, async (element) => {
     // A station of the office takes the view from the room: the computer's screen, or the chamber window. A talk and the critical scene give it back.
     if (run && !stage) { stage = createExperimentStage(); scene.add(stage.group) }
     if (stage) stage.group.visible = run !== null
-    const atStation = stage && run && station !== 'room' && !talking && !critical && !journey ? station : undefined
+    // The critical scene takes the view back to the room. A visitor at the computer first sees its screen fail.
+    const atStation = stage && run && station !== 'room' && !talking && !journey && (!critical || (station === 'computer' && criticalAge !== undefined && criticalAge < crashSeconds)) ? station : undefined
     if (stage && atStation) {
       const to = stage.shot(atStation, renderWidth, renderHeight, camera.fov)
       const turnTo = lookTurn(to.position, to.target)
@@ -742,8 +742,8 @@ watch(canvas, async (element) => {
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
       // At a station of his round he faces his work, until a visitor has his attention. At the switch he faces it. After the strike he turns back to the visitor on his feet.
       const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing
-        // At the count he faces his work: the whiteboard, or the jars under the chamber window.
-        : counting && attentionNow === 'free' ? layout.walkFacings?.[countStop] : workFacing(attentionNow) }
+        // By the door he turns to the room, where the specimens fall. Under the chamber window he faces the jars.
+        : counting && attentionNow === 'free' ? countSpot === 'chamber' ? layout.walkFacings?.[1] : -1 : workFacing(attentionNow) }
       // With motion off he has no steps to turn with, so he stands where the turn would end.
       turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
     }
@@ -803,16 +803,13 @@ watch(canvas, async (element) => {
       if (faceMotion && act.reach !== undefined) sided.push({ mannerism: { _tag: 'ReachSwitch' }, age: act.reach, side: switchSide })
       if (faceMotion && act.greet !== undefined) sided.push({ mannerism: { _tag: 'Greet' }, age: act.greet, side: switchSide })
       if (counting && faceMotion && stroll.activity._tag === 'Pausing') {
-        const boardFacing = layout.walkFacings?.[0] ?? 0
         // In the critical scene he looks to the chamber's light and holds.
         if (critical && criticalAge !== undefined) sided.push({ mannerism: { _tag: 'LookToLight' }, age: Math.min(criticalAge, 1.2) })
-        // He writes the count on the board, line after line, once he faces it. The marker squeaks on each line.
-        else if (countStop === 0 && Math.abs(turn.heading - boardFacing) < 0.25 && !talking) {
-          countAge = (countAge + delta) % 7
-          const strokes = markerStrokes(countAge)
-          if (strokes > countStrokes) emit('action', 'MarkerSqueak')
-          countStrokes = strokes
-          sided.push({ mannerism: { _tag: 'WriteBoard' }, age: countAge, weight: habitWeight, side: boardFacing < 0 ? -1 : 1 })
+        // He counts: he reads his palm, waits, and his small hands rub. Then he starts again.
+        else if (!talking) {
+          countAge = (countAge + delta) % 9
+          if (countAge < 2.4) sided.push({ mannerism: { _tag: 'CheckPalm' }, age: countAge, weight: habitWeight })
+          else if (countAge > 4.5 && countAge < 6.7) sided.push({ mannerism: { _tag: 'RubHands' }, age: countAge - 4.5, weight: habitWeight })
         }
       }
       const mannerism = poseMannerisms(sided)

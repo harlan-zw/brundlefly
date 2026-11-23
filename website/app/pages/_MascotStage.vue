@@ -9,7 +9,7 @@ import { useEventListener, useIntervalFn, useLocalStorage, useTimeoutFn } from '
 import { joinedByPath, pathForSet, setForPath } from '#shared/travel'
 import { phase, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
-import { criticalDarkAt } from '#shared/office-critical'
+import { crashSeconds, criticalDarkAt } from '#shared/office-critical'
 import { caveLines, countingLine, criticalLines, lineSeconds } from '#shared/office-script'
 import type { ActionSound } from '#shared/action-sounds'
 import { useOfficeExperiment } from '../composables/useOfficeExperiment'
@@ -106,6 +106,7 @@ const { pause: endScene, resume: playScene } = useIntervalFn(() => {
   if (!state || state.criticalAt === null) return endScene()
   const age = (office.clock() - state.criticalAt) / 1000
   for (; spoken < criticalLines.length && age >= criticalLines[spoken]!.at; spoken++) if (age < criticalLines[spoken]!.at + 2) say(criticalLines[spoken]!.text)
+  if (age >= crashSeconds) station.value = 'room'
   if (age >= criticalDarkAt) leave(state)
 }, 100, { immediate: false })
 const caveTimers: ReturnType<typeof setTimeout>[] = []
@@ -126,7 +127,8 @@ watch(() => run.value?.criticalAt ?? null, (at) => {
   const state = run.value
   if (at === null || !state) return
   talking.value = false
-  station.value = 'room'
+  // A visitor at the computer stays there for a moment and sees its screen fail. Everyone else looks at the room at once.
+  if (station.value !== 'computer') station.value = 'room'
   // The scene is over. A visitor who joined by the code, or who saw this run count and lost the connection at its end, goes straight to the cave.
   // Any other late visitor finds the plain office.
   if (phase(state, office.clock()) === 'Over') { if (joined || counted === state.run) leave(state); else left.value = state.run; return }

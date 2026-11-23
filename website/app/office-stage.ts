@@ -4,7 +4,7 @@ import { officePlan } from '@brundlefly/brand/shared/office-layout'
 import type { OfficePlan } from '@brundlefly/brand/shared/office-layout'
 import type { SetMarks } from '@brundlefly/brand/shared/scene-set'
 import { paintExperimentBoard } from '#shared/office-board'
-import { creatureKinds, creatures, specimenCount } from '#shared/office-experiment'
+import { creatureKinds, creatures, loadedPercent, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
 import type { CriticalFrame } from '#shared/office-critical'
 import { createSpecimenRain } from './office-rain'
@@ -54,34 +54,81 @@ export function createExperimentStage(plan: OfficePlan = officePlan) {
   screen.position.copy(glass.centre)
   group.add(screen)
   let shownScreen = ''
-  function drawScreen(experiment: Experiment, connected: number, alarm: boolean) {
+  // The colours of the desktop on the screen: its teal ground, the grey face of a window, and the navy of a title bar and a load bar.
+  const desk = { ground: '#008080', face: '#C0C0C0', light: '#FFFFFF', shade: '#808080', dark: '#0A0A0A', navy: '#000080', fault: '#0000AA' }
+  const bars: Record<Creature, string> = { snail: '#808000', beetle: '#008000', fly: '#000080', cricket: '#800000' }
+  function drawScreen(experiment: Experiment, connected: number, crashed: boolean) {
     const count = specimenCount(experiment)
-    const key = [experiment.run, count, experiment.target, connected, alarm, ...creatureKinds.map(kind => experiment.tally[kind])].join()
+    const key = [experiment.run, count, experiment.target, connected, crashed, ...creatureKinds.map(kind => experiment.tally[kind])].join()
     if (key === shownScreen) return
     shownScreen = key
-    phosphor.fillStyle = alarm ? '#2A1512' : '#10251E'
-    phosphor.fillRect(0, 0, raster.width, raster.height)
-    phosphor.fillStyle = alarm ? '#F0B59C' : '#A9DCB3'
-    phosphor.font = 'bold 15px monospace'
+    const fill = (x: number, y: number, width: number, height: number, colour: string) => { phosphor.fillStyle = colour; phosphor.fillRect(x, y, width, height) }
+    // A raised face has light on its top and left edges. A sunken well has it on its bottom and right edges.
+    const bevel = (x: number, y: number, width: number, height: number, raised: boolean) => {
+      fill(x, y, width, height, raised ? desk.face : desk.light)
+      fill(x, y, width, 1, raised ? desk.light : desk.shade); fill(x, y, 1, height, raised ? desk.light : desk.shade)
+      fill(x, y + height - 1, width, 1, raised ? desk.dark : desk.light); fill(x + width - 1, y, 1, height, raised ? desk.dark : desk.light)
+    }
     phosphor.textAlign = 'left'
-    phosphor.fillText(alarm ? 'CRITICAL' : 'SPECIMENS', 12, 26)
-    phosphor.font = '11px monospace'
+    if (crashed) {
+      // The run went critical, and the computer failed as that desktop failed.
+      fill(0, 0, raster.width, raster.height, desk.fault)
+      fill(84, 30, 56, 13, '#AAAAAA')
+      phosphor.font = 'bold 10px monospace'
+      phosphor.fillStyle = desk.fault
+      phosphor.fillText('CHAMBER', 91, 40)
+      phosphor.fillStyle = desk.light
+      phosphor.font = '9px monospace'
+      const lines = ['A fatal exception 0E has occurred', 'in VXD CHAMBER(01). All specimens', 'will be loaded at once.', '', '* Hold still.', '', 'Loading everything _']
+      lines.forEach((line, index) => phosphor.fillText(line, 16, 64 + index * 12))
+      display.needsUpdate = true
+      return
+    }
+    fill(0, 0, raster.width, raster.height, desk.ground)
+    bevel(4, 4, 216, 134, true)
+    const title = phosphor.createLinearGradient(7, 0, 217, 0)
+    title.addColorStop(0, desk.navy)
+    title.addColorStop(1, '#1084D0')
+    phosphor.fillStyle = title
+    phosphor.fillRect(7, 7, 210, 14)
+    phosphor.fillStyle = desk.light
+    phosphor.font = 'bold 10px sans-serif'
+    phosphor.fillText('Specimen Loader', 11, 18)
+    phosphor.fillStyle = desk.dark
+    phosphor.font = 'bold 30px sans-serif'
+    phosphor.fillText(`${loadedPercent(experiment)}%`, 12, 54)
+    phosphor.font = '10px sans-serif'
     phosphor.textAlign = 'right'
-    phosphor.fillText(`${connected} IN`, 212, 26)
+    phosphor.fillText('of specimens loaded', 212, 42)
+    phosphor.fillText(`${count} / ${experiment.target}`, 212, 54)
     phosphor.textAlign = 'left'
-    phosphor.font = 'bold 54px monospace'
-    phosphor.fillText(String(count), 10, 86)
-    phosphor.font = '13px monospace'
-    phosphor.fillStyle = alarm ? '#C98C78' : '#A0B7A1'
+    // The load bar fills in whole blocks.
+    bevel(12, 62, 200, 14, false)
+    const blocks = Math.min(24, Math.floor(24 * count / experiment.target))
+    for (let block = 0; block < blocks; block++) fill(15 + block * 8.1, 65, 7, 8, desk.navy)
+    // One bar for each creature, against the leader.
+    const lead = Math.max(1, ...creatureKinds.map(kind => experiment.tally[kind]))
+    creatureKinds.forEach((kind, index) => {
+      const left = 12 + index * 51
+      phosphor.fillStyle = desk.dark
+      phosphor.font = '13px sans-serif'
+      phosphor.fillText(creatures[kind], left, 99)
+      phosphor.font = '9px sans-serif'
+      phosphor.fillText(String(experiment.tally[kind]), left + 20, 97)
+      bevel(left, 106, 46, 8, false)
+      fill(left + 2, 108, Math.round(42 * experiment.tally[kind] / lead), 4, bars[kind])
+    })
+    bevel(0, 142, raster.width, 22, true)
+    bevel(3, 145, 38, 16, true)
+    phosphor.fillStyle = desk.dark
+    phosphor.font = 'bold 9px sans-serif'
+    phosphor.fillText('Start', 10, 157)
+    bevel(148, 145, 73, 16, false)
+    fill(149, 146, 71, 14, desk.face)
+    phosphor.font = '9px sans-serif'
     phosphor.textAlign = 'right'
-    phosphor.fillText(`/ ${experiment.target}`, 212, 84)
-    phosphor.textAlign = 'left'
-    phosphor.fillStyle = alarm ? '#5A2A22' : '#345648'
-    phosphor.fillRect(12, 100, 200, 8)
-    phosphor.fillStyle = alarm ? '#F0B59C' : count >= experiment.target * 0.9 ? '#ECC579' : '#9DDAA5'
-    phosphor.fillRect(12, 100, Math.round(200 * Math.min(1, count / experiment.target)), 8)
-    phosphor.font = '12px monospace'
-    creatureKinds.forEach((kind, index) => phosphor.fillText(`${creatures[kind]} ${experiment.tally[kind]}`, 12 + 52 * index, 138))
+    phosphor.fillStyle = desk.dark
+    phosphor.fillText(`${connected} in the office`, 217, 157)
     display.needsUpdate = true
   }
 
@@ -128,8 +175,7 @@ export function createExperimentStage(plan: OfficePlan = officePlan) {
         marks.changed()
         board = { marks, key }
       }
-      // The alarm on the screen blinks once a second, and holds under reduced motion.
-      drawScreen(experiment, connected, critical !== undefined && (still || critical.pull % 0.2 < 0.12 || critical.pull >= 1))
+      drawScreen(experiment, connected, critical !== undefined)
       const rained = rain.update({ run: experiment.run, tally: experiment.tally, delta, still, mascot, pull: critical?.pull, gone: over })
       const gathering = swarm.update(station === 'code' && !critical && !over, delta, still)
       glow.material.opacity = (critical?.chamber ?? 0) * 0.85

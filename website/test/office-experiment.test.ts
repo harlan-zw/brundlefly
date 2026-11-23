@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { addTaps, criticalSceneSeconds, emptyExperiment, goCritical, phase, readCommand, readRoomMessage, resetExperiment, setTarget, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
+import { addTaps, criticalSceneSeconds, emptyExperiment, goCritical, loadedPercent, phase, readCommand, readRoomMessage, resetExperiment, setTarget, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
 import type { Experiment, RoomMessage, Tally } from '../shared/office-experiment.ts'
 
 const tally = (counts: Partial<Tally>): Tally => ({ snail: 0, beetle: 0, fly: 0, cricket: 0, ...counts })
@@ -114,4 +114,14 @@ test('readRoomMessage rejects malformed states', () => {
     JSON.stringify({ ...state, experiment: { ...state.experiment, tally: { ...state.experiment.tally, fly: 0.5 } } }),
   ]
   for (const message of broken) assert.equal(readRoomMessage(message), undefined, message)
+})
+
+test('the loaded percent is whole, and reads 100 only at the target', () => {
+  const run = (snail: number) => ({ ...emptyExperiment(1, 3000), tally: { snail, beetle: 0, fly: 0, cricket: 0 } })
+  assert.equal(loadedPercent(run(0)), 0)
+  assert.equal(loadedPercent(run(1400)), 46)
+  assert.equal(loadedPercent(run(2999)), 99, 'One specimen short of the target is not yet 100')
+  assert.equal(loadedPercent(run(3000)), 100)
+  // A target that the presenter lowered under the count still reads 100.
+  assert.equal(loadedPercent({ ...run(900), target: 500 }), 100)
 })

@@ -193,10 +193,14 @@ Copy success uses “Copied.”
 
 ## Office experiment
 
-The counter on the desk computer is titled “Specimen counter”. In the critical scene its title is “Critical”.
-Its presence line reads “{count} in the office”. During reconnection, it reads “Reconnecting…”.
+The desk computer shows a desktop from the late 1990s with one program, titled “Specimen Loader”. Its spoken name is “Specimen loader”.
+The load line reads “{percent}% of specimens loaded” and “{count} / {target}”.
 Each key has the spoken label “Add a {creature}. {count} so far.”
-The computer screen in the room reads “SPECIMENS”, “{count} IN”, and “CRITICAL”.
+The taskbar reads “Start”, “Specimen Loader”, and the presence line “{count} in the office”. During reconnection, the presence line reads “Reconnecting…”.
+When the run goes critical, the screen fails with this text:
+“CHAMBER”. “A fatal exception 0E has occurred at 0028:C0011E36 in VXD CHAMBER(01). All specimens will be loaded at once.”
+“* Hold still.” “* Do not press any key. It will not help.” “Loading everything _”
+The computer screen in the room shows the same desktop and the same fault, in fewer words.
 The join code shows its address in letters: “brundlefly.dev/join”.
 At the computer or the join code, the scene’s keyboard action reads “Return to the room”.
 The whiteboard shows the count with no letter and no number.
