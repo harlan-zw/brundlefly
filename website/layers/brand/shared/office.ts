@@ -103,7 +103,8 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
   // The drawn sheet: the whiteboard, the clock face, the door sign, the mug's label, and the keys.
   const sheet = document.createElement('canvas')
   sheet.width = sheet.height = marksSize
-  paintOfficeMarks(sheet.getContext('2d')!)
+  const painter = sheet.getContext('2d')!
+  paintOfficeMarks(painter)
   const marks = new CanvasTexture(sheet)
   marks.colorSpace = SRGBColorSpace
   marks.magFilter = NearestFilter
@@ -175,6 +176,8 @@ export function createOffice(art: OfficeArt, plan: OfficePlan = officePlan) {
 
   return {
     root,
+    // The drawn sheet stays open. A scene can draw on the whiteboard while it runs, in the room's own light.
+    marks: { painter, changed: () => { marks.needsUpdate = true } },
     update({ time, settings, light }: OfficeInput) {
       // The lighting sliders keep their roles: ambient is the room's light, key his light from above, inner the failing tube, rim the chamber's leak.
       const ambient = settings.ambient / defaultSceneSettings.ambient

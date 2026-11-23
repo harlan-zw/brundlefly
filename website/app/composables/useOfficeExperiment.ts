@@ -1,128 +1,84 @@
-import { computed, onMounted, onScopeDispose, ref, shallowRef, watch } from 'vue'
-import { useIntervalFn, useLocalStorage } from '@vueuse/core'
-import { calibrationMs, emptyRun, phase, release, specimenCount, voteIntervalMs } from '#shared/office-experiment'
-import type { Command, Creature, RoomMessage, Run, Station } from '#shared/office-experiment'
+import { onMounted, onScopeDispose, ref, shallowRef, watch } from 'vue'
+import { useIntervalFn } from '@vueuse/core'
+import { readRoomMessage, tapsPerSecond } from '#shared/office-experiment'
+import type { Command, Creature, Experiment } from '#shared/office-experiment'
 
-// Phones on a venue LAN can open an HTTP preview. getRandomValues also works there.
-const ticket = () => Array.from(crypto.getRandomValues(new Uint32Array(4)), word => word.toString(16).padStart(8, '0')).join('')
+// Taps leave in small batches, so thirty fast phones send a few hundred messages a second and no more.
+const sendEveryMs = 80
 
-export function useOfficeExperiment(office: () => boolean, mode: () => 'present' | 'rehearse' | 'guest') {
-  const room = shallowRef<Run | null>(null)
-  const readyAt = ref(0)
+/**
+ * The shared office experiment, as this visitor sees it. The connection stands while `active` is true.
+ * `experiment` is the server's state. It is `null` until the first message, and again when `active` turns false.
+ * A lost connection keeps the last state, and `online` says that it is not live.
+ * A `watcher` reads and commands the room, and is not counted as a visitor in the office.
+ */
+export function useOfficeExperiment(active: () => boolean, role: 'visitor' | 'watcher' = 'visitor') {
+  const experiment = shallowRef<Experiment | null>(null)
   const connected = ref(0)
   const online = ref(false)
-  const host = ref(false)
-  const error = ref('')
-  const station = ref<Station>('desk')
-  const device = useLocalStorage('brundlefly-office-device', '')
-  const now = ref(0)
   let offset = 0
-  let key = ''
-  let retry: ReturnType<typeof setTimeout> | undefined
   let socket: WebSocket | undefined
-  const clock = () => Date.now() + offset
-  const stage = computed(() => phase(room.value, now.value))
-  const count = computed(() => specimenCount(room.value))
-  const rehearsal = computed(() => mode() === 'rehearse')
-  const presence = computed(() => rehearsal.value ? '20 simulated' : online.value ? connected.value + ' connected' : 'Reconnecting…')
+  let retry: ReturnType<typeof setTimeout> | undefined
+  /** Server time. Every device times the critical scene from it. */
+  const clock = () => Date.now() + (Number.isFinite(offset) ? offset : 0)
   const send = (command: Command) => {
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(command))
   }
-  const take = (message: RoomMessage) => {
-    switch (message.op) {
-      case 'snapshot':
-        offset = message.now - Date.now()
-        now.value = clock()
-        room.value = message.run
-        connected.value = message.connected
-        break
-      case 'drop':
-        if (room.value?.id === message.run && message.drop.first === count.value + 1)
-          room.value = { ...room.value, drops: [...room.value.drops, message.drop] }
-        break
-      case 'presence': connected.value = message.connected; break
-      case 'host': host.value = true; error.value = ''; break
-      case 'error': key = ''; error.value = message.message; break
-    }
-  }
+  // Taps the visitor made that have not left yet, by creature.
+  const waiting = new Map<Creature, number>()
+  const { pause, resume } = useIntervalFn(() => {
+    for (const [kind, taps] of waiting) send({ op: 'tap', kind, taps })
+    waiting.clear()
+    pause()
+  }, sendEveryMs, { immediate: false })
   function disconnect() {
     clearTimeout(retry)
     if (socket) {
-      socket.onclose = null
-      socket.onmessage = null
+      socket.onclose = socket.onmessage = socket.onopen = null
       socket.close()
       socket = undefined
     }
+    waiting.clear()
     online.value = false
+    experiment.value = null
   }
   function connect() {
-    if (!device.value) device.value = ticket()
     const endpoint = new URL('/api/office', location.href)
     endpoint.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    endpoint.searchParams.set('device', device.value)
-    socket = new WebSocket(endpoint)
-    socket.onopen = () => {
-      online.value = true
-      if (key) send({ op: 'host', key })
+    if (role === 'watcher') endpoint.searchParams.set('watch', '')
+    const opened = socket = new WebSocket(endpoint)
+    offset = -Infinity
+    opened.onopen = () => { online.value = true }
+    opened.onmessage = (event) => {
+      const message = typeof event.data === 'string' ? readRoomMessage(event.data) : undefined
+      if (!message) return
+      // A message that waited in the network or behind a busy page reads the server's clock late. The least late message of the connection is the best reading.
+      offset = Math.max(offset, message.now - Date.now())
+      connected.value = message.connected
+      experiment.value = message.experiment
     }
-    socket.onmessage = event => take(JSON.parse(event.data) as RoomMessage)
-    socket.onclose = () => {
+    // A lost connection keeps the last state on screen and tries again. The server sends the whole state on return.
+    opened.onclose = () => {
       online.value = false
-      host.value = false
-      retry = setTimeout(connect, 2500)
+      retry = setTimeout(connect, 1500)
     }
   }
-  const { pause, resume } = useIntervalFn(() => {
-    now.value = clock()
-    if (rehearsal.value && room.value && phase(room.value, now.value) === 'running') {
-      const kinds = ['beetle', 'fly', 'cricket', 'snail'] as const
-      let run = room.value
-      const start = run.drops[0]!.at + calibrationMs
-      // Restore missed simulated taps after a slow frame, using their original release times.
-      for (let turn = run.drops.length; start + turn * 100 <= now.value; turn++) {
-        const next = release(run, kinds[turn % kinds.length]!, 'rehearsal-' + turn, false, start + turn * 100)
-        if (next === run) break
-        run = next
-      }
-      room.value = run
-    }
-  }, 100, { immediate: false })
-  watch(() => room.value?.id, id => {
-    readyAt.value = 0
-    now.value = clock()
-    if (id) resume()
-    else pause()
-    station.value = room.value?.drops.length ? 'desk' : mode() === 'guest' ? 'computer' : 'board'
-  })
   let stop: (() => void) | undefined
   onMounted(() => {
-    stop = watch([() => office() || Boolean(room.value), mode], ([active]) => {
+    stop = watch(active, (wanted) => {
       disconnect()
-      if (!active) return
-      if (rehearsal.value) { host.value = online.value = true; return }
-      connect()
+      if (wanted) connect()
     }, { immediate: true })
   })
   onScopeDispose(() => { stop?.(); disconnect() })
-  function authenticate(value: string) { key = value; send({ op: 'host', key }) }
-  function open() {
-    if (rehearsal.value) { room.value = emptyRun(ticket()); now.value = clock() }
-    else send({ op: 'open' })
-  }
-  function close() {
-    if (!room.value) return
-    if (rehearsal.value) room.value = null
-    else send({ op: 'close', run: room.value.id })
-  }
+  /** One tap on a creature. The server owns the rate limit and drops taps over `tapsPerSecond`. One message holds no more than that. */
   function tap(kind: Creature) {
-    if (!room.value || !online.value || clock() < readyAt.value) return
-    readyAt.value = clock() + voteIntervalMs
-    const id = ticket()
-    if (rehearsal.value) room.value = release(room.value, kind, id, true, clock())
-    else send({ op: 'tap', kind, id, run: room.value.id })
+    if (!online.value || experiment.value?.criticalAt !== null) return
+    waiting.set(kind, Math.min(tapsPerSecond, (waiting.get(kind) ?? 0) + 1))
+    resume()
   }
-  watch(stage, next => {
-    if (next === 'running' || next === 'critical') station.value = 'desk'
-  })
-  return { room, readyAt, host, stage, station, count, connected, presence, online, error, now, clock, rehearsal, authenticate, open, close, tap }
+  return { experiment, connected, online, clock, tap,
+    reset: () => send({ op: 'reset' }),
+    setTarget: (value: number) => send({ op: 'target', value }),
+    goCritical: () => send({ op: 'critical' }) }
 }

@@ -87,8 +87,18 @@ export function tubeStrike(index: number): Shot {
   ] }
 }
 
+/** A fly lands in the office experiment: a short low buzz that rises. Each one has its own pitch and place. */
+export function flyBuzz(index: number): Shot {
+  const pitch = 140 + shotChance(index, 31) * 40
+  return { duration: 0.16, pan: shotChance(index, 32) * 0.6 - 0.3, voices: [{ _tag: 'Tone', wave: 'sawtooth', pitch: [[0, pitch], [0.15, pitch * 1.5]], level: [[0, 0], [0.018, 0.035], [0.15, 0]] }] }
+}
+
+/** A cricket lands in the office experiment: two quick high chirps. Each one has its own pitch and place. */
+export function cricketChirp(index: number): Shot {
+  const pitch = 2000 + shotChance(index, 41) * 500
+  return { duration: 0.13, pan: shotChance(index, 42) * 0.6 - 0.3, voices: [{ _tag: 'Tone', wave: 'sine', pitch: [[0, pitch], [0.13, pitch * 1.4]], level: [[0, 0], [0.012, 0.07], [0.054, 0], [0.073, 0.06], [0.13, 0]] }] }
+}
+
 /** The sound of each action, by name. */
-export const actionSounds: Record<ActionSound, (index: number) => Shot> = {
-  FlyBuzz: () => ({ duration: .16, pan: .15, voices: [{ _tag: 'Tone', wave: 'sawtooth', pitch: [[0, 155], [.15, 235]], level: [[0, 0], [.018, .035], [.15, 0]] }] }),
-  CricketChirp: () => ({ duration: .13, pan: -.13, voices: [{ _tag: 'Tone', wave: 'sine', pitch: [[0, 2200], [.13, 3150]], level: [[0, 0], [.012, .07], [.054, 0], [.073, .06], [.13, 0]] }] }),
-  KeyClick: keyClick, MarkerSqueak: markerSqueak, JarBubbles: jarBubbles, LightSwitch: lightSwitch, TubeStrike: tubeStrike }
+export const actionSounds: Record<ActionSound, (index: number) => Shot> = { KeyClick: keyClick, MarkerSqueak: markerSqueak, JarBubbles: jarBubbles, LightSwitch: lightSwitch, TubeStrike: tubeStrike,
+  FlyBuzz: flyBuzz, CricketChirp: cricketChirp }

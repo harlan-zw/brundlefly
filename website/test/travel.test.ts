@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { pathForSet, setForPath, travelAction } from '../shared/travel.ts'
+import { joinedByPath, pathForSet, setForPath, travelAction } from '../shared/travel.ts'
 import { parseDialogueInput } from '../shared/conversation.ts'
 import { advanceTravel, startTravel, travelShade, travelTimes } from '../layers/brand/shared/set-travel.ts'
 import type { Travel } from '../layers/brand/shared/set-travel.ts'
@@ -14,18 +14,32 @@ test('each address shows its set, with or without a trailing slash', () => {
   for (const set of ['lair', 'office'] as const) assert.equal(setForPath(pathForSet(set)), set)
 })
 
+test('the join address shows the office, and marks the visitor as one who came by the join code', () => {
+  assert.equal(setForPath('/join'), 'office')
+  assert.equal(setForPath('/join/'), 'office')
+  assert.equal(joinedByPath('/join'), true)
+  assert.equal(joinedByPath('/office'), false)
+  // The office keeps its own address: a journey back to it never lands on the join address.
+  assert.equal(pathForSet('office'), '/office')
+})
+
 test('an address of no set shows no set, so the site can answer with its 404 page', () => {
   for (const path of ['/offices', '/office/desk', '/brand-kit/', '/Office']) assert.equal(setForPath(path), undefined)
 })
 
 test('each set offers the journey to the other set, under its approved label', () => {
-  assert.deepEqual(travelAction('office'), { _tag: 'Travel', to: 'lair', label: 'Follow him to the cave' })
-  assert.deepEqual(travelAction('lair'), { _tag: 'Travel', to: 'office', label: 'Follow him to the office' })
+  assert.deepEqual(travelAction('office', true), { _tag: 'Travel', to: 'lair', label: 'Follow him to the cave' })
+  assert.deepEqual(travelAction('lair', false), { _tag: 'Travel', to: 'office', label: 'Follow him to the office' })
+  assert.deepEqual(travelAction('lair', true), { _tag: 'Travel', to: 'office', label: 'Follow him to the office' })
+})
+
+test('the office offers no way to the cave until the visitor has finished the office experiment', () => {
+  assert.equal(travelAction('office', false), undefined)
 })
 
 test('a travel action is not a message: the dialogue service refuses it, so it can take no chat turn', () => {
   // The service reserves a turn only for input that parses. A travel action has no text and no history.
-  for (const set of ['lair', 'office'] as const) assert.equal(parseDialogueInput(travelAction(set))._tag, 'Err')
+  for (const set of ['lair', 'office'] as const) assert.equal(parseDialogueInput(travelAction(set, true))._tag, 'Err')
 })
 
 const run = (still: boolean, swappedAfter: number, settledAfter: number) => {

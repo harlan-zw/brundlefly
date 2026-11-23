@@ -12,7 +12,6 @@ export default defineConfig({
     env: {
       ASSETS: bindings.assets(),
       OFFICE_ROOM: bindings.durableObject({ worker: 'brundlefly', exportName: 'OfficeRoom' }),
-      OFFICE_PRESENTER_KEY: bindings.secret(),
       AI: bindings.ai({ dev: { remote: true } }),
       DIALOGUE_DB: bindings.d1({ id: 'e490de7e-6e98-436d-a2e8-6818e2ee8e38' }),
     },

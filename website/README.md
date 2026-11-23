@@ -116,14 +116,22 @@ The production workflow uses cf deploy --prebuilt for the same build output.
 
 ## Present the office experiment
 
-Set the Worker's secret `OFFICE_PRESENTER_KEY` before the first live talk. Keep the key on the presenter’s device.
-Open `/office?present`, enter the key, then choose **Open the office**.
-Leave the board up for about 20 seconds. The QR code takes phones to `https://brundlefly.dev/office`.
-Choose **Computer**, then tap the snail once. The four buttons open for everyone after three seconds.
+Every visitor in the office shares one specimen counter. A Durable Object holds the count and sends it to every device.
+One tap adds one specimen. At the target the room goes critical for everyone, and the scene moves them to the cave.
+No key and no mode exist. The experiment is always on.
 
-Each device gets one vote every two seconds. Twenty regular voters fill the counter in about thirty seconds.
-Allow six seconds for the blackout and waking in the cave. **Reset experiment** closes the shared run.
-An unattended run closes after thirty minutes. Between runs, `/office` shows the usual office.
+1. Open `/presenter` on your own device. Set the target, then choose **Reset experiment**. The page is public.
+2. Open `/office` on the projector. Select the window of the test chamber. Beetles gather on the lit glass and form the join code.
+3. The audience scans the swarm. It opens `https://brundlefly.dev/join`, which puts each phone at the desk computer. The address is also on the glass in letters.
+4. Each key adds one specimen. The whiteboard, the computer screen, and the presenter page show the count.
+5. At the target, the critical scene plays on every device at the same moment. Then every device is in the cave.
 
-For a solo rehearsal, use `/office?rehearse`. This simulates twenty voters in the browser after calibration.
-For a shared local rehearsal, use the Cloudflare preview with a local presenter key. Open its local address on each device.
+A phone that joins after the critical scene goes straight to the cave.
+If the room is slow, **Go critical now** on the presenter page starts the scene at the current count.
+The initial target is 3,000. Thirty phones at three taps a second each reach it in about 33 seconds. Change the target at any time; the count stays.
+The room accepts 20 taps a second from one device and drops the rest.
+A critical run clears itself after 30 minutes. A counting run clears itself after two hours with no tap.
+A phone that came by the join code starts with the sound off.
+In the office, the dialog offers the way to the cave only after the visitor has finished the experiment.
+
+The local Cloudflare preview runs the Durable Object. It needs a Cloudflare login for the AI binding.

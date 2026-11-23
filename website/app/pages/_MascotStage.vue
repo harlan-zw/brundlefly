@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import { defineAsyncComponent, ref, shallowRef, watch } from 'vue'
+import { computed, defineAsyncComponent, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from '#app'
 import { defaultSceneAudioMix } from '#shared/scene-audio'
 import type { SceneAudioMix, SceneAudioState } from '#shared/scene-audio'
 import type { ConversationMood } from '#shared/conversation'
 import type { SetName } from '@brundlefly/brand/shared/scene-set'
-import { pathForSet, setForPath } from '#shared/travel'
-import OfficeExperiment from './_OfficeExperiment.vue'
+import { useEventListener, useIntervalFn, useLocalStorage, useTimeoutFn } from '@vueuse/core'
+import { joinedByPath, pathForSet, setForPath } from '#shared/travel'
+import { phase, specimenCount } from '#shared/office-experiment'
+import type { Creature, Experiment } from '#shared/office-experiment'
+import { criticalDarkAt } from '#shared/office-critical'
+import { caveLines, countingLine, criticalLines, lineSeconds } from '#shared/office-script'
+import type { ActionSound } from '#shared/action-sounds'
 import { useOfficeExperiment } from '../composables/useOfficeExperiment'
+import type { Station } from '../office-stage'
+import OfficeCounter from './_OfficeCounter.vue'
+import OverheadLine from './_OverheadLine.vue'
 import SpeechDialog from './_SpeechDialog.vue'
 import SceneAudio from './_SceneAudio.vue'
 import SceneLoading from './_SceneLoading.vue'
@@ -42,35 +50,114 @@ const sound = ref<SceneAudioState>({ muted: false, status: { _tag: 'Idle' } })
 const mix = ref<SceneAudioMix>({ ...defaultSceneAudioMix })
 // Whether this visit found the office dark, with him at the switch. His greeting then speaks of the lights.
 const foundDark = ref(false)
-const mode = () => 'rehearse' in route.query ? 'rehearse' : 'present' in route.query ? 'present' : 'guest'
-const office = useOfficeExperiment(() => wanted.value === 'office', mode)
-const exploring = ref(false)
-const { room, station } = office
-watch(() => room.value?.id, id => { exploring.value = false; if (id) talking.value = false })
-let lastShot = 0
-watch(() => room.value?.drops.at(-1), (drop, previous) => {
-  if (!office.host.value || !drop || drop === previous || office.clock() - drop.at > 700 || performance.now() - lastShot < 60) return
-  lastShot = performance.now()
-  audio.value?.playAction(({ snail: 'JarBubbles', beetle: 'KeyClick', fly: 'FlyBuzz', cricket: 'CricketChirp' } as const)[drop.kind])
-})
-function wake() {
-  talking.value = false
-  wanted.value = 'lair'
-  if (document.querySelector('.world-scene[data-renderer="Fallback"]')) arrive('lair', 'arrived')
+
+// The office experiment. Every visitor in the office shares one specimen counter, and the room goes critical for all of them at once.
+// A visitor who came by the join code starts at the computer, in a lit room, with the sound off.
+const joined = joinedByPath(route.path)
+const office = useOfficeExperiment(() => wanted.value === 'office' || shown.value === 'office')
+const { experiment } = office
+const station = ref<Station>(joined ? 'computer' : 'room')
+// The run whose critical scene took this visitor to the cave. The office is the plain office for them until the next run.
+const left = ref<number>()
+// A journey without the walk to the way out: the critical scene has made the picture dark already.
+const cut = ref(false)
+// The experiment is the way to the cave. A visitor who has been through its critical scene can follow him there again from the office.
+const caveOpen = useLocalStorage('brundlefly-cave-open', false, { onError: cause => console.warn('The local store is unavailable. The way to the cave stays closed after this visit.', cause) })
+const run = computed(() => experiment.value && left.value !== experiment.value.run ? experiment.value : null)
+// The scene is in its critical moment. He is busy, and the stations and the dialog wait.
+const critical = computed(() => run.value !== null && run.value.criticalAt !== null)
+function talk() {
+  if (critical.value) return
+  station.value = 'room'
+  talking.value = true
 }
-function reset() { wanted.value = 'office' }
-const talk = () => { if (!room.value || exploring.value) talking.value = true }
+// A fast thumb can miss a key. A tap beside the keys soon after a tap on them stays at the computer.
+let lastTap = 0
+function tap(kind: Creature) {
+  lastTap = performance.now()
+  office.tap(kind)
+}
+function look(to: Station) {
+  if (critical.value || (to === 'room' && station.value === 'computer' && performance.now() - lastTap < 1500)) return
+  station.value = to
+}
+useEventListener('keydown', (event: KeyboardEvent) => { if (event.key === 'Escape' && !talking.value) station.value = 'room' })
+
+// What he says over his head. A line stays for a few seconds and opens no dialog.
+const line = ref('')
+const { start: holdLine, stop: dropLine } = useTimeoutFn(() => { line.value = '' }, () => lineSeconds(line.value) * 1000, { immediate: false })
+function say(text: string) {
+  line.value = text
+  holdLine()
+}
+// He counts aloud at the first specimen and at each milestone. A state that arrives with a count already is no milestone.
+watch(run, (now, before) => {
+  if (!now || !before || now.run !== before.run || now.criticalAt !== null) return
+  const text = countingLine(specimenCount(before), specimenCount(now), now.target)
+  if (text && !talking.value) say(text)
+})
+// The critical scene, timed from the server's clock. His lines fall at their moments, and the cave follows the dark.
+let spoken = 0
+const { pause: endScene, resume: playScene } = useIntervalFn(() => {
+  const state = run.value
+  if (!state || state.criticalAt === null) return endScene()
+  const age = (office.clock() - state.criticalAt) / 1000
+  for (; spoken < criticalLines.length && age >= criticalLines[spoken]!.at; spoken++) if (age < criticalLines[spoken]!.at + 2) say(criticalLines[spoken]!.text)
+  if (age >= criticalDarkAt) leave(state)
+}, 100, { immediate: false })
+const caveTimers: ReturnType<typeof setTimeout>[] = []
+// The run that sent this visitor to the cave, until they arrive there.
+let finished: Experiment | undefined
+function leave(state: Experiment) {
+  endScene()
+  left.value = state.run
+  caveOpen.value = true
+  cut.value = true
+  wanted.value = 'lair'
+  line.value = ''
+  dropLine()
+  // In the cave he speaks to the visitor who woke there.
+  finished = state
+}
+watch(() => run.value?.criticalAt ?? null, (at) => {
+  const state = run.value
+  if (at === null || !state) return
+  talking.value = false
+  station.value = 'room'
+  // A visitor who joins after the scene goes straight to the cave. Any other late visitor finds the plain office.
+  if (phase(state, office.clock()) === 'Over') { if (joined) leave(state); else left.value = state.run; return }
+  spoken = 0
+  playScene()
+}, { immediate: true })
+watch(shown, (set) => { if (set === 'lair') cut.value = false })
+// He speaks once the visitor can see the cave.
+function viewed(set: SetName) {
+  const state = finished
+  if (set !== 'lair' || !state) return
+  finished = undefined
+  for (const { at, text } of caveLines(state)) caveTimers.push(setTimeout(() => { if (shown.value === 'lair' && !talking.value) say(text) }, at * 1000))
+}
+onScopeDispose(() => caveTimers.forEach(clearTimeout))
+// Each creature lands with its own small sound. Many land at once, so the sounds keep a short gap.
+const landings: Record<Creature, ActionSound> = { snail: 'JarBubbles', beetle: 'KeyClick', fly: 'FlyBuzz', cricket: 'CricketChirp' }
+let lastLanding = 0
+function landed(kind: Creature) {
+  if (performance.now() - lastLanding < 70) return
+  lastLanding = performance.now()
+  audio.value?.playAction(landings[kind])
+}
 </script>
 
 <template>
   <main aria-label="Brundlefly" :data-found-dark="foundDark">
     <ClientOnly>
-      <WorldScene :experiment="exploring ? null : room" :station="station" :office-clock="office.clock" :presence="office.presence.value" @station="station = $event" :set="wanted" :paused="talking" :speaking="voice" :mood="mood" :thinking="thinking" :beat="beat" :reaction="reaction" @talk="talk" @mix="mix = $event" @shown="arrive" @time="audio?.keepTime($event)" @entrance="foundDark = $event" @action="audio?.playAction($event)" />
-      <SceneAudio ref="audio" :audience="!!room && mode() === 'guest' && !exploring" :set="shown" :talking="talking" :reply-count="replies" :reply-length="replyLength" :mix="mix" @state="sound = $event" @voice="voice = $event" />
+      <WorldScene :set="wanted" :paused="talking" :speaking="voice" :mood="mood" :thinking="thinking" :beat="beat" :reaction="reaction" :experiment="run" :station="station" :server-clock="office.clock" :connected="office.connected.value" :joined="joined" :cut="cut"
+        @talk="talk" @mix="mix = $event" @shown="arrive" @time="audio?.keepTime($event)" @entrance="foundDark = $event" @action="audio?.playAction($event)" @station="look" @landed="landed" @view="viewed" />
+      <SceneAudio ref="audio" :quiet="joined" :set="shown" :talking="talking" :reply-count="replies" :reply-length="replyLength" :mix="mix" @state="sound = $event" @voice="voice = $event" />
       <template #fallback><SceneLoading /></template>
     </ClientOnly>
-    <OfficeExperiment v-if="!exploring" :office="office" :awake-in-cave="shown === 'lair'" :presenter="mode() !== 'guest' && (wanted === 'office' || !!room)" :muted="sound.muted"
-      @sound="audio?.toggle()" @wake="wake" @leave="exploring = true" @reset="reset" />
-    <SpeechDialog :open="talking" :place="shown" :found-dark="foundDark" :travelling="wanted !== shown" :muted="sound.muted" :sound-available="sound.status._tag !== 'Unavailable'" @close="talking = false; mood = 'neutral'" @reply="replyLength = $event.length; replies++" @reaction="mood = $event.mood; beat = $event.beat; reaction++" @pending="thinking = $event" @sound="audio?.toggle()" @travel="wanted = $event" />
+    <OfficeCounter v-if="run && shown === 'office'" :experiment="run" :connected="office.connected.value" :online="office.online.value" :shown="station === 'computer' && !talking" @tap="tap" />
+    <OverheadLine :text="talking ? '' : line" />
+    <SpeechDialog :open="talking" :place="shown" :found-dark="foundDark" :travelling="wanted !== shown" :muted="sound.muted" :sound-available="sound.status._tag !== 'Unavailable'" :cave-open="caveOpen" @close="talking = false; mood = 'neutral'" @reply="replyLength = $event.length; replies++" @reaction="mood = $event.mood; beat = $event.beat; reaction++" @pending="thinking = $event" @sound="audio?.toggle()" @travel="wanted = $event" />
   </main>
 </template>

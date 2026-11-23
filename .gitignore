@@ -29,5 +29,3 @@ website/apps/brand-kit/dist
 
 # Claude plugin eval runs write reports here.
 evals/triggers/results/
-website/.dev.vars
-website/.dev.vars.*

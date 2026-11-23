@@ -170,7 +170,8 @@ If the Skill catalog changes, replies with Skill links use live generation until
 Choices that require the visitor's own writing or personal details open “Your text”.
 Never supply an invented sentence or personal fact as a visitor choice.
 The fourth choice is “Your text”. It opens the text field. “Back” returns to the choices.
-The dialog has one travel action below the choices. In the office it is “Follow him to the cave”. In the cave it is “Follow him to the office”.
+The dialog has one travel action below the choices. In the cave it is “Follow him to the office”.
+In the office it is “Follow him to the cave”, and only for a visitor who has finished the office experiment.
 The travel action changes the place only. It sends no text and takes no reply.
 A visitor who opens the dialog in the office gets an office greeting. The owner approved six. They live in `docs/brand/mascot-dialogue.md`.
 Their beats and choices are strings the cave greetings already use. A new choice line for the office needs approval.
@@ -192,12 +193,39 @@ Copy success uses “Copied.”
 
 ## Office experiment
 
-The presenter controls the room at “Board”, “Computer”, and “Desk”. The sign-in field is “Presenter key”.
-The scene’s keyboard action reads “Focus on the computer” or “Return to the desk”.
-The presenter starts with “Open the office” and ends with “Reset experiment”. Guests finish with “Explore the cave”.
-The computer reads “Specimen counter”, “Warning”, “Critical”, and “Votes”. Its presence line reads “{count} connected”.
-During solo rehearsal, the presence line reads “20 simulated”. During reconnection, it reads “Reconnecting…”.
-Each emoji button has the spoken label “Add a {creature}, {count} votes”. Its recovery reads “Next vote in {seconds}s”.
-The experiment uses the approved “Sound on” and “Sound off” actions.
-Only accepted audience choices count as votes. The calibration and unexpected specimens carry no votes.
-Brundlefly’s event lines follow the office experiment script in the scene. The controls never announce the fault.
+The counter on the desk computer is titled “Specimen counter”. In the critical scene its title is “Critical”.
+Its presence line reads “{count} in the office”. During reconnection, it reads “Reconnecting…”.
+Each key has the spoken label “Add a {creature}. {count} so far.”
+The computer screen in the room reads “SPECIMENS”, “{count} IN”, and “CRITICAL”.
+The join code shows its address in letters: “brundlefly.dev/join”.
+At the computer or the join code, the scene’s keyboard action reads “Return to the room”.
+The whiteboard shows the count with no letter and no number.
+
+Brundlefly speaks these lines over his head. They open no dialog.
+`shared/office-script.ts` holds them. The owner reviews each line before a talk.
+
+| Moment | Line |
+| --- | --- |
+| First specimen | One. I count things now. Keep going. (“{count}.” when the first state holds more than one.) |
+| A quarter of the target | {count}. The chamber is warming up. |
+| Half | Halfway. My small hands are rubbing. Ignore them. |
+| Three quarters | I know that hum. I went in alone. |
+| Nine tenths | Nearly. Decide which parts you want to keep. |
+| Critical | That is the number. Hold still. |
+| The tubes go out | You will remember the hum. Little else. |
+| The cave, first | There you are. You woke up. Good. |
+| The cave, second | {count} specimens. Mostly {creatures}. It worked on me. Your turn. |
+
+A run with one specimen reads “One specimen. A {creature}.” A run with none omits the count.
+
+The presenter page is titled “Presenter”. Its link reads “Open the office”.
+Its connection line reads “Connected”, “Connecting…”, or “Reconnecting…”.
+Its sections are “Office experiment” and “Controls”. Its readout labels are “Run”, “Visitors”, “Specimens”, and “Target”.
+The phases are “Quiet”, “Counting”, “Critical”, and “Over”, with these notes:
+“No specimens yet.” “Visitors add specimens.” “The critical scene plays for everyone.” “The run is over. Reset the experiment to start a new run.”
+A lost connection marks the numbers “Last known values”. Before the first state it reads “No numbers yet. They appear when the connection opens.”
+The target field is “New target” with the action “Set target”.
+Its help reads “Use {least} to {most}. A target at or below the count sends the run critical at once.”
+After critical it reads “After critical, reset the experiment to change the target.”
+The guarded actions are “Go critical now” and “Reset experiment”. Armed, they read “Select again to go critical” and “Select again to reset”.
+Their help reads “Sends the run critical at the current count.” and “Starts a new run with zero specimens. The target stays.”

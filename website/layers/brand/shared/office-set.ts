@@ -65,6 +65,7 @@ async function loadOffice(): Promise<SetArt> {
         // The jars stand in for the eggs, the test chamber for the light, and the failing tube for the ceiling.
         cues: { light: new Vector3(...cues.light), eggs: [new Vector3(...cues.jars)], ceiling: () => tube },
         update: office.update,
+        marks: office.marks,
         dispose() { office.dispose(); release() },
       }
     },

@@ -3,7 +3,7 @@ import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useDeviceOrientation, useDocumentVisibility, useElementSize, useEventListener, useMediaQuery, usePreferredReducedMotion, useScreenOrientation, useSessionStorage } from '@vueuse/core'
 import { useRoute } from '#app'
 import {
-  ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Mesh, MirroredRepeatWrapping, NearestFilter,
+  ACESFilmicToneMapping, ClampToEdgeWrapping, Color, FogExp2, Group, LinearFilter, Matrix4, Mesh, MirroredRepeatWrapping, NearestFilter,
   PerspectiveCamera, PlaneGeometry, PointLight, Quaternion, Raycaster, Scene, ShaderMaterial, SpotLight, SRGBColorSpace, TextureLoader,
   Vector2, Vector3, WebGLRenderer,
 } from 'three'
@@ -33,13 +33,19 @@ import type { CameraKey } from '@brundlefly/brand/shared/camera-view'
 import type { SceneAudioMix } from '#shared/scene-audio'
 import type { ActionSound } from '#shared/action-sounds'
 import type { ConversationMood } from '#shared/conversation'
-import { board, computer, createFountain, printHeight, screenHeight, screenWidth } from '../office-fountain'
-import { critical, specimenCount, warning } from '#shared/office-experiment'
-import type { Run, Station } from '#shared/office-experiment'
+import { criticalSceneSeconds, specimenCount } from '#shared/office-experiment'
+import type { Creature, Experiment } from '#shared/office-experiment'
+import { criticalFrame } from '#shared/office-critical'
+import { createExperimentStage } from '../office-stage'
+import type { Station } from '../office-stage'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
-const { experiment = null, station = 'desk', officeClock = Date.now, presence = '', set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0 } = defineProps<{ experiment?: Run | null, station?: Station, officeClock?: () => number, presence?: string, set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number }>()
+// `experiment` is the shared office experiment, or nothing without a connection. `station` is where the visitor looks in the office.
+// `serverClock` gives server time, so every device plays the critical scene at one moment. `joined` is a visitor who came by the join code: the office is lit for them.
+// `cut` makes the next journey a cut in the dark, with no walk to the way out.
+const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0, experiment = null, station = 'room', serverClock = Date.now, connected = 0, joined = false, cut = false } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number,
+  experiment?: Experiment | null, station?: Station, serverClock?: () => number, connected?: number, joined?: boolean, cut?: boolean }>()
 // `set` is the place the page wants him in. The scene reports the set that stands, and travels when the two differ.
 const shownSet = ref<SetName>(set)
 const travelPhase = ref<Travel['_tag']>('Home')
@@ -49,8 +55,10 @@ const entrancePhase = ref<Entrance['_tag']>('Lit')
 const entranceSeen = useSessionStorage('brundlefly-office-entrance', false, { onError: cause => console.warn('The session store is unavailable. The office entrance can show again.', cause) })
 // The dark edge of the picture, as the set that stands asks for it.
 const vignette = ref<SetMascot['vignette']>(sceneSets[set].mascot.vignette)
-// How dark a journey makes the picture, from 0 to 1.
+// How dark a journey or the critical scene makes the picture, from 0 to 1.
 const shade = ref(0)
+// How much of the picture the test chamber's light covers in the critical scene, from 0 to 1.
+const flash = ref(0)
 const requestedMascot = useRoute().query.mascot
 const mascotMode = resolveMascotMode(requestedMascot)
 const spriteMascot = mascotMode === 'sprite'
@@ -63,8 +71,9 @@ const shownMascot = ref<MascotMode>()
 const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
 // `shown` names the set that stands after a journey. `stayed` means the other set's artwork did not load.
 // `entrance` says whether this visit found the set dark. `action` names a short sound for something he does.
-const emit = defineEmits<{ talk: [], station: [station: Station], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number],
-  entrance: [dark: boolean], action: [sound: ActionSound] }>()
+// `station` asks for another view of the office. `landed` names a specimen that reached the pile. `view` says the picture is back after a journey.
+const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number],
+  entrance: [dark: boolean], action: [sound: ActionSound], station: [station: Station], landed: [kind: Creature], view: [set: SetName] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
@@ -99,12 +108,14 @@ function askForTilt() {
 }
 const animate = computed(() => !paused && environmentMotion.value)
 const hovered = ref(false)
+// The pointer rests on the computer or the chamber window.
+const overProp = ref(false)
 const pointer = new Vector2()
 let alive = true
 let cleanup: (() => void) | undefined
 let refresh: (() => void) | undefined
 let hit: ((pointer: Vector2) => boolean) | undefined
-let propAt: ((point: Vector2) => Station | undefined) | undefined
+let stationAt: ((point: Vector2) => Station | undefined) | undefined
 let bounds = { left: 0, right: 0, top: 0, bottom: 0 }
 /** The hover area in host pixels. The pointer cursor shows over it. */
 const overMascot = (x: number, y: number) => x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
@@ -147,7 +158,8 @@ function move(event: PointerEvent) {
   }
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
-  hovered.value = experiment ? Boolean(propAt?.(pointer.set(x / rect.width * 2 - 1, 1 - y / rect.height * 2))) : overMascot(x, y)
+  hovered.value = station === 'room' && overMascot(x, y)
+  overProp.value = !hovered.value && stationAt?.(new Vector2(x / rect.width * 2 - 1, 1 - y / rect.height * 2)) !== undefined
 }
 function select(event: MouseEvent) {
   askForTilt()
@@ -155,19 +167,19 @@ function select(event: MouseEvent) {
   if (paused) return
   const rect = host.value?.getBoundingClientRect()
   if (!rect) return
+  // The keyboard has no pointer. It talks to him in the room, and returns to the room from a station.
   if (event.detail === 0) {
-    if (experiment) emit('station', station === 'computer' ? 'desk' : 'computer')
-    else emit('talk')
+    if (station === 'room') emit('talk')
+    else emit('station', 'room')
     return
   }
   const position = new Vector2((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2)
-  if (experiment) {
-    const prop = propAt?.(position)
-    if (prop) emit('station', prop)
-    else if (station !== 'desk') emit('station', 'desk')
-    return
-  }
+  const prop = stationAt?.(position)
+  // At a station, a click on the other prop goes there, and a click on the room goes back to it.
+  if (station !== 'room') { if (prop !== station) emit('station', prop ?? 'room'); return }
+  // He stands in front of the props, so a click on him is for him.
   if (status.value._tag !== 'Ready' || hit?.(position)) emit('talk')
+  else if (prop) emit('station', prop)
 }
 useEventListener('keydown', (event: KeyboardEvent) => {
   if (paused || visibility.value !== 'visible' || status.value._tag !== 'Ready' || event.ctrlKey || event.metaKey || event.altKey || inputOwnsKeys(event.target) || !isCameraKey(event.code)) return
@@ -187,9 +199,10 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
   cleanup?.()
   refresh = undefined
   hit = undefined
+  stationAt = undefined
   status.value = { _tag: 'Fallback', reason: 'context' }
 })
-watch(() => [experiment, station], () => refresh?.())
+watch(() => [experiment, station, cut], () => refresh?.())
 watch([animate, width, height], () => refresh?.())
 watch(settings, () => refresh?.(), { deep: true })
 watch(() => [speaking, mood, thinking, reaction], () => refresh?.())
@@ -202,7 +215,7 @@ const changeStill = () => {
 watch(status, changeStill)
 watch(() => set, () => { changeStill(); refresh?.() })
 watch([() => paused, visibility], () => {
-  if (paused || visibility.value !== 'visible') { cameraKeys.clear(); endView(); hovered.value = false }
+  if (paused || visibility.value !== 'visible') { cameraKeys.clear(); endView(); hovered.value = false; overProp.value = false }
   refresh?.()
 })
 onScopeDispose(() => { alive = false; cleanup?.() })
@@ -431,6 +444,8 @@ watch(canvas, async (element) => {
   let travel: Travel = { _tag: 'Home' }
   let way: readonly (readonly [number, number])[] | undefined
   let swapped = false
+  // The journey has made the picture dark, and the visitor has not seen the new set yet.
+  let hidden = false
   // The other set's artwork loads while he walks out, so the dark is short.
   let incoming: { name: SetName, art: Promise<SetArt> } | undefined
   const forget = (pending: typeof incoming) => { void pending?.art.then((art) => { if (art._tag === 'Ok') art.release() }) }
@@ -439,7 +454,7 @@ watch(canvas, async (element) => {
   // A visitor who loads a set with an entrance finds it dark, once in a browser session. He waits in the dark and walks to the switch.
   // A journey from another set arrives in a lit room, and so does every later load.
   const entry = standing.stage.layout.entrance
-  let entrance = startEntrance({ offered: entry !== undefined, arrival: 'Load', seen: entranceSeen.value, still: !moving(), walks })
+  let entrance = startEntrance({ offered: entry !== undefined, arrival: joined ? 'Travel' : 'Load', seen: entranceSeen.value, still: !moving(), walks })
   if (entry && entrance._tag === 'Dark') {
     entranceSeen.value = true
     stroll = startStroll(entry.start, 0)
@@ -497,25 +512,39 @@ watch(canvas, async (element) => {
   const baseTarget = new Vector3()
   let tiltRest: Quaternion | undefined
   const tilt = { yaw: 0, pitch: 0 }
-  // A journey needs frames to its end, even without motion: its dark hold is counted in frames.
-  let fountain: ReturnType<typeof createFountain> | undefined
-  const officeEye = new Vector3()
-  const officeAim = new Vector3()
-  let inExperiment = false
+  // The office experiment: the specimens, the join code, and the counter's screen. The scene builds it when the first state arrives in the office.
+  let stage: ReturnType<typeof createExperimentStage> | undefined
+  let stageBusy = false
+  // He keeps the count at the whiteboard, which hangs over the first stop of his round. That stop is also the desk,
+  // so he gives it up to a visitor who sits at the computer and tends the jars at the second stop. In the critical scene he stands there, under the chamber window.
   let counting = false
-  const countFrom = [[.85, -1.8]] as const
+  let countStop = 0
+  let countAge = 0
+  let countStrokes = 0
+  // How far the view has moved from the room to a station, from 0 to 1, and the station's shot as the view moves to it.
+  let stationShare = 0
+  const stationPlace = new Vector3()
+  const stationTurn = new Quaternion()
+  let stationPlaced = false
+  const lookTurn = (position: Vector3, target: Vector3) => new Quaternion().setFromRotationMatrix(new Matrix4().lookAt(position, target, camera.up))
   const projected = new Vector3()
-  const glassCorner = new Vector3(screenWidth / 2, screenHeight / 2, 0)
   const propRay = new Raycaster()
-  propAt = (point) => {
-    if (!inExperiment || !fountain) return
+  stationAt = (point) => {
+    if (!stage?.group.visible) return
     propRay.setFromCamera(point, camera)
-    const hit = propRay.intersectObjects(fountain.stations, false)[0]
-    if (hit) return hit.object === fountain.stations[0] ? 'board' : 'computer'
+    return stage.stationAt(propRay.ray)
   }
-  const needsFrames = () => visibility.value === 'visible' && (Boolean(experiment) || animate.value || (!paused && cameraKeys.size > 0)
+  // The page reads these to place the counter's keys on the screen and his line over his head.
+  const anchors = new Map<string, string>()
+  const anchor = (name: string, value: string) => {
+    if (anchors.get(name) === value) return
+    anchors.set(name, value)
+    host.value?.parentElement?.style.setProperty(name, value)
+  }
+  // A journey needs frames to its end, even without motion: its dark hold is counted in frames.
+  const needsFrames = () => visibility.value === 'visible' && (animate.value || (!paused && cameraKeys.size > 0)
     || (paused && moving()) || travel._tag !== 'Home' || set !== standing.stage.name || entrance._tag !== 'Lit'
-    || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001)
+    || Math.abs((paused ? 1 : 0) - focusProgress) > 0.001 || stageBusy || (stationShare > 0 && stationShare < 1) || (station !== 'room') !== (stationShare === 1))
   function render(delta: number) {
     renderer.toneMappingExposure = settings.value.exposure
     const aspect = renderWidth / renderHeight
@@ -533,12 +562,14 @@ watch(canvas, async (element) => {
     }
     // Free again, he takes up his loop from where he stands.
     if (entered.held && !act.held) { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
-    const dispensed = specimenCount(experiment)
-    const failureAge = experiment && dispensed === critical ? officeClock() - experiment.drops.at(-1)!.at : -1
-    const failing = standing.stage.name === 'office' && failureAge >= 0 && faceMotion
-    const light = entranceLight(entrance) * (failing && failureAge > 3300 ? .32 : failing && failureAge > 2000 ? .7 : 1)
-    if (experiment && dispensed >= warning && set === 'office' && standing.stage.name === 'office' && !incoming)
-      incoming = { name: 'lair', art: sceneSets.lair.load() }
+    // The experiment belongs to the office. Its critical scene dims the tubes, and every device times it from the server's clock.
+    const run = standing.stage.name === 'office' ? experiment : null
+    const criticalAge = run && run.criticalAt !== null ? Math.max(0, (serverClock() - run.criticalAt) / 1000) : undefined
+    const critical = criticalAge !== undefined && criticalAge < criticalSceneSeconds ? criticalFrame(criticalAge, !faceMotion) : undefined
+    const over = criticalAge !== undefined && !critical
+    const light = entranceLight(entrance) * (critical?.light ?? 1)
+    // The critical scene ends in the cave. Its artwork loads from the middle of the count, so the dark is short on a phone.
+    if (run && !over && (critical || specimenCount(run) >= run.target / 2) && set === 'office' && !incoming) incoming = { name: 'lair', art: sceneSets.lair.load() }
     const look = mascotInLight(standing.stage.mascot, light)
     shadowMaterial.uniforms.uStrength!.value = look.shadow.body
     for (const patch of footShadows) patch.material.uniforms.uDark!.value = look.shadow.foot
@@ -554,24 +585,34 @@ watch(canvas, async (element) => {
       stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } }
     }
     const phase = travel._tag
-    travel = advanceTravel(travel, { delta, still: !faceMotion || Boolean(experiment), swapped, settled: stroll.activity._tag === 'Pausing' })
+    // A cut has no walk to the way out: the picture is dark already.
+    travel = advanceTravel(travel, { delta, still: !faceMotion || (cut && travel._tag === 'Leaving'), swapped, settled: stroll.activity._tag === 'Pausing' })
     if (travel._tag === 'Dark' && phase !== 'Dark') void changeSet()
     // At home again he takes up his loop from where he stands.
     if (travel._tag === 'Home' && phase !== 'Home') { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
     if (travelPhase.value !== travel._tag) travelPhase.value = travel._tag
-    const dark = travelShade(travel, !faceMotion)
+    const dark = Math.max(cut && travel._tag === 'Leaving' ? 1 : travelShade(travel, !faceMotion), critical?.shade ?? 0)
     if (shade.value !== dark) shade.value = dark
+    if (flash.value !== (critical?.flash ?? 0)) flash.value = critical?.flash ?? 0
+    // The visitor sees the new set from here. The page waits for this before he speaks to them.
+    if (travel._tag === 'Leaving' || travel._tag === 'Dark') hidden = true
+    else if (hidden && dark < 0.3) { hidden = false; emit('view', standing.stage.name) }
     const journey = travel._tag !== 'Home'
     // The conversation holds him and the close shot only while he is at home. On a journey the dialog stays open and the view goes wide.
     const talking = paused && !journey
     const layout = standing.stage.layout
     const { fog, world, finish, reflection } = standing
-    const atCounter = Boolean(experiment && standing.stage.name === 'office' && !journey && !act.held)
-    if (atCounter !== counting) {
-      stroll = startStroll(!faceMotion && atCounter ? countFrom[0] : stroll.position, 0)
-      counting = atCounter
+    // A run with specimens takes him off his round. He walks to the whiteboard and keeps the count there.
+    const atCount = Boolean(run && !over && (critical || specimenCount(run) > 0) && !journey && !act.held)
+    const stopFor = critical || station === 'computer' ? 1 : 0
+    if (atCount !== counting || (counting && stopFor !== countStop)) {
+      counting = atCount
+      countStop = stopFor
+      countAge = 0
+      countStrokes = 0
+      stroll = faceMotion || !counting ? { ...stroll, destination: 0, activity: { _tag: 'Walking' } } : startStroll(layout.walk[countStop]!, 0)
     }
-    const route = counting ? countFrom : way ?? loop()
+    const route = counting ? [layout.walk[countStop]!] : way ?? loop()
     const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(layout.camera.desktop, layout.camera.portrait, aspect)
     focusProgress = advanceConversationFocus(focusProgress, talking, delta, reduced.value === 'reduce')
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
@@ -638,65 +679,58 @@ watch(canvas, async (element) => {
     const shot = blendCameraShot({ position: basePosition, target: baseTarget }, focus, blend)
     camera.position.copy(shot.position)
     camera.quaternion.copy(shot.quaternion)
-    if (experiment && standing.stage.name === 'office') {
-      if (!fountain) { fountain = createFountain(); scene.add(fountain.group, fountain.keepsake) }
-      fountain.keepsake.visible = false
-      fountain.group.visible = true
-      fountain.update(experiment, officeClock(), !faceMotion, presence)
-      if (!inExperiment) { officeEye.copy(camera.position); camera.getWorldDirection(officeAim).add(camera.position) }
-      inExperiment = true
-      const target = station === 'board' ? board : station === 'computer' ? computer : new Vector3(-1.14, -.9, -2.48)
-      const glassPixels = Math.min(600, renderWidth * .79, renderHeight * .70)
-      const focal = renderHeight / (2 * Math.tan(camera.fov * Math.PI / 360))
-      const distance = station === 'computer' ? screenWidth * focal / glassPixels
-        : station === 'board' ? printHeight * focal / Math.min(renderHeight * .56, renderWidth * .88)
-          : 5.9 / Math.min(1, aspect)
-      const eye = new Vector3(target.x, target.y + (station === 'desk' ? 1.05 : 0), target.z + distance)
-      const ease = faceMotion ? 1 - Math.exp(-delta * 7) : 1
-      officeEye.lerp(eye, ease); officeAim.lerp(target, ease)
-      camera.position.copy(officeEye); camera.lookAt(officeAim)
-      if (failing && failureAge > 1600 && failureAge < 4400)
-        camera.rotateZ(.012 * Math.sin(failureAge / 130))
-    } else {
-      inExperiment = false
-      if (fountain) {
-        fountain.group.visible = false
-        fountain.keepsake.visible = Boolean(experiment && dispensed === critical && standing.stage.name === 'lair')
-        if (fountain.keepsake.visible) {
-          camera.position.set(-1.3, -1.48, 4.6)
-          camera.lookAt(-2.15, -1.73, 2.25)
-        }
-      }
+    // A station of the office takes the view from the room: the computer's screen, or the chamber window. A talk and the critical scene give it back.
+    if (run && !stage) { stage = createExperimentStage(); scene.add(stage.group) }
+    if (stage) stage.group.visible = run !== null
+    const atStation = stage && run && station !== 'room' && !talking && !critical && !journey ? station : undefined
+    if (stage && atStation) {
+      const to = stage.shot(atStation, renderWidth, renderHeight, camera.fov)
+      const turnTo = lookTurn(to.position, to.target)
+      // A change from one station to the other moves the shot, so the view glides between them.
+      const ease = stationPlaced && faceMotion ? 1 - Math.exp(-delta * 6) : 1
+      stationPlace.lerp(to.position, ease)
+      stationTurn.slerp(turnTo, ease)
+      stationPlaced = true
+    }
+    stationShare = faceMotion ? Math.max(0, Math.min(1, stationShare + (atStation ? delta : -delta) / 0.9)) : Number(Boolean(atStation))
+    if (stationShare === 0) stationPlaced = false
+    else {
+      const share = stationShare * stationShare * (3 - 2 * stationShare)
+      camera.position.lerp(stationPlace, share)
+      camera.quaternion.slerp(stationTurn, share)
+    }
+    if (critical && criticalAge !== undefined && stage) {
+      // The view leans toward the chamber as it wakes, and the room shakes.
+      const lean = critical.chamber * 0.3
+      camera.position.lerp(projected.set(stage.glass.centre.x + 2.6, 0.2, 5.2), lean)
+      camera.quaternion.slerp(lookTurn(camera.position, standing.world.cues.light), lean)
+      camera.rotateZ(Math.sin(criticalAge * 31) * 0.014 * critical.shake)
+      camera.rotateX(Math.sin(criticalAge * 23 + 1) * 0.006 * critical.shake)
     }
     camera.updateMatrixWorld()
-    // Project both glass edges so the HTML keys stay inside the model when the viewport changes.
-    if (inExperiment && station === 'computer' && host.value?.parentElement) {
-      const style = host.value.parentElement.style
-      projected.copy(computer).addScaledVector(glassCorner, -1).project(camera)
+    if (stage && run) {
+      const frame = stage.update({ experiment: run, connected, station: atStation ?? 'room', critical, over, delta, still: !faceMotion, mascot: stroll.position, marks: standing.world.marks })
+      stageBusy = frame.busy
+      if (frame.landed) emit('landed', frame.landed)
+      // The counter's keys lie on the glass of the monitor. The page hides them until the view has reached the screen.
+      const { centre, width: glassWidth, height: glassHeight } = stage.glass
+      projected.set(centre.x - glassWidth / 2, centre.y - glassHeight / 2, centre.z).project(camera)
       const left = (1 + projected.x) * renderWidth / 2
       const bottom = (1 - projected.y) * renderHeight / 2
-      projected.copy(computer).add(glassCorner).project(camera)
+      projected.set(centre.x + glassWidth / 2, centre.y + glassHeight / 2, centre.z).project(camera)
       const top = (1 - projected.y) * renderHeight / 2
-      const w = (1 + projected.x) * renderWidth / 2 - left
-      style.setProperty('--crt-left', left.toFixed(1) + 'px')
-      style.setProperty('--crt-top', top.toFixed(1) + 'px')
-      style.setProperty('--crt-width', w.toFixed(1) + 'px')
-      style.setProperty('--crt-height', (bottom - top).toFixed(1) + 'px')
-      style.setProperty('--crt-visible', w >= Math.min(600, renderWidth * .79, renderHeight * .70) * .94 ? 'visible' : 'hidden')
+      anchor('--crt-left', `${left.toFixed(1)}px`)
+      anchor('--crt-top', `${top.toFixed(1)}px`)
+      anchor('--crt-width', `${((1 + projected.x) * renderWidth / 2 - left).toFixed(1)}px`)
+      anchor('--crt-height', `${(bottom - top).toFixed(1)}px`)
+      anchor('--crt-ready', atStation === 'computer' && stationShare > 0.92 ? '1' : '0')
     }
-    if (inExperiment && station === 'board' && host.value?.parentElement) {
-      projected.copy(board)
-      projected.y -= printHeight * .425
-      projected.project(camera)
-      const style = host.value.parentElement.style
-      style.setProperty('--board-bottom', ((1 - projected.y) * renderHeight / 2).toFixed(1) + 'px')
-      style.setProperty('--board-x', ((1 + projected.x) * renderWidth / 2).toFixed(1) + 'px')
-    }
+    else stageBusy = false
     // The dialog and a hovering visitor both stop him. He eases out of the stride instead of snapping.
     // A mesh without the relief rig's joints stands where the relief rig starts.
     // He walks a journey faster than his loop: he has somewhere to be.
     // He walks to the switch at that pace too.
-    const walkSpeed = settings.value.walkSpeed * walkPace * (journey || act.held ? 1.7 : 1)
+    const walkSpeed = settings.value.walkSpeed * walkPace * (journey || act.held || critical ? 1.7 : 1)
     // In the dark he has noticed the visitor, and he waits. On his way to the switch a pointer that rests on him does not stop him.
     const attentionNow = journey ? 'free' as const : talking ? 'talking' as const
       : entrance._tag === 'Dark' ? 'noticed' as const : act.held ? 'free' as const : hovered.value ? 'noticed' as const : 'free' as const
@@ -705,7 +739,9 @@ watch(canvas, async (element) => {
       cadence: meshCadence, facing: meshPose ? turn.heading : undefined })
     if (mascot._tag === 'Mesh' && meshPose && visibility.value === 'visible') {
       // At a station of his round he faces his work, until a visitor has his attention. At the switch he faces it. After the strike he turns back to the visitor on his feet.
-      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing : counting ? -.85 : workFacing(attentionNow) }
+      const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing
+        // At the count he faces his work: the whiteboard, or the jars under the chamber window.
+        : counting && attentionNow === 'free' ? layout.walkFacings?.[countStop] : workFacing(attentionNow) }
       // With motion off he has no steps to turn with, so he stands where the turn would end.
       turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
     }
@@ -764,7 +800,19 @@ watch(canvas, async (element) => {
       // The entrance has two gestures of its own: his reach for the switch, and his greeting after the turn.
       if (faceMotion && act.reach !== undefined) sided.push({ mannerism: { _tag: 'ReachSwitch' }, age: act.reach, side: switchSide })
       if (faceMotion && act.greet !== undefined) sided.push({ mannerism: { _tag: 'Greet' }, age: act.greet, side: switchSide })
-      if (counting && faceMotion && dispensed > 0) sided.push({ mannerism: { _tag: 'CheckPalm' }, age: faceElapsed % 5 })
+      if (counting && faceMotion && stroll.activity._tag === 'Pausing') {
+        const boardFacing = layout.walkFacings?.[0] ?? 0
+        // In the critical scene he looks to the chamber's light and holds.
+        if (critical && criticalAge !== undefined) sided.push({ mannerism: { _tag: 'LookToLight' }, age: Math.min(criticalAge, 1.2) })
+        // He writes the count on the board, line after line, once he faces it. The marker squeaks on each line.
+        else if (countStop === 0 && Math.abs(turn.heading - boardFacing) < 0.25 && !talking) {
+          countAge = (countAge + delta) % 7
+          const strokes = markerStrokes(countAge)
+          if (strokes > countStrokes) emit('action', 'MarkerSqueak')
+          countStrokes = strokes
+          sided.push({ mannerism: { _tag: 'WriteBoard' }, age: countAge, weight: habitWeight, side: boardFacing < 0 ? -1 : 1 })
+        }
+      }
       const mannerism = poseMannerisms(sided)
       // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
       const eyes = !faceMotion ? { _tag: 'Ahead' } as const
@@ -797,6 +845,10 @@ watch(canvas, async (element) => {
     const corners = reach.map(value => figure.localToWorld(value).project(camera))
     bounds = { left: (corners[0]!.x + 1) * renderWidth / 2, right: (corners[1]!.x + 1) * renderWidth / 2,
       top: (1 - corners[1]!.y) * renderHeight / 2, bottom: (1 - corners[0]!.y) * renderHeight / 2 }
+    // The page puts his spoken line over his head. It hides the line while he is out of the picture.
+    anchor('--head-x', `${((bounds.left + bounds.right) / 2).toFixed(0)}px`)
+    anchor('--head-y', `${Math.max(0, bounds.top).toFixed(0)}px`)
+    anchor('--head-shown', bounds.right > 0 && bounds.left < renderWidth && bounds.top < renderHeight * 0.75 && stationShare < 0.5 ? '1' : '0')
     reflection?.update(settings.value.wetness)
     if (finish) finish.render({ time: elapsed, focus: blend, focusDistance: camera.position.distanceTo(staging ? staging.face : face) })
     else renderer.render(scene, camera)
@@ -828,7 +880,7 @@ watch(canvas, async (element) => {
     endView()
     renderer.setAnimationLoop(null)
     forget(incoming)
-    fountain?.dispose(); propAt = undefined
+    stage?.dispose(); stationAt = undefined
     strike(standing); mirror?.dispose(); mascot.dispose(); loadedTextures.forEach(value => value.dispose())
     staging?.key.dispose(); staging?.rim.dispose()
     shadowGeometry.dispose(); shadowMaterial.dispose(); renderer.dispose()
@@ -843,10 +895,11 @@ watch(canvas, async (element) => {
   <div ref="host" class="world-scene" :data-set="shownSet" :data-vignette="vignette" :data-travel="travelPhase" :data-entrance="entrancePhase" :data-renderer="status._tag" :data-mascot="shownMascot" :data-mascot-motion="mascotMotion" :data-quality="shownQuality" :aria-busy="status._tag === 'Loading'">
     <canvas ref="canvas" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-vignette" :class="{ 'world-vignette-close': paused && travelPhase === 'Home' && shownMascot === 'mesh' }" aria-hidden="true" />
+    <div v-if="status._tag === 'Ready' && flash > 0" class="world-flash" :style="{ opacity: flash }" aria-hidden="true" />
     <div v-if="status._tag === 'Ready'" class="world-dark" :style="{ opacity: shade }" aria-hidden="true" />
     <SceneLoading v-if="status._tag === 'Loading'" />
     <img v-if="status._tag === 'Fallback'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
-    <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered }" :disabled="status._tag === 'Loading'" :aria-label="experiment ? station === 'computer' ? 'Return to the desk' : 'Focus on the computer' : 'Talk to Brundlefly'" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false" @click="select" />
+    <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered || overProp }" :disabled="status._tag === 'Loading'" :aria-label="station === 'room' ? 'Talk to Brundlefly' : 'Return to the room'" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false; overProp = false" @click="select" />
     <p v-if="status._tag === 'Fallback'" class="world-status" role="status">{{ status.reason === 'context' ? 'Static scene. WebGL is unavailable.' : 'The scene could not load.' }}</p>
     <SceneControls v-model="settings" />
   </div>
@@ -869,6 +922,8 @@ canvas { display: block; width: 100%; height: 100%; }
 .world-scene[data-vignette="Light"] .world-vignette::after { background: radial-gradient(ellipse 64% 68% at 50% 34%, transparent 46%, rgb(8 11 8 / 0.3) 100%); }
 /* A journey to another set darkens the whole picture. The scene sets how dark, frame by frame. */
 .world-dark { position: absolute; inset: 0; pointer-events: none; background: var(--color-night); }
+/* The light of the test chamber takes the picture in the critical scene. The dark that follows lies over it. */
+.world-flash { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 90% 90% at 62% 40%, #F2FFFA, #BFF3E8 70%, #7FD8CC); }
 .world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: default; touch-action: none; }
 .world-interaction.mascot-hover { cursor: pointer; }
 .world-interaction:focus-visible { outline: 2px solid var(--color-cream); outline-offset: -8px; }

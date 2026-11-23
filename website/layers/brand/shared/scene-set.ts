@@ -89,8 +89,16 @@ export function mascotInLight(look: SetMascot, light: number): SetMascot {
  */
 export type SetInput = { time: number, pressure: number, settings: SceneSettings, light: number }
 
-/** A set in the scene. `dispose` releases its geometry, its materials, and the artwork it loaded. */
-export type BuiltSet = { root: Object3D, cues: SetCues, update: (input: SetInput) => void, dispose: () => void }
+/** The drawing calls a drawn sheet needs. A 2D canvas context has them. The type names no browser API, so the Worker's check can read this file. */
+export type SetPainter = { fillStyle: string | object, fillRect: (x: number, y: number, width: number, height: number) => void, clearRect: (x: number, y: number, width: number, height: number) => void }
+/** The drawn sheet of a set: the painter that draws on it, and the call that shows what it drew. */
+export type SetMarks = { painter: SetPainter, changed: () => void }
+
+/**
+ * A set in the scene. `dispose` releases its geometry, its materials, and the artwork it loaded.
+ * A set with a drawn sheet gives `marks`, so the scene can draw on it while it runs.
+ */
+export type BuiltSet = { root: Object3D, cues: SetCues, update: (input: SetInput) => void, dispose: () => void, marks?: SetMarks }
 
 /** What a set needs from the device to build itself. */
 export type SetContext = { quality: SceneQuality, anisotropy: number }
