@@ -143,9 +143,10 @@ The up and down keys change how solid the glass is. The left and right keys chan
 When the cave appears, Brundlefly and the snails dance. A song can play on the projector.
 The site ships no song. On `/presenter`, in the browser that drives the projector, choose your own audio file under **Celebration track**.
 The file stays in that browser's storage. It is never uploaded, and **Remove track** deletes it.
-Set where the chorus starts, tap the tempo, and choose **Test from the fade**.
+A new track takes the settings of the song of the first talk: the chorus word at 0:39.2, 124 BPM, 31 seconds of play, and a fade out of 4 seconds.
+For another song, set where the chorus starts and tap the tempo. Choose **Test from the fade** to hear the result: a cue turns solid at the moment the cave would appear.
 The song fades in under the critical scene, and its chorus hits as the cave appears, 19.5 seconds after the run goes critical.
-The default fade of 14 seconds starts as the chamber starts to spit snails. A fade longer than the scene is cut to it. The fade is quiet for most of its length and rises into the chorus.
+The default fade runs for the whole scene. A fade longer than the scene is cut to it. The fade is quiet for most of its length and rises into the chorus.
 The room shares the tempo and the times with every device, so the phones dance in step. Phones play no sound.
 Before the talk, select anything on the office page once. A browser plays no sound on a page that nobody has touched.
 

@@ -12,8 +12,12 @@
 export type PartyTrack = { name: string, chorusAt: number, bpm: number, leadIn: number, playFor: number, fadeOut: number }
 type Setting = Exclude<keyof PartyTrack, 'name'>
 
-/** The settings of a new track. The fade of 14 seconds starts when the chamber starts to spit snails. */
-export const partyDefaults: Omit<PartyTrack, 'name'> = { chorusAt: 0, bpm: 110, leadIn: 14, playFor: 45, fadeOut: 8 }
+/**
+ * The settings of a new track. They fit the song of the first talk, so the presenter chooses the file and changes nothing:
+ * the word that must land as the cave appears is at 39.2 seconds, the tempo is 124, and the chorus with its refrain ends 31 seconds later.
+ * The fade in is as long as the critical scene, so the music comes in under all of it.
+ */
+export const partyDefaults: Omit<PartyTrack, 'name'> = { chorusAt: 39.2, bpm: 124, leadIn: 19.5, playFor: 31, fadeOut: 4 }
 /** The least and the most of each setting. Stored or typed values outside them are clamped. */
 export const partyLimits: Record<Setting, { least: number, most: number }> = {
   chorusAt: { least: 0, most: 3600 },

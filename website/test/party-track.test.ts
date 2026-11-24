@@ -3,7 +3,8 @@ import { test } from 'node:test'
 import { beatAt, formatClock, lateFade, parseClock, partyDefaults, partyLength, partyLevel, partyLimits, partyPlan, readPartyTrack, stopLevel, tapTempo } from '../shared/party-track.ts'
 import type { PartyPlan, PartyTrack } from '../shared/party-track.ts'
 
-const track = (settings: Partial<PartyTrack> = {}): PartyTrack => ({ name: 'Test tone.wav', ...partyDefaults, chorusAt: 72, ...settings })
+// The tests have their own settings, so a change of the product's defaults does not move them.
+const track = (settings: Partial<PartyTrack> = {}): PartyTrack => ({ name: 'Test tone.wav', chorusAt: 72, bpm: 110, leadIn: 14, playFor: 45, fadeOut: 8, ...settings })
 /** The file position at the hit: the plan starts at `startAt` after `startIn`, and the file then runs at normal speed. */
 const positionAtHit = (plan: PartyPlan, secondsUntilHit: number) => plan.startAt + secondsUntilHit - plan.startIn
 const near = (actual: number, expected: number, message: string) => assert.ok(Math.abs(actual - expected) < 1e-9, `${message}: ${actual}, not ${expected}.`)

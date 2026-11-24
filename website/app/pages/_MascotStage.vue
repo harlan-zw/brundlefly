@@ -119,7 +119,7 @@ watch(run, (now, before) => {
 // The critical scene, timed from the server's clock. His lines fall at their moments, and the cave follows the dark.
 let spoken = 0
 // The presenter's song, if this browser holds one. It fades in under the critical scene, and its chorus hits as the cave appears.
-// The song is asked for as the scene starts, so a fade as long as the scene can run in full. The default fade starts as the chamber spits snails.
+// The song is asked for as the scene starts, so a fade as long as the scene can run in full. The default fade is that long.
 // A phone holds no song, so this does nothing there.
 const song = usePartyTrack()
 let sung = false
