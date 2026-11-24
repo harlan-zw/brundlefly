@@ -250,6 +250,7 @@ The settings are “Chorus starts at”, “Tempo (BPM)”, “Fade in (seconds)
 The chorus help reads “Seconds, or minutes and seconds, for example 1:23.5.” The fade help reads “The chorus hits when the cave appears, {seconds} seconds after the run goes critical. A fade in longer than that is cut to it.”
 The tempo action is “Tap tempo”, with “Tap at least four times on the beat.”, “Keep tapping on the beat.”, and “{bpm} BPM”.
 The test actions are “Test from the fade” and “Stop”. The status reads “Ready.”, “Waiting to start.”, or “Playing.”
+During a test, a cue reads “The cave appears in {seconds} s.” and then “The cave is showing.”
 One line reads “Before the talk, select anything on the office page once, so the browser lets it play sound.”
 Each refusal names its next action, for example “This browser cannot play that file. Choose an audio file, such as MP3, M4A, or WAV.”
 `app/pages/presenter.vue` holds the full set of messages for this section.

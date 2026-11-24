@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, shallowRef, watch } from 'vue'
-import { useIntervalFn, useTimeoutFn } from '@vueuse/core'
+import { useIntervalFn, useTimeoutFn, useTimestamp } from '@vueuse/core'
 import { useHead } from '#imports'
 import { creatures, criticalSceneSeconds, phase, specimenCount, targetLimits } from '#shared/office-experiment'
 import type { Phase } from '#shared/office-experiment'
@@ -210,9 +210,18 @@ const playbackNotes: Record<PartyStatus, string> = {
   Playing: 'Playing.',
   Unavailable: 'The browser refused to play the track. Select “Test from the fade” again, or choose another file.',
 }
+// The test plays what the room will hear: the fade is cut to the length of the critical scene, as it is there.
+// It also says when the cave would appear, so the presenter can hear whether the right word of the song lands on that moment.
+const testHit = ref<number | null>(null)
+const stamp = useTimestamp({ interval: 100 })
 function testFade() {
-  if (song.value) party.play(song.value.leadIn)
+  if (!song.value) return
+  const lead = Math.min(song.value.leadIn, criticalSceneSeconds)
+  testHit.value = Date.now() + lead * 1000
+  party.play(lead)
 }
+watch(sounding, (now) => { if (!now) testHit.value = null })
+const untilHit = computed(() => testHit.value === null ? null : (testHit.value - stamp.value) / 1000)
 </script>
 
 <template>
@@ -411,6 +420,9 @@ function testFade() {
           <p class="playback" role="status" :data-status="songStatus">
             {{ playbackNotes[songStatus] }}
           </p>
+          <p v-if="untilHit !== null" class="cue" :data-shown="untilHit <= 0" aria-live="off">
+            {{ untilHit > 0 ? `The cave appears in ${Math.ceil(untilHit)} s.` : 'The cave is showing.' }}
+          </p>
           <p class="help">
             Before the talk, select anything on the office page once, so the browser lets it play sound.
           </p>
@@ -515,6 +527,9 @@ input[aria-invalid="true"] { border-color: var(--color-flesh); }
 .playback { font: 500 15px var(--font-mono); }
 .playback[data-status="Playing"] { color: var(--color-eye); }
 .playback[data-status="Unavailable"] { font: 400 14px/1.5 var(--font-sans); color: var(--color-flesh); }
+/* The cue of the test: a count to the moment the cave would appear, then one clear change of colour at that moment. */
+.cue { margin: 0; padding: 6px 10px; width: fit-content; font: 500 15px var(--font-mono); color: var(--color-wing); border: 1px solid currentColor; }
+.cue[data-shown="true"] { color: var(--color-night); background: var(--color-eye); border-color: var(--color-eye); }
 .celebration :is(button, input):focus-visible { outline: 2px solid var(--color-cream); outline-offset: 2px; }
 
 @media (min-width: 900px) {
