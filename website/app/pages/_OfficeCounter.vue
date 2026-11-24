@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useIntervalFn, useVibrate } from '@vueuse/core'
 import { creatureKinds, creatures, loadedPercent, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment, Tally } from '#shared/office-experiment'
+import { unrest } from '#shared/office-unrest'
 
 // The desk computer's screen: the dashboard of a home lab that runs one service, the specimen loader.
 // The scene gives the place of the glass. Each key adds one specimen for everyone, and every device shows the same load.
@@ -13,6 +14,9 @@ const digits = new Intl.NumberFormat('en')
 const count = computed(() => specimenCount(experiment))
 const percent = computed(() => loadedPercent(experiment))
 const critical = computed(() => experiment.criticalAt !== null)
+// Near the target the chamber is not steady, and its log says so. COPY.md owns the two lines.
+const stage = computed(() => unrest(experiment).stage)
+const warnings = { Calm: '', Unstable: 'chamber: pressure above limit', Warning: 'chamber: WARNING: containment at risk' }
 const { vibrate } = useVibrate({ pattern: 8 })
 function press(kind: Creature) {
   if (!online || critical.value) return
@@ -64,7 +68,7 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
 
 <template>
   <div class="computer">
-  <section class="counter" :class="{ shown }" aria-label="Specimen loader" :inert="!shown">
+  <section class="counter" :class="{ shown }" :data-stage="stage" aria-label="Specimen loader" :inert="!shown">
     <!-- The run goes critical, and the computer fails as a home server fails. -->
     <div v-if="critical" class="panic" role="alert">
       <p>{{ stamp(0) }} chamber: load reached target</p>
@@ -99,7 +103,9 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
           <svg viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><polygon :points="`0,20 ${kindLine(kind)} 100,20`" /><polyline :points="kindLine(kind)" /></svg>
         </button>
       </div>
-      <p class="log" aria-hidden="true"><span>$ tail -f chamber.log</span>{{ last }}</p>
+      <!-- A warning takes the whole line, so a phone shows all of it. -->
+      <p v-if="stage !== 'Calm'" class="log"><strong class="warn" role="status">{{ warnings[stage] }}</strong></p>
+      <p v-else class="log" aria-hidden="true"><span>$ tail -f chamber.log</span>{{ last }}</p>
     </div>
     <div class="static" aria-hidden="true" />
   </section>
@@ -126,6 +132,10 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
 @keyframes counter-roll { to { background-position: 0 0, 0 130%; } }
 /* The static rises as the computer fails. */
 .counter:has(.panic) .static::before { opacity: .24; }
+/* Near the target the tube picks up more static, and the picture jumps now and then. In the warning the picture jumps more often. */
+.counter[data-stage='Unstable'] .static::before { opacity: .16; } .counter[data-stage='Warning'] .static::before { opacity: .22; }
+.counter[data-stage='Unstable'] .board { animation: counter-jolt 5s steps(1) infinite; } .counter[data-stage='Warning'] .board { animation: counter-jolt 2.4s steps(1) infinite; }
+@keyframes counter-jolt { 0%, 4%, 100% { translate: 0 0; } 1% { translate: .8cqw -.3cqw; } 2% { translate: -.6cqw .2cqw; } 3% { translate: .3cqw 0; } }
 .leave { position: fixed; z-index: 3; left: calc(var(--crt-left, 50vw - 5.5rem) + var(--crt-width, 11rem) / 2); top: calc(var(--crt-top, 30vh) + var(--crt-height, 20rem) + max(10px, var(--crt-height, 0px) * .07)); translate: -50% 0;
   display: flex; align-items: center; gap: .5em; min-height: 44px; padding: 0 1.1em; color: #2c2a1f; background: linear-gradient(#efe6c3, #d6cba3); border: 1px solid #8f8565; border-bottom-width: 3px; border-radius: 6px;
   box-shadow: 0 2px 8px #0006; font: 600 15px/1 var(--font-mono, ui-monospace, monospace); white-space: nowrap; cursor: pointer; touch-action: manipulation; opacity: 0; pointer-events: none; transition: opacity .2s ease-out; }
@@ -178,6 +188,10 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .keys button svg { width: 100%; height: 6.4cqw; }
 .log { display: flex; gap: 2cqw; overflow: hidden; color: var(--text); font-size: 2.7cqw; white-space: nowrap; }
 .log span { color: var(--dim); }
+.log .warn { color: var(--amber); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+/* The warning blinks once a second. */
+.counter[data-stage='Warning'] .log .warn { color: var(--rose); animation: counter-warn 1s steps(1) infinite; }
+@keyframes counter-warn { 50% { opacity: .35; } }
 .panic { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.6cqw; padding: 0 4cqw; color: #d7e0d8; background: #050706; font-size: 2.9cqw; line-height: 1.35; }
 .panic-cause { color: var(--rose); }
 .caret { font-style: normal; animation: counter-caret 1s steps(2, jump-none) infinite; }
@@ -228,5 +242,5 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   .glyph { font-size: clamp(30px, 9cqw, 40px); }
   .key-head strong { font-size: clamp(22px, 7cqw, 30px); }
 }
-@media (prefers-reduced-motion: reduce) { .counter, .leave, .bar i { transition: none; } .static::before, .static::after, .lamp.live, .caret { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .counter, .leave, .bar i { transition: none; } .static::before, .static::after, .lamp.live, .caret, .board, .log .warn { animation: none !important; } }
 </style>

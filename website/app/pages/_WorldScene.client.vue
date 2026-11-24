@@ -40,6 +40,7 @@ import { createCaveSnails } from '../cave-snails'
 import { createExperimentStage } from '../office-stage'
 import type { Station } from '../office-stage'
 import { defaultCodeLook } from '../office-swarm'
+import { beaconGlow, beaconTurns, tremor, unrest } from '#shared/office-unrest'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
@@ -612,7 +613,10 @@ watch(canvas, async (element) => {
     const criticalAge = run && run.criticalAt !== null ? Math.max(0, (serverClock() - run.criticalAt) / 1000) : undefined
     const critical = criticalAge !== undefined && criticalAge < criticalSceneSeconds ? criticalFrame(criticalAge, !faceMotion) : undefined
     const over = criticalAge !== undefined && !critical
-    const light = entranceLight(entrance) * (critical?.light ?? 1)
+    // Near the target the chamber is not steady. Now and then the room shakes and the tubes dip, until the critical scene takes both over.
+    const tense = unrest(over ? null : run)
+    const quake = critical ? undefined : tremor(elapsed, tense, !faceMotion)
+    const light = entranceLight(entrance) * (critical?.light ?? 1) * (quake?.light ?? 1)
     // The critical scene ends in the cave. Its artwork loads from the middle of the count, so the dark is short on a phone.
     if (run && !over && (critical || specimenCount(run) >= run.target / 2) && set === 'office' && !incoming) incoming = { name: 'lair', art: sceneSets.lair.load() }
     const look = mascotInLight(standing.stage.mascot, light)
@@ -782,6 +786,10 @@ watch(canvas, async (element) => {
       camera.rotateZ(Math.sin(criticalAge * 31) * 0.014 * critical.shake)
       camera.rotateX(Math.sin(criticalAge * 23 + 1) * 0.006 * critical.shake)
     }
+    if (quake && quake.shake > 0) {
+      camera.rotateZ(Math.sin(elapsed * 31) * 0.006 * quake.shake)
+      camera.rotateX(Math.sin(elapsed * 23 + 1) * 0.003 * quake.shake)
+    }
     camera.updateMatrixWorld()
     if (stage && run) {
       const frame = stage.update({ experiment: run, connected, station: atStation ?? 'room', critical, arc: criticalAge === undefined ? undefined : criticalArc(criticalAge, !faceMotion), eye: camera.position, over, delta, still: !faceMotion, mascot: stroll.position, marks: standing.world.marks })
@@ -832,7 +840,7 @@ watch(canvas, async (element) => {
     figure.rotation.y = meshPose ? 0 : stroll.heading
     // The audio hears scene time twice a second, so the office tube buzzes when its light flickers.
     if (environmentMotion.value) { elapsed += delta; if (Math.floor(elapsed * 2) !== Math.floor((elapsed - delta) * 2)) emit('time', elapsed) }
-    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value, light })
+    world.update({ time: elapsed, pressure: talking ? 0.25 : 0, settings: settings.value, light, beacon: { turns: beaconTurns(tense), glow: faceMotion ? beaconGlow(tense) : 0 } })
     if (faceMotion) faceElapsed += delta
     if (lastReaction !== reaction) { lastReaction = reaction; reactionStarted = faceElapsed }
     // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.

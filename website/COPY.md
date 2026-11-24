@@ -198,6 +198,7 @@ The header reads “chamber-01”, “loader”, and the presence line “{count
 The load reads “{percent}%”, “of specimens loaded”, “{count} / {target}”, and the rate “+{count}/s”.
 Each key has the spoken label “Add a {creature}. {count} so far.”
 The log line reads “$ tail -f chamber.log”, then the last change, such as “+3 🪰”.
+From four fifths of the target the log reads “chamber: pressure above limit” in place of the last change. From nine tenths it reads “chamber: WARNING: containment at risk”.
 When the run goes critical, the screen fails with this text. Each line starts with the count in brackets, as a kernel’s clock:
 “chamber: load reached target”. “Kernel panic - not syncing: All specimens will be loaded at once.”
 “* Hold still.” “* Do not press any key. It will not help.” “Loading everything _”

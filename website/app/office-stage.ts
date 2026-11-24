@@ -7,6 +7,7 @@ import { paintExperimentBoard } from '#shared/office-board'
 import { creatureKinds, creatures, loadedPercent, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
 import { arcGlow, arcLight } from '#shared/office-critical'
+import { unrest } from '#shared/office-unrest'
 import type { CriticalArc, CriticalFrame } from '#shared/office-critical'
 import { createSpecimenRain } from './office-rain'
 import { createJoinSwarm, defaultCodeLook } from './office-swarm'
@@ -232,8 +233,10 @@ export function createExperimentStage(plan: OfficePlan = officePlan, codeLook: C
       drawScreen(experiment, connected, critical !== undefined)
       const rained = rain.update({ run: experiment.run, tally: experiment.tally, delta, still, mascot, pull: critical?.pull, spurt: critical?.spurt, gone: over })
       const gathering = swarm.update(station === 'code' && !critical && !over, delta, still)
-      glow.material.opacity = (critical?.chamber ?? 0) * 0.85
-      surge.intensity = (critical?.chamber ?? 0) * 90
+      // Before it goes critical the chamber already burns a little behind its glass, more as the load nears the target.
+      const tense = critical ? 0 : unrest(experiment).level
+      glow.material.opacity = (critical?.chamber ?? 0) * 0.85 + tense * 0.14
+      surge.intensity = (critical?.chamber ?? 0) * 90 + tense * 10
       const struck = drawArc(critical ? arc : undefined, eye)
       return { busy: rained.busy || gathering || critical !== undefined, landed: rained.landed, struck }
     },
