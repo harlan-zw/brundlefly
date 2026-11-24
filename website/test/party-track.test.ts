@@ -87,8 +87,8 @@ test('the level starts at 0, is full from the hit through the hold, ends at 0, n
       assert.equal(samples.at(-1)!.level, 0, where)
       for (const [index, { at, level }] of samples.entries()) {
         assert.ok(level >= 0 && level <= 1, `${where}: level ${level} at ${at}`)
-        // The shortest fade is half a second, and the squared curve is never steeper than 2 per fade. That bounds a 10 ms step.
-        if (index > 0) assert.ok(Math.abs(level - samples[index - 1]!.level) <= 2 * 0.01 / lateFade + 1e-9, `${where}: jump at ${at}`)
+        // The shortest fade is half a second, and the cubed curve of the fade in is never steeper than 3 per fade. That bounds a 10 ms step.
+        if (index > 0) assert.ok(Math.abs(level - samples[index - 1]!.level) <= 3 * 0.01 / lateFade + 1e-9, `${where}: jump at ${at}`)
       }
     }
   }
@@ -96,7 +96,10 @@ test('the level starts at 0, is full from the hit through the hold, ends at 0, n
 
 test('a long fade in rises over its whole length: still quiet at the halfway point, and still rising just before the hit', () => {
   const plan = partyPlan(track({ leadIn: 14, chorusAt: 72 }), 14)!
-  assert.ok(partyLevel(plan, 7) <= 0.5, 'Too loud at half the fade')
+  // The fade in stays under the scene: a murmur at the halfway point, and under half its level two thirds of the way in.
+  assert.ok(partyLevel(plan, 7) <= 0.15, 'Too loud at half the fade')
+  assert.ok(partyLevel(plan, 14 * 2 / 3) < 0.5, 'Too loud at two thirds of the fade')
+  assert.ok(partyLevel(plan, 3) > 0, 'Silent three seconds in')
   assert.ok(partyLevel(plan, 12.6) < 0.9, 'Nearly full long before the hit')
   // Each second of the fade is louder than the one before it.
   for (let second = 1; second <= 14; second++) assert.ok(partyLevel(plan, second) > partyLevel(plan, second - 1), `No rise in second ${second}`)

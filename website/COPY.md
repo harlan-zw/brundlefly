@@ -247,7 +247,7 @@ The presenter page has a section titled “Celebration track”. The presenter c
 Its help reads “The file stays in this browser and is never uploaded. Choose it in the browser that drives the projector. Phones in the room stay silent.”
 The file field is “Track file”. Without a file it reads “No track chosen. Choose a song to play when the cave appears.” Its notices are “Track stored.” and “Track removed.” Its action is “Remove track”.
 The settings are “Chorus starts at”, “Tempo (BPM)”, “Fade in (seconds)”, “Plays for (seconds)”, and “Fade out (seconds)”.
-The chorus help reads “Seconds, or minutes and seconds, for example 1:23.5.” The fade help reads “The fade starts when the chamber starts to spit snails, and the chorus hits when the cave appears.”
+The chorus help reads “Seconds, or minutes and seconds, for example 1:23.5.” The fade help reads “The chorus hits when the cave appears, {seconds} seconds after the run goes critical. A fade in longer than that is cut to it.”
 The tempo action is “Tap tempo”, with “Tap at least four times on the beat.”, “Keep tapping on the beat.”, and “{bpm} BPM”.
 The test actions are “Test from the fade” and “Stop”. The status reads “Ready.”, “Waiting to start.”, or “Playing.”
 One line reads “Before the talk, select anything on the office page once, so the browser lets it play sound.”

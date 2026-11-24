@@ -12,7 +12,7 @@
 export type PartyTrack = { name: string, chorusAt: number, bpm: number, leadIn: number, playFor: number, fadeOut: number }
 type Setting = Exclude<keyof PartyTrack, 'name'>
 
-/** The settings of a new track. The fade starts when the chamber starts to spit snails, about 14 seconds before the cave appears. */
+/** The settings of a new track. The fade of 14 seconds starts when the chamber starts to spit snails. */
 export const partyDefaults: Omit<PartyTrack, 'name'> = { chorusAt: 0, bpm: 110, leadIn: 14, playFor: 45, fadeOut: 8 }
 /** The least and the most of each setting. Stored or typed values outside them are clamped. */
 export const partyLimits: Record<Setting, { least: number, most: number }> = {
@@ -75,17 +75,19 @@ export function partyPlan(track: PartyTrack, secondsUntilHit: number): PartyPlan
 /** Seconds from the start of playback to the end of the fade out. */
 export const partyLength = (plan: PartyPlan) => plan.fadeIn + plan.hold + plan.fadeOut
 
-// A squared curve. Loudness follows about the 0.6th power of the level, so the loudness rises almost evenly over the whole fade.
-// The level keeps rising until the fade ends: there is no early plateau.
+// The fade out is a squared curve. Loudness follows about the 0.6th power of the level, so the loudness falls almost evenly over the whole fade.
 const rise = (share: number) => share * share
+// The fade in is a cubed curve. The music is a murmur under the scene for the first half of the fade, at an eighth of its level at the middle,
+// and most of the rise comes in the last third, into the hit. A squared curve was heard too early. The level keeps rising until the fade ends.
+const creep = (share: number) => share * share * share
 
 /**
  * The level of the music, from 0 to 1, `sinceStart` seconds after playback started.
- * Both fades use a squared curve. The level is 0 before the start and after the end.
+ * The fade in is a cubed curve and the fade out a squared one. The level is 0 before the start and after the end.
  */
 export function partyLevel(plan: PartyPlan, sinceStart: number): number {
   if (!(sinceStart >= 0) || sinceStart >= partyLength(plan)) return 0
-  if (sinceStart < plan.fadeIn) return rise(sinceStart / plan.fadeIn)
+  if (sinceStart < plan.fadeIn) return creep(sinceStart / plan.fadeIn)
   const fading = sinceStart - plan.fadeIn - plan.hold
   if (fading < 0) return 1
   return rise(Math.max(0, 1 - fading / plan.fadeOut))

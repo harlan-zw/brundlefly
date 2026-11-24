@@ -9,7 +9,7 @@ import { useEventListener, useIntervalFn, useLocalStorage, useMediaQuery, useTim
 import { joinedByPath, pathForSet, setForPath } from '#shared/travel'
 import { criticalSceneSeconds, phase, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
-import { crashSeconds, criticalDarkAt, criticalSpurtAt } from '#shared/office-critical'
+import { crashSeconds, criticalDarkAt } from '#shared/office-critical'
 import { caveLines, countingLine, criticalLines, lineSeconds } from '#shared/office-script'
 import type { Spoken } from '#shared/office-script'
 import type { ActionSound } from '#shared/action-sounds'
@@ -118,7 +118,8 @@ watch(run, (now, before) => {
 })
 // The critical scene, timed from the server's clock. His lines fall at their moments, and the cave follows the dark.
 let spoken = 0
-// The presenter's song, if this browser holds one. It fades in from the moment the chamber spits snails, and its chorus hits as the cave appears.
+// The presenter's song, if this browser holds one. It fades in under the critical scene, and its chorus hits as the cave appears.
+// The song is asked for as the scene starts, so a fade as long as the scene can run in full. The default fade starts as the chamber spits snails.
 // A phone holds no song, so this does nothing there.
 const song = usePartyTrack()
 let sung = false
@@ -131,7 +132,7 @@ const { pause: endScene, resume: playScene } = useIntervalFn(() => {
   const age = (office.clock() - state.criticalAt) / 1000
   for (; spoken < criticalLines.length && age >= criticalLines[spoken]!.at; spoken++) if (age < criticalLines[spoken]!.at + 2) say(criticalLines[spoken]!)
   if (age >= crashSeconds) station.value = 'room'
-  if (!sung && age >= criticalSpurtAt && !sound.value.muted) { sung = true; song.play(criticalSceneSeconds - age) }
+  if (!sung && !sound.value.muted) { sung = true; song.play(criticalSceneSeconds - age) }
   if (age >= criticalDarkAt) leave(state)
 }, 100, { immediate: false })
 const caveTimers: ReturnType<typeof setTimeout>[] = []

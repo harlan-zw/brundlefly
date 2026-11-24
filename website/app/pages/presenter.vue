@@ -2,7 +2,7 @@
 import { computed, reactive, ref, shallowRef, watch } from 'vue'
 import { useIntervalFn, useTimeoutFn } from '@vueuse/core'
 import { useHead } from '#imports'
-import { creatures, phase, specimenCount, targetLimits } from '#shared/office-experiment'
+import { creatures, criticalSceneSeconds, phase, specimenCount, targetLimits } from '#shared/office-experiment'
 import type { Phase } from '#shared/office-experiment'
 import { formatClock, parseClock, partyFileBytes, partyLimits, tapRestartMs, tapTempo } from '#shared/party-track'
 import type { PartyTrack } from '#shared/party-track'
@@ -395,7 +395,7 @@ function testFade() {
           </div>
 
           <p class="help wide">
-            The fade starts when the chamber starts to spit snails, and the chorus hits when the cave appears.
+            The chorus hits when the cave appears, {{ criticalSceneSeconds }} seconds after the run goes critical. A fade in longer than that is cut to it.
           </p>
         </form>
 
