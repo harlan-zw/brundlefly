@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { arcCount, arcGlow, arcSeconds, crashSeconds, criticalAct, criticalAddressAt, criticalArc, criticalDarkAt, criticalFrame, criticalSpurtAt, criticalStruckAt, criticalTimes } from '../shared/office-critical.ts'
+import { arcCount, arcGlow, arcLight, arcSeconds, crashSeconds, criticalAct, criticalAddressAt, criticalArc, criticalDarkAt, criticalFrame, criticalSpurtAt, criticalStruckAt, criticalTimes } from '../shared/office-critical.ts'
 import type { CriticalFrame } from '../shared/office-critical.ts'
 import { criticalSceneSeconds } from '../shared/office-experiment.ts'
 
@@ -207,4 +207,32 @@ test('the last arcs kill the tubes: each leaves them lower, and they are out whe
   const settled = starts.map(start => criticalFrame(start + arcSeconds + 0.02, false).light)
   for (let index = 1; index < settled.length; index++) assert.ok(settled[index]! < settled[index - 1]!)
   assert.equal(criticalFrame(criticalStruckAt, false).light, 0)
+})
+
+test('the light of the room changes direction no more than six times in any second: the tubes and the green of the arcs together', () => {
+  // The two lights that fill the room: the tubes, and the green light an arc throws. Each is counted where it turns from rising to falling or back.
+  const turns = (levels: readonly number[]) => {
+    const marks: number[] = []
+    let way = 0
+    for (let index = 1; index < levels.length; index++) {
+      const now = Math.sign(levels[index]! - levels[index - 1]!)
+      if (now !== 0 && now !== way) { marks.push(index); way = now }
+    }
+    return marks
+  }
+  const samples = sample(false)
+  const green = samples.map(({ age }) => { const arc = criticalArc(age, false); return arc ? arcLight(arc.life) : 0 })
+  const window = Math.round(1 / step)
+  for (const [name, levels] of [['tubes', samples.map(({ frame }) => frame.light)], ['green', green]] as const) {
+    const marks = turns(levels)
+    assert.ok(marks.length >= 6, `The ${name} do flicker.`)
+    for (const [index, mark] of marks.entries()) {
+      const inSecond = marks.slice(index).filter(other => other - mark <= window).length
+      assert.ok(inSecond <= 6, `The ${name} turn ${inSecond} times in the second from ${(mark * step).toFixed(2)} s.`)
+    }
+  }
+  // One arc is one pulse of green: it never rises again once it falls.
+  for (let life = 0.01; life <= 1; life += 0.01) assert.ok(arcLight(life) <= arcLight(life - 0.01) + 1e-9)
+  assert.equal(arcLight(0), 1)
+  assert.equal(arcLight(1), 0)
 })

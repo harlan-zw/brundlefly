@@ -6,7 +6,7 @@ import type { SetMarks } from '@brundlefly/brand/shared/scene-set'
 import { paintExperimentBoard } from '#shared/office-board'
 import { creatureKinds, creatures, loadedPercent, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
-import { arcGlow } from '#shared/office-critical'
+import { arcGlow, arcLight } from '#shared/office-critical'
 import type { CriticalArc, CriticalFrame } from '#shared/office-critical'
 import { createSpecimenRain } from './office-rain'
 import { createJoinSwarm, defaultCodeLook } from './office-swarm'
@@ -163,7 +163,8 @@ export function createExperimentStage(plan: OfficePlan = officePlan, codeLook: C
   let struckArc = -1
   function drawArc(arc: CriticalArc | undefined, eye: Vector3) {
     const glow = arc ? arcGlow(arc.life) : 0
-    strike.intensity = glow * 55
+    // The bolt crackles. The light it throws on the room is one pulse, so the room does not flash twice for one arc.
+    strike.intensity = (arc ? arcLight(arc.life) : 0) * 55
     bolts.forEach((bolt, fork) => {
       bolt.visible = arc !== undefined && glow > 0
       if (!arc || glow <= 0) return

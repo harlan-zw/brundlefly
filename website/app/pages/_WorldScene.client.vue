@@ -656,6 +656,8 @@ watch(canvas, async (element) => {
     const awayStop = layout.walk.reduce((best, point, index) => point[1] > layout.walk[best]![1] ? index : best, 0)
     // The critical scene moves him: to the chamber, and then to the computer.
     const scripted = critical && criticalAge !== undefined ? criticalAct(criticalAge) : undefined
+    // With motion off he has no steps to run with. He stays at the chamber for the whole scene, and does not jump to the desk in the middle of it.
+    const scriptedPlace = scripted ? faceMotion ? scripted.place : 'Chamber' as const : undefined
     // While specimens fall he stops where he is and counts them. A few quiet seconds send him back to his round.
     const counted = run && !over ? specimenCount(run) : 0
     if (counted !== tallySeen) { if (tallySeen >= 0 && counted > tallySeen) tallyAt = elapsed; tallySeen = counted }
@@ -663,7 +665,7 @@ watch(canvas, async (element) => {
     if (!busy) busyPlace = undefined
     else busyPlace ??= [stroll.position[0], stroll.position[1]]
     const spot = !run || journey || act.held ? undefined
-      : scripted ? scripted.place === 'Computer' && stage ? stage.deskSpot : layout.walk[chamberStop]!
+      : scriptedPlace ? scriptedPlace === 'Computer' && stage ? stage.deskSpot : layout.walk[chamberStop]!
         : station === 'code' && !over ? layout.walk[awayStop]! : busyPlace
     const spotKey = spot ? spot.join() : ''
     if (spotKey !== heldAt) {
@@ -815,9 +817,9 @@ watch(canvas, async (element) => {
       // At a station of his round he faces his work, until a visitor has his attention. At the switch he faces it. After the strike he turns back to the visitor on his feet.
       const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing
         // Where he waits he keeps his own three-quarter turn. A turn to the wall there put his head through his shoulder when he looked round.
-        : scripted?.work === 'Type' && stage && attentionNow === 'free' ? stage.deskFacing
+        : scripted?.work === 'Type' && scriptedPlace === 'Computer' && stage && attentionNow === 'free' ? stage.deskFacing
           // At the chamber he turns side-on to it, as he does for a jar, so he watches the machine and the visitor still sees his face.
-          : scripted?.place === 'Chamber' && attentionNow === 'free' ? layout.walkFacings?.[chamberStop]
+          : scriptedPlace === 'Chamber' && attentionNow === 'free' ? layout.walkFacings?.[chamberStop]
             : counting ? undefined : workFacing(attentionNow) }
       // With motion off he has no steps to turn with, so he stands where the turn would end.
       turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)

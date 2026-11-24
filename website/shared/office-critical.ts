@@ -82,7 +82,12 @@ export function criticalArc(age: number, still: boolean): CriticalArc | undefine
   if (index < 0 || age - arcTimes[index]! >= arcSeconds) return
   return { index, life: (age - arcTimes[index]!) / arcSeconds }
 }
-/** How bright an arc is through its life, from 0 to 1: it strikes, dips, strikes again, and dies. */
+/**
+ * How much green light an arc throws on the room through its life, from 0 to 1: one pulse that holds and dies.
+ * The room's light must not flash more than three times a second, and this light fills the room while the tubes are down. So it never rises twice in one arc.
+ */
+export const arcLight = (life: number) => life < 0 || life >= 1 ? 0 : life < 0.5 ? 1 : (1 - life) / 0.5
+/** How bright the thin bolt of an arc is through its life, from 0 to 1: it strikes, dips, strikes again, and dies. The bolt is a small part of the picture. */
 export const arcGlow = (life: number) => life < 0 || life >= 1 ? 0 : life < 0.14 ? 1 : life < 0.3 ? 0.25 : life < 0.6 ? 1 : (1 - life) / 0.4
 
 // The tubes flicker with the arcs. Each arc takes them down for as long as it burns, by a share that differs from arc to arc, as old tubes do.
