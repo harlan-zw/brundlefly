@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { officePlan } from '../layers/brand/shared/office-layout.ts'
-import { jarLift, keyTaps, machineSmacks, mannerismDuration, markerStrokes, poseMannerisms, roundHabits, stationMannerism } from '../layers/brand/shared/mannerism.ts'
+import { keyTaps, machineSmacks, mannerismDuration, markerStrokes, poseMannerisms, roundHabits, stationMannerism } from '../layers/brand/shared/mannerism.ts'
 import { advanceTurn, settleTurn, startStroll, startTurn, workLimit } from '../layers/brand/shared/mascot-stroll.ts'
 import type { Stroll } from '../layers/brand/shared/mascot-stroll.ts'
 import { headCounterTurn, neckLimit } from '../layers/brand/shared/mascot-mesh.ts'
@@ -148,24 +148,6 @@ test('at a station he turns side-on, far enough to work and not so far that his 
 
 /** Ages through a habit, a hundredth of a second apart. */
 const agesOf = (tag: 'TendJar' | 'SmackMachine' | 'TrackFly') => Array.from({ length: Math.floor(mannerismDuration({ _tag: tag }) * 100) + 1 }, (_, index) => index / 100)
-
-test('tending a jar, he takes it from the shelf, lifts it to his eyes, and puts it back', () => {
-  const hand = (age: number) => poseMannerisms([{ mannerism: { _tag: 'TendJar' }, age, side: 1 }]).hands.left
-  const duration = mannerismDuration({ _tag: 'TendJar' })
-  // His hand is on the jar only in the middle of the habit. As he reaches for it, and after he lets it go, the hand is empty.
-  assert.ok(hand(0.9) && hand(0.9)!.holds === undefined, 'He holds the jar before he takes it.')
-  assert.ok(hand(duration - 0.7) && hand(duration - 0.7)!.holds === undefined, 'He still holds the jar after he puts it back.')
-  assert.equal(hand(duration / 2)?.holds, 'Jar')
-  // The jar leaves the shelf, reaches his eyes, and comes back to the shelf. While it is off the shelf, it is in his hand.
-  assert.equal(jarLift(0), 0)
-  assert.equal(jarLift(duration), 0)
-  assert.ok(Math.max(...agesOf('TendJar').map(jarLift)) > 0.999)
-  for (const age of agesOf('TendJar')) if (jarLift(age) > 0) assert.equal(hand(age)?.holds, 'Jar', `the jar floats at ${age} s`)
-  // With the jar at his eyes, his working arm is higher than when he reaches for it.
-  const shoulder = (age: number) => poseMannerisms([{ mannerism: { _tag: 'TendJar' }, age, side: 1 }]).turns['left-shoulder']![0]
-  const lifted = agesOf('TendJar').find(age => jarLift(age) > 0.999)!
-  assert.ok(shoulder(lifted) < shoulder(1.2) - 0.2, `the lifted arm turns ${shoulder(lifted)} and the reaching arm ${shoulder(1.2)}`)
-})
 
 test('at the vending machine he smacks it twice, the second blow harder, and draws his arm back before each', () => {
   const ages = agesOf('SmackMachine')

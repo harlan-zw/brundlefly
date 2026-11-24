@@ -102,7 +102,7 @@ export const officePlan: OfficePlan = {
   // He starts and stays on the right of the room. A body his size hides the whiteboard and the computer from every spot on the left, and visitors must see both.
   start: [1.4, -0.3],
   exit: [3.1, -1],
-  // His round is slow: he takes a jar from the shelf and looks into it, follows a fly, smacks the vending machine, and reads his palm.
+  // His round is slow: he turns a jar on the shelf and looks into it, follows a fly, smacks the vending machine, and reads his palm.
   // Each stop is far longer than its habit, so he stands a while before and after it.
   // At the two stations he turns side-on to the viewer, so his hands are on his work and his face stays in view. He stays there longest.
   // A turn further round hides his face behind a wing, and a lifted arm then seems to grow from his neck.

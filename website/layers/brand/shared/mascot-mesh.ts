@@ -92,50 +92,6 @@ function createMarker(middle: Finger | undefined) {
   // The model's own release frees the marker with every other mesh under the scene.
   return marker
 }
-/**
- * A specimen jar for one long hand, hidden until a habit has the hand hold it. He takes it from above: his palm is on its lid, and his long fingers close down round it.
- * The jar hangs from his palm and stays upright however his wrist turns, as a jar held by its lid does. A jar fixed to his hand lay on its side when he reached for it.
- * The office model is one mesh, so no jar leaves the shelf: this is the jar he takes from behind the others.
- */
-function createJar(middle: Finger | undefined) {
-  const hand = middle?.root.parent
-  if (!middle || !hand) return undefined
-  const along = middle.root.position.clone()
-  const reach = along.length()
-  const tall = reach * 1.7
-  const wide = reach * 0.5
-  const glass = new Mesh(new CylinderGeometry(wide, wide, tall, 12, 1, true), new MeshStandardMaterial({ color: '#cfe6dc', roughness: 0.12, transparent: true, opacity: 0.38, depthWrite: false }))
-  const lid = new Mesh(new CylinderGeometry(wide * 1.06, wide * 1.06, tall * 0.12, 12), new MeshStandardMaterial({ color: '#3d4a45', roughness: 0.6 }))
-  lid.position.y = tall * 0.5
-  const floor = new Mesh(new CylinderGeometry(wide, wide, tall * 0.04, 12), new MeshStandardMaterial({ color: '#9fb5ab', roughness: 0.3 }))
-  floor.position.y = -tall * 0.5
-  // What floats in it. He does not say what it is.
-  const specimen = new Mesh(new CylinderGeometry(wide * 0.5, wide * 0.36, tall * 0.5, 7), new MeshStandardMaterial({ color: '#aa604b', roughness: 0.8 }))
-  specimen.position.y = -tall * 0.12
-  const jar = new Group()
-  jar.name = 'held-jar'
-  jar.add(specimen, floor, lid, glass)
-  const forward = along.clone().normalize()
-  const across = new Vector3(1, 0, 0).applyQuaternion(middle.root.quaternion).normalize()
-  const palm = across.clone().cross(forward).normalize()
-  // The point of his palm that rests on the lid, in the hand's own frame.
-  // The jar is as wide as his palm is long, so its middle is under the middle of his palm. His knuckles are then at its rim, and his fingers go down its outside.
-  const grip = along.clone().multiplyScalar(0.5).addScaledVector(palm, reach * 0.22)
-  jar.visible = false
-  hand.add(jar)
-  const turned = new Quaternion(), down = new Vector3()
-  /** Hangs the jar from his palm, upright in the world. The scene calls it after his arm has its pose. */
-  const hang = () => {
-    hand.updateWorldMatrix(true, false)
-    hand.getWorldQuaternion(turned).invert()
-    // A cylinder stands along y, so this turn stands it up in the world.
-    jar.quaternion.copy(turned)
-    // The lid hangs a little under his palm, so his bent hand does not sink into it.
-    jar.position.copy(grip).addScaledVector(down.set(0, -1, 0).applyQuaternion(turned), tall * 0.5 + reach * 0.3)
-  }
-  // The model's own release frees the jar with every other mesh under the scene.
-  return { jar, hang }
-}
 type FaceJoint = { joint: Object3D, rest: Vector3, unit: number }
 /**
  * The relief rig's face joints, each optional. `unit` is one face unit of the relief rig in the joint's own units,
@@ -265,7 +221,6 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
   const fingers = bodyJoints ? findFingers(scene) : undefined
   const markers = fingers ? { left: createMarker(fingers.left[2]), right: createMarker(fingers.right[2]) } : undefined
-  const jars = fingers ? { left: createJar(fingers.left[2]), right: createJar(fingers.right[2]) } : undefined
   // The fit is in place, so each joint's parent has its final scale inside the mascot.
   root.updateMatrixWorld(true)
   const feet = bodyJoints ? [bodyJoints.get('left-foot')!, bodyJoints.get('right-foot')!] : []
@@ -632,16 +587,11 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
           0, Math.sin(phase + index * 1.7) * 0.07 * body.calm)
         tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2 + depth.bounce * 0.09, 0, 0)
       })
-      // A habit closes his fingers: on a marker, round a jar, or one at a time on the keys.
+      // A habit closes his fingers: on a marker, or one at a time on the keys.
       if (fingers) for (const side of ['left', 'right'] as const) {
         const hand = input.mannerism?.hands[side]
         const marker = markers?.[side]
         if (marker) marker.visible = hand?.holds === 'Marker'
-        const held = jars?.[side]
-        if (held) {
-          held.jar.visible = hand?.holds === 'Jar'
-          if (held.jar.visible) held.hang()
-        }
         fingers[side].forEach((finger, index) => {
           if (!finger) return
           const close = Math.min(1, Math.max(0, (hand?.curl ?? 0) + (hand?.taps?.[index] ?? 0)))
