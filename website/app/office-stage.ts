@@ -9,7 +9,8 @@ import type { Creature, Experiment } from '#shared/office-experiment'
 import { arcGlow } from '#shared/office-critical'
 import type { CriticalArc, CriticalFrame } from '#shared/office-critical'
 import { createSpecimenRain } from './office-rain'
-import { createJoinSwarm } from './office-swarm'
+import { createJoinSwarm, defaultCodeLook } from './office-swarm'
+import type { CodeLook } from './office-swarm'
 
 /**
  * Where the visitor looks in the office. `room` is the room's own view. `computer` is the screen of the desk computer, where the counter's keys are.
@@ -39,11 +40,11 @@ export type StageInput = {
   marks: SetMarks | undefined
 }
 
-export function createExperimentStage(plan: OfficePlan = officePlan) {
+export function createExperimentStage(plan: OfficePlan = officePlan, codeLook: CodeLook = defaultCodeLook) {
   const group = new Group()
   group.name = 'Office experiment'
   const rain = createSpecimenRain(plan)
-  const swarm = createJoinSwarm(plan)
+  const swarm = createJoinSwarm(plan, codeLook)
   group.add(rain.group, swarm.group)
 
   // The computer's screen, as the room shows it. The counter's keys lie over it when the visitor sits at the computer.
@@ -188,6 +189,10 @@ export function createExperimentStage(plan: OfficePlan = officePlan) {
     return fresh
   }
 
+  // He stands a body's depth in front of the desk, and beside the monitor, so the failing screen stays in view past him.
+  const deskProp = plan.props.find(prop => prop._tag === 'Desk')
+  const deskSpot: readonly [x: number, z: number] = deskProp ? [glass.centre.x + 0.7, deskProp.position[2] + deskProp.size[2] / 2 + 1.5] : plan.start
+
   let board: { marks: SetMarks, key: string } | undefined
   const hitPoint = new Vector3()
   const inRect = (ray: Ray, centre: Vector3, width: number, height: number) => {
@@ -201,6 +206,12 @@ export function createExperimentStage(plan: OfficePlan = officePlan) {
   return {
     group,
     glass,
+    /** Where he stands to work the computer's keys, and the way he faces there: side-on to the desk, as he types. */
+    deskSpot,
+    deskFacing: -1.5,
+    /** The look of the join code, and the call that changes it while it shows. */
+    codeLook: swarm.look,
+    setCodeLook: swarm.setLook,
     /** The station a pointer ray chooses: the monitor, or the chamber window. */
     stationAt(ray: Ray): Station | undefined {
       if (inRect(ray, glass.centre, glass.width + 0.24, glass.height + 0.3)) return 'computer'

@@ -209,19 +209,23 @@ The whiteboard shows the count with no letter and no number.
 Brundlefly speaks these lines over his head. They open no dialog.
 `shared/office-script.ts` holds them. A new or changed line needs the owner’s review.
 
-| Moment | Line |
-| --- | --- |
-| First specimen | One. I count things now. Keep going. (“{count}.” when the first state holds more than one.) |
-| A quarter of the target | {count}. The chamber is warming up. |
-| Half | Halfway. My small hands are rubbing. Ignore them. |
-| Three quarters | I know that hum. I went in alone. |
-| Nine tenths | Nearly. Decide which parts you want to keep. |
-| Critical | That is the number. Hold still. |
-| The chamber spits snails | Uh oh. That is not right. |
-| The snails keep coming | It is not stopping. |
-| The tubes go out | You will remember the hum. Little else. |
-| The cave, first | There you are. You woke up. Good. |
-| The cave, second | {count} specimens went in. Snails came out. Your turn. |
+| Moment | Line | What he does |
+| --- | --- | --- |
+| First specimen | One. I count things now. Keep going. (“{count}.” when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
+| A quarter of the target | {count}. The chamber is warming up. | He looks toward the light of the chamber. |
+| Half | Halfway. My small hands are rubbing. Ignore them. | His small hands rub together. |
+| Three quarters | I know that hum. I went in alone. | He goes very still. |
+| Nine tenths | Nearly. Decide which parts you want to keep. | He checks an empty palm. |
+| Critical | That is the number. Hold still. | He runs to the chamber, turns side-on to it, and leans in. |
+| The chamber spits snails | Uh oh. That is not right. | His jaw catches and his wings buzz. |
+| The snails keep coming | It is not stopping. | He runs to the computer and hammers its keys. |
+| Before the tubes go out | You will remember the hum. Little else. | He gives up the keys, turns to the visitor, and leans closer. |
+| The cave, first | There you are. You woke up. Good. | He dances. |
+| The cave, second | {count} specimens went in. Snails came out. Your turn. | He leans closer. |
+
+He is never idle while he speaks: each line has a gesture, and the scene performs it as the line appears.
+Between his lines he counts during the count: he looks up, reads his palm, writes in the air, glances at the chamber, and rubs his small hands.
+A wing of his twitches at each green arc.
 
 A run with one specimen reads “One specimen went in.” A run with none omits the count.
 At the computer and at the join code, one button reads “Back to the room”.

@@ -15,6 +15,20 @@ export const criticalSpurtAt = lit.surge + lit.pull + lit.lull
 export const criticalStruckAt = criticalSpurtAt + lit.spurt + lit.strike
 /** Seconds into the scene when the picture is fully dark. The stage asks for the cave from here. */
 export const criticalDarkAt = criticalStruckAt + lit.flash
+/** Seconds into the scene when he leaves the chamber and runs to the computer: the snails have come for a while, and he must stop them. */
+export const criticalRushAt = criticalSpurtAt + 1.8
+/** Seconds into the scene when he gives up the keys and turns to the visitor. */
+export const criticalAddressAt = criticalStruckAt - 1.7
+/**
+ * What he does in the scene, so he is never idle while it runs. `place` is where he stands or runs to. `work` is what his body does there:
+ * `Peer`, he leans in to the chamber as it draws the specimens in. `Flinch`, it spits snails at him and his wings buzz.
+ * `Type`, he hammers the keys of the computer to stop it. `Address`, he turns from the keys to the visitor.
+ */
+export type CriticalAct = { place: 'Chamber' | 'Computer', work: 'Peer' | 'Flinch' | 'Type' | 'Address' }
+export const criticalAct = (age: number): CriticalAct =>
+  age < criticalSpurtAt ? { place: 'Chamber', work: 'Peer' } : age < criticalRushAt ? { place: 'Chamber', work: 'Flinch' }
+    : age < criticalAddressAt ? { place: 'Computer', work: 'Type' } : { place: 'Computer', work: 'Address' }
+
 /** Seconds of the scene that a visitor at the computer stays there. Its screen fails, and then the view returns to the room. */
 export const crashSeconds = 1.3
 

@@ -1,4 +1,4 @@
-import { CanvasTexture, Group, InstancedMesh, Mesh, MeshBasicMaterial, Object3D, Path, PlaneGeometry, Shape, ShapeGeometry, SRGBColorSpace, Vector3 } from 'three'
+import { CanvasTexture, Color, Group, InstancedMesh, Mesh, MeshBasicMaterial, Object3D, Path, PlaneGeometry, Shape, ShapeGeometry, SRGBColorSpace, Vector3 } from 'three'
 import { officePlan } from '@brundlefly/brand/shared/office-layout'
 import type { OfficePlan } from '@brundlefly/brand/shared/office-layout'
 import { joinAddress, joinCode, quietZone } from '#shared/join-code'
@@ -24,7 +24,20 @@ const shellTint = 0x4a5650
 const smooth = (value: number) => { const share = Math.max(0, Math.min(1, value)); return share * share * (3 - 2 * share) }
 const chance = (index: number, salt: number) => { const value = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453; return value - Math.floor(value) }
 
-export function createJoinSwarm(plan: OfficePlan = officePlan) {
+/**
+ * How the code reads against the glass. `glass` is how solid the light behind the symbol is, from 0, clear glass, to 1.
+ * `bugs` is how bright the beetles are, from 0, dark shells on a pale ground, to 1, shells that glow on smoked glass. The ground darkens as they brighten.
+ * A scanner needs one of the two to carry the contrast. The balance is the owner's to find on a real phone.
+ */
+export type CodeLook = { glass: number, bugs: number }
+export const defaultCodeLook: CodeLook = { glass: 1, bugs: 0 }
+// A beetle at full glow, and the ink of the address at each end.
+const glowColour = new Color('#DFFFC8')
+const darkInk = '#1C2620'
+const smokeColour = new Color('#060D0A')
+
+export function createJoinSwarm(plan: OfficePlan = officePlan, look: CodeLook = defaultCodeLook) {
+  let { glass, bugs } = look
   const group = new Group()
   group.name = 'Join code'
   group.visible = false
@@ -51,22 +64,28 @@ export function createJoinSwarm(plan: OfficePlan = officePlan) {
     const { width, height } = sheet
     const scale = width / glassSize.width
     brush.clearRect(0, 0, width, height)
+    // The ground behind the symbol is as solid as `glass` says. It is pale under dark beetles, and turns to smoked glass as the beetles brighten:
+    // glowing beetles need a dark, plain ground, and the chamber behind clear glass is neither.
+    const ground = `#${new Color(glassColour).lerp(smokeColour, bugs).getHexString()}`
+    brush.globalAlpha = glass
     // Only the symbol and its quiet zone get light, as one soft-edged square. The rest of the window stays clear glass, and the chamber shows through it.
     const reach = side / 2 * scale
     const middle = { x: width / 2, y: height / 2 - strip / 2 * scale }
-    brush.shadowColor = glassColour
+    brush.shadowColor = ground
     brush.shadowBlur = module * 2.2 * scale
-    brush.fillStyle = glassColour
+    brush.fillStyle = ground
     brush.beginPath()
     brush.roundRect(middle.x - reach, middle.y - reach, reach * 2, reach * 2, module * 2 * scale)
     brush.fill()
     brush.shadowBlur = 0
     // The address stands on its own strip of light under the symbol.
-    brush.fillStyle = glassColour
+    brush.fillStyle = ground
     brush.beginPath()
     brush.roundRect(width / 2 - lit.width * 0.36 * scale, height / 2 + (lit.height / 2 - strip * 1.1) * scale, lit.width * 0.72 * scale, strip * 0.95 * scale, strip * 0.3 * scale)
     brush.fill()
-    brush.fillStyle = '#1C2620'
+    // The address is dark on the light, and light on clear glass.
+    brush.globalAlpha = 1
+    brush.fillStyle = bugs > 0.5 ? `#${glowColour.getHexString()}` : darkInk
     brush.font = `600 ${Math.round(strip * scale * 0.52)}px "IBM Plex Mono", ui-monospace, monospace`
     brush.textAlign = 'center'
     brush.textBaseline = 'middle'
@@ -92,6 +111,14 @@ export function createJoinSwarm(plan: OfficePlan = officePlan) {
   // One unit of the model is two shell widths.
   const unit = 2
   const material = new MeshBasicMaterial({ vertexColors: true, color: shellTint, toneMapped: false })
+  // The shells take their own dark colours at `bugs` 0, and move to one glowing colour as it rises.
+  const glow = { value: bugs }
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uGlow = glow
+    shader.uniforms.uGlowColour = { value: glowColour }
+    shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, uGlowColour, uGlow);')
+      .replace('void main() {', 'uniform float uGlow;\nuniform vec3 uGlowColour;\nvoid main() {')
+  }
   const swarm = new InstancedMesh(geometry, material, code.cells.length)
   swarm.frustumCulled = false
   swarm.renderOrder = 4
@@ -150,6 +177,7 @@ export function createJoinSwarm(plan: OfficePlan = officePlan) {
     drawn = gathered
     // The lamp comes on first, then they come to the light.
     panel.material.opacity = smooth(gathered * 3.5)
+    massMaterial.color.set(massColour).lerp(glowColour, bugs)
     // The mass grows under the beetles of a mark as the last of them stop.
     for (const mesh of masses) mesh.scale.setScalar(smooth((gathered - 0.8) / 0.2))
     beetles.forEach((beetle, index) => {
@@ -175,5 +203,13 @@ export function createJoinSwarm(plan: OfficePlan = officePlan) {
     group.removeFromParent()
   }
   /** The window as a click target, and the lit glass as the camera frames it. */
-  return { group, update, dispose, window: { centre: new Vector3(wx, wy, centre.z), width: windowProp.size[0], height: windowProp.size[1] }, lit: { centre, ...lit } }
+  /** Changes the look while the code shows, so the balance can be found by eye and by phone. */
+  function setLook(next: CodeLook) {
+    glass = Math.max(0, Math.min(1, next.glass))
+    bugs = Math.max(0, Math.min(1, next.bugs))
+    glow.value = bugs
+    paint()
+    drawn = -1
+  }
+  return { group, update, dispose, setLook, look: () => ({ glass, bugs }), window: { centre: new Vector3(wx, wy, centre.z), width: windowProp.size[0], height: windowProp.size[1] }, lit: { centre, ...lit } }
 }

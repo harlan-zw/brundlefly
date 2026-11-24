@@ -11,6 +11,7 @@ import { criticalSceneSeconds, phase, specimenCount } from '#shared/office-exper
 import type { Creature, Experiment } from '#shared/office-experiment'
 import { crashSeconds, criticalDarkAt, criticalSpurtAt } from '#shared/office-critical'
 import { caveLines, countingLine, criticalLines, lineSeconds } from '#shared/office-script'
+import type { Spoken } from '#shared/office-script'
 import type { ActionSound } from '#shared/action-sounds'
 import { useOfficeExperiment } from '../composables/useOfficeExperiment'
 import { usePartyTrack } from '../composables/usePartyTrack'
@@ -100,16 +101,20 @@ useEventListener('keydown', (event: KeyboardEvent) => { if (event.key === 'Escap
 // What he says over his head. A line stays for a few seconds and opens no dialog.
 const line = ref('')
 const { start: holdLine, stop: dropLine } = useTimeoutFn(() => { line.value = '' }, () => lineSeconds(line.value) * 1000, { immediate: false })
-function say(text: string) {
+// He never speaks with still hands: each line names a gesture, and the scene performs it as the line appears.
+function say({ text, beat: gesture }: Spoken) {
   line.value = text
   holdLine()
+  if (!gesture) return
+  beat.value = gesture
+  reaction.value++
 }
 // He counts aloud at the first specimen and at each milestone. A state that arrives with a count already is no milestone.
 watch(run, (now, before) => {
   if (now && now.criticalAt === null) counted = now.run
   if (!now || !before || now.run !== before.run || now.criticalAt !== null) return
-  const text = countingLine(specimenCount(before), specimenCount(now), now.target)
-  if (text && !talking.value) say(text)
+  const spoken = countingLine(specimenCount(before), specimenCount(now), now.target)
+  if (spoken && !talking.value) say(spoken)
 })
 // The critical scene, timed from the server's clock. His lines fall at their moments, and the cave follows the dark.
 let spoken = 0
@@ -124,7 +129,7 @@ const { pause: endScene, resume: playScene } = useIntervalFn(() => {
   const state = run.value
   if (!state || state.criticalAt === null) return endScene()
   const age = (office.clock() - state.criticalAt) / 1000
-  for (; spoken < criticalLines.length && age >= criticalLines[spoken]!.at; spoken++) if (age < criticalLines[spoken]!.at + 2) say(criticalLines[spoken]!.text)
+  for (; spoken < criticalLines.length && age >= criticalLines[spoken]!.at; spoken++) if (age < criticalLines[spoken]!.at + 2) say(criticalLines[spoken]!)
   if (age >= crashSeconds) station.value = 'room'
   if (!sung && age >= criticalSpurtAt && !sound.value.muted) { sung = true; song.play(criticalSceneSeconds - age) }
   if (age >= criticalDarkAt) leave(state)
@@ -172,7 +177,7 @@ function viewed(set: SetName) {
   const state = finished
   if (set !== 'lair' || !state) return
   finished = undefined
-  for (const { at, text } of caveLines(state)) caveTimers.push(setTimeout(() => { if (shown.value === 'lair' && !talking.value) say(text) }, at * 1000))
+  for (const spoken of caveLines(state)) caveTimers.push(setTimeout(() => { if (shown.value === 'lair' && !talking.value) say(spoken) }, spoken.at * 1000))
 }
 onScopeDispose(() => caveTimers.forEach(clearTimeout))
 // Each creature lands with its own small sound. Many land at once, so the sounds keep a short gap.

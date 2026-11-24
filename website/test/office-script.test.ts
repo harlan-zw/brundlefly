@@ -1,19 +1,20 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { caveLines, countingLine, criticalLines, leadingCreature, lineSeconds } from '../shared/office-script.ts'
-import { criticalDarkAt, criticalSpurtAt, criticalTimes } from '../shared/office-critical.ts'
+import { criticalAct, criticalAddressAt, criticalDarkAt, criticalRushAt, criticalSpurtAt, criticalTimes } from '../shared/office-critical.ts'
+import { beatMannerism } from '../layers/brand/shared/mannerism.ts'
 import { creatureKinds, criticalSceneSeconds, emptyExperiment } from '../shared/office-experiment.ts'
 import type { Creature, Experiment, Tally } from '../shared/office-experiment.ts'
 
 const experiment = (counts: Partial<Tally>): Experiment => ({ ...emptyExperiment(1), tally: { snail: 0, beetle: 0, fly: 0, cricket: 0, ...counts } })
-type Spoken = { count: number, line: string }
+type Spoken = { count: number, line: string, beat: string }
 /** Counts from zero to the target in batches of the given sizes, in turn, and keeps every line he says. */
 function walk(target: number, batches: readonly number[] = [1]): Spoken[] {
   const spoken: Spoken[] = []
   for (let count = 0, turn = 0; count < target; turn++) {
     const after = Math.min(target, count + batches[turn % batches.length]!)
     const line = countingLine(count, after, target)
-    if (line !== undefined) spoken.push({ count: after, line })
+    if (line !== undefined) spoken.push({ count: after, line: line.text, beat: line.beat })
     count = after
   }
   return spoken
@@ -58,20 +59,20 @@ test('he says nothing between milestones, when the count does not rise, or at th
 test('when one batch crosses two milestones he says the later one', () => {
   const half = countingLine(1499, 1500, 3000)!
   const nearly = countingLine(2699, 2700, 3000)!
-  assert.equal(countingLine(700, 1600, 3000), half)
-  assert.equal(countingLine(0, 1600, 3000), half, 'The milestone wins over the first line.')
-  assert.equal(countingLine(0, 2999, 3000), nearly)
-  assert.notEqual(half, nearly)
+  assert.deepEqual(countingLine(700, 1600, 3000), half)
+  assert.deepEqual(countingLine(0, 1600, 3000), half, 'The milestone wins over the first line.')
+  assert.deepEqual(countingLine(0, 2999, 3000), nearly)
+  assert.notEqual(half.text, nearly.text)
 })
 
 test('a line names the count as people read it, with no placeholder left', () => {
   for (const target of [50, 3000, 20000]) {
     for (const { line } of walk(target)) assert.doesNotMatch(line, /[{}]/, `At a target of ${target}: ${line}`)
   }
-  assert.match(countingLine(749, 750, 3000)!, /\b750\b/)
-  assert.match(countingLine(4999, 5000, 20000)!, /\b5,000\b/)
+  assert.match(countingLine(749, 750, 3000)!.text, /\b750\b/)
+  assert.match(countingLine(4999, 5000, 20000)!.text, /\b5,000\b/)
   // The first state of a run can hold several specimens. His first line names the count he has.
-  assert.match(countingLine(0, 7, 3000)!, /\b7\b/)
+  assert.match(countingLine(0, 7, 3000)!.text, /\b7\b/)
 })
 
 test('his critical lines come in order, inside the scene, before the picture goes black', () => {
@@ -116,6 +117,26 @@ test('he says that something is wrong while the chamber spits snails, not before
   const wrong = criticalLines.find(line => /not right/.test(line.text))
   assert.ok(wrong, 'He has a line for the fault')
   assert.ok(wrong.at > criticalSpurtAt && wrong.at < criticalSpurtAt + criticalTimes.spurt / 2)
+})
+
+test('every beat of his lines is a gesture he can perform, and each counting line has one', () => {
+  const counted = walk(3000)
+  // A counting line comes while he does his rounds. Without a gesture he would say it with still hands.
+  for (const { line, beat } of counted) assert.notEqual(beatMannerism(beat)._tag, 'None', `No gesture for: ${line}`)
+  assert.equal(new Set(counted.map(({ beat }) => beat)).size, counted.length, 'Two counting lines share a gesture.')
+  const scripted = [...criticalLines, ...caveLines(experiment({ fly: 40 }))]
+  for (const { text, beat } of scripted) if (beat) assert.notEqual(beatMannerism(beat)._tag, 'None', `No gesture for: ${text}`)
+})
+
+test('each critical line falls in the act it belongs to: the count, the fault, the keys, and the visitor', () => {
+  const works = criticalLines.map(({ at }) => criticalAct(at).work)
+  assert.deepEqual(works, ['Peer', 'Flinch', 'Type', 'Address'])
+  // He says the keys do nothing only after he had time to reach them and try.
+  const keys = criticalLines.find(line => /not stopping/.test(line.text))!
+  assert.ok(keys.at >= criticalRushAt + 2)
+  // His last line starts as he turns, so the visitor sees his face for all of it that the light allows.
+  const last = criticalLines.at(-1)!
+  assert.ok(last.at >= criticalAddressAt && last.at < criticalAddressAt + 0.5)
 })
 
 test('a longer line stays longer, between a floor for short lines and a ceiling for long ones', () => {

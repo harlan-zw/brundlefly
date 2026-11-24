@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { arcCount, arcGlow, arcSeconds, crashSeconds, criticalArc, criticalDarkAt, criticalFrame, criticalSpurtAt, criticalStruckAt, criticalTimes } from '../shared/office-critical.ts'
+import { arcCount, arcGlow, arcSeconds, crashSeconds, criticalAct, criticalAddressAt, criticalArc, criticalDarkAt, criticalFrame, criticalRushAt, criticalSpurtAt, criticalStruckAt, criticalTimes } from '../shared/office-critical.ts'
 import type { CriticalFrame } from '../shared/office-critical.ts'
 import { criticalSceneSeconds } from '../shared/office-experiment.ts'
 
@@ -144,4 +144,32 @@ test('an arc flares, dips, flares again, and dies, and reduced motion has no arc
   assert.equal(arcGlow(1), 0)
   for (let life = 0; life <= 1; life += 0.01) assert.ok(arcGlow(life) >= 0 && arcGlow(life) <= 1)
   for (let age = 0; age <= criticalSceneSeconds; age += 0.05) assert.equal(criticalArc(age, true), undefined)
+})
+
+test('he has work for every moment of the scene: he peers, flinches, types, and then speaks to the visitor', () => {
+  const works = sample(false).map(({ age }) => criticalAct(age).work)
+  // Each act comes once, in order, and none returns.
+  assert.deepEqual(works.filter((work, index) => work !== works[index - 1]), ['Peer', 'Flinch', 'Type', 'Address'])
+  // A clock that runs early or late still gives him work.
+  assert.equal(criticalAct(-3).work, 'Peer')
+  assert.equal(criticalAct(criticalSceneSeconds + 60).work, 'Address')
+})
+
+test('he stays at the chamber until it spits snails at him, and only then runs to the computer', () => {
+  for (const { age, frame } of sample(false)) {
+    const { place, work } = criticalAct(age)
+    assert.equal(place, work === 'Peer' || work === 'Flinch' ? 'Chamber' : 'Computer')
+    // He flinches only while snails come out.
+    if (work === 'Flinch') assert.ok(age >= criticalSpurtAt && frame.spurt >= 0)
+    if (place === 'Computer') assert.ok(frame.spurt > 0, `He left at ${age} s, before a snail came out.`)
+  }
+  // He has time to flinch before he runs, and time at the keys before he gives up.
+  assert.ok(criticalRushAt - criticalSpurtAt >= 1)
+  assert.ok(criticalAddressAt - criticalRushAt >= 4)
+})
+
+test('he turns to the visitor while the room is still lit, before the last strike takes the tubes', () => {
+  assert.ok(criticalAddressAt < criticalStruckAt)
+  assert.ok(criticalStruckAt - criticalAddressAt >= 1.5, 'He needs time to turn and be seen.')
+  assert.ok(criticalFrame(criticalAddressAt, false).shade < 0.5)
 })

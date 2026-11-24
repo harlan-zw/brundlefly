@@ -35,7 +35,7 @@ import type { ActionSound } from '#shared/action-sounds'
 import type { ConversationMood } from '#shared/conversation'
 import { criticalSceneSeconds, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
-import { crashSeconds, criticalArc, criticalFrame, criticalSpurtAt } from '#shared/office-critical'
+import { crashSeconds, criticalAct, criticalAddressAt, criticalArc, criticalFrame, criticalSpurtAt } from '#shared/office-critical'
 import { createCaveSnails } from '../cave-snails'
 import { createExperimentStage } from '../office-stage'
 import type { Station } from '../office-stage'
@@ -67,6 +67,22 @@ const mascotMode = resolveMascotMode(requestedMascot)
 const spriteMascot = mascotMode === 'sprite'
 // `?quality=low`, `medium`, or `high` overrides the tier that the device would get.
 const requestedQuality = useRoute().query.quality
+// The look of the join code can be tried from the address: `?glass=0.3&bugs=0.8` sets how solid the light behind the code is and how bright the beetles are, each from 0 to 1.
+// `?tune` also lets the arrow keys change them while the code shows: up and down for the glass, left and right for the beetles.
+const share = (value: unknown, otherwise: number) => { const read = typeof value === 'string' && value !== '' ? Number(value) : Number.NaN; return Number.isFinite(read) ? Math.max(0, Math.min(1, read)) : otherwise }
+const codeLook = ref({ glass: share(useRoute().query.glass, 1), bugs: share(useRoute().query.bugs, 0) })
+const tuning = 'tune' in useRoute().query
+let tuneCode: ((look: { glass: number, bugs: number }) => void) | undefined
+useEventListener('keydown', (event: KeyboardEvent) => {
+  if (!tuning || station !== 'code' || !event.key.startsWith('Arrow')) return
+  event.preventDefault()
+  const step = (value: number, by: number) => Math.round(Math.max(0, Math.min(1, value + by)) * 100) / 100
+  const { glass, bugs } = codeLook.value
+  codeLook.value = event.key === 'ArrowUp' ? { glass: step(glass, 0.05), bugs } : event.key === 'ArrowDown' ? { glass: step(glass, -0.05), bugs }
+    : event.key === 'ArrowRight' ? { glass, bugs: step(bugs, 0.05) } : { glass, bugs: step(bugs, -0.05) }
+  tuneCode?.(codeLook.value)
+  refresh?.()
+})
 const shownQuality = ref<string>()
 // The scene reports the mascot it shows. A mesh that cannot load shows the relief rig.
 const shownMascot = ref<MascotMode>()
@@ -535,7 +551,19 @@ watch(canvas, async (element) => {
   // During the count he keeps his round, on the right of the room. Two moments take him off it, to one stop where he waits:
   // in the critical scene he stands at the jars, under the chamber window, and while the join code shows he waits at the stop nearest the viewer,
   // behind the camera at the window, so no arm of his crosses the code.
-  let holding: number | undefined
+  // The spot he is sent to and holds, as text, so a new spot is seen as a change. It is empty while he walks his round.
+  let heldAt = ''
+  // The scene time when the count last rose. While specimens fall he stops where he is and counts them.
+  let tallyAt = Number.NEGATIVE_INFINITY
+  let tallySeen = -1
+  let busyPlace: readonly [number, number] | undefined
+  let busyAge = 0
+  // His work in the critical scene: which work it is, and for how long he has done it since he arrived.
+  let workKey = ''
+  let workAge = 0
+  let typeTaps = 0
+  // The moment of the last green arc. A wing of his jumps at each one.
+  let arcAt = Number.NEGATIVE_INFINITY
   let partyHeld = false
   // How far the view has moved from the room to a station, from 0 to 1, and the station's shot as the view moves to it.
   let stationShare = 0
@@ -626,16 +654,27 @@ watch(canvas, async (element) => {
     // A run with specimens takes him off his round. He walks to the whiteboard and keeps the count there.
     const chamberStop = Math.max(0, layout.walkHabits.indexOf('TendJar'))
     const awayStop = layout.walk.reduce((best, point, index) => point[1] > layout.walk[best]![1] ? index : best, 0)
-    const held = !run || journey || act.held ? undefined : critical ? chamberStop : station === 'code' && !over ? awayStop : undefined
-    if (held !== holding) {
-      holding = held
-      stroll = faceMotion || holding === undefined ? { ...stroll, destination: 0, activity: { _tag: 'Walking' } } : startStroll(layout.walk[holding]!, 0)
+    // The critical scene moves him: to the chamber, and then to the computer.
+    const scripted = critical && criticalAge !== undefined ? criticalAct(criticalAge) : undefined
+    // While specimens fall he stops where he is and counts them. A few quiet seconds send him back to his round.
+    const counted = run && !over ? specimenCount(run) : 0
+    if (counted !== tallySeen) { if (tallySeen >= 0 && counted > tallySeen) tallyAt = elapsed; tallySeen = counted }
+    const busy = Boolean(run && !critical && !over && counted > 0 && elapsed - tallyAt < 4)
+    if (!busy) busyPlace = undefined
+    else busyPlace ??= [stroll.position[0], stroll.position[1]]
+    const spot = !run || journey || act.held ? undefined
+      : scripted ? scripted.place === 'Computer' && stage ? stage.deskSpot : layout.walk[chamberStop]!
+        : station === 'code' && !over ? layout.walk[awayStop]! : busyPlace
+    const spotKey = spot ? spot.join() : ''
+    if (spotKey !== heldAt) {
+      heldAt = spotKey
+      stroll = faceMotion || !spot ? { ...stroll, destination: 0, activity: { _tag: 'Walking' } } : startStroll(spot, 0)
     }
     // He dances where he stands in the cave, and waits there in the dark for the music.
     const partying = beats !== undefined
     if (partying !== partyHeld) { partyHeld = partying; stroll = partying ? startStroll(layout.mascot, 0) : { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
-    const counting = holding !== undefined || partying
-    const route = partying ? [layout.mascot] : holding !== undefined ? [layout.walk[holding]!] : way ?? loop()
+    const counting = spot !== undefined || partying
+    const route = partying ? [layout.mascot] : spot ? [spot] : way ?? loop()
     const { framing, fieldOfView, fogScale } = resolveResponsiveCameraFraming(layout.camera.desktop, layout.camera.portrait, aspect)
     focusProgress = advanceConversationFocus(focusProgress, talking, delta, reduced.value === 'reduce')
     const blend = focusProgress * focusProgress * (3 - 2 * focusProgress)
@@ -710,7 +749,7 @@ watch(canvas, async (element) => {
       if (snailed) snails.update({ delta, still: !faceMotion, avoid: stroll.position, dance: dancing ? beats : undefined })
     }
     // A station of the office takes the view from the room: the computer's screen, or the chamber window. A talk and the critical scene give it back.
-    if (run && !stage) { stage = createExperimentStage(); scene.add(stage.group) }
+    if (run && !stage) { stage = createExperimentStage(undefined, codeLook.value); scene.add(stage.group); tuneCode = stage.setCodeLook }
     if (stage) stage.group.visible = run !== null
     // The critical scene takes the view back to the room. A visitor at the computer first sees its screen fail.
     const atStation = stage && run && station !== 'room' && !talking && !journey && (!critical || (station === 'computer' && criticalAge !== undefined && criticalAge < crashSeconds)) ? station : undefined
@@ -745,7 +784,7 @@ watch(canvas, async (element) => {
       const frame = stage.update({ experiment: run, connected, station: atStation ?? 'room', critical, arc: criticalAge === undefined ? undefined : criticalArc(criticalAge, !faceMotion), eye: camera.position, over, delta, still: !faceMotion, mascot: stroll.position, marks: standing.world.marks })
       stageBusy = frame.busy
       if (frame.landed) emit('landed', frame.landed)
-      if (frame.struck) emit('action', 'ArcZap')
+      if (frame.struck) { emit('action', 'ArcZap'); arcAt = faceElapsed }
       // The counter's keys lie on the glass of the monitor. The page hides them until the view has reached the screen.
       const { centre, width: glassWidth, height: glassHeight } = stage.glass
       projected.set(centre.x - glassWidth / 2, centre.y - glassHeight / 2, centre.z).project(camera)
@@ -764,7 +803,8 @@ watch(canvas, async (element) => {
     // A mesh without the relief rig's joints stands where the relief rig starts.
     // He walks a journey faster than his loop: he has somewhere to be.
     // He walks to the switch at that pace too.
-    const walkSpeed = settings.value.walkSpeed * walkPace * (journey || act.held || critical ? 1.7 : 1)
+    // In the critical scene he runs.
+    const walkSpeed = settings.value.walkSpeed * walkPace * (critical ? 2.3 : journey || act.held ? 1.7 : 1)
     // In the dark he has noticed the visitor, and he waits. On his way to the switch a pointer that rests on him does not stop him.
     const attentionNow = journey ? 'free' as const : talking ? 'talking' as const
       : entrance._tag === 'Dark' ? 'noticed' as const : act.held ? 'free' as const : hovered.value ? 'noticed' as const : 'free' as const
@@ -775,7 +815,10 @@ watch(canvas, async (element) => {
       // At a station of his round he faces his work, until a visitor has his attention. At the switch he faces it. After the strike he turns back to the visitor on his feet.
       const facing = { walkSpeed, rest: Math.abs(mascot.restHeading), limit: 1.3, attention: attentionNow, stand: act.facesSwitch ? entry?.facing
         // Where he waits he keeps his own three-quarter turn. A turn to the wall there put his head through his shoulder when he looked round.
-        : holding !== undefined ? undefined : workFacing(attentionNow) }
+        : scripted?.work === 'Type' && stage && attentionNow === 'free' ? stage.deskFacing
+          // At the chamber he turns side-on to it, as he does for a jar, so he watches the machine and the visitor still sees his face.
+          : scripted?.place === 'Chamber' && attentionNow === 'free' ? layout.walkFacings?.[chamberStop]
+            : counting ? undefined : workFacing(attentionNow) }
       // With motion off he has no steps to turn with, so he stands where the turn would end.
       turn = faceMotion ? advanceTurn(turn, stroll, { ...facing, delta }) : settleTurn(turn, { ...stroll, speed: 0 }, facing)
     }
@@ -792,7 +835,9 @@ watch(canvas, async (element) => {
     // A hovering visitor or the dialog draws the mesh's head to the camera. A hover alone adds a curious tilt, as on the relief rig.
     // Reduced motion and Motion off keep the pose.
     const ease = Math.min(1, delta * 4)
-    attention.weight = faceMotion ? attention.weight + (Number(talking || (hovered.value && !journey) || act.watches) - attention.weight) * ease : 0
+    // At the end of the critical scene he turns from the keys and speaks to the visitor.
+    const addressing = scripted?.work === 'Address'
+    attention.weight = faceMotion ? attention.weight + (Number(talking || (hovered.value && !journey) || act.watches || addressing) - attention.weight) * ease : 0
     attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused && !journey ? 0.07 : 0) - attention.tilt) * ease : 0
     const watch = { target: camera.position, weight: attention.weight, tilt: attention.tilt }
     if (mascot._tag === 'Mesh' && !meshPose) mascot.update(faceElapsed, watch)
@@ -839,16 +884,44 @@ watch(canvas, async (element) => {
       if (faceMotion && act.reach !== undefined) sided.push({ mannerism: { _tag: 'ReachSwitch' }, age: act.reach, side: switchSide })
       if (faceMotion && act.greet !== undefined) sided.push({ mannerism: { _tag: 'Greet' }, age: act.greet, side: switchSide })
       if (dancing && beats !== undefined) sided.push({ mannerism: { _tag: 'Dance' }, age: beats, weight: habitWeight, side })
-      // In the critical scene he goes very still while the chamber draws the specimens in. When it spits snails he glances at it, and his wings buzz: that is not right.
-      if (counting && faceMotion && critical && criticalAge !== undefined) {
-        if (criticalAge < criticalSpurtAt) sided.push({ mannerism: { _tag: 'Still' }, age: Math.min(criticalAge, 1.4), side })
-        else sided.push({ mannerism: { _tag: 'GlanceEggs' }, age: Math.min(criticalAge - criticalSpurtAt, 1.1), side }, { mannerism: { _tag: 'WingBuzz' }, age: (criticalAge - criticalSpurtAt) % 1.4, side })
+      // The critical scene gives his body work at every moment, so he never stands idle while it runs.
+      const arrived = stroll.activity._tag === 'Pausing'
+      const working = scripted && arrived ? scripted.work : ''
+      if (working !== workKey) { workKey = working; workAge = 0; typeTaps = 0 }
+      else workAge += delta
+      if (faceMotion && scripted && criticalAge !== undefined) {
+        // A wing of his jumps at each green arc, wherever he is.
+        if (faceElapsed - arcAt < 0.8) sided.push({ mannerism: { _tag: 'WingTwitch' }, age: faceElapsed - arcAt, side })
+        // He leans in to the chamber and looks into it as it draws the specimens in.
+        if (working === 'Peer') sided.push({ mannerism: { _tag: 'LeanIn' }, age: Math.min(workAge, 1.2), side }, { mannerism: { _tag: 'GlanceEggs' }, age: Math.min(workAge, 1.1), side })
+        // It spits snails at him. His jaw catches, and his wings buzz again and again.
+        if (scripted.work === 'Flinch') {
+          const since = criticalAge - criticalSpurtAt
+          sided.push({ mannerism: { _tag: 'JawCatch' }, age: since, side }, { mannerism: { _tag: 'WingBuzz' }, age: since % 1.2, side }, { mannerism: { _tag: 'GlanceEggs' }, age: 1.1, side })
+        }
+        // At the computer he hammers the keys to stop it, once he faces them. Each key clicks.
+        if (working === 'Type' && stage && Math.abs(turn.heading - stage.deskFacing) < 0.35) {
+          const age = 0.6 + workAge % 5.2
+          const taps = keyTaps(age)
+          if (taps > typeTaps) emit('action', 'KeyClick')
+          typeTaps = taps
+          sided.push({ mannerism: { _tag: 'TypeKeys' }, age, side })
+        }
+        // The keys did nothing. He turns to the visitor and leans to them for his last line.
+        if (scripted.work === 'Address') sided.push({ mannerism: { _tag: 'LeanIn' }, age: Math.min(criticalAge - criticalAddressAt, 1.2), side })
+      }
+      // During the count he counts: he looks up at what falls, reads his palm, writes in the air, glances at the chamber, and rubs his small hands, one after the other.
+      // A line of his has its own gesture, and the count waits for it.
+      else if (faceMotion && busyPlace && arrived && !talking && faceElapsed - reactionStarted > 3) {
+        busyAge += delta
+        const turns = ['ListenCeiling', 'CheckPalm', 'AirWriting', 'GlanceEggs', 'RubHands'] as const
+        sided.push({ mannerism: { _tag: turns[Math.floor(busyAge / 2.8) % turns.length]! }, age: busyAge % 2.8, weight: habitWeight, side })
       }
       const mannerism = poseMannerisms(sided)
       // He looks around on his own. A hovering visitor or the dialog draws both pupils to the camera. A habit's cue wins while it lasts.
       const eyes = !faceMotion ? { _tag: 'Ahead' } as const
         : mannerism.eyes && mannerism.eyes.weight > 0.3 ? { _tag: 'Watch', target: cueTarget(mannerism.eyes.cue) } as const
-          : talking || (hovered.value && !journey) || act.watches ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
+          : talking || (hovered.value && !journey) || act.watches || addressing ? { _tag: 'Watch', target: camera.position } as const : { _tag: 'Wander' } as const
       const input = { time: faceElapsed, pressure: 0, pointer, transform: 'squeeze' as const, ...pose, eyes, mannerism,
         speaking: faceMotion ? speaking : 0,
         brow: thinking ? 0.12 + (faceMotion ? Math.sin(faceElapsed * 1.6) * 0.025 : 0)
@@ -937,6 +1010,7 @@ watch(canvas, async (element) => {
     <img v-if="status._tag === 'Fallback'" class="world-fallback" src="/brand/character.png" alt="" width="1199" height="1312">
     <button ref="interaction" class="world-interaction" :class="{ 'mascot-hover': hovered || overProp }" :disabled="status._tag === 'Loading'" :aria-label="station === 'room' ? 'Talk to Brundlefly' : 'Return to the room'" @pointerdown="beginView" @pointermove="move" @pointerup="endView" @pointercancel="endView" @lostpointercapture="endView" @pointerleave="hovered = false; overProp = false" @click="select" />
     <p v-if="status._tag === 'Fallback'" class="world-status" role="status">{{ status.reason === 'context' ? 'Static scene. WebGL is unavailable.' : 'The scene could not load.' }}</p>
+    <p v-if="tuning && station === 'code'" class="world-tune" role="status">glass {{ codeLook.glass.toFixed(2) }} · bugs {{ codeLook.bugs.toFixed(2) }} · arrow keys change them</p>
     <SceneControls v-model="settings" />
   </div>
 </template>
@@ -960,6 +1034,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .world-dark { position: absolute; inset: 0; pointer-events: none; background: var(--color-night); }
 /* The light of the test chamber takes the picture in the critical scene. The dark that follows lies over it. */
 .world-flash { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 90% 90% at 62% 40%, #F2FFFA, #BFF3E8 70%, #7FD8CC); }
+.world-tune { position: absolute; left: 16px; bottom: 16px; margin: 0; padding: 6px 10px; color: var(--color-cream); background: #080b08cc; font: 13px var(--font-mono); pointer-events: none; }
 .world-interaction { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: default; touch-action: none; }
 .world-interaction.mascot-hover { cursor: pointer; }
 .world-interaction:focus-visible { outline: 2px solid var(--color-cream); outline-offset: -8px; }

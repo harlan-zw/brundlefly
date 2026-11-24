@@ -134,6 +134,10 @@ A critical run clears itself after 30 minutes. A counting run clears itself afte
 A phone that came by the join code starts with the sound off.
 In the office, the dialog offers the way to the cave only after the visitor has finished the experiment.
 
+To tune the join code for a projector, open `/office?tune` and select the chamber window.
+The up and down keys change how solid the glass is. The left and right keys change how bright the beetles are.
+`?glass=` and `?bugs=` set both values from the address, each from 0 to 1. Test each look with a phone before the talk.
+
 ### The celebration in the cave
 
 When the cave appears, Brundlefly and the snails dance. A song can play on the projector.
