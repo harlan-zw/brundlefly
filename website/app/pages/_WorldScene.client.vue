@@ -35,7 +35,7 @@ import type { ActionSound } from '#shared/action-sounds'
 import type { ConversationMood } from '#shared/conversation'
 import { criticalSceneSeconds, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
-import { crashSeconds, criticalAct, criticalAddressAt, criticalArc, criticalFrame, criticalSpurtAt } from '#shared/office-critical'
+import { crashSeconds, criticalAct, criticalAddressAt, criticalArc, criticalFrame, criticalPace, criticalSpurtAt, keysFacingSlack } from '#shared/office-critical'
 import { createCaveSnails } from '../cave-snails'
 import { createExperimentStage } from '../office-stage'
 import type { Station } from '../office-stage'
@@ -804,7 +804,7 @@ watch(canvas, async (element) => {
     // He walks a journey faster than his loop: he has somewhere to be.
     // He walks to the switch at that pace too.
     // In the critical scene he runs.
-    const walkSpeed = settings.value.walkSpeed * walkPace * (critical ? 2.3 : journey || act.held ? 1.7 : 1)
+    const walkSpeed = settings.value.walkSpeed * walkPace * (critical ? criticalPace : journey || act.held ? 1.7 : 1)
     // In the dark he has noticed the visitor, and he waits. On his way to the switch a pointer that rests on him does not stop him.
     const attentionNow = journey ? 'free' as const : talking ? 'talking' as const
       : entrance._tag === 'Dark' ? 'noticed' as const : act.held ? 'free' as const : hovered.value ? 'noticed' as const : 'free' as const
@@ -858,7 +858,8 @@ watch(canvas, async (element) => {
       const away = station === undefined ? 0 : Math.abs(turn.heading - station)
       if (station !== undefined && stationReady === undefined && away < 0.2 && stroll.activity._tag === 'Pausing') stationReady = stroll.activity.age
       const habits = roundHabits(layout.walkHabits, layout.walkAlternates, stopVisits)
-      const habit = !faceMotion || journey || act.held ? undefined
+      // A place the scene holds him at is no stop of his round. A round habit there had him lift a jar at the computer.
+      const habit = !faceMotion || journey || act.held || counting ? undefined
         : station === undefined ? pauseMannerism(stroll, habits) : stationMannerism(stroll, habits, stationReady, 1 - (away - 0.2) / 0.5)
       // A habit turns his head away: to the ceiling, to a palm, to the eggs. In a conversation he faces the visitor.
       // A habit that kept playing as the dialog opened left him tilted in the close shot, so it fades out with the dialog and back in after it.
@@ -900,7 +901,7 @@ watch(canvas, async (element) => {
           sided.push({ mannerism: { _tag: 'JawCatch' }, age: since, side }, { mannerism: { _tag: 'WingBuzz' }, age: since % 1.2, side }, { mannerism: { _tag: 'GlanceEggs' }, age: 1.1, side })
         }
         // At the computer he hammers the keys to stop it, once he faces them. Each key clicks.
-        if (working === 'Type' && stage && Math.abs(turn.heading - stage.deskFacing) < 0.35) {
+        if (working === 'Type' && stage && Math.abs(turn.heading - stage.deskFacing) < keysFacingSlack) {
           const age = 0.6 + workAge % 5.2
           const taps = keyTaps(age)
           if (taps > typeTaps) emit('action', 'KeyClick')

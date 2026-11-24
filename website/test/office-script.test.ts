@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { caveLines, countingLine, criticalLines, leadingCreature, lineSeconds } from '../shared/office-script.ts'
-import { criticalAct, criticalAddressAt, criticalDarkAt, criticalRushAt, criticalSpurtAt, criticalTimes } from '../shared/office-critical.ts'
+import { criticalAct, criticalAddressAt, criticalDarkAt, criticalSpurtAt, criticalTimes } from '../shared/office-critical.ts'
 import { beatMannerism } from '../layers/brand/shared/mannerism.ts'
 import { creatureKinds, criticalSceneSeconds, emptyExperiment } from '../shared/office-experiment.ts'
 import type { Creature, Experiment, Tally } from '../shared/office-experiment.ts'
@@ -124,16 +124,14 @@ test('every beat of his lines is a gesture he can perform, and each counting lin
   // A counting line comes while he does his rounds. Without a gesture he would say it with still hands.
   for (const { line, beat } of counted) assert.notEqual(beatMannerism(beat)._tag, 'None', `No gesture for: ${line}`)
   assert.equal(new Set(counted.map(({ beat }) => beat)).size, counted.length, 'Two counting lines share a gesture.')
-  const scripted = [...criticalLines, ...caveLines(experiment({ fly: 40 }))]
-  for (const { text, beat } of scripted) if (beat) assert.notEqual(beatMannerism(beat)._tag, 'None', `No gesture for: ${text}`)
+  for (const { text, beat } of caveLines(experiment({ fly: 40 }))) if (beat) assert.notEqual(beatMannerism(beat)._tag, 'None', `No gesture for: ${text}`)
+  // The critical scene moves him itself. A beat on one of its lines would add a second gesture to the one he performs.
+  for (const { text, beat } of criticalLines) assert.equal(beat, '', text)
 })
 
 test('each critical line falls in the act it belongs to: the count, the fault, the keys, and the visitor', () => {
   const works = criticalLines.map(({ at }) => criticalAct(at).work)
   assert.deepEqual(works, ['Peer', 'Flinch', 'Type', 'Address'])
-  // He says the keys do nothing only after he had time to reach them and try.
-  const keys = criticalLines.find(line => /not stopping/.test(line.text))!
-  assert.ok(keys.at >= criticalRushAt + 2)
   // His last line starts as he turns, so the visitor sees his face for all of it that the light allows.
   const last = criticalLines.at(-1)!
   assert.ok(last.at >= criticalAddressAt && last.at < criticalAddressAt + 0.5)

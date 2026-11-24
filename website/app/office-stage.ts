@@ -189,10 +189,6 @@ export function createExperimentStage(plan: OfficePlan = officePlan, codeLook: C
     return fresh
   }
 
-  // He stands a body's depth in front of the desk, and beside the monitor, so the failing screen stays in view past him.
-  const deskProp = plan.props.find(prop => prop._tag === 'Desk')
-  const deskSpot: readonly [x: number, z: number] = deskProp ? [glass.centre.x + 0.7, deskProp.position[2] + deskProp.size[2] / 2 + 1.5] : plan.start
-
   let board: { marks: SetMarks, key: string } | undefined
   const hitPoint = new Vector3()
   const inRect = (ray: Ray, centre: Vector3, width: number, height: number) => {
@@ -207,8 +203,8 @@ export function createExperimentStage(plan: OfficePlan = officePlan, codeLook: C
     group,
     glass,
     /** Where he stands to work the computer's keys, and the way he faces there: side-on to the desk, as he types. */
-    deskSpot,
-    deskFacing: -1.5,
+    deskSpot: plan.keys.stand,
+    deskFacing: plan.keys.facing,
     /** The look of the join code, and the call that changes it while it shows. */
     codeLook: swarm.look,
     setCodeLook: swarm.setLook,

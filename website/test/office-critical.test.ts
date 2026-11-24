@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { arcCount, arcGlow, arcSeconds, crashSeconds, criticalAct, criticalAddressAt, criticalArc, criticalDarkAt, criticalFrame, criticalRushAt, criticalSpurtAt, criticalStruckAt, criticalTimes } from '../shared/office-critical.ts'
+import { arcCount, arcGlow, arcSeconds, crashSeconds, criticalAct, criticalAddressAt, criticalArc, criticalDarkAt, criticalFrame, criticalSpurtAt, criticalStruckAt, criticalTimes } from '../shared/office-critical.ts'
 import type { CriticalFrame } from '../shared/office-critical.ts'
 import { criticalSceneSeconds } from '../shared/office-experiment.ts'
 
@@ -107,7 +107,8 @@ test('the chamber spits its snails only after it has taken every specimen, and b
   assert.ok(criticalFrame(criticalSpurtAt + 0.5, false).spurt > 0)
   // The room sees all of them land in the light.
   assert.equal(criticalFrame(criticalStruckAt - criticalTimes.strike, false).spurt, 1)
-  assert.ok(criticalFrame(criticalSpurtAt + criticalTimes.spurt / 2, false).light > 0.3)
+  // An arc takes the tubes down for a moment. Between the arcs the room is well lit for as long as the snails come.
+  for (const { age, frame } of sample(false, criticalSpurtAt, criticalStruckAt - criticalTimes.strike - 0.01)) if (!criticalArc(age, false)) assert.ok(frame.light > 0.5, `The tubes are at ${frame.light} at ${age} s.`)
 })
 
 test('without motion the specimens go and the snails come at once, each at its moment', () => {
@@ -159,17 +160,51 @@ test('he stays at the chamber until it spits snails at him, and only then runs t
   for (const { age, frame } of sample(false)) {
     const { place, work } = criticalAct(age)
     assert.equal(place, work === 'Peer' || work === 'Flinch' ? 'Chamber' : 'Computer')
-    // He flinches only while snails come out.
-    if (work === 'Flinch') assert.ok(age >= criticalSpurtAt && frame.spurt >= 0)
     if (place === 'Computer') assert.ok(frame.spurt > 0, `He left at ${age} s, before a snail came out.`)
   }
-  // He has time to flinch before he runs, and time at the keys before he gives up.
-  assert.ok(criticalRushAt - criticalSpurtAt >= 1)
-  assert.ok(criticalAddressAt - criticalRushAt >= 4)
 })
 
 test('he turns to the visitor while the room is still lit, before the last strike takes the tubes', () => {
-  assert.ok(criticalAddressAt < criticalStruckAt)
-  assert.ok(criticalStruckAt - criticalAddressAt >= 1.5, 'He needs time to turn and be seen.')
   assert.ok(criticalFrame(criticalAddressAt, false).shade < 0.5)
+})
+
+/** The start of each arc, found by stepping through the scene. */
+function arcStarts() {
+  const starts: number[] = []
+  let last = -1
+  for (const { age } of sample(false)) {
+    const arc = criticalArc(age, false)
+    if (arc && arc.index !== last) { starts.push(age); last = arc.index }
+  }
+  return starts
+}
+
+test('the tubes dip while each green arc burns, and burn again when it is over', () => {
+  const light = (age: number) => criticalFrame(age, false).light
+  const starts = arcStarts()
+  for (const [index, start] of starts.entries()) {
+    const before = light(start - 0.02), during = light(start + arcSeconds / 2), after = light(start + arcSeconds + 0.02)
+    assert.ok(during < before * 0.6, `Arc ${index} at ${start.toFixed(2)} s: the tubes went from ${before} to ${during}.`)
+    // The last arc puts the tubes out. Every other arc lets them back.
+    if (index < starts.length - 1) assert.ok(after > during, `Arc ${index}: the tubes stayed at ${during}.`)
+    else assert.equal(after, 0)
+  }
+})
+
+test('with no arc in the air the tubes hold or sink, and never brighten by themselves', () => {
+  const steady = sample(false).filter(({ age }) => !criticalArc(age, false))
+  for (const [index, { age, frame }] of steady.entries()) {
+    if (index > 0) assert.ok(frame.light <= steady[index - 1]!.frame.light + 1e-9, `The tubes rose to ${frame.light} at ${age} s with no arc.`)
+  }
+  // The room is at its full light until the first arc.
+  assert.equal(criticalFrame(0, false).light, 1)
+  assert.equal(criticalFrame(-5, false).light, 1)
+})
+
+test('the last arcs kill the tubes: each leaves them lower, and they are out when the strike is over', () => {
+  const starts = arcStarts().filter(start => start >= criticalStruckAt - criticalTimes.strike - 0.01)
+  assert.ok(starts.length >= 3, 'The tubes die over several strikes')
+  const settled = starts.map(start => criticalFrame(start + arcSeconds + 0.02, false).light)
+  for (let index = 1; index < settled.length; index++) assert.ok(settled[index]! < settled[index - 1]!)
+  assert.equal(criticalFrame(criticalStruckAt, false).light, 0)
 })

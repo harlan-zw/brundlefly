@@ -124,7 +124,7 @@ No key and no mode exist. The experiment is always on.
 2. Open `/office` on the projector. Select the window of the test chamber. Beetles gather on the lit glass and form the join code.
 3. The audience scans the swarm. It opens `https://brundlefly.dev/join`, which puts each phone at the desk computer. The address is also on the glass in letters.
 4. Each key adds one specimen. The whiteboard, the computer screen, and the presenter page show the count.
-5. At the target, the critical scene plays on every device at the same moment. The chamber takes every specimen and spits out snails, whatever went in. Then every device is in the cave, and so are some snails.
+5. At the target, the critical scene plays on every device at the same moment. Green arcs leap from the chamber, and the tubes dip with each one. The chamber takes every specimen and spits out snails, whatever went in. Then every device is in the cave, and so are some snails.
 
 A phone that joins after the critical scene goes straight to the cave.
 If the room is slow, **Go critical now** on the presenter page starts the scene at the current count.

@@ -45,6 +45,8 @@ export type OfficePlan = {
   lightSwitch: Place
   /** The entrance in the dark: where he stands when a visitor loads the office, where he stands to reach the switch, and the way he faces there. */
   entrance: { start: Point, stand: Point, facing: number }
+  /** The computer's keys: where he stands to work them, and the way he faces there. */
+  keys: { stand: Point, facing: number }
 }
 
 const jar = (id: string, x: number, contents: 'specimen' | 'empty'): OfficeProp =>
@@ -117,6 +119,9 @@ export const officePlan: OfficePlan = {
   lightSwitch: [5.47, -0.7, -0.4],
   // He starts in front of the test chamber window, so its light edges him. The switch is a short walk to his left.
   entrance: { start: [1.75, -0.9], stand: [4.14, -0.98], facing: 1.3 },
+  // He stands at the right end of the desk, side-on, and reaches left to the keys. So his head stays right of the monitor, and the viewer sees its screen fail.
+  // A stand in front of the monitor hid the screen and half the whiteboard behind him.
+  keys: { stand: [-0.3, -2], facing: -1.5 },
 }
 
 /**

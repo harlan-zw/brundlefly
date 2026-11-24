@@ -6,7 +6,7 @@ import { criticalAddressAt, criticalRushAt, criticalSpurtAt } from './office-cri
  * The office experiment as a scene for him: what he says over his head, and what his body does as he says it. COPY.md owns the lines.
  * He counts, he knows the hum of the machine, and he woke in the cave once himself. The lines say no more than that.
  * Each line has a `beat`: one of his approved gestures, by its name in the dialogue. The scene performs it as the line appears, so he never speaks with still hands.
- * A line with no beat falls in a moment where the scene already moves him: he runs, he types, or he dances.
+ * A line with no beat falls in a moment where the scene already moves him. The critical scene gives him an act for every moment, so its lines have no beat: two gestures at once add up to one that is too large.
  */
 export type Spoken = { text: string, beat: string }
 export type TimedLine = Spoken & { at: number }
@@ -40,11 +40,11 @@ export function countingLine(before: number, after: number, target: number): Spo
  */
 export const criticalLines: readonly TimedLine[] = [
   { at: 0.2, text: 'That is the number. Hold still.', beat: '' },
-  { at: criticalSpurtAt + 0.8, text: 'Uh oh. That is not right.', beat: 'His wings buzz once.' },
+  { at: criticalSpurtAt + 0.8, text: 'Uh oh. That is not right.', beat: '' },
   // He is at the keys by now, and they do nothing.
   { at: criticalRushAt + 2.6, text: 'It is not stopping.', beat: '' },
   // He gives up the keys and says the last thing to the visitor's face.
-  { at: criticalAddressAt + 0.2, text: 'You will remember the hum. Little else.', beat: 'He leans closer.' },
+  { at: criticalAddressAt + 0.2, text: 'You will remember the hum. Little else.', beat: '' },
 ]
 
 const plurals: Record<Creature, string> = { snail: 'snails', beetle: 'beetles', fly: 'flies', cricket: 'crickets' }
