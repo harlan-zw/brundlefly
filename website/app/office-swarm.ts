@@ -25,12 +25,13 @@ const smooth = (value: number) => { const share = Math.max(0, Math.min(1, value)
 const chance = (index: number, salt: number) => { const value = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453; return value - Math.floor(value) }
 
 /**
- * How the code reads against the glass. `glass` is how solid the light behind the symbol is, from 0, clear glass, to 1.
+ * How the code reads against the glass. `glass` is how solid the ground on the pane is, from 0, clear glass, to 1.
  * `bugs` is how bright the beetles are, from 0, dark shells on a pale ground, to 1, shells that glow on smoked glass. The ground darkens as they brighten.
  * A scanner needs one of the two to carry the contrast. The balance is the owner's to find on a real phone.
  */
 export type CodeLook = { glass: number, bugs: number }
-export const defaultCodeLook: CodeLook = { glass: 1, bugs: 0 }
+// The owner found this balance with a phone: glass that is almost clear, and beetles that glow.
+export const defaultCodeLook: CodeLook = { glass: 0.3, bugs: 1 }
 // A beetle at full glow, and the ink of the address at each end.
 const glowColour = new Color('#DFFFC8')
 const darkInk = '#1C2620'
@@ -51,8 +52,7 @@ export function createJoinSwarm(plan: OfficePlan = officePlan, look: CodeLook = 
   const centre = new Vector3(wx, wy, wz + windowProp.size[2] / 2 + 0.012)
   const lit = { width: side + 0.12, height: side + strip + 0.06 }
   const symbolY = centre.y + strip / 2
-  // The lamp stands behind the middle of the glass. Its light is flat and pale behind the symbol and its quiet zone, where a scanner needs it,
-  // and fades to clear glass toward the frame, so the chamber still shows through the rest of the window.
+  // The pane of the window, inside its frame. The ground of the code covers all of it, as thin as the look says, so the chamber still shows through.
   const glassSize = { width: windowProp.size[0] - 0.4, height: windowProp.size[1] - 0.36 }
   const sheet = document.createElement('canvas')
   sheet.width = 1024
@@ -67,22 +67,10 @@ export function createJoinSwarm(plan: OfficePlan = officePlan, look: CodeLook = 
     // The ground behind the symbol is as solid as `glass` says. It is pale under dark beetles, and turns to smoked glass as the beetles brighten:
     // glowing beetles need a dark, plain ground, and the chamber behind clear glass is neither.
     const ground = `#${new Color(glassColour).lerp(smokeColour, bugs).getHexString()}`
+    // The whole pane takes the ground, from frame to frame. A square of it behind the symbol alone read as a patch stuck on the glass.
     brush.globalAlpha = glass
-    // Only the symbol and its quiet zone get light, as one soft-edged square. The rest of the window stays clear glass, and the chamber shows through it.
-    const reach = side / 2 * scale
-    const middle = { x: width / 2, y: height / 2 - strip / 2 * scale }
-    brush.shadowColor = ground
-    brush.shadowBlur = module * 2.2 * scale
     brush.fillStyle = ground
-    brush.beginPath()
-    brush.roundRect(middle.x - reach, middle.y - reach, reach * 2, reach * 2, module * 2 * scale)
-    brush.fill()
-    brush.shadowBlur = 0
-    // The address stands on its own strip of light under the symbol.
-    brush.fillStyle = ground
-    brush.beginPath()
-    brush.roundRect(width / 2 - lit.width * 0.36 * scale, height / 2 + (lit.height / 2 - strip * 1.1) * scale, lit.width * 0.72 * scale, strip * 0.95 * scale, strip * 0.3 * scale)
-    brush.fill()
+    brush.fillRect(0, 0, width, height)
     // The address is dark on the light, and light on clear glass.
     brush.globalAlpha = 1
     brush.fillStyle = bugs > 0.5 ? `#${glowColour.getHexString()}` : darkInk

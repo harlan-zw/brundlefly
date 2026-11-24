@@ -39,6 +39,7 @@ import { crashSeconds, criticalAct, criticalAddressAt, criticalArc, criticalFram
 import { createCaveSnails } from '../cave-snails'
 import { createExperimentStage } from '../office-stage'
 import type { Station } from '../office-stage'
+import { defaultCodeLook } from '../office-swarm'
 import SceneControls from './_SceneControls.vue'
 import SceneLoading from './_SceneLoading.vue'
 
@@ -70,7 +71,7 @@ const requestedQuality = useRoute().query.quality
 // The look of the join code can be tried from the address: `?glass=0.3&bugs=0.8` sets how solid the light behind the code is and how bright the beetles are, each from 0 to 1.
 // `?tune` also lets the arrow keys change them while the code shows: up and down for the glass, left and right for the beetles.
 const share = (value: unknown, otherwise: number) => { const read = typeof value === 'string' && value !== '' ? Number(value) : Number.NaN; return Number.isFinite(read) ? Math.max(0, Math.min(1, read)) : otherwise }
-const codeLook = ref({ glass: share(useRoute().query.glass, 1), bugs: share(useRoute().query.bugs, 0) })
+const codeLook = ref({ glass: share(useRoute().query.glass, defaultCodeLook.glass), bugs: share(useRoute().query.bugs, defaultCodeLook.bugs) })
 const tuning = 'tune' in useRoute().query
 let tuneCode: ((look: { glass: number, bugs: number }) => void) | undefined
 useEventListener('keydown', (event: KeyboardEvent) => {
