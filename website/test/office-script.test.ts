@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { caveLines, countingLine, criticalLines, leadingCreature, lineSeconds } from '../shared/office-script.ts'
-import { criticalDarkAt } from '../shared/office-critical.ts'
+import { criticalDarkAt, criticalSpurtAt, criticalTimes } from '../shared/office-critical.ts'
 import { creatureKinds, criticalSceneSeconds, emptyExperiment } from '../shared/office-experiment.ts'
 import type { Creature, Experiment, Tally } from '../shared/office-experiment.ts'
 
@@ -94,15 +94,28 @@ test('the creature with the most specimens leads, and a tie goes to the first cr
   }
 })
 
-test('his last cave line names the real count and the creature that led, in its plural', () => {
-  const plurals: Record<Creature, string> = { snail: 'snails', beetle: 'beetles', fly: 'flies', cricket: 'crickets' }
+test('his last cave line names the real count, and says snails came out whatever led', () => {
   for (const [index, kind] of creatureKinds.entries()) {
     const counts: Partial<Tally> = Object.fromEntries(creatureKinds.map(other => [other, other === kind ? 1200 + index : 1]))
     const last = caveLines(experiment(counts)).at(-1)!.text
-    assert.match(last, new RegExp(`\\b1,${203 + index} specimens\\b`), last)
-    assert.match(last, new RegExp(`\\b${plurals[kind]}\\b`), last)
-    for (const other of creatureKinds.filter(other => other !== kind)) assert.doesNotMatch(last, new RegExp(`\\b${plurals[other]}\\b`), last)
+    assert.match(last, new RegExp(`\\b1,${203 + index} specimens went in\\b`), last)
+    assert.match(last, /\bSnails came out\b/, last)
+    // The creature that led has no part in what came out.
+    for (const other of ['beetles', 'flies', 'crickets']) assert.doesNotMatch(last, new RegExp(`\\b${other}\\b`), last)
   }
+})
+
+test('a run with one specimen or none still gets a cave line that reads right', () => {
+  assert.match(caveLines(experiment({ fly: 1 })).at(-1)!.text, /^One specimen went in\. Snails came out\./)
+  const empty = caveLines(experiment({})).at(-1)!.text
+  assert.doesNotMatch(empty, /specimen/)
+  assert.match(empty, /^Snails came out\./)
+})
+
+test('he says that something is wrong while the chamber spits snails, not before', () => {
+  const wrong = criticalLines.find(line => /not right/.test(line.text))
+  assert.ok(wrong, 'He has a line for the fault')
+  assert.ok(wrong.at > criticalSpurtAt && wrong.at < criticalSpurtAt + criticalTimes.spurt / 2)
 })
 
 test('a longer line stays longer, between a floor for short lines and a ceiling for long ones', () => {

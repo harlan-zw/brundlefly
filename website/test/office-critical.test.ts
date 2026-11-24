@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { crashSeconds, criticalDarkAt, criticalFrame, criticalTimes } from '../shared/office-critical.ts'
+import { arcCount, arcGlow, arcSeconds, crashSeconds, criticalArc, criticalDarkAt, criticalFrame, criticalSpurtAt, criticalStruckAt, criticalTimes } from '../shared/office-critical.ts'
 import type { CriticalFrame } from '../shared/office-critical.ts'
 import { criticalSceneSeconds } from '../shared/office-experiment.ts'
 
@@ -15,8 +15,8 @@ const sample = (still: boolean, from = 0, to = criticalSceneSeconds): Sample[] =
 const changes = (levels: readonly number[]) => levels.filter((level, index) => index > 0 && level !== levels[index - 1]).length
 
 test('the phases fill the whole scene, and the picture is dark before the scene ends', () => {
-  const { surge, pull, strike, flash, dark } = criticalTimes
-  assert.ok(Math.abs(surge + pull + strike + flash + dark - criticalSceneSeconds) < 1e-9)
+  const { surge, pull, lull, spurt, strike, flash, dark } = criticalTimes
+  assert.ok(Math.abs(surge + pull + lull + spurt + strike + flash + dark - criticalSceneSeconds) < 1e-9)
   // The scene changes the set behind the dark. It needs dark time to do that.
   assert.ok(criticalDarkAt < criticalSceneSeconds)
   assert.ok(Math.abs(criticalSceneSeconds - criticalDarkAt - dark) < 1e-9)
@@ -92,4 +92,56 @@ test('a visitor at the computer is back in the room before the chamber draws the
   assert.ok(crashSeconds > 0.8, 'The failed screen stays long enough to read its first line')
   assert.ok(crashSeconds <= criticalTimes.surge)
   assert.equal(criticalFrame(crashSeconds, false).pull, 0)
+})
+
+test('the chamber spits its snails only after it has taken every specimen, and before the tubes go out', () => {
+  let last = 0
+  for (let age = 0; age <= criticalSceneSeconds; age += 0.01) {
+    const { pull, spurt } = criticalFrame(age, false)
+    // No snail leaves while a specimen is still on its way in.
+    if (spurt > 0) assert.equal(pull, 1, `a snail is out at ${age.toFixed(2)} s while the chamber still pulls`)
+    assert.ok(spurt >= last - 1e-12, 'The snails never go back in')
+    last = spurt
+  }
+  assert.equal(criticalFrame(criticalSpurtAt, false).spurt, 0)
+  assert.ok(criticalFrame(criticalSpurtAt + 0.5, false).spurt > 0)
+  // The room sees all of them land in the light.
+  assert.equal(criticalFrame(criticalStruckAt - criticalTimes.strike, false).spurt, 1)
+  assert.ok(criticalFrame(criticalSpurtAt + criticalTimes.spurt / 2, false).light > 0.3)
+})
+
+test('without motion the specimens go and the snails come at once, each at its moment', () => {
+  assert.equal(criticalFrame(criticalSpurtAt - 0.01, true).spurt, 0)
+  assert.equal(criticalFrame(criticalSpurtAt, true).spurt, 1)
+  assert.equal(criticalFrame(criticalTimes.surge, true).pull, 1)
+})
+
+test('green arcs strike through the scene, faster toward its end, and never more than three times a second', () => {
+  // The start of each arc, found by stepping through the scene.
+  const starts: number[] = []
+  let last = -1
+  for (let age = 0; age <= criticalSceneSeconds; age += 0.005) {
+    const arc = criticalArc(age, false)
+    if (arc && arc.index !== last) { starts.push(age); last = arc.index }
+    if (arc) assert.ok(arc.life >= 0 && arc.life < 1)
+  }
+  assert.equal(starts.length, arcCount)
+  assert.ok(arcCount >= 12, 'The scene has enough arcs to read as a storm')
+  for (let index = 1; index < starts.length; index++) assert.ok(starts[index]! - starts[index - 1]! >= 0.39, 'Two arcs come too close together')
+  // The gaps shrink: the storm builds.
+  assert.ok(starts[1]! - starts[0]! > starts.at(-1)! - starts.at(-2)!)
+  // No arc burns after the tubes are out: the light of the chamber has the picture then.
+  assert.ok(starts.at(-1)! <= criticalStruckAt + 0.01)
+  assert.equal(criticalArc(criticalStruckAt + arcSeconds, false), undefined)
+  assert.equal(criticalArc(criticalSceneSeconds, false), undefined)
+})
+
+test('an arc flares, dips, flares again, and dies, and reduced motion has no arcs', () => {
+  assert.equal(arcGlow(0), 1)
+  assert.ok(arcGlow(0.2) < 0.5)
+  assert.equal(arcGlow(0.45), 1)
+  assert.ok(arcGlow(0.95) < 0.2)
+  assert.equal(arcGlow(1), 0)
+  for (let life = 0; life <= 1; life += 0.01) assert.ok(arcGlow(life) >= 0 && arcGlow(life) <= 1)
+  for (let age = 0; age <= criticalSceneSeconds; age += 0.05) assert.equal(criticalArc(age, true), undefined)
 })

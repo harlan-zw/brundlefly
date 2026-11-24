@@ -3,6 +3,9 @@
  * A tap on a creature adds one specimen. At the target the experiment goes critical, once, for everyone.
  * The server owns the state and sends all of it in every message, so a late or reconnecting visitor needs nothing else.
  */
+import { partyDefaults, readPartyTrack } from './party-track.ts'
+import type { PartyTrack } from './party-track.ts'
+
 export const creatures = { snail: '🐌', beetle: '🪲', fly: '🪰', cricket: '🦗' } as const
 export type Creature = keyof typeof creatures
 export const creatureKinds = Object.keys(creatures) as Creature[]
@@ -19,11 +22,12 @@ export type Experiment = {
   criticalAt: number | null
 }
 
-export const targetLimits = { least: 50, most: 20000, initial: 3000 }
+// The least target is small, so one person can run the whole experiment to its end in a few taps.
+export const targetLimits = { least: 5, most: 20000, initial: 3000 }
 /** The most taps one visitor can add in one second. Faster input is dropped, never queued. */
 export const tapsPerSecond = 20
 /** Seconds from critical to the cave. A visitor who joins later goes straight to the cave. */
-export const criticalSceneSeconds = 9.5
+export const criticalSceneSeconds = 19.5
 
 const emptyTally = (): Tally => ({ snail: 0, beetle: 0, fly: 0, cricket: 0 })
 export const emptyExperiment = (run = 0, target = targetLimits.initial): Experiment => ({ run, tally: emptyTally(), target, criticalAt: null })
@@ -62,13 +66,30 @@ export function setTarget(experiment: Experiment, value: number, now: number): E
 export const goCritical = (experiment: Experiment, now: number): Experiment =>
   experiment.criticalAt !== null ? experiment : { ...experiment, criticalAt: now }
 
+/**
+ * The settings of the celebration in the cave, which every device shares: the tempo of the dance and the times of the music.
+ * The music itself is a file in the presenter's own browser. The room never holds it.
+ */
+export type PartySettings = Omit<PartyTrack, 'name'>
+export const defaultParty: PartySettings = partyDefaults
+/** Parse celebration settings from the wire or from storage, each inside its limits. Anything else gives nothing. */
+export function readPartySettings(value: unknown): PartySettings | undefined {
+  if (!value || typeof value !== 'object') return
+  // The track parser owns the limits. It needs a name, and the room has none.
+  const track = readPartyTrack({ ...value, name: 'shared' })
+  if (!track) return
+  const { chorusAt, bpm, leadIn, playFor, fadeOut } = track
+  return { chorusAt, bpm, leadIn, playFor, fadeOut }
+}
+
 export type Command =
   | { op: 'tap', kind: Creature, taps: number }
   | { op: 'reset' }
   | { op: 'target', value: number }
   | { op: 'critical' }
-/** `connected` counts the visitors in the office. `now` is server time, for the offset of the visitor's clock. */
-export type RoomMessage = { op: 'state', experiment: Experiment, connected: number, now: number }
+  | { op: 'party', settings: PartySettings }
+/** `connected` counts the visitors in the office. `now` is server time, for the offset of the visitor's clock. `party` holds the celebration settings. */
+export type RoomMessage = { op: 'state', experiment: Experiment, connected: number, now: number, party: PartySettings }
 
 /** Parse one message from a visitor. Anything else gives nothing. */
 export function readCommand(message: string): Command | undefined {
@@ -78,6 +99,10 @@ export function readCommand(message: string): Command | undefined {
   catch { return } // Wire input that is not JSON is no command.
   if (!data || typeof data !== 'object' || !('op' in data)) return
   if (data.op === 'reset' || data.op === 'critical') return { op: data.op }
+  if (data.op === 'party' && 'settings' in data) {
+    const settings = readPartySettings(data.settings)
+    return settings && { op: 'party', settings }
+  }
   if (data.op === 'target' && 'value' in data && typeof data.value === 'number' && Number.isFinite(data.value)) return { op: 'target', value: clampTarget(data.value) }
   if (data.op === 'tap' && 'kind' in data && typeof data.kind === 'string' && Object.hasOwn(creatures, data.kind)
     && 'taps' in data && Number.isInteger(data.taps) && (data.taps as number) >= 1 && (data.taps as number) <= tapsPerSecond)
@@ -100,8 +125,9 @@ export function readRoomMessage(message: string): RoomMessage | undefined {
   try { data = JSON.parse(message) }
   catch { return } // Wire input that is not JSON is no message.
   if (!data || typeof data !== 'object' || !('op' in data) || data.op !== 'state') return
-  const { experiment, connected, now } = data as { experiment?: unknown, connected?: unknown, now?: unknown }
+  const { experiment, connected, now, party } = data as { experiment?: unknown, connected?: unknown, now?: unknown, party?: unknown }
   const read = readExperiment(experiment)
   if (!read || !count(connected) || typeof now !== 'number') return
-  return { op: 'state', connected, now, experiment: read }
+  // A message without settings takes the defaults, so the dance always has a tempo.
+  return { op: 'state', connected, now, experiment: read, party: readPartySettings(party) ?? defaultParty }
 }

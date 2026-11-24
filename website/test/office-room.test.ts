@@ -4,7 +4,7 @@ import { stripTypeScriptTypes } from 'node:module'
 import { after, before, test } from 'node:test'
 import { URL } from 'node:url'
 import { Miniflare } from 'miniflare'
-import { emptyExperiment, readRoomMessage, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
+import { defaultParty as emptyMessageParty, emptyExperiment, readRoomMessage, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
 import type { Command, Creature, RoomMessage, Tally } from '../shared/office-experiment.ts'
 
 // The fixture extends the real room with test hooks and owns the clock.
@@ -46,7 +46,7 @@ const fixture = `
 let runtime: Miniflare
 const sockets: { close: () => void }[] = []
 before(async () => {
-  const modules = Object.fromEntries(await Promise.all(['worker/office-room.ts', 'shared/office-experiment.ts'].map(async path => [path, {
+  const modules = Object.fromEntries(await Promise.all(['worker/office-room.ts', 'shared/office-experiment.ts', 'shared/party-track.ts'].map(async path => [path, {
     type: 'esm' as const,
     contents: stripTypeScriptTypes(await readFile(new URL(`../${path}`, import.meta.url), 'utf8')),
   }])))
@@ -226,12 +226,13 @@ test('reset, target and critical change the run as the contract says, and go out
 
   await tapMany(presenter, 'fly', 60)
   const lowered = await clock()
-  assert.deepEqual(await command({ op: 'target', value: 10 }), { run: 1, tally: tally({ fly: 60 }), target: targetLimits.least, criticalAt: lowered }, 'A target at or under the count goes critical')
+  assert.deepEqual(await command({ op: 'target', value: 1 }), { run: 1, tally: tally({ fly: 60 }), target: targetLimits.least, criticalAt: lowered }, 'A target at or under the count goes critical')
 
   assert.deepEqual(await command({ op: 'reset' }), emptyExperiment(2, targetLimits.least))
-  await tapMany(presenter, 'snail', 7)
+  // Fewer taps than the least target, so the run still counts when the presenter forces it.
+  await tapMany(presenter, 'snail', 3)
   const forced = await clock()
-  assert.deepEqual(await command({ op: 'critical' }), { run: 2, tally: tally({ snail: 7 }), target: targetLimits.least, criticalAt: forced }, 'Critical goes critical at the current count and keeps the target')
+  assert.deepEqual(await command({ op: 'critical' }), { run: 2, tally: tally({ snail: 3 }), target: targetLimits.least, criticalAt: forced }, 'Critical goes critical at the current count and keeps the target')
 })
 
 test('a burst of taps reaches the other sockets in a few coalesced broadcasts', async () => {
@@ -363,4 +364,20 @@ test('the room refuses a socket over 400 with 503', { timeout: 60_000 }, async (
   const refused = await request('full', 'visitor')
   assert.equal(refused.status, 503)
   await refused.arrayBuffer()
+})
+
+test('celebration settings reach every socket at once, and a reset keeps them', async () => {
+  const presenter = await open('party', 'watcher')
+  const visitor = await open('party')
+  const settings = { chorusAt: 52.5, bpm: 104, leadIn: 14, playFor: 30, fadeOut: 6 }
+  assert.deepEqual(visitor.first.party, emptyMessageParty, 'A new room has the default settings')
+  presenter.send({ op: 'party', settings })
+  const told = await visitor.until(message => message.party.bpm === 104, 'The visitor never got the settings')
+  assert.deepEqual(told.party, settings)
+  presenter.send({ op: 'reset' })
+  const fresh = await visitor.until(message => message.experiment.run === 1)
+  assert.deepEqual(fresh.party, settings, 'The settings belong to the song, not to a run')
+  // A visitor who connects later gets them with the first state.
+  const late = await open('party')
+  assert.deepEqual(late.first.party, settings)
 })

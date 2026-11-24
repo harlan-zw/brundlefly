@@ -97,17 +97,20 @@ export const officePlan: OfficePlan = {
     // Two tubes light the room behind the camera, for a visitor who turns round.
     tube('tube-rear-near', 0, 4.8, 1.8, 'steady'), tube('tube-rear-far', 0, 9.8, 1.8, 'steady'),
   ],
-  start: [0.35, -0.4],
+  // He starts and stays on the right of the room. A body his size hides the whiteboard and the computer from every spot on the left, and visitors must see both.
+  start: [1.4, -0.3],
   exit: [3.1, -1],
-  // He works a round: he types at the desk, tends the jars, reads his palm on the way back, and listens to the failing tube.
+  // His round is slow: he takes a jar from the shelf and looks into it, follows a fly, smacks the vending machine, and reads his palm.
+  // Each stop is far longer than its habit, so he stands a while before and after it.
   // At the two stations he turns side-on to the viewer, so his hands are on his work and his face stays in view. He stays there longest.
   // A turn further round hides his face behind a wing, and a lifted arm then seems to grow from his neck.
   stops: [
-    // The whiteboard hangs above the desk. On every second round he writes on it and leaves the keys.
-    { position: [-0.9, -1.5], pause: 9, habit: 'TypeKeys', facing: -1.5, alternate: 'WriteBoard', works: ['desk'] },
-    { position: [0.9, -1.5], pause: 8, habit: 'TendJar', facing: 1.5, works: ['jar-shelf'] },
-    { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
-    { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
+    { position: [1.3, -1.5], pause: 15, habit: 'TendJar', facing: 1.5, works: ['jar-shelf'] },
+    { position: [1.8, 0.5], pause: 10, habit: 'TrackFly', alternate: 'ListenCeiling' },
+    { position: [2.95, 1.6], pause: 13, habit: 'SmackMachine', facing: 1.5, works: ['vending-machine'] },
+    // The palm stop lies a little right of the machine stop, so he leaves the machine sideways and keeps his side.
+    // A stop to the left sent him back and across in one walk. A foot that held him at the machine then slid on the floor.
+    { position: [3.05, -0.55], pause: 9, habit: 'CheckPalm', alternate: 'RubHands' },
   ],
   cues: { jars: [2.17, -0.345, -3.75], light: [1.45, 0.95, -4.35], ceiling: [0.7, 2.28, 0.7] },
   // The plate hangs on the door's wall, on the side nearer the viewer.

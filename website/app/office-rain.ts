@@ -18,6 +18,8 @@ const size = 0.26
 // One layer of a pile. Bodies interleave, so a layer is thinner than a body.
 const layer = 0.055
 const cellSize = 0.24
+/** The snails the chamber spits out in the critical scene. */
+export const spitSnails = 860
 /** The most bodies of one creature in the room. The oldest body leaves when a new one needs its place. */
 export const bodiesPerCreature = 900
 // How each creature falls and lands. `drag` slows it in the air. `bounce` is the share of its speed that a landing gives back.
@@ -46,6 +48,8 @@ export type RainInput = {
   mascot: readonly [x: number, z: number]
   /** How far the chamber has drawn the specimens in, from 0 to 1. Nothing during the count. */
   pull: number | undefined
+  /** How many of its snails the chamber has spat out, from 0 to 1. Nothing during the count. */
+  spurt: number | undefined
   /** The experiment is over and the room is empty. */
   gone: boolean
 }
@@ -129,14 +133,29 @@ export function createSpecimenRain(plan: OfficePlan = officePlan) {
     }
     else { place(body, 0); moving.add(body) }
   }
+  // The chamber spits one snail out of its window, over the room and toward the viewer. It falls and lands as every specimen does.
+  function spit(index: number, instant: boolean) {
+    add('snail', index, 0, instant)
+    if (instant) return
+    const body = bodies.get('snail')![index % bodiesPerCreature]!
+    body.x = sink.x + (Math.random() - 0.5) * 1.6; body.y = sink.y + (Math.random() - 0.5) * 0.7; body.z = sink.z + 0.15
+    body.vx = (Math.random() - 0.5) * 9 - sink.x * 0.9; body.vy = 1.5 + Math.random() * 5.5; body.vz = 2.5 + Math.random() * 7
+    body.state = 'Falling'
+    body.age = 0
+  }
   let run: number | undefined
   let seen: Tally = { snail: 0, beetle: 0, fly: 0, cricket: 0 }
   let pulling = false
+  // The chamber has taken every specimen. The room is empty until it spits.
+  let emptied = false
+  let spat = 0
   function clear() {
     for (const kind of creatureKinds) { layers.get(kind)!.count = 0; bodies.get(kind)!.length = 0 }
     pile.clear(); moving.clear()
     seen = { snail: 0, beetle: 0, fly: 0, cricket: 0 }
     pulling = false
+    emptied = false
+    spat = 0
   }
   let idle = 0
   // One resting fly takes off, or one cricket hops. Only a body on top of its pile can leave it.
@@ -156,7 +175,7 @@ export function createSpecimenRain(plan: OfficePlan = officePlan) {
     moving.add(body)
   }
 
-  function update({ run: now, tally, delta, still, mascot, pull, gone }: RainInput): RainFrame {
+  function update({ run: now, tally, delta, still, mascot, pull, spurt, gone }: RainInput): RainFrame {
     let landed: Creature | undefined
     if (run !== now || gone) {
       const first = run === undefined
@@ -174,7 +193,7 @@ export function createSpecimenRain(plan: OfficePlan = officePlan) {
       for (let index = 0; index < fresh; index++) add(kind, seen[kind] + index, Math.random() * 0.14, still || pull !== undefined || fresh - index > 60)
       seen[kind] = tally[kind]
     }
-    if (pull !== undefined && pull > 0) {
+    if (pull !== undefined && pull > 0 && !emptied) {
       if (!pulling) {
         pulling = true
         for (const list of bodies.values()) for (const body of list) {
@@ -198,11 +217,22 @@ export function createSpecimenRain(plan: OfficePlan = officePlan) {
         place(body, size * (1 - smooth((share - 0.75) / 0.25)))
         if (share >= 1) body.state = 'Gone'
       }
+      if (pull >= 1) {
+        // Every specimen is in the chamber. The layers start again from nothing, for what comes out.
+        const counted = seen
+        clear()
+        seen = counted
+        emptied = true
+      }
     }
-    else if (!still) {
+    else if (emptied && spurt !== undefined) {
+      // The chamber fails. It spits snails, and only snails, whatever went in.
+      for (const due = Math.floor(spurt * spitSnails); spat < due; spat++) spit(spat, still)
+    }
+    if (!still && (pull === undefined || emptied)) {
       // A few flies and crickets keep moving, so the pile is alive.
       idle += delta
-      if (idle > 0.35 && moving.size < 240) { idle = 0; stir(Math.random() < 0.6 ? 'fly' : 'cricket') }
+      if (pull === undefined && idle > 0.35 && moving.size < 240) { idle = 0; stir(Math.random() < 0.6 ? 'fly' : 'cricket') }
       for (const body of moving) {
         body.age += delta
         if (body.state === 'Waiting') { if (body.age < 0) continue; body.state = 'Falling'; body.age = 0 }
@@ -264,7 +294,7 @@ export function createSpecimenRain(plan: OfficePlan = officePlan) {
     }
     for (const kind of dirty) layers.get(kind)!.instanceMatrix.needsUpdate = true
     dirty.clear()
-    return { busy: moving.size > 0 || (pulling && pull !== undefined && pull < 1), landed }
+    return { busy: moving.size > 0 || (pulling && !emptied), landed }
   }
   function dispose() {
     for (const mesh of layers.values()) { mesh.geometry.dispose(); mesh.material.dispose(); mesh.dispose() }

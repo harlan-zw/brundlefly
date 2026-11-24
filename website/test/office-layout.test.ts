@@ -2,20 +2,34 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { checkOfficePlan, checkWalkedPath, meshBody, officePlan } from '../layers/brand/shared/office-layout.ts'
 import type { OfficePlan, OfficeProp, PlanRules } from '../layers/brand/shared/office-layout.ts'
+import { mannerismDuration } from '../layers/brand/shared/mannerism.ts'
 import { frame, meshCadence, meshWalk, startWalk, stepWalk, walkSets } from './walk-sim.ts'
 import type { Point, Walk } from './walk-sim.ts'
 
 // The cameras of the scene at its default zoom, and the close shot on both sides.
-// The first stop of his loop. The back leg of the loop runs from it, along the furniture.
-const [stopX, stopZ] = officePlan.stops[0]!.position
 const rules: PlanRules = { body: meshBody, legClearance: 0.3, stopClearance: 0.4, readable: ['monitor', 'whiteboard'], viewpoints: [
   { _tag: 'Fixed', name: 'desktop', position: [0, 0.75, 8.67] }, { _tag: 'Fixed', name: 'phone', position: [0, 0.75, 6.93] },
   { _tag: 'CloseShot', name: 'close-right', side: 1 }, { _tag: 'CloseShot', name: 'close-left', side: -1 },
 ] }
+/**
+ * A loop of a known shape in the office, for the tests of the checks themselves. His real round changes, and these tests must not change with it.
+ * Its back leg runs from the first stop along the furniture, and its two diagonals cross near the middle of the room, as a figure of eight.
+ */
+const loop: OfficePlan = { ...officePlan, start: [0.35, -0.4], stops: [
+  { position: [-0.9, -1.5], pause: 9, habit: 'TypeKeys', facing: -1.5, works: ['desk'] },
+  { position: [0.9, -1.5], pause: 8, habit: 'TendJar', facing: 1.5, works: ['jar-shelf'] },
+  { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
+  { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
+] }
+// The first stop of the loop. The back leg of the loop runs from it, along the furniture.
+const [stopX, stopZ] = loop.stops[0]!.position
 const crate = (id: string, x: number, z: number, size = 0.6): OfficeProp =>
   ({ _tag: 'FilingCabinet', id, position: [x, -2.2 + size / 2, z], size: [size, size, size], facing: '+z', rests: 'floor' })
-const withProp = (prop: OfficeProp): OfficePlan => ({ ...officePlan, props: [...officePlan.props, prop] })
+const withProp = (prop: OfficeProp, plan = loop): OfficePlan => ({ ...plan, props: [...plan.props, prop] })
 const tags = (plan: OfficePlan) => checkOfficePlan(plan, rules).map(problem => `${problem._tag}:${problem.prop}`)
+/** How far a floor point is from a prop's footprint. Zero inside it. */
+const gapTo = ({ position, size }: OfficeProp, [x, z]: Point) =>
+  Math.hypot(Math.max(position[0] - size[0] / 2 - x, 0, x - position[0] - size[0] / 2), Math.max(position[2] - size[2] / 2 - z, 0, z - position[2] - size[2] / 2))
 
 test('the office plan keeps his walk, his sightlines, and the readable props clear', () => {
   assert.deepEqual(checkOfficePlan(officePlan, rules), [])
@@ -68,12 +82,12 @@ test('a prop in front of the close shot is reported for the close shot', () => {
 })
 
 test('the monitor and the whiteboard must face the cameras with nothing in front', () => {
-  const turned: OfficePlan = { ...officePlan, props: officePlan.props.map(prop => prop.id === 'monitor' ? { ...prop, facing: '-z' as const } : prop) }
+  const turned: OfficePlan = { ...loop, props: loop.props.map(prop => prop.id === 'monitor' ? { ...prop, facing: '-z' as const } : prop) }
   assert.ok(checkOfficePlan(turned, rules).some(problem => problem._tag === 'Unreadable' && problem.prop === 'monitor' && problem.reason === 'faces-away'))
   // A cabinet in front of the desk hides the monitor's screen.
   const hidden = checkOfficePlan(withProp({ ...crate('stack', -1.6, -2.75, 0.4), position: [-1.6, -0.7, -2.75], size: [1.2, 3, 0.4] }), rules)
   assert.ok(hidden.some(problem => problem._tag === 'Unreadable' && problem.prop === 'monitor' && typeof problem.reason === 'object' && problem.reason.hiddenBy === 'stack'))
-  const gone: OfficePlan = { ...officePlan, props: officePlan.props.filter(prop => prop.id !== 'whiteboard') }
+  const gone: OfficePlan = { ...loop, props: loop.props.filter(prop => prop.id !== 'whiteboard') }
   assert.ok(checkOfficePlan(gone, rules).some(problem => problem._tag === 'Unreadable' && problem.prop === 'whiteboard' && problem.reason === 'missing'))
 })
 
@@ -90,7 +104,7 @@ test('his way to the door must be clear from the start point and from every stop
   assert.ok(problems.some(problem => problem._tag === 'ExitBlocked' && problem.prop === 'plant' && problem.from === 3))
   assert.ok(problems.some(problem => problem._tag === 'ExitBlocked' && problem.from === 'start'))
   // The door's own point keeps clear of the door and the vending machine. He works at the jars, so only his trunk must clear them.
-  const tight = checkOfficePlan({ ...officePlan, exit: [3.6, -1.6] }, rules).filter(problem => problem._tag === 'ExitBlocked').map(problem => problem.prop)
+  const tight = checkOfficePlan({ ...loop, exit: [3.6, -1.6] }, rules).filter(problem => problem._tag === 'ExitBlocked').map(problem => problem.prop)
   assert.ok(tight.includes('door') && !tight.includes('jar-shelf'))
 })
 
@@ -136,7 +150,12 @@ test('the path he really walks, with its curves and every journey to the door, k
   assert.ok(path.length > 5000, 'The path must hold his laps and his journeys.')
   assert.deepEqual(checkWalkedPath(officePlan, rules, path), [])
   // His curves stay close to the straight legs: he never swings wide of the room he was given.
-  for (const [x, z] of path) assert.ok(x > -1.3 && x < 3.2 && z > stopZ - 0.3 && z < 1, `He walked to ${x.toFixed(2)}, ${z.toFixed(2)}.`)
+  // That room is the box round his start, his stops, and the door's point, with a margin of 0.3 on every side.
+  const given = [officePlan.start, officePlan.exit, ...officePlan.stops.map(stop => stop.position)]
+  const [xs, zs] = [given.map(([x]) => x), given.map(([, z]) => z)]
+  for (const [x, z] of path) {
+    assert.ok(x > Math.min(...xs) - 0.3 && x < Math.max(...xs) + 0.3 && z > Math.min(...zs) - 0.3 && z < Math.max(...zs) + 0.3, `He walked to ${x.toFixed(2)}, ${z.toFixed(2)}.`)
+  }
 })
 
 test('a prop beside a curve of his path is reported with the point that comes nearest it', () => {
@@ -153,13 +172,47 @@ test('a prop beside a curve of his path is reported with the point that comes ne
 })
 
 test('he stands within reach of furniture he works at, and keeps his whole reach clear of every other prop', () => {
-  const desk = officePlan.props.find(prop => prop.id === 'desk')!
-  const front = desk.position[2] + desk.size[2] / 2
-  // At the desk station his long arms reach the desk's front edge, and his trunk keeps the stop clearance from it.
-  assert.ok(stopZ - front < meshBody.reach && stopZ - front >= meshBody.torso + rules.stopClearance)
+  const worked = officePlan.stops.flatMap(stop => (stop.works ?? []).map(id => ({ stop, prop: officePlan.props.find(prop => prop.id === id)! })))
+  assert.ok(worked.length > 0, 'His round must have a station.')
+  // At each station his long arms reach the furniture, and his trunk keeps the stop clearance from it.
+  for (const { stop, prop } of worked) {
+    const gap = gapTo(prop, stop.position)
+    assert.ok(gap < meshBody.reach && gap >= meshBody.torso + rules.stopClearance, `He stands ${gap.toFixed(2)} from ${prop.id}.`)
+  }
   assert.deepEqual(checkOfficePlan(officePlan, rules).filter(problem => problem._tag === 'StopCrowded' || problem._tag === 'RouteBlocked'), [])
-  // The same stop beside a prop he does not work at is crowded.
+  // The same stops beside furniture he does not work at are crowded.
   const unworked = { ...officePlan, stops: officePlan.stops.map(stop => ({ ...stop, works: undefined })) }
   const crowded = checkOfficePlan(unworked, rules).filter(problem => problem._tag === 'StopCrowded').map(problem => problem.prop)
-  assert.ok(crowded.includes('desk') && crowded.includes('jar-shelf'))
+  for (const { prop } of worked) assert.ok(crowded.includes(prop.id), `Without its work, the stop at ${prop.id} is not crowded.`)
+})
+
+test('at the start and at every stop, his body leaves the whiteboard and the monitor in view of the fixed cameras', () => {
+  // The checks of the plan keep props off his walk, off his sightlines, and off the readable props. None of them asks whether he himself hides those props.
+  // A fixed camera sees his body, as wide as he stands, fall on the wall behind him. It must miss both the whiteboard and the monitor.
+  const readable = rules.readable.map(id => officePlan.props.find(prop => prop.id === id)!)
+  for (const viewpoint of rules.viewpoints) {
+    if (viewpoint._tag !== 'Fixed') continue
+    const [eyeX, , eyeZ] = viewpoint.position
+    for (const [x, z] of [officePlan.start, ...officePlan.stops.map(stop => stop.position)]) {
+      for (const prop of readable) {
+        // The prop's front faces the cameras. Seen from the camera, a point of his body lands on that plane further out from the camera's line.
+        const front = prop.position[2] + prop.size[2] / 2
+        const spread = (eyeZ - front) / (eyeZ - z)
+        const [left, right] = [x - meshBody.width / 2, x + meshBody.width / 2].map(edge => eyeX + (edge - eyeX) * spread) as [number, number]
+        const [propLeft, propRight] = [prop.position[0] - prop.size[0] / 2, prop.position[0] + prop.size[0] / 2]
+        assert.ok(right <= propLeft || left >= propRight,
+          `From ${viewpoint.name}, his body at ${x}, ${z} covers ${left.toFixed(2)} to ${right.toFixed(2)} on the wall and hides ${prop.id} at ${propLeft} to ${propRight}.`)
+      }
+    }
+  }
+})
+
+test('his round is slow: at every stop he stands at least 3 seconds longer than his habit there takes', () => {
+  for (const stop of officePlan.stops) {
+    for (const habit of [stop.habit, stop.alternate]) {
+      if (!habit) continue
+      const takes = mannerismDuration({ _tag: habit })
+      assert.ok(stop.pause >= takes + 3, `${habit} takes ${takes} seconds of a stop of ${stop.pause}.`)
+    }
+  }
 })

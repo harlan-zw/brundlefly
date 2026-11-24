@@ -207,7 +207,7 @@ At the computer or the join code, the scene’s keyboard action reads “Return 
 The whiteboard shows the count with no letter and no number.
 
 Brundlefly speaks these lines over his head. They open no dialog.
-`shared/office-script.ts` holds them. The owner approved these lines. A new or changed line needs the owner’s review.
+`shared/office-script.ts` holds them. A new or changed line needs the owner’s review.
 
 | Moment | Line |
 | --- | --- |
@@ -217,11 +217,14 @@ Brundlefly speaks these lines over his head. They open no dialog.
 | Three quarters | I know that hum. I went in alone. |
 | Nine tenths | Nearly. Decide which parts you want to keep. |
 | Critical | That is the number. Hold still. |
+| The chamber spits snails | Uh oh. That is not right. |
+| The snails keep coming | It is not stopping. |
 | The tubes go out | You will remember the hum. Little else. |
 | The cave, first | There you are. You woke up. Good. |
-| The cave, second | {count} specimens. Mostly {creatures}. It worked on me. Your turn. |
+| The cave, second | {count} specimens went in. Snails came out. Your turn. |
 
-A run with one specimen reads “One specimen. A {creature}.” A run with none omits the count.
+A run with one specimen reads “One specimen went in.” A run with none omits the count.
+At the computer and at the join code, one button reads “Back to the room”.
 
 The presenter page is titled “Presenter”. Its link reads “Open the office”.
 Its connection line reads “Connected”, “Connecting…”, or “Reconnecting…”.
@@ -229,8 +232,19 @@ Its sections are “Office experiment” and “Controls”. Its readout labels 
 The phases are “Quiet”, “Counting”, “Critical”, and “Over”, with these notes:
 “No specimens yet.” “Visitors add specimens.” “The critical scene plays for everyone.” “The run is over. Reset the experiment to start a new run.”
 A lost connection marks the numbers “Last known values”. Before the first state it reads “No numbers yet. They appear when the connection opens.”
-The target field is “New target” with the action “Set target”.
+The target field is “New target” with the action “Set target”. The quick targets are spoken as “Quick targets” and read as plain numbers.
 Its help reads “Use {least} to {most}. A target at or below the count sends the run critical at once.”
 After critical it reads “After critical, reset the experiment to change the target.”
 The guarded actions are “Go critical now” and “Reset experiment”. Armed, they read “Select again to go critical” and “Select again to reset”.
 Their help reads “Sends the run critical at the current count.” and “Starts a new run with zero specimens. The target stays.”
+
+The presenter page has a section titled “Celebration track”. The presenter chooses a song file there. The file stays in that browser.
+Its help reads “The file stays in this browser and is never uploaded. Choose it in the browser that drives the projector. Phones in the room stay silent.”
+The file field is “Track file”. Without a file it reads “No track chosen. Choose a song to play when the cave appears.” Its notices are “Track stored.” and “Track removed.” Its action is “Remove track”.
+The settings are “Chorus starts at”, “Tempo (BPM)”, “Fade in (seconds)”, “Plays for (seconds)”, and “Fade out (seconds)”.
+The chorus help reads “Seconds, or minutes and seconds, for example 1:23.5.” The fade help reads “The fade starts when the chamber starts to spit snails, and the chorus hits when the cave appears.”
+The tempo action is “Tap tempo”, with “Tap at least four times on the beat.”, “Keep tapping on the beat.”, and “{bpm} BPM”.
+The test actions are “Test from the fade” and “Stop”. The status reads “Ready.”, “Waiting to start.”, or “Playing.”
+One line reads “Before the talk, select anything on the office page once, so the browser lets it play sound.”
+Each refusal names its next action, for example “This browser cannot play that file. Choose an audio file, such as MP3, M4A, or WAV.”
+`app/pages/presenter.vue` holds the full set of messages for this section.

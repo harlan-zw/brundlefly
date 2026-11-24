@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { addTaps, criticalSceneSeconds, emptyExperiment, goCritical, loadedPercent, phase, readCommand, readRoomMessage, resetExperiment, setTarget, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
+import { addTaps, criticalSceneSeconds, defaultParty, emptyExperiment, goCritical, loadedPercent, phase, readPartySettings, readCommand, readRoomMessage, resetExperiment, setTarget, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
 import type { Experiment, RoomMessage, Tally } from '../shared/office-experiment.ts'
 
 const tally = (counts: Partial<Tally>): Tally => ({ snail: 0, beetle: 0, fly: 0, cricket: 0, ...counts })
@@ -39,7 +39,7 @@ test('setTarget keeps the tally and keeps the target inside its limits', () => {
 test('setTarget at or under the count goes critical at once', () => {
   const experiment = counting({ fly: 60 })
   assert.deepEqual(setTarget(experiment, 60, 7), { ...experiment, target: 60, criticalAt: 7 })
-  assert.deepEqual(setTarget(experiment, 10, 7), { ...experiment, target: targetLimits.least, criticalAt: 7 })
+  assert.deepEqual(setTarget(experiment, 1, 7), { ...experiment, target: targetLimits.least, criticalAt: 7 })
   const critical = setTarget(experiment, 10, 7)
   assert.equal(setTarget(critical, 5000, 9), critical, 'A critical run keeps its target')
 })
@@ -94,7 +94,8 @@ test('readCommand rejects malformed messages and taps out of range', () => {
   for (const message of rejected) assert.equal(readCommand(message), undefined, message)
 })
 
-const state: RoomMessage = { op: 'state', experiment: { run: 2, tally: tally({ fly: 3 }), target: 50, criticalAt: 99 }, connected: 4, now: 1000 }
+const state: RoomMessage = { op: 'state', experiment: { run: 2, tally: tally({ fly: 3 }), target: 50, criticalAt: 99 }, connected: 4, now: 1000,
+  party: { chorusAt: 52.5, bpm: 104, leadIn: 14, playFor: 30, fadeOut: 6 } }
 
 test('readRoomMessage reads a state and drops unknown fields', () => {
   assert.deepEqual(readRoomMessage(JSON.stringify(state)), state)
@@ -124,4 +125,23 @@ test('the loaded percent is whole, and reads 100 only at the target', () => {
   assert.equal(loadedPercent(run(3000)), 100)
   // A target that the presenter lowered under the count still reads 100.
   assert.equal(loadedPercent({ ...run(900), target: 500 }), 100)
+})
+
+test('a state without celebration settings takes the defaults, so the dance always has a tempo', () => {
+  const { party: _party, ...bare } = state
+  assert.deepEqual(readRoomMessage(JSON.stringify(bare))?.party, defaultParty)
+  assert.deepEqual(readRoomMessage(JSON.stringify({ ...bare, party: 'loud' }))?.party, defaultParty)
+})
+
+test('the party command carries settings inside their limits, and nothing else', () => {
+  const settings = { chorusAt: 52.5, bpm: 104, leadIn: 14, playFor: 30, fadeOut: 6 }
+  assert.deepEqual(readCommand(JSON.stringify({ op: 'party', settings })), { op: 'party', settings })
+  // A hostile tempo is clamped, and a field that is no setting is dropped.
+  const hostile = readCommand(JSON.stringify({ op: 'party', settings: { ...settings, bpm: 1e9, name: 'x', extra: 1 } }))
+  assert.ok(hostile && hostile.op === 'party')
+  assert.ok(hostile.settings.bpm < 1000)
+  assert.deepEqual(Object.keys(hostile.settings).sort(), Object.keys(settings).sort())
+  assert.equal(readCommand('{"op":"party"}'), undefined)
+  assert.equal(readCommand('{"op":"party","settings":7}'), undefined)
+  assert.equal(readPartySettings(null), undefined)
 })

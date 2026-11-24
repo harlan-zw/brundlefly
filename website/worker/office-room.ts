@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers'
-import { addTaps, emptyExperiment, goCritical, readCommand, readExperiment, resetExperiment, setTarget, specimenCount, tapsPerSecond } from '../shared/office-experiment.ts'
-import type { Command, Experiment, RoomMessage } from '../shared/office-experiment.ts'
+import { addTaps, defaultParty, emptyExperiment, goCritical, readCommand, readExperiment, readPartySettings, resetExperiment, setTarget, specimenCount, tapsPerSecond } from '../shared/office-experiment.ts'
+import type { Command, Experiment, PartySettings, RoomMessage } from '../shared/office-experiment.ts'
 
 const socketLimit = 400
 const broadcastEveryMs = 80
@@ -25,19 +25,21 @@ const spendTaps = (spent: Spent | undefined, taps: number, now: number) => {
   return { spent: { second, taps: used + accepted }, accepted }
 }
 
-const applyCommand = (experiment: Experiment, command: Exclude<Command, { op: 'tap' }>, now: number) => {
+const applyCommand = (experiment: Experiment, command: Exclude<Command, { op: 'tap' | 'party' }>, now: number) => {
   if (command.op === 'reset') return resetExperiment(experiment)
   if (command.op === 'target') return setTarget(experiment, command.value, now)
   return goCritical(experiment, now)
 }
 
-/** The stored experiment has the wire shape, so the wire parser checks it. Text that is not JSON is no experiment. */
-const readSaved = (text: string) => {
+/** Read stored text with a parser. Text that is not JSON gives nothing, so a spoiled row starts from the defaults. */
+const readJson = <T>(text: string, read: (value: unknown) => T | undefined) => {
   let data: unknown
   try { data = JSON.parse(text) }
-  catch { return } // A spoiled row starts a new experiment.
-  return readExperiment(data)
+  catch { return } // A spoiled row is no value.
+  return read(data)
 }
+/** The stored experiment has the wire shape, so the wire parser checks it. */
+const readSaved = (text: string) => readJson(text, readExperiment)
 
 /**
  * The one shared experiment of the office. Every change lands in memory at once.
@@ -47,29 +49,32 @@ export class OfficeRoom extends DurableObject<Env> {
   private experiment: Experiment
   /** The time of the last accepted tap. The idle deadline counts from it. */
   private lastTap: number
+  /** The celebration settings. A reset keeps them: they belong to the presenter's song, not to a run. */
+  private party: PartySettings
   private spent = new Map<WebSocket, Spent>()
   private flushTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env)
     const storage = ctx.storage.sql
-    storage.exec('CREATE TABLE IF NOT EXISTS room (id INTEGER PRIMARY KEY CHECK (id = 1), experiment TEXT NOT NULL, last_tap INTEGER NOT NULL)')
-    const row = storage.exec<{ experiment: string, last_tap: number }>('SELECT experiment, last_tap FROM room WHERE id = 1').toArray()[0]
+    storage.exec('CREATE TABLE IF NOT EXISTS room (id INTEGER PRIMARY KEY CHECK (id = 1), experiment TEXT NOT NULL, last_tap INTEGER NOT NULL, party TEXT)')
+    const row = storage.exec<{ experiment: string, last_tap: number, party: string | null }>('SELECT experiment, last_tap, party FROM room WHERE id = 1').toArray()[0]
     this.experiment = (row && readSaved(row.experiment)) ?? emptyExperiment()
     this.lastTap = row?.last_tap ?? 0
+    this.party = (row?.party ? readJson(row.party, readPartySettings) : undefined) ?? defaultParty
   }
 
   private state(): RoomMessage {
     const connected = this.ctx.getWebSockets()
       .filter(socket => socket.readyState === WebSocket.OPEN && !(socket.deserializeAttachment() as Attachment).watcher).length
-    return { op: 'state', experiment: this.experiment, connected, now: Date.now() }
+    return { op: 'state', experiment: this.experiment, connected, now: Date.now(), party: this.party }
   }
 
   /** Save the state and send it to every socket now. */
   private flush() {
     clearTimeout(this.flushTimer)
     this.flushTimer = null
-    this.ctx.storage.sql.exec('INSERT OR REPLACE INTO room (id, experiment, last_tap) VALUES (1, ?, ?)', JSON.stringify(this.experiment), this.lastTap)
+    this.ctx.storage.sql.exec('INSERT OR REPLACE INTO room (id, experiment, last_tap, party) VALUES (1, ?, ?, ?)', JSON.stringify(this.experiment), this.lastTap, JSON.stringify(this.party))
     const message = JSON.stringify(this.state())
     for (const socket of this.ctx.getWebSockets()) if (socket.readyState === WebSocket.OPEN) socket.send(message)
   }
@@ -104,6 +109,12 @@ export class OfficeRoom extends DurableObject<Env> {
     if (!command) return
     const now = Date.now()
     const before = this.experiment
+    if (command.op === 'party') {
+      // The presenter's page sends the settings of its song. They are public, as the other presenter commands are.
+      this.party = command.settings
+      this.flush()
+      return
+    }
     if (command.op !== 'tap') {
       // Reset, target and critical are public on purpose. The presenter page has no key.
       this.experiment = applyCommand(before, command, now)

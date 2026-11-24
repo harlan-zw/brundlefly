@@ -1,7 +1,7 @@
 import { onMounted, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useIntervalFn } from '@vueuse/core'
-import { readRoomMessage, tapsPerSecond } from '#shared/office-experiment'
-import type { Command, Creature, Experiment } from '#shared/office-experiment'
+import { defaultParty, readRoomMessage, tapsPerSecond } from '#shared/office-experiment'
+import type { Command, Creature, Experiment, PartySettings } from '#shared/office-experiment'
 
 // Taps leave in small batches, so thirty fast phones send a few hundred messages a second and no more.
 const sendEveryMs = 80
@@ -16,6 +16,8 @@ export function useOfficeExperiment(active: () => boolean, role: 'visitor' | 'wa
   const experiment = shallowRef<Experiment | null>(null)
   const connected = ref(0)
   const online = ref(false)
+  // The celebration settings of the room. The defaults stand until the first message.
+  const party = shallowRef<PartySettings>(defaultParty)
   let offset = 0
   let socket: WebSocket | undefined
   let retry: ReturnType<typeof setTimeout> | undefined
@@ -55,6 +57,7 @@ export function useOfficeExperiment(active: () => boolean, role: 'visitor' | 'wa
       // A message that waited in the network or behind a busy page reads the server's clock late. The least late message of the connection is the best reading.
       offset = Math.max(offset, message.now - Date.now())
       connected.value = message.connected
+      party.value = message.party
       experiment.value = message.experiment
     }
     // A lost connection keeps the last state on screen and tries again. The server sends the whole state on return.
@@ -77,7 +80,8 @@ export function useOfficeExperiment(active: () => boolean, role: 'visitor' | 'wa
     waiting.set(kind, Math.min(tapsPerSecond, (waiting.get(kind) ?? 0) + 1))
     resume()
   }
-  return { experiment, connected, online, clock, tap,
+  return { experiment, connected, online, clock, tap, party,
+    setParty: (settings: PartySettings) => send({ op: 'party', settings }),
     reset: () => send({ op: 'reset' }),
     setTarget: (value: number) => send({ op: 'target', value }),
     goCritical: () => send({ op: 'critical' }) }

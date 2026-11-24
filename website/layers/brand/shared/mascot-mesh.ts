@@ -92,6 +92,39 @@ function createMarker(middle: Finger | undefined) {
   // The model's own release frees the marker with every other mesh under the scene.
   return marker
 }
+/**
+ * A specimen jar for one long hand, hidden until a habit has the hand hold it. His fingers close round its side, so it stands across them, against his palm.
+ * The office model is one mesh, so no jar leaves the shelf: this is the jar he takes from behind the others.
+ */
+function createJar(middle: Finger | undefined) {
+  const hand = middle?.root.parent
+  if (!middle || !hand) return undefined
+  const along = middle.root.position.clone()
+  const reach = along.length()
+  const tall = reach * 2.1
+  const wide = reach * 0.62
+  const glass = new Mesh(new CylinderGeometry(wide, wide, tall, 12, 1, true), new MeshStandardMaterial({ color: '#cfe6dc', roughness: 0.12, transparent: true, opacity: 0.38, depthWrite: false }))
+  const lid = new Mesh(new CylinderGeometry(wide * 1.06, wide * 1.06, tall * 0.12, 12), new MeshStandardMaterial({ color: '#3d4a45', roughness: 0.6 }))
+  lid.position.y = tall * 0.5
+  const floor = new Mesh(new CylinderGeometry(wide, wide, tall * 0.04, 12), new MeshStandardMaterial({ color: '#9fb5ab', roughness: 0.3 }))
+  floor.position.y = -tall * 0.5
+  // What floats in it. He does not say what it is.
+  const specimen = new Mesh(new CylinderGeometry(wide * 0.5, wide * 0.36, tall * 0.5, 7), new MeshStandardMaterial({ color: '#aa604b', roughness: 0.8 }))
+  specimen.position.y = -tall * 0.12
+  const jar = new Group()
+  jar.name = 'held-jar'
+  jar.add(specimen, floor, lid, glass)
+  const forward = along.clone().normalize()
+  const across = new Vector3(1, 0, 0).applyQuaternion(middle.root.quaternion).normalize()
+  const palm = across.clone().cross(forward).normalize()
+  // A cylinder stands along y. The jar stands across his fingers.
+  jar.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), across)
+  jar.position.copy(along).multiplyScalar(0.75).addScaledVector(palm, wide * 1.1)
+  jar.visible = false
+  hand.add(jar)
+  // The model's own release frees the jar with every other mesh under the scene.
+  return jar
+}
 type FaceJoint = { joint: Object3D, rest: Vector3, unit: number }
 /**
  * The relief rig's face joints, each optional. `unit` is one face unit of the relief rig in the joint's own units,
@@ -221,6 +254,7 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
   const mouthparts = bodyJoints ? findMouthparts(scene) : []
   const fingers = bodyJoints ? findFingers(scene) : undefined
   const markers = fingers ? { left: createMarker(fingers.left[2]), right: createMarker(fingers.right[2]) } : undefined
+  const jars = fingers ? { left: createJar(fingers.left[2]), right: createJar(fingers.right[2]) } : undefined
   // The fit is in place, so each joint's parent has its final scale inside the mascot.
   root.updateMatrixWorld(true)
   const feet = bodyJoints ? [bodyJoints.get('left-foot')!, bodyJoints.get('right-foot')!] : []
@@ -592,6 +626,8 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
         const hand = input.mannerism?.hands[side]
         const marker = markers?.[side]
         if (marker) marker.visible = hand?.holds === 'Marker'
+        const jar = jars?.[side]
+        if (jar) jar.visible = hand?.holds === 'Jar'
         fingers[side].forEach((finger, index) => {
           if (!finger) return
           const close = Math.min(1, Math.max(0, (hand?.curl ?? 0) + (hand?.taps?.[index] ?? 0)))

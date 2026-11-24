@@ -38,7 +38,8 @@ export function createJoinSwarm(plan: OfficePlan = officePlan) {
   const centre = new Vector3(wx, wy, wz + windowProp.size[2] / 2 + 0.012)
   const lit = { width: side + 0.12, height: side + strip + 0.06 }
   const symbolY = centre.y + strip / 2
-  // The lamp lights the whole glass. It is flat and pale behind the symbol, and falls off toward the frame.
+  // The lamp stands behind the middle of the glass. Its light is flat and pale behind the symbol and its quiet zone, where a scanner needs it,
+  // and fades to clear glass toward the frame, so the chamber still shows through the rest of the window.
   const glassSize = { width: windowProp.size[0] - 0.4, height: windowProp.size[1] - 0.36 }
   const sheet = document.createElement('canvas')
   sheet.width = 1024
@@ -50,11 +51,21 @@ export function createJoinSwarm(plan: OfficePlan = officePlan) {
     const { width, height } = sheet
     const scale = width / glassSize.width
     brush.clearRect(0, 0, width, height)
-    const fall = brush.createRadialGradient(width / 2, height / 2, lit.width * scale * 0.72, width / 2, height / 2, width * 0.56)
-    fall.addColorStop(0, glassColour)
-    fall.addColorStop(1, '#5E7468')
-    brush.fillStyle = fall
-    brush.fillRect(0, 0, width, height)
+    // Only the symbol and its quiet zone get light, as one soft-edged square. The rest of the window stays clear glass, and the chamber shows through it.
+    const reach = side / 2 * scale
+    const middle = { x: width / 2, y: height / 2 - strip / 2 * scale }
+    brush.shadowColor = glassColour
+    brush.shadowBlur = module * 2.2 * scale
+    brush.fillStyle = glassColour
+    brush.beginPath()
+    brush.roundRect(middle.x - reach, middle.y - reach, reach * 2, reach * 2, module * 2 * scale)
+    brush.fill()
+    brush.shadowBlur = 0
+    // The address stands on its own strip of light under the symbol.
+    brush.fillStyle = glassColour
+    brush.beginPath()
+    brush.roundRect(width / 2 - lit.width * 0.36 * scale, height / 2 + (lit.height / 2 - strip * 1.1) * scale, lit.width * 0.72 * scale, strip * 0.95 * scale, strip * 0.3 * scale)
+    brush.fill()
     brush.fillStyle = '#1C2620'
     brush.font = `600 ${Math.round(strip * scale * 0.52)}px "IBM Plex Mono", ui-monospace, monospace`
     brush.textAlign = 'center'

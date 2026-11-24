@@ -1,4 +1,4 @@
-import { AdditiveBlending, CanvasTexture, Group, Mesh, MeshBasicMaterial, NearestFilter, PlaneGeometry, PointLight, SRGBColorSpace, Vector3 } from 'three'
+import { AdditiveBlending, CanvasTexture, DoubleSide, Group, Matrix4, Mesh, MeshBasicMaterial, NearestFilter, PlaneGeometry, PointLight, SRGBColorSpace, TextureLoader, Vector3 } from 'three'
 import type { Ray } from 'three'
 import { officePlan } from '@brundlefly/brand/shared/office-layout'
 import type { OfficePlan } from '@brundlefly/brand/shared/office-layout'
@@ -6,7 +6,8 @@ import type { SetMarks } from '@brundlefly/brand/shared/scene-set'
 import { paintExperimentBoard } from '#shared/office-board'
 import { creatureKinds, creatures, loadedPercent, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
-import type { CriticalFrame } from '#shared/office-critical'
+import { arcGlow } from '#shared/office-critical'
+import type { CriticalArc, CriticalFrame } from '#shared/office-critical'
 import { createSpecimenRain } from './office-rain'
 import { createJoinSwarm } from './office-swarm'
 
@@ -25,6 +26,10 @@ export type StageInput = {
   station: Station
   /** The critical scene at this moment, or nothing while the run counts. */
   critical: CriticalFrame | undefined
+  /** The green arc that burns at this moment of the critical scene, or nothing. */
+  arc: CriticalArc | undefined
+  /** Where the camera stands. An arc turns its flat side to it. */
+  eye: Vector3
   /** The scene has played to its end and the room is empty. */
   over: boolean
   delta: number
@@ -131,6 +136,58 @@ export function createExperimentStage(plan: OfficePlan = officePlan) {
   surge.position.set(swarm.window.centre.x, swarm.window.centre.y, swarm.window.centre.z + 0.9)
   group.add(glow, surge)
 
+  // The green arcs of the critical scene. Each strike is two bolts from the middle of the chamber window to two things in the room.
+  // The artwork is one bolt that runs from one corner of its square to the other, on black, so it adds its light to the picture.
+  const boltMap = new TextureLoader().load('/brand/office/experiment/green-arc.png')
+  boltMap.colorSpace = SRGBColorSpace
+  boltMap.magFilter = NearestFilter
+  const boltGeometry = new PlaneGeometry(1, 1)
+  const bolts = [0, 1].map(() => {
+    const bolt = new Mesh(boltGeometry, new MeshBasicMaterial({ map: boltMap, transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, depthTest: false, side: DoubleSide, toneMapped: false }))
+    bolt.matrixAutoUpdate = false
+    bolt.visible = false
+    bolt.renderOrder = 6
+    return bolt
+  })
+  const strike = new PointLight('#7CFF4A', 0, 9, 1.5)
+  group.add(...bolts, strike)
+  // What an arc can hit: the tubes, the furniture, the far walls, and the floor.
+  const { room } = plan
+  const strikeMarks = [
+    ...plan.props.filter(prop => ['CeilingTube', 'Monitor', 'Whiteboard', 'VendingMachine', 'FilingCabinet', 'Door', 'WallClock', 'Desk'].includes(prop._tag)).map(prop => new Vector3(...prop.position)),
+    new Vector3(-2.4, room.floorY, 0.6), new Vector3(0.4, room.floorY, 1.8), new Vector3(3, room.floorY, 0.2), new Vector3(-4.2, room.floorY, -1.2), new Vector3(room.minX + 0.1, 0.4, 1), new Vector3(1, room.ceilingY, 1.5),
+  ]
+  const pick = (index: number, salt: number) => { const value = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453; return strikeMarks[Math.floor((value - Math.floor(value)) * strikeMarks.length)]! }
+  const along = new Vector3(), across = new Vector3(), facing = new Vector3(), middle = new Vector3(), first = new Vector3(), second = new Vector3(), turn = new Matrix4(), size = new Matrix4()
+  let struckArc = -1
+  function drawArc(arc: CriticalArc | undefined, eye: Vector3) {
+    const glow = arc ? arcGlow(arc.life) : 0
+    strike.intensity = glow * 55
+    bolts.forEach((bolt, fork) => {
+      bolt.visible = arc !== undefined && glow > 0
+      if (!arc || glow <= 0) return
+      const from = swarm.window.centre
+      const to = pick(arc.index, fork + 1)
+      if (fork === 0) strike.position.copy(to)
+      bolt.material.opacity = glow * (fork === 0 ? 1 : 0.7)
+      // The bolt lies along its square's diagonal. The square turns so that the diagonal runs from the chamber to the mark, and its flat side faces the camera.
+      along.subVectors(to, from)
+      const reach = along.length()
+      along.normalize()
+      middle.addVectors(from, to).multiplyScalar(0.5)
+      facing.subVectors(eye, middle)
+      facing.addScaledVector(along, -facing.dot(along)).normalize()
+      across.crossVectors(facing, along)
+      first.subVectors(along, across).normalize()
+      second.addVectors(along, across).normalize()
+      turn.makeBasis(first, second, facing)
+      bolt.matrix.copy(turn).multiply(size.makeScale(reach / Math.SQRT2, reach / Math.SQRT2, 1)).setPosition(middle)
+    })
+    const fresh = arc !== undefined && arc.index !== struckArc
+    if (arc) struckArc = arc.index
+    return fresh
+  }
+
   let board: { marks: SetMarks, key: string } | undefined
   const hitPoint = new Vector3()
   const inRect = (ray: Ray, centre: Vector3, width: number, height: number) => {
@@ -157,7 +214,7 @@ export function createExperimentStage(plan: OfficePlan = officePlan) {
         : { centre: swarm.lit.centre, distance: Math.max(swarm.lit.height / (0.88 * tangent), swarm.lit.width * height / (0.94 * tangent * width)) }
       return { position: new Vector3(frame.centre.x, frame.centre.y, frame.centre.z + frame.distance), target: frame.centre }
     },
-    update({ experiment, connected, station, critical, over, delta, still, mascot, marks }: StageInput): { busy: boolean, landed: Creature | undefined } {
+    update({ experiment, connected, station, critical, arc, eye, over, delta, still, mascot, marks }: StageInput): { busy: boolean, landed: Creature | undefined, struck: boolean } {
       const key = `${experiment.run} ${experiment.target} ${creatureKinds.map(kind => experiment.tally[kind]).join()}`
       if (marks && (board?.marks !== marks || board.key !== key)) {
         paintExperimentBoard(marks.painter, experiment)
@@ -165,16 +222,18 @@ export function createExperimentStage(plan: OfficePlan = officePlan) {
         board = { marks, key }
       }
       drawScreen(experiment, connected, critical !== undefined)
-      const rained = rain.update({ run: experiment.run, tally: experiment.tally, delta, still, mascot, pull: critical?.pull, gone: over })
+      const rained = rain.update({ run: experiment.run, tally: experiment.tally, delta, still, mascot, pull: critical?.pull, spurt: critical?.spurt, gone: over })
       const gathering = swarm.update(station === 'code' && !critical && !over, delta, still)
       glow.material.opacity = (critical?.chamber ?? 0) * 0.85
       surge.intensity = (critical?.chamber ?? 0) * 90
-      return { busy: rained.busy || gathering || critical !== undefined, landed: rained.landed }
+      const struck = drawArc(critical ? arc : undefined, eye)
+      return { busy: rained.busy || gathering || critical !== undefined, landed: rained.landed, struck }
     },
     dispose() {
       rain.dispose(); swarm.dispose()
       display.dispose(); screenGeometry.dispose(); screen.material.dispose()
       glowGeometry.dispose(); glow.material.dispose(); surge.dispose()
+      boltMap.dispose(); boltGeometry.dispose(); bolts.forEach(bolt => bolt.material.dispose()); strike.dispose()
       group.removeFromParent()
     },
   }

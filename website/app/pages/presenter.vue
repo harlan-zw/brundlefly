@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, reactive, ref, shallowRef, watch } from 'vue'
 import { useIntervalFn, useTimeoutFn } from '@vueuse/core'
 import { useHead } from '#imports'
 import { creatures, phase, specimenCount, targetLimits } from '#shared/office-experiment'
 import type { Phase } from '#shared/office-experiment'
+import { formatClock, parseClock, partyFileBytes, partyLimits, tapRestartMs, tapTempo } from '#shared/party-track'
+import type { PartyTrack } from '#shared/party-track'
 import { useOfficeExperiment } from '../composables/useOfficeExperiment'
+import { usePartyTrack } from '../composables/usePartyTrack'
+import type { PartyFailure, PartyStatus } from '../composables/usePartyTrack'
 
 // The presenter's control panel. It watches the room, so the room does not count it as a visitor.
 useHead({
@@ -13,7 +17,7 @@ useHead({
   link: [{ rel: 'canonical', href: 'https://brundlefly.dev/presenter' }],
 })
 
-const { experiment, connected, online, clock, reset, setTarget, goCritical } = useOfficeExperiment(() => true, 'watcher')
+const { experiment, connected, online, clock, reset, setTarget, goCritical, setParty } = useOfficeExperiment(() => true, 'watcher')
 
 // Server time, read again every half second. Then `Critical` turns to `Over` without a new message.
 const now = shallowRef(clock())
@@ -72,10 +76,142 @@ const edited = ref(false)
 watch(() => experiment.value?.target, (target) => {
   if (target !== undefined && !edited.value) draft.value = target
 }, { immediate: true })
+// Targets for one tap: a few specimens for a test alone, and the sizes of a small and a full room.
+const presets = [10, 100, 1000, targetLimits.initial]
+function usePreset(value: number) {
+  edited.value = false
+  draft.value = value
+  setTarget(value)
+}
 function submitTarget() {
   if (typeof draft.value !== 'number' || !Number.isFinite(draft.value)) return
   setTarget(draft.value)
   edited.value = false
+}
+
+// The celebration track. The file stays in this browser. The office page in this browser plays it when the cave appears.
+const party = usePartyTrack()
+// The room shares the song's tempo and times with every device, so they all dance in step. The song itself stays here.
+// The settings go out when they change, and again when the connection returns.
+watch([party.track, online], ([track, live]) => {
+  if (!track || !live) return
+  const { chorusAt, bpm, leadIn, playFor, fadeOut } = track
+  setParty({ chorusAt, bpm, leadIn, playFor, fadeOut })
+})
+const { track: song, status: songStatus, duration: songLength } = party
+const storageRefused = computed(() => songStatus.value === 'Unavailable' && !song.value)
+
+type Setting = Exclude<keyof PartyTrack, 'name'>
+const settings: readonly Setting[] = ['chorusAt', 'bpm', 'leadIn', 'playFor', 'fadeOut']
+// A number field's model can hold a number. Each draft is read as text.
+const drafts = reactive<Record<Setting, string | number>>({ chorusAt: '', bpm: '', leadIn: '', playFor: '', fadeOut: '' })
+const problems = reactive<Partial<Record<Setting, string>>>({})
+const shown = (setting: Setting, value: number) => setting === 'chorusAt' ? formatClock(value) : String(value)
+// A stored change shows in every field, except a field that holds a mistake the presenter is fixing.
+watch(song, (track) => {
+  if (!track) return
+  for (const setting of settings) if (!problems[setting]) drafts[setting] = shown(setting, track[setting])
+}, { immediate: true })
+
+type Reading = { _tag: 'Ok', value: number } | { _tag: 'Err', message: string }
+function readSetting(setting: Setting, text: string): Reading {
+  const { least, most } = partyLimits[setting]
+  if (setting === 'chorusAt') {
+    const value = parseClock(text)
+    if (value === undefined) return { _tag: 'Err', message: 'Use seconds, or minutes and seconds, for example 83 or 1:23.' }
+    if (value > most) return { _tag: 'Err', message: `Use a time up to ${formatClock(most)}.` }
+    if (songLength.value !== null && value >= songLength.value) return { _tag: 'Err', message: `The file ends at ${formatClock(songLength.value)}. Use an earlier time.` }
+    return { _tag: 'Ok', value }
+  }
+  const value = text.trim() === '' ? Number.NaN : Number(text)
+  if (Number.isFinite(value) && value >= least && value <= most) return { _tag: 'Ok', value }
+  return { _tag: 'Err', message: `Use ${digits.format(least)} to ${digits.format(most)} ${setting === 'bpm' ? 'BPM' : 'seconds'}.` }
+}
+
+const notice = ref('')
+const failures: Record<PartyFailure, string> = {
+  NotAudio: 'This browser cannot play that file. Choose an audio file, such as MP3, M4A, or WAV.',
+  TooLarge: `That file is larger than ${digits.format(partyFileBytes / 1024 / 1024)} MB. Choose a smaller file.`,
+  StorageRefused: 'The browser refused to store the track. Allow site storage for this page, then try again.',
+  NoTrack: 'Choose a track first.',
+}
+/** Stores the settings that read well. A setting that does not read keeps its message and is not stored. */
+async function commit(...chosen: Setting[]) {
+  const track = song.value
+  if (!track) return
+  const changes: Partial<PartyTrack> = {}
+  for (const setting of chosen) {
+    const reading = readSetting(setting, String(drafts[setting]))
+    if (reading._tag === 'Err') {
+      problems[setting] = reading.message
+      continue
+    }
+    delete problems[setting]
+    if (reading.value === track[setting]) drafts[setting] = shown(setting, reading.value)
+    else changes[setting] = reading.value
+  }
+  if (Object.keys(changes).length === 0) return
+  const result = await party.update(changes)
+  if (result._tag === 'Err') notice.value = failures[result.reason]
+}
+
+const choosing = ref(false)
+async function pick(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  choosing.value = true
+  // A new song keeps the timing of the room. Its chorus and tempo start again from the defaults.
+  const kept = song.value
+  const result = await party.choose(file, kept ? { leadIn: kept.leadIn, playFor: kept.playFor, fadeOut: kept.fadeOut } : {})
+  choosing.value = false
+  input.value = ''
+  if (result._tag === 'Err') {
+    notice.value = failures[result.reason]
+    return
+  }
+  for (const setting of settings) delete problems[setting]
+  if (song.value) for (const setting of settings) drafts[setting] = shown(setting, song.value[setting])
+  notice.value = 'Track stored.'
+}
+async function removeTrack() {
+  const result = await party.remove()
+  notice.value = result._tag === 'Ok' ? 'Track removed.' : failures[result.reason]
+}
+
+// A chorus near the start of the file leaves less music than the fade in needs.
+const shortFade = computed(() => {
+  const track = song.value
+  if (!track || track.chorusAt >= track.leadIn) return undefined
+  if (track.chorusAt === 0) return 'The chorus is at the start of the file, so the music starts at full level. Set where the chorus starts.'
+  return `The file has ${digits.format(track.chorusAt)} seconds before the chorus, so the fade in is ${digits.format(track.chorusAt)} seconds long.`
+})
+
+// Tap tempo. The taps count until a gap of more than two seconds. The tempo is stored when the taps stop.
+const taps = shallowRef<readonly number[]>([])
+const tapped = computed(() => tapTempo(taps.value))
+const { start: keepTapped } = useTimeoutFn(() => { void commit('bpm') }, tapRestartMs, { immediate: false })
+function tap() {
+  const at = performance.now()
+  const last = taps.value.at(-1)
+  taps.value = last === undefined || at - last > tapRestartMs ? [at] : [...taps.value.slice(-15), at]
+  const bpm = tapTempo(taps.value)
+  if (bpm === undefined) return
+  drafts.bpm = String(bpm)
+  delete problems.bpm
+  keepTapped()
+}
+const tapNote = computed(() => taps.value.length === 0 ? 'Tap at least four times on the beat.' : tapped.value === undefined ? 'Keep tapping on the beat.' : `${tapped.value} BPM`)
+
+const sounding = computed(() => songStatus.value === 'Waiting' || songStatus.value === 'Playing')
+const playbackNotes: Record<PartyStatus, string> = {
+  Idle: 'Ready.',
+  Waiting: 'Waiting to start.',
+  Playing: 'Playing.',
+  Unavailable: 'The browser refused to play the track. Select “Test from the fade” again, or choose another file.',
+}
+function testFade() {
+  if (song.value) party.play(song.value.leadIn)
 }
 </script>
 
@@ -139,6 +275,11 @@ function submitTarget() {
               Set target
             </button>
           </div>
+          <div class="presets" role="group" aria-label="Quick targets">
+            <button v-for="value in presets" :key="value" type="button" :disabled="!live || locked" @click="usePreset(value)">
+              {{ digits.format(value) }}
+            </button>
+          </div>
           <p id="presenter-target-help" class="help">
             <template v-if="locked">
               After critical, reset the experiment to change the target.
@@ -170,6 +311,108 @@ function submitTarget() {
           </button>
           <p id="presenter-reset-help" class="help">
             Starts a new run with zero specimens. The target stays.
+          </p>
+        </div>
+      </section>
+
+      <section class="celebration" aria-labelledby="celebration-title">
+        <h2 id="celebration-title">
+          Celebration track
+        </h2>
+        <p class="help">
+          The file stays in this browser and is never uploaded. Choose it in the browser that drives the projector. Phones in the room stay silent.
+        </p>
+
+        <div class="control">
+          <label for="party-file">Track file</label>
+          <input id="party-file" type="file" accept="audio/*" :disabled="choosing || storageRefused" :data-stored="Boolean(song)" aria-describedby="party-notice" @change="pick">
+          <p v-if="storageRefused" class="problem">
+            This browser refused to store the track. Private windows often do this. Use a normal window, then reload this page.
+          </p>
+          <div v-else-if="song" class="chosen">
+            <p class="name">
+              {{ song.name }}<span v-if="songLength !== null" class="length">{{ formatClock(Math.round(songLength)) }}</span>
+            </p>
+            <button type="button" @click="removeTrack">
+              Remove track
+            </button>
+          </div>
+          <p v-else class="empty">
+            No track chosen. Choose a song to play when the cave appears.
+          </p>
+          <p id="party-notice" class="help" role="status">
+            {{ notice }}
+          </p>
+        </div>
+
+        <form v-if="song" class="control settings" novalidate @submit.prevent="commit(...settings)">
+          <div class="setting wide">
+            <label for="party-chorus">Chorus starts at</label>
+            <input
+              id="party-chorus" v-model="drafts.chorusAt" type="text" autocomplete="off" spellcheck="false"
+              :aria-invalid="Boolean(problems.chorusAt)" :aria-describedby="`party-chorus-help${problems.chorusAt ? ' party-chorus-problem' : ''}${shortFade ? ' party-short-fade' : ''}`"
+              @change="commit('chorusAt')"
+            >
+            <p v-if="problems.chorusAt" id="party-chorus-problem" class="problem">
+              {{ problems.chorusAt }}
+            </p>
+            <p id="party-chorus-help" class="help">
+              Seconds, or minutes and seconds, for example 1:23.5.
+            </p>
+            <p v-if="shortFade" id="party-short-fade" class="help warning">
+              {{ shortFade }}
+            </p>
+          </div>
+
+          <div class="setting wide">
+            <label for="party-bpm">Tempo (BPM)</label>
+            <div class="field">
+              <input
+                id="party-bpm" v-model="drafts.bpm" type="number" inputmode="decimal" step="any" :min="partyLimits.bpm.least" :max="partyLimits.bpm.most"
+                :aria-invalid="Boolean(problems.bpm)" :aria-describedby="`party-tap${problems.bpm ? ' party-bpm-problem' : ''}`" @change="commit('bpm')"
+              >
+              <button type="button" class="tap" @click="tap">
+                Tap tempo
+              </button>
+            </div>
+            <p v-if="problems.bpm" id="party-bpm-problem" class="problem">
+              {{ problems.bpm }}
+            </p>
+            <p id="party-tap" class="help" role="status">
+              {{ tapNote }}
+            </p>
+          </div>
+
+          <div v-for="[setting, label] in ([['leadIn', 'Fade in (seconds)'], ['playFor', 'Plays for (seconds)'], ['fadeOut', 'Fade out (seconds)']] as const)" :key="setting" class="setting">
+            <label :for="`party-${setting}`">{{ label }}</label>
+            <input
+              :id="`party-${setting}`" v-model="drafts[setting]" type="number" inputmode="decimal" step="any" :min="partyLimits[setting].least" :max="partyLimits[setting].most"
+              :aria-invalid="Boolean(problems[setting])" :aria-describedby="problems[setting] ? `party-${setting}-problem` : undefined" @change="commit(setting)"
+            >
+            <p v-if="problems[setting]" :id="`party-${setting}-problem`" class="problem">
+              {{ problems[setting] }}
+            </p>
+          </div>
+
+          <p class="help wide">
+            The fade starts when the chamber starts to spit snails, and the chorus hits when the cave appears.
+          </p>
+        </form>
+
+        <div v-if="song" class="control">
+          <div class="actions">
+            <button type="button" class="primary" :disabled="sounding" @click="testFade">
+              Test from the fade
+            </button>
+            <button type="button" :disabled="!sounding" @click="party.stop(1)">
+              Stop
+            </button>
+          </div>
+          <p class="playback" role="status" :data-status="songStatus">
+            {{ playbackNotes[songStatus] }}
+          </p>
+          <p class="help">
+            Before the talk, select anything on the office page once, so the browser lets it play sound.
           </p>
         </div>
       </section>
@@ -230,6 +473,8 @@ dd { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .waiting { color: var(--color-wing); font-size: 17px; line-height: 1.5; padding-block: 24px; }
 
 .control { display: grid; gap: 8px; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.presets button { flex: 1; min-width: 64px; }
 .control + .control { padding-block-start: 20px; border-block-start: 1px solid var(--color-chitin); }
 label { font: 500 13px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-wing); }
 .field { display: flex; gap: 8px; }
@@ -246,10 +491,39 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 /* An armed action changes colour and label, so a second selection is a clear choice. */
 .guarded[data-armed="true"], .guarded[data-armed="true"]:enabled:hover { background: var(--color-bruise); border-color: var(--color-flesh); box-shadow: inset 4px 0 var(--color-flesh); }
 
+/* The celebration track. Its parts follow the controls above it. */
+.chosen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.name { min-inline-size: 0; font: 500 17px/1.4 var(--font-mono); overflow-wrap: anywhere; }
+.length { margin-inline-start: 12px; color: var(--color-wing); font-variant-numeric: tabular-nums; }
+.empty { font-size: 17px; line-height: 1.5; color: var(--color-wing); }
+.problem { font-size: 14px; line-height: 1.5; color: var(--color-flesh); }
+.warning { color: var(--color-cream); }
+/* The stored track's name stands below the field, so the browser's own file note is hidden. */
+input[type="file"] { flex: none; justify-self: start; max-inline-size: 100%; min-block-size: 0; padding: 0; border: 0; background: none; font-size: 0; color: transparent; }
+input[type="file"]::file-selector-button { min-block-size: 48px; margin: 0; padding: 10px 16px; font: 500 16px/1.2 var(--font-mono); color: var(--color-night); background: var(--color-cream); border: 1px solid var(--color-cream); border-radius: 0; cursor: pointer; }
+input[type="file"]:enabled:hover::file-selector-button { background: var(--color-wing); border-color: var(--color-wing); }
+input[type="file"][data-stored="true"]::file-selector-button { color: var(--color-cream); background: transparent; border-color: var(--color-olive); }
+input[type="file"][data-stored="true"]:enabled:hover::file-selector-button { background: var(--ui-bg-elevated); }
+input[aria-invalid="true"] { border-color: var(--color-flesh); }
+/* The three timing fields share one row, also at 360 px. Labels can wrap, and the fields stay level. */
+.settings { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 16px 12px; }
+.settings .wide { grid-column: 1 / -1; }
+.setting { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-inline-size: 0; }
+.tap { white-space: nowrap; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions button { flex: 1 1 auto; }
+.playback { font: 500 15px var(--font-mono); }
+.playback[data-status="Playing"] { color: var(--color-eye); }
+.playback[data-status="Unavailable"] { font: 400 14px/1.5 var(--font-sans); color: var(--color-flesh); }
+.celebration :is(button, input):focus-visible { outline: 2px solid var(--color-cream); outline-offset: 2px; }
+
 @media (min-width: 900px) {
   .panel { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; gap: 24px 32px; padding: 48px 32px; }
   .top, .connection { grid-column: 1 / -1; }
   section { padding: 24px; }
+  /* The readout fills the left column. The celebration track sits under the controls. */
+  .readout { grid-row: span 2; }
+  .celebration { grid-column: 2; }
 }
 @media (prefers-reduced-motion: reduce) {
   .track i, button { transition: none; }

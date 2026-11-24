@@ -1,6 +1,6 @@
 import { creatureKinds, specimenCount } from './office-experiment.ts'
 import type { Creature, Experiment } from './office-experiment.ts'
-import { criticalTimes } from './office-critical.ts'
+import { criticalSpurtAt, criticalStruckAt } from './office-critical.ts'
 
 /**
  * What Brundlefly says over his head during the office experiment. COPY.md owns these lines.
@@ -28,24 +28,27 @@ export function countingLine(before: number, after: number, target: number): str
   if (before === 0) return first.replace('{count}', count)
 }
 
-/** His lines in the critical scene, in seconds after the experiment went critical. */
+/** His lines in the critical scene, in seconds after the experiment went critical. The second comes as the chamber spits snails. */
 export const criticalLines: readonly TimedLine[] = [
   { at: 0.2, text: 'That is the number. Hold still.' },
-  { at: criticalTimes.surge + criticalTimes.pull - 0.4, text: 'You will remember the hum. Little else.' },
+  { at: criticalSpurtAt + 0.8, text: 'Uh oh. That is not right.' },
+  { at: criticalSpurtAt + 4.6, text: 'It is not stopping.' },
+  { at: criticalStruckAt - 1.6, text: 'You will remember the hum. Little else.' },
 ]
 
 const plurals: Record<Creature, string> = { snail: 'snails', beetle: 'beetles', fly: 'flies', cricket: 'crickets' }
 /** The creature with the most specimens. A tie goes to the first in the order of the counter's keys. */
 export const leadingCreature = (experiment: Experiment): Creature =>
   creatureKinds.reduce((lead, kind) => experiment.tally[kind] > experiment.tally[lead] ? kind : lead)
+/** The creature with the most specimens, as the word for many of it. */
+export const leadingPlural = (experiment: Experiment) => plurals[leadingCreature(experiment)]
 
-/** His lines in the cave after the experiment, in seconds after the visitor sees the cave. */
+/** His lines in the cave after the experiment, in seconds after the visitor sees the cave. Whatever went in, snails came out. */
 export function caveLines(experiment: Experiment): readonly TimedLine[] {
   const count = specimenCount(experiment)
-  const lead = leadingCreature(experiment)
   // The presenter can send an empty run critical. He then has no count to report.
-  const report = count === 0 ? '' : count === 1 ? `One specimen. A ${lead}. ` : `${count.toLocaleString('en')} specimens. Mostly ${plurals[lead]}. `
-  return [{ at: 0.8, text: 'There you are. You woke up. Good.' }, { at: 5.6, text: `${report}It worked on me. Your turn.` }]
+  const report = count === 0 ? '' : count === 1 ? 'One specimen went in. ' : `${count.toLocaleString('en')} specimens went in. `
+  return [{ at: 1, text: 'There you are. You woke up. Good.' }, { at: 6, text: `${report}Snails came out. Your turn.` }]
 }
 
 /** Seconds a line stays over his head. A longer line stays longer. */

@@ -7,7 +7,8 @@ import type { Creature, Experiment, Tally } from '#shared/office-experiment'
 // The desk computer's screen: the dashboard of a home lab that runs one service, the specimen loader.
 // The scene gives the place of the glass. Each key adds one specimen for everyone, and every device shows the same load.
 const { experiment, connected, online, shown } = defineProps<{ experiment: Experiment, connected: number, online: boolean, shown: boolean }>()
-const emit = defineEmits<{ tap: [kind: Creature] }>()
+// `leave` asks for the room again.
+const emit = defineEmits<{ tap: [kind: Creature], leave: [] }>()
 const digits = new Intl.NumberFormat('en')
 const count = computed(() => specimenCount(experiment))
 const percent = computed(() => loadedPercent(experiment))
@@ -62,6 +63,7 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
 </script>
 
 <template>
+  <div class="computer">
   <section class="counter" :class="{ shown }" aria-label="Specimen loader" :inert="!shown">
     <!-- The run goes critical, and the computer fails as a home server fails. -->
     <div v-if="critical" class="panic" role="alert">
@@ -101,6 +103,9 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
     </div>
     <div class="static" aria-hidden="true" />
   </section>
+  <!-- The way back to the room stands under the glass, on the monitor's own plastic, where a thumb finds it. -->
+  <button class="leave" :class="{ shown: shown && !critical }" type="button" :inert="!shown || critical" @click="emit('leave')"><span aria-hidden="true">←</span> Back to the room</button>
+  </div>
 </template>
 
 <style scoped>
@@ -121,6 +126,13 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
 @keyframes counter-roll { to { background-position: 0 0, 0 130%; } }
 /* The static rises as the computer fails. */
 .counter:has(.panic) .static::before { opacity: .24; }
+.leave { position: fixed; z-index: 3; left: calc(var(--crt-left, 50vw - 5.5rem) + var(--crt-width, 11rem) / 2); top: calc(var(--crt-top, 30vh) + var(--crt-height, 20rem) + max(10px, var(--crt-height, 0px) * .07)); translate: -50% 0;
+  display: flex; align-items: center; gap: .5em; min-height: 44px; padding: 0 1.1em; color: #2c2a1f; background: linear-gradient(#efe6c3, #d6cba3); border: 1px solid #8f8565; border-bottom-width: 3px; border-radius: 6px;
+  box-shadow: 0 2px 8px #0006; font: 600 15px/1 var(--font-mono, ui-monospace, monospace); white-space: nowrap; cursor: pointer; touch-action: manipulation; opacity: 0; pointer-events: none; transition: opacity .2s ease-out; }
+.leave.shown { opacity: var(--crt-ready, 1); pointer-events: auto; }
+.leave:hover { background: linear-gradient(#f7efd0, #e0d5ae); }
+.leave:active { translate: -50% 1px; border-bottom-width: 2px; }
+.leave:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 p { margin: 0; }
 svg { display: block; overflow: visible; }
 polyline { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
@@ -153,22 +165,68 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .bar { grid-column: 1 / -1; height: 3cqw; background: #18261f; mask-image: repeating-linear-gradient(90deg, #000 0 1.5cqw, transparent 1.5cqw 2cqw); }
 .bar i { display: block; height: 100%; background: var(--level); transition: width .15s linear; }
 .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6cqw; }
-button { display: flex; flex-direction: column; justify-content: space-between; gap: 1cqw; min-width: 0; min-height: 44px; height: 21cqw; padding: 1.6cqw 1.8cqw 1.4cqw; color: var(--kind); background: var(--panel);
+.keys button { display: flex; flex-direction: column; justify-content: space-between; gap: 1cqw; min-width: 0; min-height: 44px; height: 21cqw; padding: 1.6cqw 1.8cqw 1.4cqw; color: var(--kind); background: var(--panel);
   border: 1px solid var(--rule); border-bottom-color: color-mix(in srgb, var(--kind) 55%, var(--rule)); border-radius: 1.6cqw; font: inherit; cursor: pointer; touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent; }
-button[data-kind='snail'] { --kind: var(--amber); } button[data-kind='beetle'] { --kind: var(--green); } button[data-kind='fly'] { --kind: var(--cyan); } button[data-kind='cricket'] { --kind: var(--rose); }
+.keys button[data-kind='snail'] { --kind: var(--amber); } .keys button[data-kind='beetle'] { --kind: var(--green); } .keys button[data-kind='fly'] { --kind: var(--cyan); } .keys button[data-kind='cricket'] { --kind: var(--rose); }
 /* A pressed key lights in its creature's colour. */
-button:active:enabled { translate: 0 1px; border-color: var(--kind); background: color-mix(in srgb, var(--kind) 18%, var(--panel)); }
-button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-button:disabled { cursor: default; opacity: .55; }
+.keys button:active:enabled { translate: 0 1px; border-color: var(--kind); background: color-mix(in srgb, var(--kind) 18%, var(--panel)); }
+.keys button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.keys button:disabled { cursor: default; opacity: .55; }
 .key-head { display: flex; align-items: center; justify-content: space-between; gap: 1cqw; }
 .glyph { font-size: 6.4cqw; line-height: 1; }
 .key-head strong { color: var(--text); font-size: 3.6cqw; font-variant-numeric: tabular-nums; }
-button svg { width: 100%; height: 6.4cqw; }
+.keys button svg { width: 100%; height: 6.4cqw; }
 .log { display: flex; gap: 2cqw; overflow: hidden; color: var(--text); font-size: 2.7cqw; white-space: nowrap; }
 .log span { color: var(--dim); }
 .panic { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.6cqw; padding: 0 4cqw; color: #d7e0d8; background: #050706; font-size: 2.9cqw; line-height: 1.35; }
 .panic-cause { color: var(--rose); }
 .caret { font-style: normal; animation: counter-caret 1s steps(2, jump-none) infinite; }
 @keyframes counter-caret { to { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .counter, .bar i { transition: none; } .static::before, .static::after, .lamp.live, .caret { animation: none; } }
+/* On a narrow portrait phone the glass is too small for thumbs. The view goes all the way into the tube, and the screen fills the phone.
+   Its sizes have a floor in pixels, so no text a visitor reads is smaller than 13px. */
+@media (max-width: 640px) and (orientation: portrait) {
+  polyline { stroke-width: 2; }
+  .counter { left: 0; top: 0; width: 100%; height: 100dvh; border-radius: 0; box-shadow: inset 0 0 3rem #000b;
+    /* Fast taps do not zoom the page or select text. */
+    touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  /* The static layer is smaller on a phone. Its jumps move it by 16% of the screen at most, so a margin of 25% still covers the screen. */
+  .static::before { inset: -25%; }
+  /* The way back stands at the top, far from the keys, so a busy thumb does not leave the computer by accident. */
+  .leave { left: max(16px, env(safe-area-inset-left)); top: max(16px, env(safe-area-inset-top)); translate: none; }
+  .leave:active { translate: 0 1px; }
+  /* The board keeps a row at the top for the way back. */
+  .board { justify-content: flex-start; gap: 12px; padding: calc(max(16px, env(safe-area-inset-top)) + 56px) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    font-size: clamp(14px, 4cqw, 17px); line-height: 1.25; }
+  /* The header stays one line. The chart of people takes the space that the words leave. On a very narrow phone the name of the service gives way. */
+  header { gap: 10px; font-size: clamp(13px, 3.7cqw, 16px); }
+  .host { gap: 8px; }
+  .lamp { width: 9px; height: 9px; }
+  .people { flex: 1 1 0; justify-content: flex-end; gap: 8px; }
+  .people svg { flex: 1 1 auto; width: 24px; max-width: 96px; height: 18px; }
+  /* The load takes the height that the keys leave, and its chart of the rate grows into it. */
+  .load { flex: 1 1 auto; grid-template-columns: auto 1fr; grid-template-rows: auto 1fr auto; gap: 10px 14px; padding: 12px 14px 14px; border-radius: 8px; }
+  .percent strong { font-size: clamp(52px, 17cqw, 84px); }
+  .detail { gap: 4px; }
+  .rate { grid-column: 1 / -1; align-self: stretch; min-height: clamp(36px, 12cqw, 60px); }
+  .rate svg { height: 100%; }
+  .rate span { top: -2px; font-size: max(13px, 3.4cqw); }
+  .bar { height: 12px; mask-image: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); }
+  /* The keys take the lower half of the screen, where thumbs reach. On a short screen they give up height first. */
+  .keys { flex: 0 1 50dvh; min-height: 0; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .keys button { height: auto; min-height: 72px; gap: 6px; padding: 12px 14px 10px; overflow: hidden; border-bottom-width: 3px; border-radius: 10px; }
+  .key-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .glyph { font-size: clamp(36px, 12cqw, 56px); }
+  .key-head strong { font-size: clamp(24px, 8cqw, 36px); }
+  .keys button svg { flex: 1 1 0; min-height: 16px; max-height: 50%; height: auto; }
+  .log { gap: 10px; font-size: max(13px, 3.6cqw); }
+  .panic { gap: 12px; padding: max(24px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+    font-size: clamp(15px, 4.4cqw, 19px); line-height: 1.45; overflow-wrap: anywhere; }
+}
+/* A short phone, or a phone with its browser bars open, has less height for the keys. Each key then puts its creature beside its count. */
+@media (max-width: 640px) and (orientation: portrait) and (max-height: 680px) {
+  .key-head { flex-direction: row; align-items: center; justify-content: space-between; gap: 6px; }
+  .glyph { font-size: clamp(30px, 9cqw, 40px); }
+  .key-head strong { font-size: clamp(22px, 7cqw, 30px); }
+}
+@media (prefers-reduced-motion: reduce) { .counter, .leave, .bar i { transition: none; } .static::before, .static::after, .lamp.live, .caret { animation: none; } }
 </style>

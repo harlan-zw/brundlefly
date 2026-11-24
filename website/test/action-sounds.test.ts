@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { actionSounds, chamberHum, jarBubbles, keyClick, markerSqueak } from '../shared/action-sounds.ts'
-import { criticalTimes } from '../shared/office-critical.ts'
+import { criticalStruckAt } from '../shared/office-critical.ts'
 import { shotLevelAt, shotPeak } from '../shared/audio-shot.ts'
 import { assertPlayable } from './playable.ts'
 
@@ -71,6 +71,32 @@ test('the chamber hum lasts the length it is given, rises all the way, and stops
     // The last step to silence takes a twentieth of a second.
     assert.ok(hum.duration - voice.level.at(-2)![0] <= 0.051)
   }
-  // The scene's hum ends with the strike of the critical scene.
-  assert.equal(actionSounds.ChamberHum(0).duration, criticalTimes.surge + criticalTimes.pull + criticalTimes.strike)
+  // The scene's hum ends as the last tube goes out.
+  assert.equal(actionSounds.ChamberHum(0).duration, criticalStruckAt)
+})
+
+test('a thump on the vending machine is low and short, stays under his voice, and no two blows in a row sound the same', () => {
+  // The scene asks for the thump by name, once for each blow.
+  for (let index = 0; index < 30; index++) {
+    const thump = actionSounds.MachineThump(index)
+    assertPlayable(thump, 'machine thump')
+    assert.ok(shotPeak(thump) < 0.2)
+    const tone = thump.voices.find(voice => voice._tag === 'Tone')
+    assert.ok(tone && tone._tag === 'Tone' && Math.max(...tone.pitch.map(point => point[1])) < 200, 'A thump is a low sound')
+    assert.notDeepEqual(thump, actionSounds.MachineThump(index + 1))
+    assert.deepEqual(thump, actionSounds.MachineThump(index))
+  }
+})
+
+test('an arc cracks short and sharp, falls in pitch, and no two arcs in a row sound the same', () => {
+  for (let index = 0; index < 20; index++) {
+    const zap = actionSounds.ArcZap(index)
+    assertPlayable(zap, 'arc zap')
+    assert.ok(zap.duration <= 0.4)
+    assert.ok(shotPeak(zap) < 0.2)
+    const tone = zap.voices[0]!
+    assert.ok(tone._tag === 'Tone')
+    assert.ok(tone.pitch[0]![1] > tone.pitch.at(-1)![1] * 4, 'The crack falls a long way')
+    assert.notDeepEqual(zap, actionSounds.ArcZap(index + 1))
+  }
 })
