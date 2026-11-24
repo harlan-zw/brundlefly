@@ -93,7 +93,8 @@ function createMarker(middle: Finger | undefined) {
   return marker
 }
 /**
- * A specimen jar for one long hand, hidden until a habit has the hand hold it. His fingers close round its side, so it stands across them, against his palm.
+ * A specimen jar for one long hand, hidden until a habit has the hand hold it. He takes it from above: his palm is on its lid, and his long fingers close down round it.
+ * The jar hangs from his palm and stays upright however his wrist turns, as a jar held by its lid does. A jar fixed to his hand lay on its side when he reached for it.
  * The office model is one mesh, so no jar leaves the shelf: this is the jar he takes from behind the others.
  */
 function createJar(middle: Finger | undefined) {
@@ -101,8 +102,8 @@ function createJar(middle: Finger | undefined) {
   if (!middle || !hand) return undefined
   const along = middle.root.position.clone()
   const reach = along.length()
-  const tall = reach * 2.1
-  const wide = reach * 0.62
+  const tall = reach * 1.7
+  const wide = reach * 0.5
   const glass = new Mesh(new CylinderGeometry(wide, wide, tall, 12, 1, true), new MeshStandardMaterial({ color: '#cfe6dc', roughness: 0.12, transparent: true, opacity: 0.38, depthWrite: false }))
   const lid = new Mesh(new CylinderGeometry(wide * 1.06, wide * 1.06, tall * 0.12, 12), new MeshStandardMaterial({ color: '#3d4a45', roughness: 0.6 }))
   lid.position.y = tall * 0.5
@@ -117,13 +118,23 @@ function createJar(middle: Finger | undefined) {
   const forward = along.clone().normalize()
   const across = new Vector3(1, 0, 0).applyQuaternion(middle.root.quaternion).normalize()
   const palm = across.clone().cross(forward).normalize()
-  // A cylinder stands along y. The jar stands across his fingers.
-  jar.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), across)
-  jar.position.copy(along).multiplyScalar(0.75).addScaledVector(palm, wide * 1.1)
+  // The point of his palm that rests on the lid, in the hand's own frame.
+  // The jar is as wide as his palm is long, so its middle is under the middle of his palm. His knuckles are then at its rim, and his fingers go down its outside.
+  const grip = along.clone().multiplyScalar(0.5).addScaledVector(palm, reach * 0.22)
   jar.visible = false
   hand.add(jar)
+  const turned = new Quaternion(), down = new Vector3()
+  /** Hangs the jar from his palm, upright in the world. The scene calls it after his arm has its pose. */
+  const hang = () => {
+    hand.updateWorldMatrix(true, false)
+    hand.getWorldQuaternion(turned).invert()
+    // A cylinder stands along y, so this turn stands it up in the world.
+    jar.quaternion.copy(turned)
+    // The lid hangs a little under his palm, so his bent hand does not sink into it.
+    jar.position.copy(grip).addScaledVector(down.set(0, -1, 0).applyQuaternion(turned), tall * 0.5 + reach * 0.3)
+  }
   // The model's own release frees the jar with every other mesh under the scene.
-  return jar
+  return { jar, hang }
 }
 type FaceJoint = { joint: Object3D, rest: Vector3, unit: number }
 /**
@@ -626,8 +637,11 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
         const hand = input.mannerism?.hands[side]
         const marker = markers?.[side]
         if (marker) marker.visible = hand?.holds === 'Marker'
-        const jar = jars?.[side]
-        if (jar) jar.visible = hand?.holds === 'Jar'
+        const held = jars?.[side]
+        if (held) {
+          held.jar.visible = hand?.holds === 'Jar'
+          if (held.jar.visible) held.hang()
+        }
         fingers[side].forEach((finger, index) => {
           if (!finger) return
           const close = Math.min(1, Math.max(0, (hand?.curl ?? 0) + (hand?.taps?.[index] ?? 0)))

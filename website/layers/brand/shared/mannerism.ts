@@ -94,14 +94,15 @@ const shapes: Record<MannerismTag, Shape> = {
       head: [(0.2 - (1 - typing) * 0.26) * e, Math.sin(age * 0.9) * 0.06 * e, 0], chest: [0.16 * e, 0, 0] } }
   } },
   // He stands turned to the jars. The long arm nearer them takes one from the shelf, lifts it to his eyes, turns it each way in the light, and puts it back.
+  // He holds it from above, by its lid. As his arm lifts, his wrist bends over the jar, so his palm stays on the lid and the jar hangs under it.
   // `side` is the side the jars are on. `jarLift` gives the share of the lift, so the jar is in his hand only while his hand is at the shelf or above it.
   TendJar: { duration: 9.2, attack: 0.8, release: 0.9, motion: (e, age, side) => {
     const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
     const lift = jarLift(age)
     const turn = Math.sin(age * 1.5) * lift
     return { cue: lift > 0.4 ? side === 1 ? 'Claw' as const : 'Palm' as const : 'Eggs' as const, calm: e * 0.5,
-      hands: { [side === 1 ? 'left' : 'right']: { curl: 0.55 * e, holds: age > jarHeld[0] && age < jarHeld[1] ? 'Jar' as const : undefined } }, turns: {
-        [shoulder]: [(-0.5 - 0.3 * lift) * e, 0, 0.08 * e * side], [elbow]: [(-0.95 - 0.5 * lift) * e, 0, 0], [hand]: [-0.15 * e, turn * 0.45 * e, 0],
+      hands: { [side === 1 ? 'left' : 'right']: { curl: 0.4 * e, holds: age > jarHeld[0] && age < jarHeld[1] ? 'Jar' as const : undefined } }, turns: {
+        [shoulder]: [(-0.5 - 0.3 * lift) * e, 0, 0.08 * e * side], [elbow]: [(-0.95 - 0.5 * lift) * e, 0, 0], [hand]: [(-0.15 + 1.4 * lift) * e, turn * 0.45 * e, 0],
         head: [(0.26 - 0.3 * lift) * e, 0.1 * e * side, turn * 0.07 * e * side], chest: [(0.14 - 0.08 * lift) * e, 0.04 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
   } },
   // He stands turned to the whiteboard. The long arm on `side` lifts high and writes four short lines, each a little lower, and his head follows the hand.
