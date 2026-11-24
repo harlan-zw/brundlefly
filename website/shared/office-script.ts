@@ -54,13 +54,13 @@ export const leadingCreature = (experiment: Experiment): Creature =>
 /** The creature with the most specimens, as the word for many of it. */
 export const leadingPlural = (experiment: Experiment) => plurals[leadingCreature(experiment)]
 
-/** His lines in the cave after the experiment, in seconds after the visitor sees the cave. Whatever went in, snails came out. */
+/** His lines in the cave after the experiment, in seconds after the visitor sees the cave. It is a celebration, so he congratulates the room. Whatever went in, snails came out. */
 export function caveLines(experiment: Experiment): readonly TimedLine[] {
   const count = specimenCount(experiment)
   // The presenter can send an empty run critical. He then has no count to report.
   const report = count === 0 ? '' : count === 1 ? 'One specimen went in. ' : `${count.toLocaleString('en')} specimens went in. `
   // He dances through the first line. For the second he leans to the visitor: it is their turn.
-  return [{ at: 1, text: 'There you are. You woke up. Good.', beat: '' }, { at: 6, text: `${report}Snails came out. Your turn.`, beat: 'He leans closer.' }]
+  return [{ at: 1, text: 'Congratulations. You did that. All of you.', beat: '' }, { at: 6, text: `${report}Snails came out. A perfect run. Your turn.`, beat: 'He leans closer.' }]
 }
 
 /** Seconds a line stays over his head. A longer line stays longer. */

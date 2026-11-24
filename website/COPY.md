@@ -220,8 +220,8 @@ Brundlefly speaks these lines over his head. They open no dialog.
 | The chamber spits snails | Uh oh. That is not right. | His jaw catches and his wings buzz. |
 | The snails keep coming | It is not stopping. | He runs to the computer and hammers its keys. |
 | Before the tubes go out | You will remember the hum. Little else. | He gives up the keys, turns to the visitor, and leans closer. |
-| The cave, first | There you are. You woke up. Good. | He dances. |
-| The cave, second | {count} specimens went in. Snails came out. Your turn. | He leans closer. |
+| The cave, first | Congratulations. You did that. All of you. | He dances. |
+| The cave, second | {count} specimens went in. Snails came out. A perfect run. Your turn. | He leans closer. |
 
 He is never idle while he speaks: each line has a gesture, and the scene performs it as the line appears.
 Between his lines he counts during the count: he looks up, reads his palm, writes in the air, glances at the chamber, and rubs his small hands.
