@@ -124,6 +124,18 @@ export const officePlan: OfficePlan = {
   keys: { stand: [-0.3, -2], facing: -1.5 },
 }
 
+/** The public office keeps his usual round. The experiment keeps the desk and whiteboard in view. */
+export const publicOfficePlan: OfficePlan = {
+  ...officePlan,
+  start: [0.35, -0.4],
+  stops: [
+    { position: [-0.9, -1.5], pause: 9, habit: 'TypeKeys', facing: -1.5, alternate: 'WriteBoard', works: ['desk'] },
+    { position: [0.9, -1.5], pause: 8, habit: 'TendJar', facing: 1.5, works: ['jar-shelf'] },
+    { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
+    { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
+  ],
+}
+
 /**
  * His body for the checks. `reach` is the furthest any part of him gets from his own vertical axis, so a disc of that radius holds him at every turn.
  * `width` and `height` are his box as the camera sees him. `torso` is the furthest his trunk and his legs get from that axis: his long arms reach past it.

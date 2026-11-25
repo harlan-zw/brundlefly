@@ -171,7 +171,8 @@ Choices that require the visitor's own writing or personal details open “Your 
 Never supply an invented sentence or personal fact as a visitor choice.
 The fourth choice is “Your text”. It opens the text field. “Back” returns to the choices.
 The dialog has one travel action below the choices. In the cave it is “Follow him to the office”.
-In the office it is “Follow him to the cave”, and only for a visitor who has finished the office experiment.
+In the public office it is “Follow him to the cave”.
+During the experiment, the office offers the same action after the visitor reaches the cave.
 The travel action changes the place only. It sends no text and takes no reply.
 A visitor who opens the dialog in the office gets an office greeting. The owner approved six. They live in `docs/brand/mascot-dialogue.md`.
 Their beats and choices are strings the cave greetings already use. A new choice line for the office needs approval.

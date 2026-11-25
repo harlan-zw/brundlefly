@@ -19,7 +19,8 @@ import { createSceneFinish } from '@brundlefly/brand/shared/scene-finish'
 import type { SceneFinish } from '@brundlefly/brand/shared/scene-finish'
 import { createFloorReflection } from '@brundlefly/brand/shared/floor-reflection'
 import type { FloorReflection } from '@brundlefly/brand/shared/floor-reflection'
-import { sceneSets } from '@brundlefly/brand/shared/scene-sets'
+import { experimentOfficeSet } from '@brundlefly/brand/shared/office-set'
+import { sceneSets as publicSets } from '@brundlefly/brand/shared/scene-sets'
 import { mascotInLight } from '@brundlefly/brand/shared/scene-set'
 import type { BuiltSet, SceneSet, SetArt, SetMascot, SetName } from '@brundlefly/brand/shared/scene-set'
 import { advanceEntrance, entranceAct, entranceLight, startEntrance } from '@brundlefly/brand/shared/office-entrance'
@@ -49,8 +50,9 @@ import SceneLoading from './_SceneLoading.vue'
 // `cut` makes the next journey a cut in the dark, with no walk to the way out. `caveSnails` puts the snails of the experiment in the cave.
 // `covered` says the computer's screen fills the whole page, as it does on a phone: the scene then keeps its state and draws nothing, which leaves the phone free for the keys.
 // `party` is the celebration in the cave: the server time when the music's chorus hits, and its tempo. He and the snails dance to it from that moment.
-const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0, experiment = null, station = 'room', serverClock = Date.now, connected = 0, joined = false, cut = false, caveSnails = false, party = null, covered = false } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number,
+const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0, presenting = false, experiment = null, station = 'room', serverClock = Date.now, connected = 0, joined = false, cut = false, caveSnails = false, party = null, covered = false } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number, presenting?: boolean,
   experiment?: Experiment | null, station?: Station, serverClock?: () => number, connected?: number, joined?: boolean, cut?: boolean, caveSnails?: boolean, party?: { at: number, bpm: number } | null, covered?: boolean }>()
+const sceneSets = presenting ? { ...publicSets, office: experimentOfficeSet } : publicSets
 // `set` is the place the page wants him in. The scene reports the set that stands, and travels when the two differ.
 const shownSet = ref<SetName>(set)
 const travelPhase = ref<Travel['_tag']>('Home')
@@ -73,7 +75,7 @@ const requestedQuality = useRoute().query.quality
 // `?tune` also lets the arrow keys change them while the code shows: up and down for the glass, left and right for the beetles.
 const share = (value: unknown, otherwise: number) => { const read = typeof value === 'string' && value !== '' ? Number(value) : Number.NaN; return Number.isFinite(read) ? Math.max(0, Math.min(1, read)) : otherwise }
 const codeLook = ref({ glass: share(useRoute().query.glass, defaultCodeLook.glass), bugs: share(useRoute().query.bugs, defaultCodeLook.bugs) })
-const tuning = 'tune' in useRoute().query
+const tuning = presenting && 'tune' in useRoute().query
 let tuneCode: ((look: { glass: number, bugs: number }) => void) | undefined
 useEventListener('keydown', (event: KeyboardEvent) => {
   if (!tuning || station !== 'code' || !event.key.startsWith('Arrow')) return

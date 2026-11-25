@@ -116,12 +116,12 @@ The production workflow uses cf deploy --prebuilt for the same build output.
 
 ## Present the office experiment
 
-Every visitor in the office shares one specimen counter. A Durable Object holds the count and sends it to every device.
+The projector and attendees share one specimen counter. A Durable Object holds the count and sends it to every device.
 One tap adds one specimen. At the target the room goes critical for everyone, and the scene moves them to the cave.
-No key and no mode exist. The experiment is always on.
+The experiment uses `/projector` and `/join`. The public office at `/office` keeps its usual conversation and travel.
 
-1. Open `/presenter` on your own device. Set the target, then choose **Reset experiment**. The page is public. For a test alone, choose the quick target of 10.
-2. Open `/office` on the projector. Select the window of the test chamber. Beetles gather on the lit glass and form the join code.
+1. Open `/presenter` on your own device. Choose **Reset experiment**, then set the target. The page is public. For a test alone, choose the quick target of 10.
+2. Open `/projector` on the projector. Select the window of the test chamber. Beetles gather on the lit glass and form the join code.
 3. The audience scans the swarm. It opens `https://brundlefly.dev/join`, which puts each phone at the desk computer. The address is also on the glass in letters.
 4. Each key adds one specimen. The whiteboard, the computer screen, and the presenter page show the count. From 80% of the target the chamber is unstable: its warning light turns faster and throws red on the room, the room shakes now and then, and the tubes dip. From 90% all of that is stronger, and the computer warns.
 5. At the target, the critical scene plays on every device at the same moment. Green arcs leap from the chamber, and the tubes dip with each one. The chamber takes every specimen and spits out snails, whatever went in. Then every device is in the cave, and so are some snails.
@@ -132,9 +132,9 @@ The initial target is 3,000. Thirty phones at three taps a second each reach it 
 The room accepts 20 taps a second from one device and drops the rest.
 A critical run clears itself after 30 minutes. A counting run clears itself after two hours with no tap.
 A phone that came by the join code starts with the sound off.
-In the office, the dialog offers the way to the cave only after the visitor has finished the experiment.
+The experiment shows its cave on the same page. After finishing, visitors can travel between the cave and office there.
 
-To tune the join code for a projector, open `/office?tune` and select the chamber window.
+To tune the join code for a projector, open `/projector?tune` and select the chamber window.
 The up and down keys change how solid the glass is. The left and right keys change how bright the beetles are.
 `?glass=` and `?bugs=` set both values from the address, each from 0 to 1. Test each look with a phone before the talk.
 
@@ -148,6 +148,6 @@ For another song, set where the chorus starts and tap the tempo. Choose **Test f
 The song fades in under the critical scene, and its chorus hits as the cave appears, 19.5 seconds after the run goes critical.
 The default fade runs for the whole scene. A fade longer than the scene is cut to it. The fade is quiet for most of its length and rises into the chorus.
 The room shares the tempo and the times with every device, so the phones dance in step. Phones play no sound.
-Before the talk, select anything on the office page once. A browser plays no sound on a page that nobody has touched.
+Before the talk, select anything on `/projector` once. A browser plays no sound on a page that nobody has touched.
 
 The local Cloudflare preview runs the Durable Object. It needs a Cloudflare login for the AI binding.

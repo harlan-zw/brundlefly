@@ -25,6 +25,6 @@ export default defineNuxtConfig({
     },
   },
   // The standalone kit is generated separately and assembled after this export.
-  // No page links to the join address or the presenter's page, so the crawler needs their names.
-  nitro: { prerender: { crawlLinks: true, failOnError: true, ignore: ['/brand-kit/'], routes: ['/join', '/presenter'] } },
+  // The public site does not link to the experiment pages.
+  nitro: { prerender: { crawlLinks: true, failOnError: true, ignore: ['/brand-kit/'], routes: ['/join', '/projector', '/presenter'] } },
 })

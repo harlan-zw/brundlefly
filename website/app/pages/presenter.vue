@@ -229,7 +229,7 @@ const untilHit = computed(() => testHit.value === null ? null : (testHit.value -
     <div class="panel">
       <header class="top">
         <h1>Presenter</h1>
-        <a href="/office" target="_blank" rel="noopener">Open the office<span class="hidden-label"> (opens in a new tab)</span></a>
+        <a href="/projector" target="_blank" rel="noopener">Open the office<span class="hidden-label"> (opens in a new tab)</span></a>
       </header>
       <p class="connection" role="status" :data-online="online">
         <i aria-hidden="true" />{{ connection }}
@@ -424,7 +424,7 @@ const untilHit = computed(() => testHit.value === null ? null : (testHit.value -
             {{ untilHit > 0 ? `The cave appears in ${Math.ceil(untilHit)} s.` : 'The cave is showing.' }}
           </p>
           <p class="help">
-            Before the talk, select anything on the office page once, so the browser lets it play sound.
+            Before the talk, select anything on the <a href="/projector" target="_blank" rel="noopener">office page</a> once, so the browser lets it play sound.
           </p>
         </div>
       </section>

@@ -5,7 +5,7 @@ import { setTimeout } from 'node:timers/promises'
 const origin = new URL(process.argv[2] ?? 'https://brundlefly.dev')
 const output = new URL('../.output/public/', import.meta.url)
 const digest = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')
-const pages = ['/', '/office/', '/brand-kit/', '/brand-kit/mascot/']
+const pages = ['/', '/office/', '/join/', '/projector/', '/presenter/', '/brand-kit/', '/brand-kit/mascot/']
 const required = new Set<string>(pages)
 
 // Verify every texture and model, plus the scripts each exported page loads.
@@ -25,6 +25,7 @@ for (const path of pages) {
 for (const name of await readdir(new URL('skills/', output))) required.add(`/skills/${name}`)
 // The 3D model is the mascot. A build without it shows the relief rig and reports no error, so its absence must fail here.
 required.add('/brand/3d/brundlefly-web.glb')
+required.add('/brand/office/experiment/green-arc.png')
 
 const expected = await Promise.all([...required].map(async (path) => {
   const file = path.endsWith('/') ? `${path}index.html` : path

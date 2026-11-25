@@ -2,7 +2,8 @@ import { ClampToEdgeWrapping, LinearFilter, NearestFilter, NoColorSpace, RepeatW
 import type { BufferGeometry, Material, Mesh, Object3D, Texture } from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { createOffice } from './office.ts'
-import { officePlan } from './office-layout.ts'
+import { officePlan, publicOfficePlan } from './office-layout.ts'
+import type { OfficePlan } from './office-layout.ts'
 import { sceneLayout } from './scene-layout.ts'
 import type { SceneSet, SetArt } from './scene-set.ts'
 
@@ -72,15 +73,21 @@ async function loadOffice(): Promise<SetArt> {
   }
 }
 
-const route = officePlan.stops.map(stop => stop.position)
+function officeLayout(plan: OfficePlan): SceneSet['layout'] {
+  const route = plan.stops.map(stop => stop.position)
+  return {
+    floorLevel: plan.room.floorY, mascot: plan.start, exit: plan.exit, walk: route, meshWalk: route,
+    walkPauses: plan.stops.map(stop => stop.pause), walkHabits: plan.stops.map(stop => stop.habit),
+    walkFacings: plan.stops.map(stop => stop.facing), walkAlternates: plan.stops.map(stop => stop.alternate),
+    camera: sceneLayout.camera, entrance: { ...plan.entrance, lightSwitch: plan.lightSwitch },
+  }
+}
 
 /** The research office at /office: the same mascot at his old desk. It draws no fog, no finishing pass, and no floor mirror, so it costs far less than the lair. */
 export const officeSet: SceneSet = {
   name: 'office',
   // The camera keeps the lair's framing, so the conversation shots hold. The relief rig is flat artwork and can walk the mesh's route.
-  layout: { floorLevel: officePlan.room.floorY, mascot: officePlan.start, exit: officePlan.exit, walk: route, meshWalk: route,
-    walkPauses: officePlan.stops.map(stop => stop.pause), walkHabits: officePlan.stops.map(stop => stop.habit), walkFacings: officePlan.stops.map(stop => stop.facing), walkAlternates: officePlan.stops.map(stop => stop.alternate), camera: sceneLayout.camera,
-    entrance: { ...officePlan.entrance, lightSwitch: officePlan.lightSwitch } },
+  layout: officeLayout(publicOfficePlan),
   background: '#080B08',
   fog: { _tag: 'None' },
   effects: ['WetEnvironment'],
@@ -89,3 +96,5 @@ export const officeSet: SceneSet = {
     rim: { colour: '#9CC8C4', rest: 0, talk: 2 }, shadow: { body: 0.62, foot: 0.86 }, vignette: 'Light' },
   load: loadOffice,
 }
+
+export const experimentOfficeSet: SceneSet = { ...officeSet, layout: officeLayout(officePlan) }

@@ -11,11 +11,11 @@ import { voiceDuration } from '#shared/scene-audio'
 import { travelAction } from '#shared/travel'
 import type { SetName } from '@brundlefly/brand/shared/scene-set'
 
-const { open, place, foundDark = false, travelling = false, muted = false, soundAvailable = true, caveOpen = false } = defineProps<{ open: boolean, place: SetName, foundDark?: boolean, travelling?: boolean, muted?: boolean, soundAvailable?: boolean, caveOpen?: boolean }>()
+const { open, place, foundDark = false, travelling = false, muted = false, soundAvailable = true, caveOpen = true } = defineProps<{ open: boolean, place: SetName, foundDark?: boolean, travelling?: boolean, muted?: boolean, soundAvailable?: boolean, caveOpen?: boolean }>()
 const emit = defineEmits<{ close: [], reply: [text: string], sound: [], reaction: [reply: Pick<ConversationReply, 'mood' | 'beat'>], pending: [value: boolean], travel: [to: SetName] }>()
 // The app's own action: it takes him to the other place. It is no reply, so it sends nothing and leaves the conversation as it is.
 // During a journey the action waits. It keeps the keyboard focus, so it is marked as unavailable and not disabled.
-// The office offers the journey to the cave only to a visitor who has finished the office experiment.
+// An experiment visit must reach the cave before it can offer the journey there.
 const journey = computed(() => travelAction(place, caveOpen))
 const dialog = shallowRef<HTMLDialogElement>()
 const input = shallowRef<HTMLTextAreaElement>()
