@@ -170,7 +170,9 @@ If the Skill catalog changes, replies with Skill links use live generation until
 Choices that require the visitor's own writing or personal details open “Your text”.
 Never supply an invented sentence or personal fact as a visitor choice.
 The fourth choice is “Your text”. It opens the text field. “Back” returns to the choices.
-The dialog has one travel action below the choices. In the office it is “Follow him to the cave”. In the cave it is “Follow him to the office”.
+The dialog has one travel action below the choices. In the cave it is “Follow him to the office”.
+In the public office it is “Follow him to the cave”.
+During the experiment, the office offers the same action after the visitor reaches the cave.
 The travel action changes the place only. It sends no text and takes no reply.
 A visitor who opens the dialog in the office gets an office greeting. The owner approved six. They live in `docs/brand/mascot-dialogue.md`.
 Their beats and choices are strings the cave greetings already use. A new choice line for the office needs approval.
@@ -189,3 +191,67 @@ Panel actions use “Close”, “Reset”, and “Copy settings”.
 The copy fallback label is “Settings JSON”.
 Its error is “Clipboard access failed. Select and copy the settings.”
 Copy success uses “Copied.”
+
+## Office experiment
+
+The desk computer shows the dashboard of a home lab. Its spoken name is “Specimen loader”.
+The header reads “chamber-01”, “loader”, and the presence line “{count} in the office”. During reconnection, the presence line reads “Reconnecting…”.
+The load reads “{percent}%”, “of specimens loaded”, “{count} / {target}”, and the rate “+{count}/s”.
+Each key has the spoken label “Add a {creature}. {count} so far.”
+The log line reads “$ tail -f chamber.log”, then the last change, such as “+3 🪰”.
+From four fifths of the target the log reads “chamber: pressure above limit” in place of the last change. From nine tenths it reads “chamber: WARNING: containment at risk”.
+When the run goes critical, the screen fails with this text. Each line starts with the count in brackets, as a kernel’s clock:
+“chamber: load reached target”. “Kernel panic - not syncing: All specimens will be loaded at once.”
+“* Hold still.” “* Do not press any key. It will not help.” “Loading everything _”
+The computer screen in the room shows the same dashboard and the same fault, in fewer words.
+The join code shows its address in letters: “brundlefly.dev/join”.
+At the computer or the join code, the scene’s keyboard action reads “Return to the room”.
+The whiteboard shows the count with no letter and no number.
+
+Brundlefly speaks these lines over his head. They open no dialog.
+`shared/office-script.ts` holds them. A new or changed line needs the owner’s review.
+
+| Moment | Line | What he does |
+| --- | --- | --- |
+| First specimen | One. I count things now. Keep going. (“{count}.” when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
+| A quarter of the target | {count}. The chamber is warming up. | He looks toward the light of the chamber. |
+| Half | Halfway. My small hands are rubbing. Ignore them. | His small hands rub together. |
+| Three quarters | I know that hum. I went in alone. | He goes very still. |
+| Nine tenths | Nearly. Decide which parts you want to keep. | He checks an empty palm. |
+| Critical | That is the number. Hold still. | He runs to the chamber, turns side-on to it, and leans in. |
+| The chamber spits snails | Uh oh. That is not right. | His jaw catches and his wings buzz. |
+| The snails keep coming | It is not stopping. | He runs to the computer and hammers its keys. |
+| Before the tubes go out | You will remember the hum. Little else. | He gives up the keys, turns to the visitor, and leans closer. |
+| The cave, first | Congratulations. You did that. All of you. | He dances. |
+| The cave, second | {count} specimens went in. Snails came out. A perfect run. Your turn. | He leans closer. |
+
+He is never idle while he speaks: each line has a gesture, and the scene performs it as the line appears.
+Between his lines he counts during the count: he looks up, reads his palm, writes in the air, glances at the chamber, and rubs his small hands.
+A wing of his twitches at each green arc.
+
+A run with one specimen reads “One specimen went in.” A run with none omits the count.
+At the computer and at the join code, one button reads “Back to the room”.
+
+The presenter page is titled “Presenter”. Its link reads “Open the office”.
+Its connection line reads “Connected”, “Connecting…”, or “Reconnecting…”.
+Its sections are “Office experiment” and “Controls”. Its readout labels are “Run”, “Visitors”, “Specimens”, and “Target”.
+The phases are “Quiet”, “Counting”, “Critical”, and “Over”, with these notes:
+“No specimens yet.” “Visitors add specimens.” “The critical scene plays for everyone.” “The run is over. Reset the experiment to start a new run.”
+A lost connection marks the numbers “Last known values”. Before the first state it reads “No numbers yet. They appear when the connection opens.”
+The target field is “New target” with the action “Set target”. The quick targets are spoken as “Quick targets” and read as plain numbers.
+Its help reads “Use {least} to {most}. A target at or below the count sends the run critical at once.”
+After critical it reads “After critical, reset the experiment to change the target.”
+The guarded actions are “Go critical now” and “Reset experiment”. Armed, they read “Select again to go critical” and “Select again to reset”.
+Their help reads “Sends the run critical at the current count.” and “Starts a new run with zero specimens. The target stays.”
+
+The presenter page has a section titled “Celebration track”. The presenter chooses a song file there. The file stays in that browser.
+Its help reads “The file stays in this browser and is never uploaded. Choose it in the browser that drives the projector. Phones in the room stay silent.”
+The file field is “Track file”. Without a file it reads “No track chosen. Choose a song to play when the cave appears.” Its notices are “Track stored.” and “Track removed.” Its action is “Remove track”.
+The settings are “Chorus starts at”, “Tempo (BPM)”, “Fade in (seconds)”, “Plays for (seconds)”, and “Fade out (seconds)”.
+The chorus help reads “Seconds, or minutes and seconds, for example 1:23.5.” The fade help reads “The chorus hits when the cave appears, {seconds} seconds after the run goes critical. A fade in longer than that is cut to it.”
+The tempo action is “Tap tempo”, with “Tap at least four times on the beat.”, “Keep tapping on the beat.”, and “{bpm} BPM”.
+The test actions are “Test from the fade” and “Stop”. The status reads “Ready.”, “Waiting to start.”, or “Playing.”
+During a test, a cue reads “The cave appears in {seconds} s.” and then “The cave is showing.”
+One line reads “Before the talk, select anything on the office page once, so the browser lets it play sound.”
+Each refusal names its next action, for example “This browser cannot play that file. Choose an audio file, such as MP3, M4A, or WAV.”
+`app/pages/presenter.vue` holds the full set of messages for this section.

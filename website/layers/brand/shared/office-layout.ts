@@ -45,6 +45,8 @@ export type OfficePlan = {
   lightSwitch: Place
   /** The entrance in the dark: where he stands when a visitor loads the office, where he stands to reach the switch, and the way he faces there. */
   entrance: { start: Point, stand: Point, facing: number }
+  /** The computer's keys: where he stands to work them, and the way he faces there. */
+  keys: { stand: Point, facing: number }
 }
 
 const jar = (id: string, x: number, contents: 'specimen' | 'empty'): OfficeProp =>
@@ -97,23 +99,41 @@ export const officePlan: OfficePlan = {
     // Two tubes light the room behind the camera, for a visitor who turns round.
     tube('tube-rear-near', 0, 4.8, 1.8, 'steady'), tube('tube-rear-far', 0, 9.8, 1.8, 'steady'),
   ],
-  start: [0.35, -0.4],
+  // He starts and stays on the right of the room. A body his size hides the whiteboard and the computer from every spot on the left, and visitors must see both.
+  start: [1.4, -0.3],
   exit: [3.1, -1],
-  // He works a round: he types at the desk, tends the jars, reads his palm on the way back, and listens to the failing tube.
+  // His round is slow: he turns a jar on the shelf and looks into it, follows a fly, smacks the vending machine, and reads his palm.
+  // Each stop is far longer than its habit, so he stands a while before and after it.
   // At the two stations he turns side-on to the viewer, so his hands are on his work and his face stays in view. He stays there longest.
   // A turn further round hides his face behind a wing, and a lifted arm then seems to grow from his neck.
   stops: [
-    // The whiteboard hangs above the desk. On every second round he writes on it and leaves the keys.
-    { position: [-0.9, -1.5], pause: 9, habit: 'TypeKeys', facing: -1.5, alternate: 'WriteBoard', works: ['desk'] },
-    { position: [0.9, -1.5], pause: 8, habit: 'TendJar', facing: 1.5, works: ['jar-shelf'] },
-    { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
-    { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
+    { position: [1.3, -1.5], pause: 15, habit: 'TendJar', facing: 1.5, works: ['jar-shelf'] },
+    { position: [1.8, 0.5], pause: 10, habit: 'TrackFly', alternate: 'ListenCeiling' },
+    { position: [2.95, 1.6], pause: 13, habit: 'SmackMachine', facing: 1.5, works: ['vending-machine'] },
+    // The palm stop lies a little right of the machine stop, so he leaves the machine sideways and keeps his side.
+    // A stop to the left sent him back and across in one walk. A foot that held him at the machine then slid on the floor.
+    { position: [3.05, -0.55], pause: 9, habit: 'CheckPalm', alternate: 'RubHands' },
   ],
   cues: { jars: [2.17, -0.345, -3.75], light: [1.45, 0.95, -4.35], ceiling: [0.7, 2.28, 0.7] },
   // The plate hangs on the door's wall, on the side nearer the viewer.
   lightSwitch: [5.47, -0.7, -0.4],
   // He starts in front of the test chamber window, so its light edges him. The switch is a short walk to his left.
   entrance: { start: [1.75, -0.9], stand: [4.14, -0.98], facing: 1.3 },
+  // He stands at the right end of the desk, side-on, and reaches left to the keys. So his head stays right of the monitor, and the viewer sees its screen fail.
+  // A stand in front of the monitor hid the screen and half the whiteboard behind him.
+  keys: { stand: [-0.3, -2], facing: -1.5 },
+}
+
+/** The public office keeps his usual round. The experiment keeps the desk and whiteboard in view. */
+export const publicOfficePlan: OfficePlan = {
+  ...officePlan,
+  start: [0.35, -0.4],
+  stops: [
+    { position: [-0.9, -1.5], pause: 9, habit: 'TypeKeys', facing: -1.5, alternate: 'WriteBoard', works: ['desk'] },
+    { position: [0.9, -1.5], pause: 8, habit: 'TendJar', facing: 1.5, works: ['jar-shelf'] },
+    { position: [-0.7, 0.4], pause: 2.6, habit: 'CheckPalm' },
+    { position: [0.7, 0.7], pause: 3.2, habit: 'ListenCeiling' },
+  ],
 }
 
 /**

@@ -15,14 +15,19 @@ export const walkSets = {
   lair: { start: sceneLayout.mascot as Point, exit: sceneLayout.exit as Point, route: sceneLayout.meshWalk as readonly Point[], pauses: sceneLayout.walkPauses as readonly number[] },
   office: { start: officePlan.start, exit: officePlan.exit, route: officePlan.stops.map(stop => stop.position), pauses: officePlan.stops.map(stop => stop.pause) },
 }
-export type WalkInput = { delta?: number, route: readonly Point[], pauses: readonly number[], attention?: StrollAttention, walkSpeed?: number, cadence: number }
+/** The way he faces his work at each stop of the office round, or nothing at a stop with no work. */
+export const officeFacings = officePlan.stops.map(stop => stop.facing)
+/** `facings` turns him to his work while he pauses at a stop, as the scene does at a station. Without it he holds the three-quarter turn at every stop. */
+export type WalkInput = { delta?: number, route: readonly Point[], pauses: readonly number[], attention?: StrollAttention, walkSpeed?: number, cadence: number, facings?: readonly (number | undefined)[] }
 
 export const startWalk = (position: Point, heading = meshWalk.rest): Walk => ({ stroll: startStroll(position, 0), turn: startTurn(heading) })
 
 /** One frame of the scene: the stroll first, with the way he faces, and then his turn. */
-export function stepWalk({ stroll, turn }: Walk, { delta = frame, route, pauses, attention = 'free', walkSpeed = meshWalk.speed, cadence }: WalkInput): Walk {
+export function stepWalk({ stroll, turn }: Walk, { delta = frame, route, pauses, attention = 'free', walkSpeed = meshWalk.speed, cadence, facings }: WalkInput): Walk {
   const walked = advanceStroll(stroll, { delta, route, pauses, walkSpeed, attention, cadence, facing: turn.heading })
-  return { stroll: walked, turn: advanceTurn(turn, walked, { delta, walkSpeed, rest: meshWalk.rest, limit: meshWalk.limit, attention }) }
+  // The scene turns him to his work only while he pauses at a station and nothing has his attention.
+  const stand = facings && attention === 'free' && walked.activity._tag === 'Pausing' ? facings[walked.activity.waypoint % facings.length] : undefined
+  return { stroll: walked, turn: advanceTurn(turn, walked, { delta, walkSpeed, rest: meshWalk.rest, limit: meshWalk.limit, attention, stand }) }
 }
 
 /** The cadence the scene gives a mesh whose stride is `stride` of its own units. */

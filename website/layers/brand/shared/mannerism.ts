@@ -3,6 +3,7 @@ import type { Stroll } from './mascot-stroll.ts'
 /** Habits he performs on his own or as a dialogue beat. Human habits first, then fly habits. */
 export type MannerismTag = 'CheckPalm' | 'HeadTilt' | 'JawCatch' | 'LeanIn' | 'AirWriting' | 'GlanceEggs'
   | 'WingTwitch' | 'WingBuzz' | 'RubHands' | 'WipeEye' | 'ListenCeiling' | 'LookToLight' | 'Still' | 'ReachSwitch' | 'Greet' | 'TypeKeys' | 'TendJar' | 'WriteBoard'
+  | 'SmackMachine' | 'TrackFly' | 'Dance'
 export type Mannerism = { _tag: 'None' } | { _tag: MannerismTag }
 /** `age` counts seconds since the mannerism began. `weight` fades a whole layer in or out. `side` mirrors a directional turn. */
 export type MannerismLayer = { mannerism: Mannerism, age: number, weight?: number, side?: 1 | -1 }
@@ -93,6 +94,7 @@ const shapes: Record<MannerismTag, Shape> = {
       head: [(0.2 - (1 - typing) * 0.26) * e, Math.sin(age * 0.9) * 0.06 * e, 0], chest: [0.16 * e, 0, 0] } }
   } },
   // He stands turned to the jars. The long arm nearer them lifts to one, turns it a little each way, and his head tips to look inside. `side` is the side the jars are on.
+  // The jar stays on the shelf. A jar in his hand never looked held: his fingers went through it.
   TendJar: { duration: 5.4, attack: 0.7, release: 0.8, motion: (e, age, side) => {
     const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
     const turn = Math.sin(age * 1.7)
@@ -112,6 +114,50 @@ const shapes: Record<MannerismTag, Shape> = {
       [shoulder]: [(-1.05 + Math.floor(line) * 0.05) * e, 0, (0.04 + along * 0.1 * writing) * e * side], [elbow]: [-0.85 * e, 0, along * 0.08 * writing * e * side],
       [hand]: [-0.1 * e, 0, along * 0.2 * writing * e * side],
       head: [-0.12 * e, 0.1 * e * side, 0.04 * e * side], chest: [-0.03 * e, 0.04 * e * side, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
+  } },
+  // The vending machine keeps what he paid for. He stands turned to it, draws the long arm on the viewer's side back, and smacks its front twice, the second time harder.
+  // Then he leans in to look at the slot, and his head tips: nothing. `side` is the side the machine is on. `machineSmacks` gives the moments of the blows, so the sound can follow them.
+  SmackMachine: { duration: 6.4, attack: 0.5, release: 0.8, motion: (e, age, side) => {
+    const [shoulder, elbow, hand] = side === 1 ? ['left-shoulder', 'left-elbow', 'left-hand'] as const : ['right-shoulder', 'right-elbow', 'right-hand'] as const
+    // `drawn` is how far the arm is pulled back for a blow. `struck` is how far it is out against the machine.
+    const blow = smackTimes.reduce((sum, time, index) => {
+      const drawn = smooth(clamp01((age - time + 0.45) / 0.4)) * (1 - clamp01((age - time) / 0.07))
+      const struck = clamp01((age - time) / 0.07) * (1 - 0.45 * smooth(clamp01((age - time - 0.07) / 0.5))) * (age < time + 0.85 ? 1 : 1 - smooth(clamp01((age - time - 0.85) / 0.3)))
+      return { drawn: Math.max(sum.drawn, drawn), struck: Math.max(sum.struck, struck * (0.8 + index * 0.2)) }
+    }, { drawn: 0, struck: 0 })
+    const peer = smooth(clamp01((age - 3.3) / 0.5)) * (1 - smooth(clamp01((age - 4.7) / 0.4)))
+    const doubt = smooth(clamp01((age - 4.6) / 0.35)) * (1 - smooth(clamp01((age - 5.7) / 0.4)))
+    return { calm: e * 0.4, hands: { [side === 1 ? 'left' : 'right']: { curl: 0.2 * e } }, turns: {
+      [shoulder]: [(-0.55 - 0.3 * blow.struck + 0.35 * blow.drawn) * e, 0, (0.3 + 0.62 * blow.struck - 0.25 * blow.drawn) * e * side],
+      [elbow]: [(-0.9 + 0.4 * blow.struck - 0.5 * blow.drawn) * e, 0, 0], [hand]: [(-0.1 - 0.25 * blow.struck) * e, 0, 0],
+      head: [(0.05 + 0.2 * peer + 0.08 * blow.struck) * e, (0.6 - 0.15 * blow.drawn) * e * side, 0.3 * doubt * e * side],
+      chest: [(0.06 + 0.18 * peer + 0.1 * blow.struck) * e, (0.1 + 0.08 * blow.struck) * e * side, 0],
+      'left-wing': [0, 0.14 * blow.struck * e, 0], 'right-wing': [0, -0.1 * blow.struck * e, 0] } satisfies Partial<Record<MannerismJoint, Turn>> }
+  } },
+  // A fly crosses the room, or he thinks one does. His head follows it up and round, his small arms twitch, and his jaw snaps at it. He misses, and his small hands rub it off.
+  TrackFly: { duration: 5.6, attack: 0.4, release: 0.7, motion: (e, age) => {
+    const snap = Math.max(0, 1 - Math.abs(age - snapTime) / 0.14)
+    const after = smooth(clamp01((age - snapTime - 0.2) / 0.3))
+    const follow = 1 - after
+    return { jaw: snap * 0.85 * e, rub: after * e, turns: {
+      head: [(-0.2 + Math.sin(age * 2.7 + 1) * 0.18) * follow * e + snap * 0.22 * e, (Math.sin(age * 1.9) * 0.5 + Math.sin(age * 4.3) * 0.16) * follow * e, Math.sin(age * 3.1) * 0.08 * follow * e],
+      chest: [-0.05 * follow * e, Math.sin(age * 1.9) * 0.14 * follow * e, 0],
+      'left-small-elbow': [0, 0, Math.sin(age * 11) * 0.18 * follow * e], 'right-small-elbow': [0, 0, -Math.sin(age * 9 + 1) * 0.18 * follow * e],
+      'left-wing': [0, Math.sin(age * 6) * 0.06 * follow * e, 0] } }
+  } },
+  // He dances. `age` counts beats of the music here, not seconds, so the dance keeps any tempo. He bounces once a beat and sways over two.
+  // His long arms go up in turn over four beats, his small arms pump on every beat, and his wings lift with each bounce.
+  Dance: { duration: 100000, attack: 1.5, release: 2, motion: (e, age) => {
+    const turn = age * Math.PI
+    const bounce = Math.abs(Math.sin(turn))
+    const sway = Math.sin(turn)
+    const phrase = Math.sin(turn / 2)
+    return { turns: {
+      chest: [0.1 * bounce * e, 0.16 * sway * e, 0.07 * sway * e], head: [(-0.12 + 0.2 * bounce) * e, -0.1 * sway * e, 0.16 * sway * e],
+      'left-shoulder': [(-0.5 - 0.4 * Math.max(0, phrase)) * e, 0, (0.25 + 0.3 * Math.max(0, sway)) * e], 'right-shoulder': [(-0.5 - 0.4 * Math.max(0, -phrase)) * e, 0, (-0.25 - 0.3 * Math.max(0, -sway)) * e],
+      'left-elbow': [(-0.9 + 0.3 * bounce) * e, 0, 0], 'right-elbow': [(-0.9 + 0.3 * bounce) * e, 0, 0], 'left-hand': [0, 0, 0.3 * sway * e], 'right-hand': [0, 0, 0.3 * sway * e],
+      'left-small-elbow': [0, 0, 0.25 * Math.sin(turn * 2) * e], 'right-small-elbow': [0, 0, -0.25 * Math.sin(turn * 2) * e],
+      'left-wing': [0, 0.12 * bounce * e, 0], 'right-wing': [0, -0.12 * bounce * e, 0] } }
   } },
   // A small hello: his head tips, and the long claw on `side` lifts beside his face and opens twice. The wings give one short buzz.
   Greet: { duration: 1.7, attack: 0.3, release: 0.5, motion: (e, age, side) => {
@@ -133,6 +179,14 @@ export function keyTaps(age: number) {
   for (const [from, to] of typingBursts) taps += Math.floor(Math.max(0, Math.min(age, to) - from) * keyTapRate)
   return taps
 }
+
+// He smacks the vending machine twice.
+const smackTimes = [1.4, 2.5] as const
+/** How many blows have landed on the vending machine by `age` seconds of that habit. The scene plays a thump each time the count rises. */
+export const machineSmacks = (age: number) => smackTimes.filter(time => age >= time).length
+
+// The moment his jaw snaps at the fly.
+const snapTime = 3.7
 
 // He writes four lines on the board, one after the other.
 const strokeStart = 0.9, strokeTime = 1.1, strokeCount = 4

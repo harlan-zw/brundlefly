@@ -5,7 +5,7 @@ import type { Object3D } from 'three'
 import { createMeshMascot } from '../layers/brand/shared/mascot-mesh.ts'
 import { strollPose } from '../layers/brand/shared/mascot-stroll.ts'
 import { loadMascotModel } from './mascot-model.ts'
-import { frame, meshCadence, meshWalk, sequence, startWalk, stepWalk, walkSets } from './walk-sim.ts'
+import { frame, meshCadence, meshWalk, officeFacings, sequence, startWalk, stepWalk, walkSets } from './walk-sim.ts'
 import type { Walk } from './walk-sim.ts'
 
 /**
@@ -55,8 +55,8 @@ async function standModel(start: readonly [number, number]) {
 type Shown = Awaited<ReturnType<typeof standModel>>['show'] extends (...args: never[]) => infer Result ? Result : never
 type Measure = { slide: number, toeSlide: number, inPlace: number, airborne: number, reach: number, knee: number, sunk: number, turnJump: number, speedJump: number, steps: number }
 
-/** Walks one lap of a set, from his first arrival at the first stop to his next, and measures it. */
-async function measureLap(name: keyof typeof walkSets, frameTime: () => number): Promise<Measure> {
+/** Walks one lap of a set, from his first arrival at the first stop to his next, and measures it. With `facings` he turns to his work at each station, as the scene does. */
+async function measureLap(name: keyof typeof walkSets, frameTime: () => number, facings?: readonly (number | undefined)[]): Promise<Measure> {
   const set = walkSets[name]
   const { show, cadence } = await standModel(set.start)
   let walk = startWalk(set.start)
@@ -66,7 +66,7 @@ async function measureLap(name: keyof typeof walkSets, frameTime: () => number):
   let arrivals = 0, wasPausing = false, before: Shown | undefined, elapsed = 0, lastRate = 0
   while (arrivals < 2 && elapsed < 120) {
     const delta = frameTime()
-    const next = stepWalk(walk, { delta, route: set.route, pauses: set.pauses, cadence })
+    const next = stepWalk(walk, { delta, route: set.route, pauses: set.pauses, cadence, facings })
     const feet = show(next, delta)
     elapsed += delta
     const pausing = next.stroll.activity._tag === 'Pausing'
@@ -129,6 +129,14 @@ test('uneven frames, as on a slow device, still hold his feet to the floor', asy
   const lap = await measureLap('office', () => 0.004 + random() * 0.046)
   assert.ok(lap.slide < height * 0.02 && lap.toeSlide < height * 0.02, `A planted foot slid ${lap.slide.toFixed(3)} units, or turned ${lap.toeSlide.toFixed(3)}, in one step.`)
   assert.ok(lap.inPlace < 0.5 && lap.airborne === 0 && lap.reach <= 0.9701 && lap.knee > 0.04 && lap.sunk < 1e-4, JSON.stringify(lap))
+})
+
+test('when he turns to his work at a station and then walks on, a foot on the floor still stays where it stands', async () => {
+  // At a station he turns side-on to his work, so he walks off from that turn. He steps in place to make the turn, so only his feet are measured here.
+  const lap = await measureLap('office', () => frame, officeFacings)
+  assert.ok(lap.slide < height * 0.01, `A planted foot slid ${lap.slide.toFixed(3)} units in one step.`)
+  assert.ok(lap.toeSlide < height * 0.01, `A planted foot turned on the floor: its toe moved ${lap.toeSlide.toFixed(3)} units in one step.`)
+  assert.ok(lap.airborne === 0 && lap.reach <= 0.9701 && lap.knee > 0.04 && lap.sunk < 1e-4, JSON.stringify(lap))
 })
 
 test('through a stride on the floor, the skin of the foot that carries him rests on it and the other foot never goes under', async () => {

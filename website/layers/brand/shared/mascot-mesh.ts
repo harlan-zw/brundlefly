@@ -587,7 +587,7 @@ function assemble(scene: Object3D, animations: readonly AnimationClip[], bounds:
           0, Math.sin(phase + index * 1.7) * 0.07 * body.calm)
         tip?.rotation.set(Math.sin(phase * 2 + index * 0.9 + 0.8) * 0.16 * body.calm + body.speaking * 0.2 + depth.bounce * 0.09, 0, 0)
       })
-      // A habit closes his fingers: on a marker, round a jar, or one at a time on the keys.
+      // A habit closes his fingers: on a marker, or one at a time on the keys.
       if (fingers) for (const side of ['left', 'right'] as const) {
         const hand = input.mannerism?.hands[side]
         const marker = markers?.[side]

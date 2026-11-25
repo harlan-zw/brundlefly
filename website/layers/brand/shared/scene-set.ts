@@ -86,11 +86,20 @@ export function mascotInLight(look: SetMascot, light: number): SetMascot {
 /**
  * `time` is scene time in seconds. It stands still under reduced motion, so a set that follows it stands still too.
  * `light` is how bright the set's own lamps are, from 0 to 1. A set whose lamps can go out follows it.
+ * `beacon` is a warning light of the set, if it has one: its turns in one second, and how much brighter than usual it burns, from 0 to 1.
  */
-export type SetInput = { time: number, pressure: number, settings: SceneSettings, light: number }
+export type SetInput = { time: number, pressure: number, settings: SceneSettings, light: number, beacon?: { turns: number, glow: number } }
 
-/** A set in the scene. `dispose` releases its geometry, its materials, and the artwork it loaded. */
-export type BuiltSet = { root: Object3D, cues: SetCues, update: (input: SetInput) => void, dispose: () => void }
+/** The drawing calls a drawn sheet needs. A 2D canvas context has them. The type names no browser API, so the Worker's check can read this file. */
+export type SetPainter = { fillStyle: string | object, fillRect: (x: number, y: number, width: number, height: number) => void, clearRect: (x: number, y: number, width: number, height: number) => void }
+/** The drawn sheet of a set: the painter that draws on it, and the call that shows what it drew. */
+export type SetMarks = { painter: SetPainter, changed: () => void }
+
+/**
+ * A set in the scene. `dispose` releases its geometry, its materials, and the artwork it loaded.
+ * A set with a drawn sheet gives `marks`, so the scene can draw on it while it runs.
+ */
+export type BuiltSet = { root: Object3D, cues: SetCues, update: (input: SetInput) => void, dispose: () => void, marks?: SetMarks }
 
 /** What a set needs from the device to build itself. */
 export type SetContext = { quality: SceneQuality, anisotropy: number }

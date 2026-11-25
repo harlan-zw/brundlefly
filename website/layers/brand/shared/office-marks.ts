@@ -1,3 +1,5 @@
+import type { SetPainter } from './scene-set.ts'
+
 /**
  * The drawn surfaces of the office on one small sheet: the whiteboard, the clock face, the door sign, the mug's label, and the keyboard's keys.
  * Each has its own region of the sheet and its own flat face in the room. Text can come later as a new drawing in a region, or as an image with the same regions.
@@ -13,6 +15,10 @@ const regions = {
   keys: [112, 116, 96, 36],
 } as const
 export type MarkName = keyof typeof regions
+/** A region in sheet pixels: left, top, width, height. A scene that draws on the sheet stays inside it. */
+export const markPixels = (name: MarkName) => regions[name]
+/** The colours of the sheet. */
+export const markInk = { board: '#D8DACB', smudge: '#C6CABA', chitin: '#343C3B', rust: '#AA604B', teal: '#418B90', cream: '#E8D4A6', olive: '#777648', bruise: '#69404B', night: '#080B08', wing: '#A4B5A0' } as const
 export type UvRect = readonly [u0: number, v0: number, u1: number, v1: number]
 
 /** Where a region lies on the sheet, for a face that shows it. The sheet's top row is the top of the face. */
@@ -21,9 +27,9 @@ export const markRegion = (name: MarkName): UvRect => {
   return [left / marksSize, 1 - (top + height) / marksSize, (left + width) / marksSize, 1 - top / marksSize]
 }
 
-const ink = { board: '#D8DACB', smudge: '#C6CABA', chitin: '#343C3B', rust: '#AA604B', teal: '#418B90', cream: '#E8D4A6', olive: '#777648', bruise: '#69404B', night: '#080B08', wing: '#A4B5A0' }
+const ink = markInk
 /** The drawing calls the sheet needs. A 2D canvas context has them. */
-export type MarkPainter = Pick<CanvasRenderingContext2D, 'fillRect' | 'clearRect'> & { fillStyle: string | CanvasGradient | CanvasPattern }
+export type MarkPainter = SetPainter
 
 /** Draws the whole sheet with whole pixels only, so every edge stays hard. */
 export function paintOfficeMarks(painter: MarkPainter) {
