@@ -2,7 +2,7 @@
 import { computed, reactive, ref, shallowRef, watch } from 'vue'
 import { useIntervalFn, useTimeoutFn, useTimestamp } from '@vueuse/core'
 import { useHead } from '#imports'
-import { creatures, criticalSceneSeconds, phase, specimenCount, targetLimits } from '#shared/office-experiment'
+import { creatures, criticalSceneSeconds, phase, revealSwellSeconds, specimenCount, targetLimits } from '#shared/office-experiment'
 import type { Phase } from '#shared/office-experiment'
 import { formatClock, parseClock, partyFileBytes, partyLimits, tapRestartMs, tapTempo } from '#shared/party-track'
 import type { PartyTrack } from '#shared/party-track'
@@ -17,7 +17,7 @@ useHead({
   link: [{ rel: 'canonical', href: 'https://brundlefly.dev/presenter' }],
 })
 
-const { experiment, connected, online, clock, reset, setTarget, goCritical, setParty } = useOfficeExperiment(() => true, 'watcher')
+const { experiment, connected, online, clock, reset, setTarget, goCritical, reveal, setParty } = useOfficeExperiment(() => true, 'watcher')
 
 // Server time, read again every half second. Then `Critical` turns to `Over` without a new message.
 const now = shallowRef(clock())
@@ -31,6 +31,7 @@ const connection = computed(() => online.value ? 'Connected' : wasOnline.value ?
 // The numbers are live only while the connection is open and the server has sent a state.
 const live = computed(() => online.value && experiment.value !== null)
 const locked = computed(() => experiment.value !== null && experiment.value.criticalAt !== null)
+const canReveal = computed(() => live.value && experiment.value !== null && experiment.value.criticalAt !== null && experiment.value.revealAt === null)
 const readout = computed(() => {
   const state = experiment.value
   if (!state) return undefined
@@ -41,7 +42,8 @@ const readout = computed(() => {
 const phaseNotes: Record<Phase, string> = {
   Quiet: 'No specimens yet.',
   Counting: 'Visitors add specimens.',
-  Critical: 'The critical scene plays for everyone.',
+  Critical: 'The critical scene plays for the room.',
+  Holding: 'The room is dark. Reveal the cave when ready.',
   Over: 'The run is over. Reset the experiment to start a new run.',
 }
 const digits = new Intl.NumberFormat('en')
@@ -76,8 +78,8 @@ const edited = ref(false)
 watch(() => experiment.value?.target, (target) => {
   if (target !== undefined && !edited.value) draft.value = target
 }, { immediate: true })
-// Targets for one tap: a few specimens for a test alone, and the sizes of a small and a full room.
-const presets = [10, 100, 1000, targetLimits.initial]
+// Targets for one tap: a few specimens for a test alone, and the sizes of a small, house-party, and full room.
+const presets = [10, 100, targetLimits.initial, 3000]
 function usePreset(value: number) {
   edited.value = false
   draft.value = value
@@ -229,7 +231,10 @@ const untilHit = computed(() => testHit.value === null ? null : (testHit.value -
     <div class="panel">
       <header class="top">
         <h1>Presenter</h1>
-        <a href="/projector" target="_blank" rel="noopener">Open the office<span class="hidden-label"> (opens in a new tab)</span></a>
+        <div class="links">
+          <a href="/projector?show" target="_blank" rel="noopener">Open show<span class="hidden-label"> (opens in a new tab)</span></a>
+          <a href="/projector" target="_blank" rel="noopener">Open the office<span class="hidden-label"> (opens in a new tab)</span></a>
+        </div>
       </header>
       <p class="connection" role="status" :data-online="online">
         <i aria-hidden="true" />{{ connection }}
@@ -298,6 +303,18 @@ const untilHit = computed(() => testHit.value === null ? null : (testHit.value -
             </template>
           </p>
         </form>
+
+        <div class="control">
+          <button
+            type="button" class="primary reveal-btn" :disabled="!canReveal"
+            aria-describedby="presenter-reveal-help" @click="reveal"
+          >
+            Reveal cave now
+          </button>
+          <p id="presenter-reveal-help" class="help">
+            Leaves the blackout hold, starts the {{ revealSwellSeconds }}-second song swell, and reveals the cave.
+          </p>
+        </div>
 
         <div class="control">
           <button
@@ -404,7 +421,7 @@ const untilHit = computed(() => testHit.value === null ? null : (testHit.value -
           </div>
 
           <p class="help wide">
-            The chorus hits when the cave appears, {{ criticalSceneSeconds }} seconds after the run goes critical. A fade in longer than that is cut to it.
+            The chorus hits when the cave appears, {{ revealSwellSeconds }} seconds after you reveal from the blackout hold (at least {{ criticalSceneSeconds }} seconds after critical).
           </p>
         </form>
 
@@ -438,11 +455,13 @@ const untilHit = computed(() => testHit.value === null ? null : (testHit.value -
 .panel { box-sizing: border-box; display: grid; gap: 24px; align-content: start; max-inline-size: 64rem; margin-inline: auto; padding: 24px 16px 48px; }
 h1, h2, p, dl, dd { margin: 0; }
 
-.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.links { display: flex; align-items: center; gap: 20px; }
 h1 { font: 700 2.25rem/1 var(--font-display); letter-spacing: .01em; }
 .top a { display: inline-flex; align-items: center; min-block-size: 44px; font: 500 15px var(--font-mono); color: var(--color-cream); text-decoration: underline; text-underline-offset: .3em; }
 .top a:hover { color: var(--color-wing); }
 .hidden-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.reveal-btn { inline-size: 100%; }
 
 .connection { display: flex; align-items: center; gap: 10px; font: 500 15px var(--font-mono); color: var(--color-wing); }
 .connection i { inline-size: 10px; block-size: 10px; border-radius: 50%; background: var(--color-flesh); }
@@ -463,7 +482,7 @@ dd { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .phase strong { font: 700 clamp(2.5rem, 11vw, 3.5rem)/1 var(--font-display); letter-spacing: .01em; }
 .phase span { color: var(--color-wing); }
 .readout[data-phase="Quiet"] .phase strong { color: var(--color-wing); }
-.readout[data-phase="Critical"] .phase strong { color: var(--color-flesh); }
+.readout[data-phase="Critical"] .phase strong, .readout[data-phase="Holding"] .phase strong { color: var(--color-flesh); }
 .readout[data-phase="Over"] .phase strong { color: var(--color-wing); }
 
 .numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }

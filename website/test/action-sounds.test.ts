@@ -88,6 +88,19 @@ test('a thump on the vending machine is low and short, stays under his voice, an
   }
 })
 
+test('hold pulse swells smoothly and returns to silence under voice level', () => {
+  for (let index = 0; index < 8; index++) {
+    const pulse = actionSounds.HoldPulse(index)
+    assertPlayable(pulse, 'hold pulse')
+    assert.ok(pulse.duration >= 0.8 && pulse.duration < 1.2)
+    assert.ok(shotPeak(pulse) < 0.2)
+    for (const voice of pulse.voices) {
+      assert.equal(voice.level[0]![1], 0)
+      assert.equal(voice.level.at(-1)![1], 0)
+    }
+  }
+})
+
 test('an arc cracks short and sharp, falls in pitch, and no two arcs in a row sound the same', () => {
   for (let index = 0; index < 20; index++) {
     const zap = actionSounds.ArcZap(index)

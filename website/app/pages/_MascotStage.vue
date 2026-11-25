@@ -10,9 +10,10 @@ import { pathForSet } from '#shared/travel'
 import type { SceneVisit } from '#shared/travel'
 import { criticalSceneSeconds, phase, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
-import { crashSeconds, criticalDarkAt } from '#shared/office-critical'
+import { criticalDarkAt } from '#shared/office-critical'
 import { caveLines, countingLine, criticalLines, lineSeconds } from '#shared/office-script'
 import type { Spoken } from '#shared/office-script'
+import { clickerAction, readClickerKey } from '#shared/show-deck'
 import type { ActionSound } from '#shared/action-sounds'
 import { useOfficeExperiment } from '../composables/useOfficeExperiment'
 import { usePartyTrack } from '../composables/usePartyTrack'
@@ -20,6 +21,7 @@ import type { Station } from '../office-stage'
 import BackToRoom from './_BackToRoom.vue'
 import OfficeCounter from './_OfficeCounter.vue'
 import OverheadLine from './_OverheadLine.vue'
+import ShowSlides from './_ShowSlides.vue'
 import SpeechDialog from './_SpeechDialog.vue'
 import SceneAudio from './_SceneAudio.vue'
 import SceneLoading from './_SceneLoading.vue'
@@ -61,9 +63,13 @@ const foundDark = ref(false)
 const office = useOfficeExperiment(() => presenting && (wanted.value === 'office' || shown.value === 'office'))
 const { experiment } = office
 const station = ref<Station>(joined ? 'computer' : 'room')
+// `/projector?show` opens on the four MS Paint slides over the preloaded 3D office so one presenter clicker runs the whole act.
+const showMode = presenting && !joined && 'show' in route.query
+const tuning = presenting && !joined && 'tune' in route.query
+const slide = ref<number | null>(showMode ? 0 : null)
 // On a phone held upright the computer's screen fills the page. The scene behind it then draws nothing, and his lines wait for the room.
 const phone = useMediaQuery('(max-width: 640px) and (orientation: portrait)')
-const covered = computed(() => phone.value && station.value === 'computer' && run.value !== null && shown.value === 'office' && !talking.value)
+const covered = computed(() => (phone.value && station.value === 'computer' && run.value !== null && shown.value === 'office' && !talking.value) || slide.value !== null)
 // The run whose critical scene took this visitor to the cave. The office is the plain office for them until the next run.
 const left = ref<number>()
 // The run this visitor saw while it counted. Its critical scene is theirs, also when they see the end of it late.
@@ -84,6 +90,24 @@ const caveOpen = presenting
 const run = computed(() => experiment.value && left.value !== experiment.value.run ? experiment.value : null)
 // The scene is in its critical moment. He is busy, and the stations and the dialog wait.
 const critical = computed(() => run.value !== null && run.value.criticalAt !== null)
+// True for `/join` phones once the presenter has triggered the cave reveal and its chorus has landed.
+const phoneRevealed = ref(false)
+const { pause: stopRevealWatch, resume: watchReveal } = useIntervalFn(() => {
+  const state = run.value
+  if (!state || state.revealAt === null) { phoneRevealed.value = false; return stopRevealWatch() }
+  if (office.clock() >= state.revealAt) { phoneRevealed.value = true; stopRevealWatch() }
+}, 250, { immediate: false })
+watch(() => [joined, run.value?.run, run.value?.revealAt] as const, ([isJoined, , revealAt]) => {
+  if (!isJoined || revealAt === null || revealAt === undefined) { phoneRevealed.value = false; stopRevealWatch(); return }
+  if (office.clock() >= revealAt) { phoneRevealed.value = true; stopRevealWatch() }
+  else { phoneRevealed.value = false; watchReveal() }
+}, { immediate: true })
+function enterCaveFromPhone() {
+  const state = run.value
+  if (!state || state.revealAt === null) return
+  station.value = 'room'
+  leave(state)
+}
 function talk() {
   if (critical.value) return
   station.value = 'room'
@@ -99,7 +123,25 @@ function look(to: Station) {
   if (critical.value || (to === 'room' && station.value === 'computer' && performance.now() - lastTap < 1500)) return
   station.value = to
 }
-if (presenting) useEventListener('keydown', (event: KeyboardEvent) => { if (event.key === 'Escape' && !talking.value) station.value = 'room' })
+if (presenting) {
+  useEventListener('keydown', (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && !talking.value) { station.value = 'room'; return }
+    if (joined || talking.value || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return
+    if (tuning && station.value === 'code' && event.key.startsWith('Arrow')) return
+    const target = event.target
+    if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, button, [contenteditable]:not([contenteditable="false"])'))) return
+    const key = readClickerKey(event.key)
+    if (!key) return
+    const state = run.value
+    const criticalAge = state && state.criticalAt !== null ? (office.clock() - state.criticalAt) / 1000 : undefined
+    const action = clickerAction(key, { show: showMode, slide: slide.value, station: station.value, experiment: state, criticalAge })
+    if (action._tag === 'None') return
+    event.preventDefault()
+    if (action._tag === 'Slide') slide.value = action.index
+    else if (action._tag === 'Station') station.value = action.station
+    else office.reveal()
+  })
+}
 
 // What he says over his head. A line stays for a few seconds and opens no dialog.
 const line = ref('')
@@ -128,15 +170,34 @@ const song = presenting ? usePartyTrack() : undefined
 let sung = false
 // A visitor who turns the sound off, and a presenter who starts a new run, both end the song.
 watch(() => sound.value.muted, (muted) => { if (muted) song?.stop(1) })
-watch(() => experiment.value?.run, (now, before) => { if (before !== undefined && now !== undefined && now !== before) song?.stop(1) })
+watch(() => experiment.value?.run, (now, before) => {
+  if (before === undefined || now === undefined || now === before) return
+  song?.stop(1)
+  if (!joined && shown.value === 'lair') {
+    wanted.value = 'office'
+    snailed.value = false
+    party.value = null
+    keepParty()
+  }
+  if (joined) station.value = 'computer'
+})
+let lastHoldPulse = 0
 const { pause: endScene, resume: playScene } = useIntervalFn(() => {
   const state = run.value
   if (!state || state.criticalAt === null) return endScene()
-  const age = (office.clock() - state.criticalAt) / 1000
+  const now = office.clock()
+  const age = (now - state.criticalAt) / 1000
   for (; spoken < criticalLines.length && age >= criticalLines[spoken]!.at; spoken++) if (age < criticalLines[spoken]!.at + 2) say(criticalLines[spoken]!)
-  if (age >= crashSeconds) station.value = 'room'
-  if (!sung && !sound.value.muted) { sung = true; song?.play(criticalSceneSeconds - age) }
-  if (age >= criticalDarkAt) leave(state)
+  if (state.revealAt !== null) {
+    if (!sung && !sound.value.muted) { sung = true; song?.play((state.revealAt - now) / 1000) }
+    if (age >= criticalDarkAt) leave(state)
+    return
+  }
+  // Hold in pitch black after `criticalDarkAt` with a gentle rising hum pulse until the presenter triggers reveal.
+  if (age >= criticalDarkAt && !sound.value.muted && now - lastHoldPulse >= 1200) {
+    lastHoldPulse = now
+    audio.value?.playAction('HoldPulse')
+  }
 }, 100, { immediate: false })
 const caveTimers: ReturnType<typeof setTimeout>[] = []
 // The run that sent this visitor to the cave, until they arrive there.
@@ -145,8 +206,8 @@ function leave(state: Experiment) {
   endScene()
   left.value = state.run
   snailed.value = true
-  // The cave appears as the scene ends, and the celebration runs from there. A visitor who comes after it finds a quiet cave.
-  const hit = (state.criticalAt ?? office.clock()) + criticalSceneSeconds * 1000
+  // The cave appears when `revealAt` arrives (or at the end of the critical scene if already past), and the celebration runs from there.
+  const hit = state.revealAt ?? ((state.criticalAt ?? office.clock()) + criticalSceneSeconds * 1000)
   // The room gives the tempo and the length, so every device dances as one.
   const { bpm, playFor, fadeOut } = office.party.value
   partyRemaining.value = hit + (playFor + fadeOut) * 1000 - office.clock()
@@ -164,13 +225,15 @@ watch(() => run.value?.criticalAt ?? null, (at) => {
   const state = run.value
   if (at === null || !state) return
   talking.value = false
-  // A visitor at the computer stays there for a moment and sees its screen fail. Everyone else looks at the room at once.
-  if (station.value !== 'computer') station.value = 'room'
-  // The scene is over. A visitor who joined by the code, or who saw this run count and lost the connection at its end, goes straight to the cave.
-  // Any other late visitor finds the plain office.
-  if (phase(state, office.clock()) === 'Over') { if (joined || counted === state.run) leave(state); else left.value = state.run; return }
+  slide.value = null
+  // Phones that came by `/join` stay locked on the computer's overload alarm so eyes stay on the room and phones never spoil the reveal.
+  if (joined) { station.value = 'computer'; return }
+  station.value = 'room'
+  // The scene is over. A projector that joins after the reveal goes straight to the cave.
+  if (phase(state, office.clock()) === 'Over') { if (counted === state.run) leave(state); else left.value = state.run; return }
   spoken = 0
   sung = false
+  lastHoldPulse = 0
   playScene()
   // The chamber hums from the start of the scene. A visitor who comes in the middle of it hears no hum cut short.
   if ((office.clock() - at) / 1000 < 1) audio.value?.playAction('ChamberHum')
@@ -203,8 +266,9 @@ function landed(kind: Creature) {
       <template #fallback><SceneLoading /></template>
     </ClientOnly>
     <template v-if="presenting">
-      <OfficeCounter v-if="run && shown === 'office'" :experiment="run" :connected="office.connected.value" :online="office.online.value" :shown="station === 'computer' && !talking" @tap="tap" @leave="station = 'room'" />
-      <BackToRoom :shown="station === 'code' && !talking && !critical" @leave="station = 'room'" />
+      <ShowSlides v-if="slide !== null" :slide="slide" />
+      <OfficeCounter v-if="run && shown === 'office'" :experiment="run" :connected="office.connected.value" :online="office.online.value" :shown="station === 'computer' && !talking && slide === null" :revealed="phoneRevealed" @tap="tap" @leave="station = 'room'" @enter="enterCaveFromPhone" />
+      <BackToRoom :shown="station === 'code' && !talking && !critical && slide === null" @leave="station = 'room'" />
       <OverheadLine :text="talking || covered ? '' : line" />
     </template>
     <SpeechDialog :open="talking" :place="shown" :found-dark="foundDark" :travelling="wanted !== shown" :muted="sound.muted" :sound-available="sound.status._tag !== 'Unavailable'" :cave-open="caveOpen" @close="talking = false; mood = 'neutral'" @reply="replyLength = $event.length; replies++" @reaction="mood = $event.mood; beat = $event.beat; reaction++" @pending="thinking = $event" @sound="audio?.toggle()" @travel="wanted = $event" />

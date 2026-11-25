@@ -611,9 +611,11 @@ watch(canvas, async (element) => {
     // Free again, he takes up his loop from where he stands.
     if (entered.held && !act.held) { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
     // The experiment belongs to the office. Its critical scene dims the tubes, and every device times it from the server's clock.
+    // While the presenter holds the room in pitch black (`revealAt === null`), keep the final dark frame locked so the office never flashes back in.
     const run = standing.stage.name === 'office' ? experiment : null
     const criticalAge = run && run.criticalAt !== null ? Math.max(0, (serverClock() - run.criticalAt) / 1000) : undefined
-    const critical = criticalAge !== undefined && criticalAge < criticalSceneSeconds ? criticalFrame(criticalAge, !faceMotion) : undefined
+    const holding = Boolean(run && run.criticalAt !== null && run.revealAt === null && criticalAge !== undefined && criticalAge >= criticalSceneSeconds)
+    const critical = criticalAge !== undefined && (criticalAge < criticalSceneSeconds || holding) ? criticalFrame(Math.min(criticalAge, criticalSceneSeconds), !faceMotion) : undefined
     const over = criticalAge !== undefined && !critical
     // Near the target the chamber is not steady. Now and then the room shakes and the tubes dip, until the critical scene takes both over.
     const tense = unrest(over ? null : run)

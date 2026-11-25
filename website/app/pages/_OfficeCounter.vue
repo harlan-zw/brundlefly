@@ -7,9 +7,9 @@ import { unrest } from '#shared/office-unrest'
 
 // The desk computer's screen: the dashboard of a home lab that runs one service, the specimen loader.
 // The scene gives the place of the glass. Each key adds one specimen for everyone, and every device shows the same load.
-const { experiment, connected, online, shown } = defineProps<{ experiment: Experiment, connected: number, online: boolean, shown: boolean }>()
-// `leave` asks for the room again.
-const emit = defineEmits<{ tap: [kind: Creature], leave: [] }>()
+const { experiment, connected, online, shown, revealed = false } = defineProps<{ experiment: Experiment, connected: number, online: boolean, shown: boolean, revealed?: boolean }>()
+// `leave` asks for the room again. `enter` opens the cave after the reveal.
+const emit = defineEmits<{ tap: [kind: Creature], leave: [], enter: [] }>()
 const digits = new Intl.NumberFormat('en')
 const count = computed(() => specimenCount(experiment))
 const percent = computed(() => loadedPercent(experiment))
@@ -69,17 +69,18 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
 <template>
   <div class="computer">
   <section class="counter" :class="{ shown }" :data-stage="stage" aria-label="Specimen loader" :inert="!shown">
-    <!-- The run goes critical, and the computer fails as a home server fails. -->
+    <!-- The run goes critical: lock phones on an unmistakable in-world alarm so every eye snaps up to the room. -->
     <div v-if="critical" class="panic" role="alert">
-      <p>{{ stamp(0) }} chamber: load reached target</p>
-      <p class="panic-cause">{{ stamp(1) }} Kernel panic - not syncing: All specimens will be loaded at once.</p>
-      <p>{{ stamp(2) }} * Hold still.</p>
-      <p>{{ stamp(3) }} * Do not press any key. It will not help.</p>
-      <p>Loading everything <i class="caret" aria-hidden="true">_</i></p>
+      <p class="alarm-badge">CHAMBER OVERLOAD</p>
+      <p class="alarm-look">LOOK UP NOW</p>
+      <p class="alarm-sub">{{ stamp(0) }} Do not press any key. Chamber 01 is breaching.</p>
+      <button v-if="revealed" class="enter-cave" type="button" @click="emit('enter')">
+        Enter the 18th Dimension
+      </button>
     </div>
     <div v-else class="board">
       <header>
-        <p class="host"><i class="lamp" :class="{ live: online }" aria-hidden="true" /><strong>chamber-01</strong><span>loader</span></p>
+        <p class="host"><i class="lamp" :class="{ live: online }" aria-hidden="true" /><strong>chamber-01</strong><span>MISSION: IMPRESS ALIEN JAYDE (30)</span></p>
         <p class="people" role="status">
           <svg viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><polyline :points="peopleLine" /></svg>
           {{ online ? `${connected} in the office` : 'Reconnecting…' }}
@@ -192,10 +193,12 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 /* The warning blinks once a second. */
 .counter[data-stage='Warning'] .log .warn { color: var(--rose); animation: counter-warn 1s steps(1) infinite; }
 @keyframes counter-warn { 50% { opacity: .35; } }
-.panic { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.6cqw; padding: 0 4cqw; color: #d7e0d8; background: #050706; font-size: 2.9cqw; line-height: 1.35; }
-.panic-cause { color: var(--rose); }
-.caret { font-style: normal; animation: counter-caret 1s steps(2, jump-none) infinite; }
-@keyframes counter-caret { to { opacity: 0; } }
+.panic { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 3cqw; padding: 4cqw; color: #f4ebe8; background: radial-gradient(circle at 50% 45%, #2b0907, #090404 72%); font-size: 3cqw; line-height: 1.3; }
+.alarm-badge { padding: 1cqw 2.4cqw; border: 2px solid var(--rose); color: var(--rose); font-size: 3.6cqw; font-weight: 700; letter-spacing: .12em; animation: counter-warn 1s steps(1) infinite; }
+.alarm-look { color: #fff; font-size: 11cqw; font-weight: 800; line-height: 1; letter-spacing: .04em; text-shadow: 0 0 2.4cqw var(--rose); }
+.alarm-sub { color: #d7c0bb; font-size: 2.8cqw; max-width: 34ch; }
+.enter-cave { margin-top: 2cqw; min-height: 44px; padding: 1.8cqw 3.4cqw; color: var(--ground); background: var(--green); border: 1px solid var(--green); border-radius: 6px; font: 700 3cqw/1.2 var(--font-mono, ui-monospace, monospace); cursor: pointer; touch-action: manipulation; }
+.enter-cave:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 /* On a narrow portrait phone the glass is too small for thumbs. The view goes all the way into the tube, and the screen fills the phone.
    Its sizes have a floor in pixels, so no text a visitor reads is smaller than 13px. */
 @media (max-width: 640px) and (orientation: portrait) {
@@ -233,8 +236,12 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   .key-head strong { font-size: clamp(24px, 8cqw, 36px); }
   .keys button svg { flex: 1 1 0; min-height: 16px; max-height: 50%; height: auto; }
   .log { gap: 10px; font-size: max(13px, 3.6cqw); }
-  .panic { gap: 12px; padding: max(24px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
-    font-size: clamp(15px, 4.4cqw, 19px); line-height: 1.45; overflow-wrap: anywhere; }
+  .panic { gap: 18px; padding: max(24px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+    font-size: clamp(15px, 4.4cqw, 19px); line-height: 1.4; overflow-wrap: anywhere; }
+  .alarm-badge { padding: 6px 14px; font-size: clamp(16px, 5cqw, 22px); }
+  .alarm-look { font-size: clamp(42px, 14cqw, 68px); }
+  .alarm-sub { font-size: clamp(14px, 4cqw, 18px); }
+  .enter-cave { padding: 12px 20px; font-size: clamp(15px, 4.2cqw, 18px); }
 }
 /* A short phone, or a phone with its browser bars open, has less height for the keys. Each key then puts its creature beside its count. */
 @media (max-width: 640px) and (orientation: portrait) and (max-height: 680px) {
@@ -242,5 +249,5 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   .glyph { font-size: clamp(30px, 9cqw, 40px); }
   .key-head strong { font-size: clamp(22px, 7cqw, 30px); }
 }
-@media (prefers-reduced-motion: reduce) { .counter, .leave, .bar i { transition: none; } .static::before, .static::after, .lamp.live, .caret, .board, .log .warn { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .counter, .leave, .bar i { transition: none; } .static::before, .static::after, .lamp.live, .board, .log .warn, .alarm-badge { animation: none !important; } }
 </style>

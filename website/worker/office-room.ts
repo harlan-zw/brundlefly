@@ -1,5 +1,5 @@
 import { DurableObject } from 'cloudflare:workers'
-import { addTaps, defaultParty, emptyExperiment, goCritical, readCommand, readExperiment, readPartySettings, resetExperiment, setTarget, specimenCount, tapsPerSecond } from '../shared/office-experiment.ts'
+import { addTaps, defaultParty, emptyExperiment, goCritical, readCommand, readExperiment, readPartySettings, resetExperiment, revealExperiment, setTarget, specimenCount, tapsPerSecond } from '../shared/office-experiment.ts'
 import type { Command, Experiment, PartySettings, RoomMessage } from '../shared/office-experiment.ts'
 
 const socketLimit = 400
@@ -11,8 +11,9 @@ type Attachment = { watcher: boolean }
 /** The taps one socket spent in one clock second. */
 type Spent = { second: number, taps: number }
 
-/** When the run clears itself. A critical run lasts 30 minutes. A counting run lasts 2 hours after its last tap. A quiet run never clears. */
+/** When the run clears itself. A critical or revealed run lasts 30 minutes. A counting run lasts 2 hours after its last tap. A quiet run never clears. */
 const clearsAt = (experiment: Experiment, lastTap: number) => {
+  if (experiment.revealAt !== null) return experiment.revealAt + criticalLifeMs
   if (experiment.criticalAt !== null) return experiment.criticalAt + criticalLifeMs
   return specimenCount(experiment) > 0 ? lastTap + idleLifeMs : null
 }
@@ -28,6 +29,7 @@ const spendTaps = (spent: Spent | undefined, taps: number, now: number) => {
 const applyCommand = (experiment: Experiment, command: Exclude<Command, { op: 'tap' | 'party' }>, now: number) => {
   if (command.op === 'reset') return resetExperiment(experiment)
   if (command.op === 'target') return setTarget(experiment, command.value, now)
+  if (command.op === 'reveal') return revealExperiment(experiment, now)
   return goCritical(experiment, now)
 }
 

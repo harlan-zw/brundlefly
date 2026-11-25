@@ -4,7 +4,7 @@ import { stripTypeScriptTypes } from 'node:module'
 import { after, before, test } from 'node:test'
 import { URL } from 'node:url'
 import { Miniflare } from 'miniflare'
-import { defaultParty as emptyMessageParty, emptyExperiment, readRoomMessage, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
+import { criticalSceneSeconds, defaultParty as emptyMessageParty, emptyExperiment, readRoomMessage, revealSwellSeconds, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
 import type { Command, Creature, RoomMessage, Tally } from '../shared/office-experiment.ts'
 
 // The fixture extends the real room with test hooks and owns the clock.
@@ -221,18 +221,21 @@ test('reset, target and critical change the run as the contract says, and go out
     return state.experiment
   }
   await tapMany(presenter, 'cricket', 10)
-  assert.deepEqual(await command({ op: 'target', value: 4000 }), { run: 0, tally: tally({ cricket: 10 }), target: 4000, criticalAt: null }, 'A target keeps the tally')
+  assert.deepEqual(await command({ op: 'target', value: 4000 }), { run: 0, tally: tally({ cricket: 10 }), target: 4000, criticalAt: null, revealAt: null }, 'A target keeps the tally')
   assert.deepEqual(await command({ op: 'reset' }), emptyExperiment(1, 4000), 'A reset raises the run, clears the tally, and keeps the target')
 
   await tapMany(presenter, 'fly', 60)
   const lowered = await clock()
-  assert.deepEqual(await command({ op: 'target', value: 1 }), { run: 1, tally: tally({ fly: 60 }), target: targetLimits.least, criticalAt: lowered }, 'A target at or under the count goes critical')
+  assert.deepEqual(await command({ op: 'target', value: 1 }), { run: 1, tally: tally({ fly: 60 }), target: targetLimits.least, criticalAt: lowered, revealAt: null }, 'A target at or under the count goes critical')
 
   assert.deepEqual(await command({ op: 'reset' }), emptyExperiment(2, targetLimits.least))
   // Fewer taps than the least target, so the run still counts when the presenter forces it.
   await tapMany(presenter, 'snail', 3)
   const forced = await clock()
-  assert.deepEqual(await command({ op: 'critical' }), { run: 2, tally: tally({ snail: 3 }), target: targetLimits.least, criticalAt: forced }, 'Critical goes critical at the current count and keeps the target')
+  assert.deepEqual(await command({ op: 'critical' }), { run: 2, tally: tally({ snail: 3 }), target: targetLimits.least, criticalAt: forced, revealAt: null }, 'Critical goes critical at the current count and keeps the target')
+
+  const revealedAt = await clock(criticalSceneSeconds * 1000 + 5000)
+  assert.deepEqual(await command({ op: 'reveal' }), { run: 2, tally: tally({ snail: 3 }), target: targetLimits.least, criticalAt: forced, revealAt: revealedAt + revealSwellSeconds * 1000 }, 'Reveal ends the blackout hold after the swell')
 })
 
 test('a burst of taps reaches the other sockets in a few coalesced broadcasts', async () => {

@@ -195,14 +195,14 @@ Copy success uses “Copied.”
 ## Office experiment
 
 The desk computer shows the dashboard of a home lab. Its spoken name is “Specimen loader”.
-The header reads “chamber-01”, “loader”, and the presence line “{count} in the office”. During reconnection, the presence line reads “Reconnecting…”.
+The header reads “chamber-01”, “MISSION: IMPRESS ALIEN JAYDE (30)”, and the presence line “{count} in the office”. During reconnection, the presence line reads “Reconnecting…”.
 The load reads “{percent}%”, “of specimens loaded”, “{count} / {target}”, and the rate “+{count}/s”.
 Each key has the spoken label “Add a {creature}. {count} so far.”
 The log line reads “$ tail -f chamber.log”, then the last change, such as “+3 🪰”.
 From four fifths of the target the log reads “chamber: pressure above limit” in place of the last change. From nine tenths it reads “chamber: WARNING: containment at risk”.
-When the run goes critical, the screen fails with this text. Each line starts with the count in brackets, as a kernel’s clock:
-“chamber: load reached target”. “Kernel panic - not syncing: All specimens will be loaded at once.”
-“* Hold still.” “* Do not press any key. It will not help.” “Loading everything _”
+When the run goes critical, phones stay locked on an overload alarm so every eye looks up to the room:
+“CHAMBER OVERLOAD”. “LOOK UP NOW”. “[{count}.00000] Do not press any key. Chamber 01 is breaching.”
+Once the presenter triggers the cave reveal, phones add one button: “Enter the 18th Dimension”.
 The computer screen in the room shows the same dashboard and the same fault, in fewer words.
 The join code shows its address in letters: “brundlefly.dev/join”.
 At the computer or the join code, the scene’s keyboard action reads “Return to the room”.
@@ -232,15 +232,16 @@ A wing of his twitches at each green arc.
 A run with one specimen reads “One specimen went in.” A run with none omits the count.
 At the computer and at the join code, one button reads “Back to the room”.
 
-The presenter page is titled “Presenter”. Its link reads “Open the office”.
+The presenter page is titled “Presenter”. Its links read “Open show” and “Open the office”.
 Its connection line reads “Connected”, “Connecting…”, or “Reconnecting…”.
 Its sections are “Office experiment” and “Controls”. Its readout labels are “Run”, “Visitors”, “Specimens”, and “Target”.
-The phases are “Quiet”, “Counting”, “Critical”, and “Over”, with these notes:
-“No specimens yet.” “Visitors add specimens.” “The critical scene plays for everyone.” “The run is over. Reset the experiment to start a new run.”
+The phases are “Quiet”, “Counting”, “Critical”, “Holding”, and “Over”, with these notes:
+“No specimens yet.” “Visitors add specimens.” “The critical scene plays for the room.” “The room is dark. Reveal the cave when ready.” “The run is over. Reset the experiment to start a new run.”
 A lost connection marks the numbers “Last known values”. Before the first state it reads “No numbers yet. They appear when the connection opens.”
 The target field is “New target” with the action “Set target”. The quick targets are spoken as “Quick targets” and read as plain numbers.
 Its help reads “Use {least} to {most}. A target at or below the count sends the run critical at once.”
 After critical it reads “After critical, reset the experiment to change the target.”
+The reveal action is “Reveal cave now”. Its help reads “Leaves the blackout hold, starts the {seconds}-second song swell, and reveals the cave.”
 The guarded actions are “Go critical now” and “Reset experiment”. Armed, they read “Select again to go critical” and “Select again to reset”.
 Their help reads “Sends the run critical at the current count.” and “Starts a new run with zero specimens. The target stays.”
 
@@ -248,7 +249,7 @@ The presenter page has a section titled “Celebration track”. The presenter c
 Its help reads “The file stays in this browser and is never uploaded. Choose it in the browser that drives the projector. Phones in the room stay silent.”
 The file field is “Track file”. Without a file it reads “No track chosen. Choose a song to play when the cave appears.” Its notices are “Track stored.” and “Track removed.” Its action is “Remove track”.
 The settings are “Chorus starts at”, “Tempo (BPM)”, “Fade in (seconds)”, “Plays for (seconds)”, and “Fade out (seconds)”.
-The chorus help reads “Seconds, or minutes and seconds, for example 1:23.5.” The fade help reads “The chorus hits when the cave appears, {seconds} seconds after the run goes critical. A fade in longer than that is cut to it.”
+The chorus help reads “Seconds, or minutes and seconds, for example 1:23.5.” The fade help reads “The chorus hits when the cave appears, {reveal} seconds after you reveal from the blackout hold (at least {seconds} seconds after critical).”
 The tempo action is “Tap tempo”, with “Tap at least four times on the beat.”, “Keep tapping on the beat.”, and “{bpm} BPM”.
 The test actions are “Test from the fade” and “Stop”. The status reads “Ready.”, “Waiting to start.”, or “Playing.”
 During a test, a cue reads “The cave appears in {seconds} s.” and then “The cave is showing.”
