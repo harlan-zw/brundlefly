@@ -111,6 +111,9 @@ export function leadShiftLine(beforeLead: Creature, afterLead: Creature, share: 
   return { text: variants[occurrence % variants.length]!, beat: 'He leans closer.' }
 }
 
+/** Overhead greeting after turning the office lights on at the start of `/projector?show` (the entrance plays his Greet gesture, so `beat` stays empty). */
+export const showGreetingLine: Spoken = { text: 'Oh. Hello. Welcome to the Virtual Lab. Do not touch the chamber.', beat: '' }
+
 /**
  * His lines in the critical scene, in seconds after the experiment went critical. `criticalAct` in the timeline moves him between them:
  * he runs to the chamber and leans in, flinches as it spits snails, runs to the computer and hammers its keys, and at the end turns to the visitor.
@@ -136,7 +139,7 @@ export function caveLines(experiment: Experiment): readonly TimedLine[] {
   // The presenter can send an empty run critical. He then has no count to report.
   const report = count === 0 ? '' : count === 1 ? 'One specimen went in. ' : `${count.toLocaleString('en')} specimens went in. `
   // He dances through the first line. For the second he leans to the visitor: it is their turn.
-  return [{ at: 1, text: 'Happy 30th, Jayde. You all did that.', beat: '' }, { at: 6, text: `${report}Snails came out. A complete triumph. Your turn.`, beat: 'He leans closer.' }]
+  return [{ at: 1, text: 'Happy 30th, Jayde. Show me what you got, doctor.', beat: '' }, { at: 6, text: `${report}Snails came out. Peak Earthling talent. Dance.`, beat: 'He leans closer.' }]
 }
 
 /** Seconds a line stays over his head. A longer line stays longer. */

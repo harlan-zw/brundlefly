@@ -8,7 +8,8 @@ import type { ActionSound } from '#shared/action-sounds'
 import type { SetName } from '@brundlefly/brand/shared/scene-set'
 
 // `set` is the set that stands. The sound follows it: each set names its ambience, and a change of set is a cross-fade.
-const { quiet = false, talking, replyCount, replyLength = 120, mix = defaultSceneAudioMix, set = 'lair' } = defineProps<{ quiet?: boolean, talking: boolean, replyCount: number, replyLength?: number, mix?: SceneAudioMix, set?: SetName }>()
+// `suspended` cuts the scene audio context completely (for example while the projector's celebration MP3 plays) so nothing interferes with the music.
+const { quiet = false, suspended = false, talking, replyCount, replyLength = 120, mix = defaultSceneAudioMix, set = 'lair' } = defineProps<{ quiet?: boolean, suspended?: boolean, talking: boolean, replyCount: number, replyLength?: number, mix?: SceneAudioMix, set?: SetName }>()
 const emit = defineEmits<{ state: [value: SceneAudioState], voice: [envelope: number] }>()
 const state = shallowRef<SceneAudioState>({ muted: false, status: { _tag: 'Idle' } })
 const visibility = useDocumentVisibility()
@@ -38,9 +39,9 @@ function startMime(kind: 'open' | 'reply', length = replyLength) {
 }
 function requestVoice(kind: 'open' | 'reply', length = replyLength) {
   stopMime()
-  if (!state.value.muted && state.value.status._tag === 'Running') { audio?.playMascot(kind, length); return }
-  // Sound that is off, or not yet allowed by the browser, leaves the line silent. Sound that starts later takes over.
-  if (!state.value.muted) pendingVoice = { kind, length }
+  if (!suspended && !state.value.muted && state.value.status._tag === 'Running') { audio?.playMascot(kind, length); return }
+  // Sound that is off, suspended for music, or not yet allowed by the browser leaves the line silent while still moving his mouth.
+  if (!suspended && !state.value.muted) pendingVoice = { kind, length }
   startMime(kind, length)
 }
 function toggle() {
@@ -66,7 +67,10 @@ function gesture(event: PointerEvent | KeyboardEvent) {
 }
 useEventListener('pointerdown', gesture, { capture: true })
 useEventListener('keydown', gesture, { capture: true })
-watch(visibility, value => audio?.setVisible(value === 'visible'))
+watch([visibility, () => suspended], ([vis, cut]) => {
+  if (cut) pendingVoice = undefined
+  audio?.setVisible(vis === 'visible' && !cut)
+})
 watch(() => talking, value => {
   audio?.setTalking(value)
   if (value) requestVoice('open')
@@ -97,7 +101,7 @@ onMounted(() => {
   })
   // A phone that joined the office experiment in a room of people starts silent. The visitor can still turn the sound on.
   if (quiet) audio.setMuted(true)
-  audio.setVisible(visibility.value === 'visible')
+  audio.setVisible(visibility.value === 'visible' && !suspended)
   audio.setMix(mix)
   audio.setAmbience(ambienceForSet(set))
   audio.setTalking(talking)

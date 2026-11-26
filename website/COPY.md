@@ -213,6 +213,7 @@ Brundlefly speaks these lines over his head. They open no dialog.
 
 | Moment | Line | What he does |
 | --- | --- | --- |
+| Show entrance (lights on) | Oh. Hello. Welcome to the Virtual Lab. Do not touch the chamber. | Turns the office lights on at the switch, turns to the room, and waves without opening the dialog. |
 | First specimen | Names the creature picked first: “One snail. He told you not to pick that.”, “One fly. Look how well that worked out for me.”, “One beetle. Hard shell. Terrible for lab coats.”, or “One cricket. Loud legs. Already a mistake.” (Uses “{count}.” with the plural when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
 | Three twentieths of the target | {count}. He said it was safe last time too. Keep going. | He tilts his head. |
 | A quarter of the target | Adapts to what leads: “{count}. Mostly snails. He is going to be furious.”, “{count}. Mostly flies. You people have no imagination.”, “{count}. Mostly beetles. He will never fit through doors.”, or “{count}. Mostly crickets. Good luck sleeping tonight.” | He looks toward the light of the chamber. |
@@ -224,8 +225,8 @@ Brundlefly speaks these lines over his head. They open no dialog.
 | The chamber spits snails | Uh oh. Those are all snails. That is not right. | His jaw catches and his wings buzz. |
 | The snails keep coming | It is not stopping. Too many snails. | He runs to the computer and hammers its keys. |
 | Before the tubes go out | You will remember the hum. Welcome to the 18th Dimension. | He gives up the keys, turns to the visitor, and leans closer. |
-| The cave, first | Happy 30th, Jayde. You all did that. | He dances. |
-| The cave, second | {count} specimens went in. Snails came out. A complete triumph. Your turn. | He leans closer. |
+| The cave, first | Happy 30th, Jayde. Show me what you got, doctor. | He dances. |
+| The cave, second | {count} specimens went in. Snails came out. Peak Earthling talent. Dance. | He leans closer. |
 
 He is never idle while he speaks: each line has a gesture, and the scene performs it as the line appears.
 Between his lines he counts during the count: he looks up, reads his palm, writes in the air, glances at the chamber, and rubs his small hands.

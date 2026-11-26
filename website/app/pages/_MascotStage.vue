@@ -11,7 +11,7 @@ import type { SceneVisit } from '#shared/travel'
 import { criticalSceneSeconds, phase, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
 import { criticalDarkAt } from '#shared/office-critical'
-import { caveLines, countingLine, criticalLines, leadingCreature, leadShiftLine, lineSeconds } from '#shared/office-script'
+import { caveLines, countingLine, criticalLines, leadingCreature, leadShiftLine, lineSeconds, showGreetingLine } from '#shared/office-script'
 import type { Spoken } from '#shared/office-script'
 import { clickerAction, readClickerKey } from '#shared/show-deck'
 import type { ActionSound } from '#shared/action-sounds'
@@ -68,9 +68,17 @@ const station = ref<Station>(joined ? 'computer' : 'room')
 const showMode = computed(() => presenting && !joined && ('show' in route.query || (import.meta.client && new URLSearchParams(window.location.search).has('show'))))
 const tuning = presenting && !joined && 'tune' in route.query
 const slide = ref<number | null>(null)
+const shownComputer = ref(false)
 onMounted(() => {
   if (showMode.value && !critical.value) slide.value = 0
 })
+watch(station, (next, prev) => {
+  if (next === 'computer') shownComputer.value = true
+  else if (prev === 'code' && next === 'room') shownComputer.value = false
+})
+function greetShow() {
+  if (presenting && !joined && !talking.value && !critical.value && slide.value === null) say(showGreetingLine)
+}
 // On a phone held upright the computer's screen fills the page. The scene behind it then draws nothing, and his lines wait for the room.
 const phone = useMediaQuery('(max-width: 640px) and (orientation: portrait)')
 const covered = computed(() => (phone.value && station.value === 'computer' && run.value !== null && shown.value === 'office' && !talking.value) || slide.value !== null)
@@ -142,11 +150,12 @@ if (presenting) {
     if (key === 'Next' && slide.value === null && performance.now() < slideFadeUntil) { event.preventDefault(); return }
     const state = run.value
     const criticalAge = state && state.criticalAt !== null ? (office.clock() - state.criticalAt) / 1000 : undefined
-    const action = clickerAction(key, { show: showMode.value, slide: slide.value, station: station.value, experiment: state, criticalAge })
+    const action = clickerAction(key, { show: showMode.value, slide: slide.value, station: station.value, shownComputer: shownComputer.value, experiment: state, criticalAge })
     if (action._tag === 'None') return
     event.preventDefault()
     if (action._tag === 'Slide') {
       if (slide.value !== null && action.index === null) slideFadeUntil = performance.now() + 1000
+      if (action.index !== null) shownComputer.value = false
       slide.value = action.index
     }
     else if (action._tag === 'Station') station.value = action.station
@@ -207,6 +216,7 @@ let spoken = 0
 // The song is asked for as the scene starts, so a fade as long as the scene can run in full. The default fade is that long.
 // A phone holds no song, so this does nothing there.
 const song = presenting ? usePartyTrack() : undefined
+const songActive = computed(() => song?.status.value === 'Waiting' || song?.status.value === 'Playing')
 let sung = false
 // A visitor who turns the sound off, and a presenter who starts a new run, both end the song.
 watch(() => sound.value.muted, (muted) => { if (muted) song?.stop(1) })
@@ -221,6 +231,7 @@ watch(() => experiment.value?.run, (now, before) => {
       keepParty()
     }
     station.value = 'room'
+    shownComputer.value = false
     if (showMode.value) slide.value = 0
   }
   if (joined) station.value = 'computer'
@@ -304,9 +315,9 @@ function landed(kind: Creature) {
 <template>
   <main aria-label="Brundlefly" :data-found-dark="foundDark">
     <ClientOnly>
-      <WorldScene :set="wanted" :paused="talking" :speaking="voice" :mood="mood" :thinking="thinking" :beat="beat" :reaction="reaction" :presenting="presenting" :experiment="run" :station="station" :server-clock="office.clock" :connected="office.connected.value" :joined="joined" :cut="cut" :cave-snails="snailed" :party="party" :covered="covered"
-        @talk="talk" @mix="mix = $event" @shown="arrive" @time="audio?.keepTime($event)" @entrance="foundDark = $event" @action="audio?.playAction($event)" @station="look" @landed="landed" @view="viewed" />
-      <SceneAudio ref="audio" :quiet="joined" :set="shown" :talking="talking" :reply-count="replies" :reply-length="replyLength" :mix="mix" @state="sound = $event" @voice="voice = $event" />
+      <WorldScene :set="wanted" :paused="talking" :speaking="voice" :mood="mood" :thinking="thinking" :beat="beat" :reaction="reaction" :presenting="presenting" :experiment="run" :station="station" :server-clock="office.clock" :connected="office.connected.value" :joined="joined" :cut="cut" :cave-snails="snailed" :party="party" :covered="covered" :hold-entrance="showMode && slide !== null"
+        @talk="talk" @mix="mix = $event" @shown="arrive" @time="audio?.keepTime($event)" @entrance="foundDark = $event" @greet="greetShow" @action="audio?.playAction($event)" @station="look" @landed="landed" @view="viewed" />
+      <SceneAudio ref="audio" :quiet="joined" :suspended="songActive" :set="shown" :talking="talking" :reply-count="replies" :reply-length="replyLength" :mix="mix" @state="sound = $event" @voice="voice = $event" />
       <template #fallback><SceneLoading /></template>
     </ClientOnly>
     <template v-if="presenting">

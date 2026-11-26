@@ -50,8 +50,8 @@ import SceneLoading from './_SceneLoading.vue'
 // `cut` makes the next journey a cut in the dark, with no walk to the way out. `caveSnails` puts the snails of the experiment in the cave.
 // `covered` says the computer's screen fills the whole page, as it does on a phone: the scene then keeps its state and draws nothing, which leaves the phone free for the keys.
 // `party` is the celebration in the cave: the server time when the music's chorus hits, and its tempo. He and the snails dance to it from that moment.
-const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0, presenting = false, experiment = null, station = 'room', serverClock = Date.now, connected = 0, joined = false, cut = false, caveSnails = false, party = null, covered = false } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number, presenting?: boolean,
-  experiment?: Experiment | null, station?: Station, serverClock?: () => number, connected?: number, joined?: boolean, cut?: boolean, caveSnails?: boolean, party?: { at: number, bpm: number } | null, covered?: boolean }>()
+const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0, presenting = false, experiment = null, station = 'room', serverClock = Date.now, connected = 0, joined = false, cut = false, caveSnails = false, party = null, covered = false, holdEntrance = false } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number, presenting?: boolean,
+  experiment?: Experiment | null, station?: Station, serverClock?: () => number, connected?: number, joined?: boolean, cut?: boolean, caveSnails?: boolean, party?: { at: number, bpm: number } | null, covered?: boolean, holdEntrance?: boolean }>()
 const sceneSets = presenting ? { ...publicSets, office: experimentOfficeSet } : publicSets
 // `set` is the place the page wants him in. The scene reports the set that stands, and travels when the two differ.
 const shownSet = ref<SetName>(set)
@@ -96,7 +96,7 @@ const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
 // `entrance` says whether this visit found the set dark. `action` names a short sound for something he does.
 // `station` asks for another view of the office. `landed` names a specimen that reached the pile. `view` says the picture is back after a journey.
 const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number],
-  entrance: [dark: boolean], action: [sound: ActionSound], station: [station: Station], landed: [kind: Creature], view: [set: SetName] }>()
+  entrance: [dark: boolean], greet: [], action: [sound: ActionSound], station: [station: Station], landed: [kind: Creature], view: [set: SetName] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
@@ -225,7 +225,7 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
   stationAt = undefined
   status.value = { _tag: 'Fallback', reason: 'context' }
 })
-watch(() => [experiment, station, cut, caveSnails, party, covered], () => refresh?.())
+watch(() => [experiment, station, cut, caveSnails, party, covered, holdEntrance], () => refresh?.())
 watch([animate, width, height], () => refresh?.())
 watch(settings, () => refresh?.(), { deep: true })
 watch(() => [speaking, mood, thinking, reaction], () => refresh?.())
@@ -485,11 +485,20 @@ watch(canvas, async (element) => {
   // How far the wide view has turned to keep him clear of the open dialog during a journey, from 0 to 1.
   let lift = 0
   // A visitor who loads a set with an entrance finds it dark, once in a browser session. He waits in the dark and walks to the switch.
-  // A journey from another set arrives in a lit room, and so does every later load.
+  // In `/projector?show` (`holdEntrance`), the office starts dark behind the slides every time and plays the entrance when the slides fade out.
   const entry = standing.stage.layout.entrance
-  let entrance = startEntrance({ offered: entry !== undefined, arrival: joined ? 'Travel' : 'Load', seen: entranceSeen.value, still: !moving(), walks })
+  let entrance = startEntrance({ offered: entry !== undefined, arrival: joined ? 'Travel' : 'Load', seen: holdEntrance ? false : entranceSeen.value, still: !moving(), walks })
+  const stageEntrance = () => {
+    if (!entry) return
+    entrance = { _tag: 'Dark', age: 0 }
+    stroll = startStroll(entry.start, 0)
+    way = [entry.stand]
+    following = true
+    entrancePhase.value = 'Dark'
+    emit('entrance', true)
+  }
   if (entry && entrance._tag === 'Dark') {
-    entranceSeen.value = true
+    if (!holdEntrance) entranceSeen.value = true
     stroll = startStroll(entry.start, 0)
     way = [entry.stand]
   }
@@ -497,6 +506,9 @@ watch(canvas, async (element) => {
   emit('entrance', entrance._tag === 'Dark')
   // A narrow screen cannot show the switch. From the dark until he is back in the picture, the wide view turns to keep him in sight.
   let following = entrance._tag !== 'Lit'
+  watch(() => holdEntrance, (held) => {
+    if (held && entry && standing.stage.name === 'office' && walks && moving()) { stageEntrance(); refresh?.() }
+  })
   let follow: number | undefined
   // The side of him that the switch is on.
   const switchSide = entry && entry.facing < 0 ? -1 : 1
@@ -597,16 +609,20 @@ watch(canvas, async (element) => {
     renderer.toneMappingExposure = settings.value.exposure
     const aspect = renderWidth / renderHeight
     const faceMotion = moving()
-    // The entrance in the dark. A visitor who asks for him, or who leaves for another set, ends it at once: the light comes and he is free.
+    // The entrance in the dark. A visitor who asks for him, moves to a station, starts an active count, or leaves ends it at once.
+    // While slides cover `/projector?show` (`holdEntrance`), hold the dark start frame until the slides fade out.
     const entered = entranceAct(entrance)
     const phaseBefore = entrance._tag
-    entrance = advanceEntrance(entrance, { delta, arrived: stroll.activity._tag === 'Pausing', skip: paused || Boolean(experiment) || set !== standing.stage.name, still: !faceMotion })
+    const skipEntrance = paused || station !== 'room' || set !== standing.stage.name
+      || (experiment !== null && (experiment.criticalAt !== null || specimenCount(experiment) > 0))
+    if (!holdEntrance) entrance = advanceEntrance(entrance, { delta, arrived: stroll.activity._tag === 'Pausing', skip: skipEntrance, still: !faceMotion })
     const act = entranceAct(entrance)
     if (entrance._tag !== phaseBefore) {
       entrancePhase.value = entrance._tag
       // The switch clicks as the light comes. The tubes ring only when they strike.
       if (entrance._tag === 'Striking' || entrance._tag === 'Hurrying') emit('action', 'LightSwitch')
       if (entrance._tag === 'Striking') emit('action', 'TubeStrike')
+      if (entrance._tag === 'Greeting') emit('greet')
     }
     // Free again, he takes up his loop from where he stands.
     if (entered.held && !act.held) { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }

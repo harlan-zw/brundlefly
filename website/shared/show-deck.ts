@@ -14,6 +14,8 @@ export type ShowContext = {
   /** Current 0-based slide index, or `null` when showing the live 3D scene. */
   slide: number | null
   station: ShowStation
+  /** Whether the clicker has already visited the desk computer in this run, so returning to `room` holds on the falling critters. */
+  shownComputer?: boolean
   experiment: Experiment | null
   /** Seconds since `criticalAt`, or `undefined` when not critical. */
   criticalAge: number | undefined
@@ -34,10 +36,10 @@ export function readClickerKey(key: string): ClickerKey | undefined {
 /**
  * Pure state transition for one presenter clicker press on `/projector`.
  * In show mode, `Next` advances slides 1..5, fades into the 3D office, opens the beetle QR, moves to the desk computer,
- * and triggers `Reveal` once the critical scene reaches its blackout window.
+ * zooms back out to the office to watch specimens fall, and triggers `Reveal` once the critical scene reaches its blackout window.
  */
 export function clickerAction(key: ClickerKey, context: ShowContext): ClickerAction {
-  const { show, slide, station, experiment, criticalAge } = context
+  const { show, slide, station, shownComputer = false, experiment, criticalAge } = context
   const critical = experiment !== null && experiment.criticalAt !== null
   if (critical) {
     if (key === 'Next' && experiment.revealAt === null && criticalAge !== undefined && criticalAge >= clickerRevealAfterSeconds) {
@@ -53,12 +55,13 @@ export function clickerAction(key: ClickerKey, context: ShowContext): ClickerAct
 
   const counting = experiment !== null && specimenCount(experiment) > 0
   if (key === 'Next') {
-    if (station === 'room') return { _tag: 'Station', station: 'code' }
+    if (station === 'room') return shownComputer ? { _tag: 'None' } : { _tag: 'Station', station: 'code' }
     if (station === 'code') return { _tag: 'Station', station: 'computer' }
-    return { _tag: 'None' }
+    return { _tag: 'Station', station: 'room' }
   }
 
-  // `Prev` steps back computer -> QR -> room, or back to the final slide when idle in show mode.
+  // `Prev` steps back room (after computer) -> computer -> QR -> room -> Slide 5 when idle in show mode.
+  if (station === 'room' && shownComputer) return { _tag: 'Station', station: 'computer' }
   if (station === 'computer') return { _tag: 'Station', station: 'code' }
   if (station === 'code') return { _tag: 'Station', station: 'room' }
   if (show && !counting) return { _tag: 'Slide', index: showSlideCount - 1 }
