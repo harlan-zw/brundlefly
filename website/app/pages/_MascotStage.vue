@@ -168,17 +168,37 @@ function say({ text, beat: gesture }: Spoken) {
 }
 // He counts aloud at the first specimen, at each milestone, and when a new creature overtakes the lead mid-run.
 let lastLeadShift = 0
+let leadShiftRun = -1
+let lastPair: readonly [Creature, Creature] | undefined
+let pingPongCount = 0
+const leadHits: Record<Creature, number> = { snail: 0, beetle: 0, fly: 0, cricket: 0 }
 watch(run, (now, before) => {
   if (now && now.criticalAt === null) counted = now.run
+  if (now && now.run !== leadShiftRun) {
+    leadShiftRun = now.run
+    lastLeadShift = 0
+    lastPair = undefined
+    pingPongCount = 0
+    leadHits.snail = leadHits.beetle = leadHits.fly = leadHits.cricket = 0
+  }
   if (!now || !before || now.run !== before.run || now.criticalAt !== null) return
   const beforeCount = specimenCount(before)
   const afterCount = specimenCount(now)
+  const prevLead = leadingCreature(before)
   const lead = leadingCreature(now)
   const spoken = countingLine(beforeCount, afterCount, now.target, lead)
   if (spoken) { if (!talking.value) say(spoken); return }
-  if (beforeCount > 0 && performance.now() - lastLeadShift >= 6500) {
-    const shifted = leadShiftLine(leadingCreature(before), lead, afterCount / Math.max(1, now.target))
-    if (shifted && !talking.value) { lastLeadShift = performance.now(); say(shifted) }
+  if (beforeCount > 0 && prevLead !== lead && performance.now() - lastLeadShift >= 6500) {
+    const pingPong = lastPair !== undefined && lastPair[0] === lead && lastPair[1] === prevLead
+    const occurrence = pingPong ? pingPongCount : leadHits[lead]
+    const shifted = leadShiftLine(prevLead, lead, afterCount / Math.max(1, now.target), occurrence, pingPong)
+    if (shifted && !talking.value) {
+      lastLeadShift = performance.now()
+      lastPair = [prevLead, lead]
+      if (pingPong) pingPongCount++
+      else leadHits[lead]++
+      say(shifted)
+    }
   }
 })
 // The critical scene, timed from the server's clock. His lines fall at their moments, and the cave follows the dark.

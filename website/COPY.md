@@ -219,7 +219,7 @@ Brundlefly speaks these lines over his head. They open no dialog.
 | Half | Adapts to what leads: “Halfway. All these snails. Do not shake the jar.”, “Halfway. That many flies and he will look like me.”, “Halfway. Enough beetles to crush the lab bench.”, or “Halfway. So many crickets. My small hands are rubbing.” | His small hands rub together. |
 | Three quarters | I know that hum. Too many {lead}. I went in alone. He is next. | He goes very still. |
 | Nine tenths | Adapts to what leads: “Nearly. Almost all snails. Decide which parts you want to keep.” or “Nearly. {Lead} in the lead. Decide which parts you want to keep.” | He checks an empty palm. |
-| Lead change mid-run | Between 10% and 88% when a new species overtakes the lead (throttled): “Snails just took the lead. He is not going to like this.”, “Flies took the lead. One of me was plenty.”, “Beetles took the lead. Good luck with the shell.”, or “Crickets took the lead. Hope you like jumping.” | He leans closer. |
+| Lead change mid-run | Between 10% and 88% when a new species overtakes the lead (throttled, 3 variants per species plus 3 tug-of-war variations when two species trade the lead back and forth). | He leans closer. / He tilts his head. |
 | Critical | That is the number. Hold still, doctor. | He runs to the chamber, turns side-on to it, and leans in. |
 | The chamber spits snails | Uh oh. Those are all snails. That is not right. | His jaw catches and his wings buzz. |
 | The snails keep coming | It is not stopping. Too many snails. | He runs to the computer and hammers its keys. |

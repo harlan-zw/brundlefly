@@ -56,12 +56,33 @@ const firstLines: Record<Creature, { one: string, many: string }> = {
   cricket: { one: 'One cricket. Loud legs. Already a mistake.', many: '{count}. Crickets. Loud legs. Already a mistake.' },
 }
 const firstBeat = 'He listens to the ceiling.'
-const leadShiftLines: Record<Creature, string> = {
-  snail: 'Snails just took the lead. He is not going to like this.',
-  fly: 'Flies took the lead. One of me was plenty.',
-  beetle: 'Beetles took the lead. Good luck with the shell.',
-  cricket: 'Crickets took the lead. Hope you like jumping.',
+const leadShiftPool: Record<Creature, readonly string[]> = {
+  snail: [
+    'Snails just took the lead. He is not going to like this.',
+    'Snails in front again. You were specifically warned.',
+    'More snails. I hope he likes mucus.',
+  ],
+  fly: [
+    'Flies took the lead. One of me was plenty.',
+    'Back to flies. At least the wings are handy.',
+    'Flies pulling ahead. Welcome to the club, doctor.',
+  ],
+  beetle: [
+    'Beetles took the lead. Good luck with the shell.',
+    'Beetles ahead again. Very shiny. Terrible posture.',
+    'More beetles. He will rattle when he walks.',
+  ],
+  cricket: [
+    'Crickets took the lead. Hope you like jumping.',
+    'Crickets back in front. The ceilings in here are low.',
+    'More crickets. Nobody is sleeping tonight.',
+  ],
 }
+const tugOfWarLines: readonly ((prev: Creature, next: Creature) => string)[] = [
+  (prev, next) => `${capitalizedPlurals[prev]} and ${plurals[next]} fighting for the wheel. He will come out lopsided.`,
+  (_, next) => `Back to ${plurals[next]}. Make up your minds before the glass breaks.`,
+  (prev, next) => `Half ${prev}, half ${next}. That is not even legal.`,
+]
 
 /** His line when the count moves from `before` to `after`, or nothing. He speaks once at the first specimen and once at each milestone, reacting to what leads. */
 export function countingLine(before: number, after: number, target: number, picked: Creature = 'fly'): Spoken | undefined {
@@ -76,10 +97,18 @@ export function countingLine(before: number, after: number, target: number, pick
   }
 }
 
-/** His aside when a different creature overtakes the lead mid-run (between 10% and 88% of target). */
-export function leadShiftLine(beforeLead: Creature, afterLead: Creature, share: number): Spoken | undefined {
+/**
+ * His aside when a different creature overtakes the lead mid-run (between 10% and 88% of target).
+ * `occurrence` is how many times `afterLead` has already taken the lead this run; `pingPong` is true when two species are trading the lead back and forth.
+ */
+export function leadShiftLine(beforeLead: Creature, afterLead: Creature, share: number, occurrence = 0, pingPong = false): Spoken | undefined {
   if (beforeLead === afterLead || share < 0.1 || share >= 0.88) return
-  return { text: leadShiftLines[afterLead], beat: 'He leans closer.' }
+  if (pingPong) {
+    const line = tugOfWarLines[occurrence % tugOfWarLines.length]!
+    return { text: line(beforeLead, afterLead), beat: 'He tilts his head.' }
+  }
+  const variants = leadShiftPool[afterLead]
+  return { text: variants[occurrence % variants.length]!, beat: 'He leans closer.' }
 }
 
 /**

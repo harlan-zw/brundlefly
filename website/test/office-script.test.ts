@@ -41,9 +41,15 @@ test('his first line and milestones react to the leading creature, and mid-run l
     assert.notEqual(countingLine(199, 200, 800, kind)!.text, countingLine(199, 200, 800, kind === 'fly' ? 'snail' : 'fly')!.text)
     assert.notEqual(countingLine(399, 400, 800, kind)!.text, countingLine(399, 400, 800, kind === 'fly' ? 'snail' : 'fly')!.text)
     assert.notEqual(countingLine(599, 600, 800, kind)!.text, countingLine(599, 600, 800, kind === 'fly' ? 'snail' : 'fly')!.text)
-    const shifted = leadShiftLine(kind === 'fly' ? 'snail' : 'fly', kind, 0.35)!
-    assert.ok(shifted && beatMannerism(shifted.beat)._tag !== 'None')
+    const shifted0 = leadShiftLine(kind === 'fly' ? 'snail' : 'fly', kind, 0.35, 0)!
+    const shifted1 = leadShiftLine(kind === 'fly' ? 'snail' : 'fly', kind, 0.45, 1)!
+    assert.ok(shifted0 && beatMannerism(shifted0.beat)._tag !== 'None')
+    assert.notEqual(shifted0.text, shifted1.text, `Repeated lead-shift line for ${kind}`)
   }
+  const tug0 = leadShiftLine('beetle', 'fly', 0.4, 0, true)!
+  const tug1 = leadShiftLine('fly', 'beetle', 0.5, 1, true)!
+  assert.notEqual(tug0.text, tug1.text)
+  assert.ok(beatMannerism(tug0.beat)._tag !== 'None')
   assert.equal(leadShiftLine('fly', 'fly', 0.35), undefined)
   assert.equal(leadShiftLine('fly', 'snail', 0.05), undefined)
   assert.equal(leadShiftLine('fly', 'snail', 0.9), undefined)

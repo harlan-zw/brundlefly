@@ -30,9 +30,9 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 
         <div class="staff-grid">
           <figure class="polaroid tilt-left">
-            <div class="frame">
+            <div class="frame headshot-frame">
               <img v-if="photos.scientist" :src="photos.scientist" alt="Lead scientist">
-              <svg v-else class="sketch" :viewBox="penSketches.scientist.box" role="img" aria-label="Sketched portrait of Dr. Science">
+              <svg v-else class="sketch headshot" :viewBox="penSketches.scientist.box" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Sketched portrait of Dr. Science">
                 <path :d="penSketches.scientist.d" />
               </svg>
             </div>
@@ -44,9 +44,9 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
           </figure>
 
           <figure class="polaroid tilt-right">
-            <div class="frame">
+            <div class="frame headshot-frame">
               <img v-if="photos.brundle" :src="photos.brundle" alt="Dr Brundle before experiment">
-              <svg v-else class="sketch" :viewBox="penSketches.coworker.box" role="img" aria-label="Sketched portrait of Dr Brundle before transformation">
+              <svg v-else class="sketch headshot" :viewBox="penSketches.coworker.box" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Sketched portrait of Dr Brundle before transformation">
                 <path :d="penSketches.coworker.d" />
               </svg>
             </div>
@@ -67,9 +67,9 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 
         <div class="equation">
           <figure class="eq-item">
-            <div class="frame small">
+            <div class="frame small headshot-frame">
               <img v-if="photos.brundle" :src="photos.brundle" alt="Dr Brundle before">
-              <svg v-else class="sketch" :viewBox="penSketches.coworker.box" role="img" aria-label="Dr Brundle">
+              <svg v-else class="sketch headshot" :viewBox="penSketches.coworker.box" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Dr Brundle">
                 <path :d="penSketches.coworker.d" />
               </svg>
             </div>
@@ -146,16 +146,29 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
         </div>
       </div>
 
-      <!-- Slide 4: Virtual Lab with Brundlefly, Me, and Audience underneath -->
+      <!-- Slide 4: Virtual Lab (Computer + Chamber 01) with Brundlefly, Me, and Audience underneath -->
       <div v-else-if="slide === 3" class="page slide-four">
         <svg class="pen-title" :viewBox="lineView(penLines.virtualLab.w)" role="img" aria-label="The Virtual Lab">
           <path :d="penLines.virtualLab.d" />
         </svg>
 
         <div class="lab-hub">
-          <svg class="sketch computer" :viewBox="penSketches.computer.box" role="img" aria-label="Virtual Lab computer">
-            <path :d="penSketches.computer.d" />
-          </svg>
+          <div class="lab-gear">
+            <svg class="sketch computer" :viewBox="penSketches.computer.box" role="img" aria-label="Virtual Lab computer">
+              <path :d="penSketches.computer.d" />
+            </svg>
+            <svg class="gear-link" viewBox="0 0 84 24" aria-hidden="true">
+              <path d="M4 12 L80 12" />
+            </svg>
+            <div class="chamber-unit">
+              <svg class="sketch chamber" :viewBox="penSketches.chamber.box" role="img" aria-label="Chamber 01 glass cylinder">
+                <path :d="penSketches.chamber.d" />
+              </svg>
+              <svg class="pen-label ink-green chamber-name" :viewBox="lineView(penLines.chamber01.w)" role="img" aria-label="Chamber 01">
+                <path :d="penLines.chamber01.d" />
+              </svg>
+            </div>
+          </div>
           <div class="arrows" aria-hidden="true">
             <svg viewBox="0 0 680 76">
               <path d="M295 4 L95 66 M95 66 L114 52 M95 66 L118 68" />
@@ -174,9 +187,9 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
             </figure>
 
             <figure class="eq-item">
-              <div class="frame compact">
+              <div class="frame compact headshot-frame">
                 <img v-if="photos.scientist" :src="photos.scientist" alt="Me neural-linked">
-                <svg v-else class="sketch" :viewBox="penSketches.scientist.box" role="img" aria-label="Me">
+                <svg v-else class="sketch headshot" :viewBox="penSketches.scientist.box" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Me">
                   <path :d="penSketches.scientist.d" />
                 </svg>
               </div>
@@ -212,9 +225,9 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 
         <div class="transform-row">
           <figure class="eq-item subject">
-            <div class="frame small">
+            <div class="frame small headshot-frame">
               <img v-if="photos.scientist" :src="photos.scientist" alt="Dr. Science">
-              <svg v-else class="sketch" :viewBox="penSketches.scientist.box" role="img" aria-label="Sketched portrait of Dr. Science">
+              <svg v-else class="sketch headshot" :viewBox="penSketches.scientist.box" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Sketched portrait of Dr. Science">
                 <path :d="penSketches.scientist.d" />
               </svg>
             </div>
@@ -280,6 +293,8 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 .ink-green path { stroke: #7ee787; }
 .sketch { display: block; width: 100%; height: 100%; overflow: visible; }
 .sketch path { fill: none; stroke: #f2efe6; stroke-width: .022; stroke-linecap: round; stroke-linejoin: round; }
+.sketch.headshot { overflow: hidden; }
+.sketch.headshot path { stroke-width: .015; }
 
 .title-row { display: flex; flex-direction: column; align-items: center; gap: .6vh; }
 .alien-note { display: flex; align-items: center; gap: 14px; }
@@ -294,6 +309,7 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 .polaroid figcaption { display: flex; justify-content: center; width: 100%; }
 
 .frame { width: 100%; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; padding: 14px; background: #131924; border: 1.5px solid #324056; overflow: hidden; }
+.frame.headshot-frame { padding: 0; align-items: flex-end; }
 .frame img { width: 100%; height: 100%; object-fit: cover; }
 .frame.small { width: clamp(160px, 21vw, 270px); aspect-ratio: 1; background: #18202d; border: 2px solid #41516b; box-shadow: 4px 5px 0 #00000055; }
 .frame.compact { width: clamp(140px, 16vw, 210px); aspect-ratio: 1; background: #18202d; border: 2px solid #41516b; }
@@ -307,8 +323,15 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 .lightning { width: clamp(92px, 10vw, 136px); height: clamp(92px, 10vw, 136px); }
 .lightning path { stroke: #ff6b6b; stroke-width: .028; }
 
-.lab-hub { display: flex; flex-direction: column; align-items: center; gap: 1vh; width: 100%; max-width: 1020px; }
-.computer { width: clamp(165px, 20vw, 260px); height: clamp(130px, 18vh, 195px); }
+.lab-hub { display: flex; flex-direction: column; align-items: center; gap: .8vh; width: 100%; max-width: 1020px; }
+.lab-gear { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 2vw, 28px); }
+.computer { width: clamp(150px, 18vw, 230px); height: clamp(120px, 16vh, 175px); }
+.gear-link { width: clamp(44px, 5vw, 76px); height: 24px; }
+.gear-link path { fill: none; stroke: #7ee787; stroke-width: 4; stroke-dasharray: 8 7; stroke-linecap: round; }
+.chamber-unit { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.chamber { width: clamp(100px, 12vw, 150px); height: clamp(120px, 16vh, 175px); }
+.chamber path { stroke: #7ee787; stroke-width: .024; }
+.chamber-name { height: clamp(2rem, 4vh, 3rem); }
 .arrows { width: min(740px, 76vw); }
 .arrows svg { display: block; width: 100%; height: clamp(48px, 7.5vh, 76px); }
 .arrows path { fill: none; stroke: #9bb8f0; stroke-width: 4; stroke-dasharray: 9 7; stroke-linecap: round; stroke-linejoin: round; }
