@@ -215,10 +215,11 @@ Brundlefly speaks these lines over his head. They open no dialog.
 | --- | --- | --- |
 | First specimen | Names the creature picked first: “One snail. He told you not to pick that.”, “One fly. Look how well that worked out for me.”, “One beetle. Hard shell. Terrible for lab coats.”, or “One cricket. Loud legs. Already a mistake.” (Uses “{count}.” with the plural when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
 | Three twentieths of the target | {count}. He said it was safe last time too. Keep going. | He tilts his head. |
-| A quarter of the target | {count}. The chamber is warming up. Do not shake the jar. | He looks toward the light of the chamber. |
-| Half | Halfway. My small hands are rubbing. Ignore them. | His small hands rub together. |
-| Three quarters | I know that hum. I went in alone. He is next. | He goes very still. |
-| Nine tenths | Nearly. Decide which parts you want to keep. Not the snail. | He checks an empty palm. |
+| A quarter of the target | Adapts to what leads: “{count}. Mostly snails. He is going to be furious.”, “{count}. Mostly flies. You people have no imagination.”, “{count}. Mostly beetles. He will never fit through doors.”, or “{count}. Mostly crickets. Good luck sleeping tonight.” | He looks toward the light of the chamber. |
+| Half | Adapts to what leads: “Halfway. All these snails. Do not shake the jar.”, “Halfway. That many flies and he will look like me.”, “Halfway. Enough beetles to crush the lab bench.”, or “Halfway. So many crickets. My small hands are rubbing.” | His small hands rub together. |
+| Three quarters | I know that hum. Too many {lead}. I went in alone. He is next. | He goes very still. |
+| Nine tenths | Adapts to what leads: “Nearly. Almost all snails. Decide which parts you want to keep.” or “Nearly. {Lead} in the lead. Decide which parts you want to keep.” | He checks an empty palm. |
+| Lead change mid-run | Between 10% and 88% when a new species overtakes the lead (throttled): “Snails just took the lead. He is not going to like this.”, “Flies took the lead. One of me was plenty.”, “Beetles took the lead. Good luck with the shell.”, or “Crickets took the lead. Hope you like jumping.” | He leans closer. |
 | Critical | That is the number. Hold still, doctor. | He runs to the chamber, turns side-on to it, and leans in. |
 | The chamber spits snails | Uh oh. Those are all snails. That is not right. | His jaw catches and his wings buzz. |
 | The snails keep coming | It is not stopping. Too many snails. | He runs to the computer and hammers its keys. |

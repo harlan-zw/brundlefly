@@ -11,7 +11,7 @@ import type { SceneVisit } from '#shared/travel'
 import { criticalSceneSeconds, phase, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
 import { criticalDarkAt } from '#shared/office-critical'
-import { caveLines, countingLine, criticalLines, leadingCreature, lineSeconds } from '#shared/office-script'
+import { caveLines, countingLine, criticalLines, leadingCreature, leadShiftLine, lineSeconds } from '#shared/office-script'
 import type { Spoken } from '#shared/office-script'
 import { clickerAction, readClickerKey } from '#shared/show-deck'
 import type { ActionSound } from '#shared/action-sounds'
@@ -161,16 +161,25 @@ const { start: holdLine, stop: dropLine } = useTimeoutFn(() => { line.value = ''
 function say({ text, beat: gesture }: Spoken) {
   line.value = text
   holdLine()
+  audio.value?.speak(text.length)
   if (!gesture) return
   beat.value = gesture
   reaction.value++
 }
-// He counts aloud at the first specimen and at each milestone. A state that arrives with a count already is no milestone.
+// He counts aloud at the first specimen, at each milestone, and when a new creature overtakes the lead mid-run.
+let lastLeadShift = 0
 watch(run, (now, before) => {
   if (now && now.criticalAt === null) counted = now.run
   if (!now || !before || now.run !== before.run || now.criticalAt !== null) return
-  const spoken = countingLine(specimenCount(before), specimenCount(now), now.target, leadingCreature(now))
-  if (spoken && !talking.value) say(spoken)
+  const beforeCount = specimenCount(before)
+  const afterCount = specimenCount(now)
+  const lead = leadingCreature(now)
+  const spoken = countingLine(beforeCount, afterCount, now.target, lead)
+  if (spoken) { if (!talking.value) say(spoken); return }
+  if (beforeCount > 0 && performance.now() - lastLeadShift >= 6500) {
+    const shifted = leadShiftLine(leadingCreature(before), lead, afterCount / Math.max(1, now.target))
+    if (shifted && !talking.value) { lastLeadShift = performance.now(); say(shifted) }
+  }
 })
 // The critical scene, timed from the server's clock. His lines fall at their moments, and the cave follows the dark.
 let spoken = 0

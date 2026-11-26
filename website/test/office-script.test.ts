@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { caveLines, countingLine, criticalLines, leadingCreature, lineSeconds } from '../shared/office-script.ts'
+import { caveLines, countingLine, criticalLines, leadingCreature, leadShiftLine, lineSeconds } from '../shared/office-script.ts'
 import { criticalAct, criticalAddressAt, criticalDarkAt, criticalSpurtAt, criticalTimes } from '../shared/office-critical.ts'
 import { beatMannerism } from '../layers/brand/shared/mannerism.ts'
 import { creatureKinds, criticalSceneSeconds, emptyExperiment } from '../shared/office-experiment.ts'
@@ -30,14 +30,23 @@ test('he speaks at the first specimen, at 15%, at each quarter of the target, an
   }
 })
 
-test('his first line reacts to the creature that was picked first', () => {
+test('his first line and milestones react to the leading creature, and mid-run lead shifts trigger an aside', () => {
   for (const kind of creatureKinds) {
     const one = countingLine(0, 1, 800, kind)!
     const many = countingLine(0, 5, 800, kind)!
     assert.match(one.text, new RegExp(`^One ${kind}\\.`, 'i'))
     assert.match(many.text, /^5\./)
     assert.notEqual(one.text, many.text)
+    // 25%, 50%, 75%, and 90% adapt to what leads.
+    assert.notEqual(countingLine(199, 200, 800, kind)!.text, countingLine(199, 200, 800, kind === 'fly' ? 'snail' : 'fly')!.text)
+    assert.notEqual(countingLine(399, 400, 800, kind)!.text, countingLine(399, 400, 800, kind === 'fly' ? 'snail' : 'fly')!.text)
+    assert.notEqual(countingLine(599, 600, 800, kind)!.text, countingLine(599, 600, 800, kind === 'fly' ? 'snail' : 'fly')!.text)
+    const shifted = leadShiftLine(kind === 'fly' ? 'snail' : 'fly', kind, 0.35)!
+    assert.ok(shifted && beatMannerism(shifted.beat)._tag !== 'None')
   }
+  assert.equal(leadShiftLine('fly', 'fly', 0.35), undefined)
+  assert.equal(leadShiftLine('fly', 'snail', 0.05), undefined)
+  assert.equal(leadShiftLine('fly', 'snail', 0.9), undefined)
 })
 
 test('taps in batches give the same lines as single taps, each said once at the first batch past its milestone', () => {

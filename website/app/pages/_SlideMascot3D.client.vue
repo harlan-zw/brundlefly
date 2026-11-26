@@ -56,6 +56,7 @@ watch(canvas, async (element) => {
   }
 
   const renderer = new WebGLRenderer({ canvas: element, context, alpha: true, antialias: true })
+  renderer.setClearColor(0x000000, 0)
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.15
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))

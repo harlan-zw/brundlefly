@@ -11,16 +11,43 @@ import { criticalAddressAt, criticalRushAt, criticalSpurtAt } from './office-cri
 export type Spoken = { text: string, beat: string }
 export type TimedLine = Spoken & { at: number }
 
-// The share of the target at which he speaks, what he says, and what he does. `{count}` is the specimen count at that moment.
-const milestones: readonly (readonly [share: number, text: string, beat: string])[] = [
-  [0.15, '{count}. He said it was safe last time too. Keep going.', 'He tilts his head.'],
+const plurals: Record<Creature, string> = { snail: 'snails', beetle: 'beetles', fly: 'flies', cricket: 'crickets' }
+const capitalizedPlurals: Record<Creature, string> = { snail: 'Snails', beetle: 'Beetles', fly: 'Flies', cricket: 'Crickets' }
+
+// The share of the target at which he speaks, what he says for the leading creature, and what he does.
+const milestones: readonly { share: number, text: (count: string, lead: Creature) => string, beat: string }[] = [
+  { share: 0.15, text: count => `${count}. He said it was safe last time too. Keep going.`, beat: 'He tilts his head.' },
   // He turns to the chamber: it is the thing that warms.
-  [0.25, '{count}. The chamber is warming up. Do not shake the jar.', 'He looks toward the light.'],
-  [0.5, 'Halfway. My small hands are rubbing. Ignore them.', 'His small hands rub together.'],
+  {
+    share: 0.25,
+    text: (count, lead) => ({
+      snail: `${count}. Mostly snails. He is going to be furious.`,
+      fly: `${count}. Mostly flies. You people have no imagination.`,
+      beetle: `${count}. Mostly beetles. He will never fit through doors.`,
+      cricket: `${count}. Mostly crickets. Good luck sleeping tonight.`,
+    }[lead]),
+    beat: 'He looks toward the light.',
+  },
+  {
+    share: 0.5,
+    text: (_, lead) => ({
+      snail: 'Halfway. All these snails. Do not shake the jar.',
+      fly: 'Halfway. That many flies and he will look like me.',
+      beetle: 'Halfway. Enough beetles to crush the lab bench.',
+      cricket: 'Halfway. So many crickets. My small hands are rubbing.',
+    }[lead]),
+    beat: 'His small hands rub together.',
+  },
   // The hum is the one thing he remembers of the machine. He stops to hear it.
-  [0.75, 'I know that hum. I went in alone. He is next.', 'He goes very still.'],
+  { share: 0.75, text: (_, lead) => `I know that hum. Too many ${plurals[lead]}. I went in alone. He is next.`, beat: 'He goes very still.' },
   // Which parts are still his: he looks at his own hand.
-  [0.9, 'Nearly. Decide which parts you want to keep. Not the snail.', 'He checks an empty palm.'],
+  {
+    share: 0.9,
+    text: (_, lead) => lead === 'snail'
+      ? 'Nearly. Almost all snails. Decide which parts you want to keep.'
+      : `Nearly. ${capitalizedPlurals[lead]} in the lead. Decide which parts you want to keep.`,
+    beat: 'He checks an empty palm.',
+  },
 ]
 const firstLines: Record<Creature, { one: string, many: string }> = {
   snail: { one: 'One snail. He told you not to pick that.', many: '{count}. Snails already. He told you not to pick that.' },
@@ -29,18 +56,30 @@ const firstLines: Record<Creature, { one: string, many: string }> = {
   cricket: { one: 'One cricket. Loud legs. Already a mistake.', many: '{count}. Crickets. Loud legs. Already a mistake.' },
 }
 const firstBeat = 'He listens to the ceiling.'
+const leadShiftLines: Record<Creature, string> = {
+  snail: 'Snails just took the lead. He is not going to like this.',
+  fly: 'Flies took the lead. One of me was plenty.',
+  beetle: 'Beetles took the lead. Good luck with the shell.',
+  cricket: 'Crickets took the lead. Hope you like jumping.',
+}
 
-/** His line when the count moves from `before` to `after`, or nothing. He speaks once at the first specimen and once at each milestone. */
+/** His line when the count moves from `before` to `after`, or nothing. He speaks once at the first specimen and once at each milestone, reacting to what leads. */
 export function countingLine(before: number, after: number, target: number, picked: Creature = 'fly'): Spoken | undefined {
   if (after <= before || after >= target) return
-  const crossed = milestones.findLast(([share]) => before < share * target && after >= share * target)
+  const crossed = milestones.findLast(({ share }) => before < share * target && after >= share * target)
   // He says "One" for the first specimen, and the number for any other count.
   const count = after === 1 ? 'One' : after.toLocaleString('en')
-  if (crossed) return { text: crossed[1].replace('{count}', count), beat: crossed[2] }
+  if (crossed) return { text: crossed.text(count, picked), beat: crossed.beat }
   if (before === 0) {
     const line = after === 1 ? firstLines[picked].one : firstLines[picked].many.replace('{count}', count)
     return { text: line, beat: firstBeat }
   }
+}
+
+/** His aside when a different creature overtakes the lead mid-run (between 10% and 88% of target). */
+export function leadShiftLine(beforeLead: Creature, afterLead: Creature, share: number): Spoken | undefined {
+  if (beforeLead === afterLead || share < 0.1 || share >= 0.88) return
+  return { text: leadShiftLines[afterLead], beat: 'He leans closer.' }
 }
 
 /**
@@ -56,7 +95,6 @@ export const criticalLines: readonly TimedLine[] = [
   { at: criticalAddressAt + 0.2, text: 'You will remember the hum. Welcome to the 18th Dimension.', beat: '' },
 ]
 
-const plurals: Record<Creature, string> = { snail: 'snails', beetle: 'beetles', fly: 'flies', cricket: 'crickets' }
 /** The creature with the most specimens. A tie goes to the first in the order of the counter's keys. */
 export const leadingCreature = (experiment: Experiment): Creature =>
   creatureKinds.reduce((lead, kind) => experiment.tally[kind] > experiment.tally[lead] ? kind : lead)

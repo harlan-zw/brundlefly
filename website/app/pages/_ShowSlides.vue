@@ -94,7 +94,7 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
           <span class="op" aria-hidden="true">=</span>
 
           <figure class="eq-item result">
-            <div class="frame brundle-frame">
+            <div class="frame brundle-3d">
               <SlideMascot3D />
             </div>
             <svg class="pen-label ink-red" :viewBox="lineView(penLines.brundlefly.w)" role="img" aria-label="Brundlefly">
@@ -112,8 +112,8 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 
         <div class="equation">
           <figure class="eq-item">
-            <div class="frame brundle-frame">
-              <img src="/brand/character.png" alt="Brundlefly">
+            <div class="frame brundle-3d">
+              <SlideMascot3D />
             </div>
             <svg class="pen-label" :viewBox="lineView(penLines.brundlefly.w)" role="img" aria-label="Brundlefly">
               <path :d="penLines.brundlefly.d" />
@@ -199,7 +199,7 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
         </div>
       </div>
 
-      <!-- Slide 5: Experiment 2 - Source the Transformation + 4 Specimen Cards (Snail = Lame - don't pick!) -->
+      <!-- Slide 5: Experiment 2 - Me -> one of 4 Specimen Cards (Snail = Lame - don't pick!) -->
       <div v-else class="page slide-five">
         <div class="exp2-head">
           <svg class="pen-title" :viewBox="lineView(penLines.exp2.w)" role="img" aria-label="Experiment 2: Source the Transformation">
@@ -210,26 +210,44 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
           </svg>
         </div>
 
-        <div class="species">
-          <div class="card">
-            <svg class="sketch creature" :viewBox="penSketches.fly.box" aria-hidden="true"><path :d="penSketches.fly.d" /></svg>
-            <svg class="pen-label" :viewBox="lineView(penLines.fly.w)" role="img" aria-label="Fly"><path :d="penLines.fly.d" /></svg>
-            <span class="tag">Aerial dominance</span>
-          </div>
-          <div class="card">
-            <svg class="sketch creature" :viewBox="penSketches.beetle.box" aria-hidden="true"><path :d="penSketches.beetle.d" /></svg>
-            <svg class="pen-label" :viewBox="lineView(penLines.beetle.w)" role="img" aria-label="Beetle"><path :d="penLines.beetle.d" /></svg>
-            <span class="tag">Armored shell</span>
-          </div>
-          <div class="card">
-            <svg class="sketch creature" :viewBox="penSketches.cricket.box" aria-hidden="true"><path :d="penSketches.cricket.d" /></svg>
-            <svg class="pen-label" :viewBox="lineView(penLines.cricket.w)" role="img" aria-label="Cricket"><path :d="penLines.cricket.d" /></svg>
-            <span class="tag">30x leap</span>
-          </div>
-          <div class="card lame-card">
-            <svg class="sketch creature" :viewBox="penSketches.snail.box" aria-hidden="true"><path :d="penSketches.snail.d" /></svg>
-            <svg class="pen-label" :viewBox="lineView(penLines.snail.w)" role="img" aria-label="Snail"><path :d="penLines.snail.d" /></svg>
-            <svg class="pen-lame ink-red" :viewBox="lineView(penLines.lame.w)" role="img" aria-label="Lame - don't pick!"><path :d="penLines.lame.d" /></svg>
+        <div class="transform-row">
+          <figure class="eq-item subject">
+            <div class="frame small">
+              <img v-if="photos.scientist" :src="photos.scientist" alt="Dr. Science">
+              <svg v-else class="sketch" :viewBox="penSketches.scientist.box" role="img" aria-label="Sketched portrait of Dr. Science">
+                <path :d="penSketches.scientist.d" />
+              </svg>
+            </div>
+            <svg class="pen-label" :viewBox="lineView(penLines.meLead.w)" role="img" aria-label="Dr. Science">
+              <path :d="penLines.meLead.d" />
+            </svg>
+          </figure>
+
+          <svg class="transform-arrow" viewBox="0 0 110 60" aria-hidden="true">
+            <path d="M6 30 L96 30 M76 12 L98 30 L76 48" />
+          </svg>
+
+          <div class="species">
+            <div class="card">
+              <svg class="sketch creature" :viewBox="penSketches.fly.box" aria-hidden="true"><path :d="penSketches.fly.d" /></svg>
+              <svg class="pen-label" :viewBox="lineView(penLines.fly.w)" role="img" aria-label="Fly"><path :d="penLines.fly.d" /></svg>
+              <span class="tag">Aerial dominance</span>
+            </div>
+            <div class="card">
+              <svg class="sketch creature" :viewBox="penSketches.beetle.box" aria-hidden="true"><path :d="penSketches.beetle.d" /></svg>
+              <svg class="pen-label" :viewBox="lineView(penLines.beetle.w)" role="img" aria-label="Beetle"><path :d="penLines.beetle.d" /></svg>
+              <span class="tag">Armored shell</span>
+            </div>
+            <div class="card">
+              <svg class="sketch creature" :viewBox="penSketches.cricket.box" aria-hidden="true"><path :d="penSketches.cricket.d" /></svg>
+              <svg class="pen-label" :viewBox="lineView(penLines.cricket.w)" role="img" aria-label="Cricket"><path :d="penLines.cricket.d" /></svg>
+              <span class="tag">30x leap</span>
+            </div>
+            <div class="card lame-card">
+              <svg class="sketch creature" :viewBox="penSketches.snail.box" aria-hidden="true"><path :d="penSketches.snail.d" /></svg>
+              <svg class="pen-label" :viewBox="lineView(penLines.snail.w)" role="img" aria-label="Snail"><path :d="penLines.snail.d" /></svg>
+              <svg class="pen-lame ink-red" :viewBox="lineView(penLines.lame.w)" role="img" aria-label="Lame - don't pick!"><path :d="penLines.lame.d" /></svg>
+            </div>
           </div>
         </div>
       </div>
@@ -279,6 +297,7 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 .frame.compact { width: clamp(140px, 16vw, 210px); aspect-ratio: 1; background: #fff; border: 2px solid #2b2b2b; }
 .frame.brundle-frame { width: clamp(210px, 25vw, 330px); aspect-ratio: 1; background: radial-gradient(circle at 50% 45%, #233329, #0c120e); border: 3px solid #141414; box-shadow: 5px 6px 0 #c6282833; padding: 6px; }
 .frame.brundle-frame img { object-fit: contain; }
+.frame.brundle-3d { width: clamp(230px, 27vw, 360px); aspect-ratio: 1; background: transparent; border: none; box-shadow: none; padding: 0; overflow: visible; }
 .frame.brundle-frame.compact { width: clamp(140px, 16vw, 210px); }
 
 .equation { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 2.4vw, 34px); width: 100%; max-width: 1240px; }
@@ -295,13 +314,17 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 .arrows path { fill: none; stroke: #1a237e; stroke-width: 4; stroke-dasharray: 9 7; stroke-linecap: round; stroke-linejoin: round; }
 .under-lab { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; justify-items: center; gap: clamp(20px, 4vw, 64px); width: min(920px, 88vw); }
 
-.slide-five { justify-content: space-evenly; padding-top: 3vh; padding-bottom: 3vh; }
-.exp2-head { display: flex; flex-direction: column; align-items: center; gap: 1vh; text-align: center; }
+.slide-five { justify-content: space-evenly; padding-top: 2.5vh; padding-bottom: 2.5vh; }
+.exp2-head { display: flex; flex-direction: column; align-items: center; gap: .6vh; text-align: center; }
+.transform-row { display: flex; align-items: center; justify-content: center; gap: clamp(16px, 2.5vw, 36px); width: 100%; max-width: 1240px; }
+.subject { flex: none; }
+.transform-arrow { flex: none; width: clamp(64px, 7vw, 110px); height: auto; overflow: visible; }
+.transform-arrow path { fill: none; stroke: #1a237e; stroke-width: 5; stroke-dasharray: 10 8; stroke-linecap: round; stroke-linejoin: round; }
 
-.species { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5vw; width: 100%; max-width: 1220px; }
-.card { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 10px; padding: 2.2vh 1.2vw;
+.species { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 1.5vw, 22px); flex: 1; max-width: 780px; }
+.card { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6px; padding: 1.5vh 1.2vw;
   border: 2.5px solid #2b2b2b; background: #fff; box-shadow: 4px 5px 0 #1a237e14; text-align: center; }
-.creature { height: clamp(96px, 17vh, 160px); width: 100%; }
+.creature { height: clamp(72px, 12vh, 118px); width: 100%; }
 .tag { font: 700 clamp(.9rem, 1.35vw, 1.2rem)/1.2 var(--font-mono, ui-monospace, monospace); color: #3949ab; text-transform: uppercase; letter-spacing: .04em; }
 .lame-card { background: #fff0f0; border: 3px dashed #c62828; box-shadow: 4px 5px 0 #c6282822; }
 </style>
