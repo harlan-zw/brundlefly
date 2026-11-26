@@ -4,9 +4,9 @@ import { addTaps, emptyExperiment, goCritical, revealExperiment } from '../share
 import { clickerAction, clickerRevealAfterSeconds, readClickerKey, showSlideCount } from '../shared/show-deck.ts'
 
 test('readClickerKey maps USB presenter keys to Next and Prev', () => {
-  for (const key of ['ArrowRight', 'PageDown', ' ']) assert.equal(readClickerKey(key), 'Next')
-  for (const key of ['ArrowLeft', 'PageUp']) assert.equal(readClickerKey(key), 'Prev')
-  for (const key of ['Escape', 'b', 'Enter', 'ArrowUp']) assert.equal(readClickerKey(key), undefined)
+  for (const key of ['ArrowRight', 'ArrowDown', 'PageDown', ' ']) assert.equal(readClickerKey(key), 'Next')
+  for (const key of ['ArrowLeft', 'ArrowUp', 'PageUp']) assert.equal(readClickerKey(key), 'Prev')
+  for (const key of ['Escape', 'b', 'Enter']) assert.equal(readClickerKey(key), undefined)
 })
 
 test('show mode steps through slides 1 to 4, cuts to 3D office, then opens beetle QR', () => {

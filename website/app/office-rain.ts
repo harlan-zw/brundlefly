@@ -14,14 +14,14 @@ import { specimenGeometry } from './office-specimens'
 
 // World units and seconds. He is about three units tall, so gravity is stronger than nine point eight.
 const gravity = 13
-const size = 0.26
+const size = 0.28
 // One layer of a pile. Bodies interleave, so a layer is thinner than a body.
-const layer = 0.055
+const layer = 0.068
 const cellSize = 0.24
 /** The snails the chamber spits out in the critical scene. */
-export const spitSnails = 860
+export const spitSnails = 2200
 /** The most bodies of one creature in the room. The oldest body leaves when a new one needs its place. */
-export const bodiesPerCreature = 900
+export const bodiesPerCreature = 2400
 // How each creature falls and lands. `drag` slows it in the air. `bounce` is the share of its speed that a landing gives back.
 const manner: Record<Creature, { weight: number, drag: number, bounce: number, tumble: number, hops: number }> = {
   snail: { weight: 1, drag: 0, bounce: 0.06, tumble: 2, hops: 0 },
@@ -138,8 +138,8 @@ export function createSpecimenRain(plan: OfficePlan = officePlan) {
     add('snail', index, 0, instant)
     if (instant) return
     const body = bodies.get('snail')![index % bodiesPerCreature]!
-    body.x = sink.x + (Math.random() - 0.5) * 1.6; body.y = sink.y + (Math.random() - 0.5) * 0.7; body.z = sink.z + 0.15
-    body.vx = (Math.random() - 0.5) * 9 - sink.x * 0.9; body.vy = 1.5 + Math.random() * 5.5; body.vz = 2.5 + Math.random() * 7
+    body.x = sink.x + (Math.random() - 0.5) * 1.9; body.y = sink.y + (Math.random() - 0.5) * 0.85; body.z = sink.z + 0.15
+    body.vx = (Math.random() - 0.5) * 11 - sink.x * 0.95; body.vy = 2 + Math.random() * 6.5; body.vz = 3 + Math.random() * 8
     body.state = 'Falling'
     body.age = 0
   }

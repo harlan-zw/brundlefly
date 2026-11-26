@@ -25,10 +25,10 @@ export type ClickerAction =
   | { _tag: 'Station', station: ShowStation }
   | { _tag: 'Reveal' }
 
-/** Maps standard USB presenter clicker keys (`ArrowRight`, `PageDown`, `Space`, `ArrowLeft`, `PageUp`) to Next or Prev. */
+/** Maps standard USB presenter clicker keys (`ArrowRight`, `ArrowDown`, `PageDown`, `Space`, `ArrowLeft`, `ArrowUp`, `PageUp`) to Next or Prev. */
 export function readClickerKey(key: string): ClickerKey | undefined {
-  if (key === 'ArrowRight' || key === 'PageDown' || key === ' ') return 'Next'
-  if (key === 'ArrowLeft' || key === 'PageUp') return 'Prev'
+  if (key === 'ArrowRight' || key === 'ArrowDown' || key === 'PageDown' || key === ' ') return 'Next'
+  if (key === 'ArrowLeft' || key === 'ArrowUp' || key === 'PageUp') return 'Prev'
 }
 
 /**

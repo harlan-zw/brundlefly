@@ -213,17 +213,17 @@ Brundlefly speaks these lines over his head. They open no dialog.
 
 | Moment | Line | What he does |
 | --- | --- | --- |
-| First specimen | One. I count things now. Keep going. (“{count}.” when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
-| A quarter of the target | {count}. The chamber is warming up. | He looks toward the light of the chamber. |
+| First specimen | One. He said it was safe last time too. Keep going. (“{count}.” when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
+| A quarter of the target | {count}. The chamber is warming up. Do not shake the jar. | He looks toward the light of the chamber. |
 | Half | Halfway. My small hands are rubbing. Ignore them. | His small hands rub together. |
-| Three quarters | I know that hum. I went in alone. | He goes very still. |
-| Nine tenths | Nearly. Decide which parts you want to keep. | He checks an empty palm. |
-| Critical | That is the number. Hold still. | He runs to the chamber, turns side-on to it, and leans in. |
-| The chamber spits snails | Uh oh. That is not right. | His jaw catches and his wings buzz. |
-| The snails keep coming | It is not stopping. | He runs to the computer and hammers its keys. |
-| Before the tubes go out | You will remember the hum. Little else. | He gives up the keys, turns to the visitor, and leans closer. |
-| The cave, first | Congratulations. You did that. All of you. | He dances. |
-| The cave, second | {count} specimens went in. Snails came out. A perfect run. Your turn. | He leans closer. |
+| Three quarters | I know that hum. I went in alone. He is next. | He goes very still. |
+| Nine tenths | Nearly. Decide which parts you want to keep. Not the snail. | He checks an empty palm. |
+| Critical | That is the number. Hold still, doctor. | He runs to the chamber, turns side-on to it, and leans in. |
+| The chamber spits snails | Uh oh. Those are all snails. That is not right. | His jaw catches and his wings buzz. |
+| The snails keep coming | It is not stopping. Too many snails. | He runs to the computer and hammers its keys. |
+| Before the tubes go out | You will remember the hum. Welcome to the 18th Dimension. | He gives up the keys, turns to the visitor, and leans closer. |
+| The cave, first | Happy 30th, Jayde. You all did that. | He dances. |
+| The cave, second | {count} specimens went in. Snails came out. A complete triumph. Your turn. | He leans closer. |
 
 He is never idle while he speaks: each line has a gesture, and the scene performs it as the line appears.
 Between his lines he counts during the count: he looks up, reads his palm, writes in the air, glances at the chamber, and rubs his small hands.

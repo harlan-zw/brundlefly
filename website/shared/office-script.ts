@@ -14,15 +14,15 @@ export type TimedLine = Spoken & { at: number }
 // The share of the target at which he speaks, what he says, and what he does. `{count}` is the specimen count at that moment.
 const milestones: readonly (readonly [share: number, text: string, beat: string])[] = [
   // He turns to the chamber: it is the thing that warms.
-  [0.25, '{count}. The chamber is warming up.', 'He looks toward the light.'],
+  [0.25, '{count}. The chamber is warming up. Do not shake the jar.', 'He looks toward the light.'],
   [0.5, 'Halfway. My small hands are rubbing. Ignore them.', 'His small hands rub together.'],
   // The hum is the one thing he remembers of the machine. He stops to hear it.
-  [0.75, 'I know that hum. I went in alone.', 'He goes very still.'],
+  [0.75, 'I know that hum. I went in alone. He is next.', 'He goes very still.'],
   // Which parts are still his: he looks at his own hand.
-  [0.9, 'Nearly. Decide which parts you want to keep.', 'He checks an empty palm.'],
+  [0.9, 'Nearly. Decide which parts you want to keep. Not the snail.', 'He checks an empty palm.'],
 ]
 // The first state of a run can hold more than one specimen, so he says the count he has. He looks up: they fall from the ceiling.
-const first = { text: '{count}. I count things now. Keep going.', beat: 'He listens to the ceiling.' }
+const first = { text: '{count}. He said it was safe last time too. Keep going.', beat: 'He listens to the ceiling.' }
 
 /** His line when the count moves from `before` to `after`, or nothing. He speaks once at the first specimen and once at each milestone. */
 export function countingLine(before: number, after: number, target: number): Spoken | undefined {
@@ -39,12 +39,12 @@ export function countingLine(before: number, after: number, target: number): Spo
  * he runs to the chamber and leans in, flinches as it spits snails, runs to the computer and hammers its keys, and at the end turns to the visitor.
  */
 export const criticalLines: readonly TimedLine[] = [
-  { at: 0.2, text: 'That is the number. Hold still.', beat: '' },
-  { at: criticalSpurtAt + 0.8, text: 'Uh oh. That is not right.', beat: '' },
+  { at: 0.2, text: 'That is the number. Hold still, doctor.', beat: '' },
+  { at: criticalSpurtAt + 0.8, text: 'Uh oh. Those are all snails. That is not right.', beat: '' },
   // He is at the keys by now, and they do nothing.
-  { at: criticalRushAt + 2.6, text: 'It is not stopping.', beat: '' },
+  { at: criticalRushAt + 2.6, text: 'It is not stopping. Too many snails.', beat: '' },
   // He gives up the keys and says the last thing to the visitor's face.
-  { at: criticalAddressAt + 0.2, text: 'You will remember the hum. Little else.', beat: '' },
+  { at: criticalAddressAt + 0.2, text: 'You will remember the hum. Welcome to the 18th Dimension.', beat: '' },
 ]
 
 const plurals: Record<Creature, string> = { snail: 'snails', beetle: 'beetles', fly: 'flies', cricket: 'crickets' }
@@ -60,7 +60,7 @@ export function caveLines(experiment: Experiment): readonly TimedLine[] {
   // The presenter can send an empty run critical. He then has no count to report.
   const report = count === 0 ? '' : count === 1 ? 'One specimen went in. ' : `${count.toLocaleString('en')} specimens went in. `
   // He dances through the first line. For the second he leans to the visitor: it is their turn.
-  return [{ at: 1, text: 'Congratulations. You did that. All of you.', beat: '' }, { at: 6, text: `${report}Snails came out. A perfect run. Your turn.`, beat: 'He leans closer.' }]
+  return [{ at: 1, text: 'Happy 30th, Jayde. You all did that.', beat: '' }, { at: 6, text: `${report}Snails came out. A complete triumph. Your turn.`, beat: 'He leans closer.' }]
 }
 
 /** Seconds a line stays over his head. A longer line stays longer. */

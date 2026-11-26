@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onScopeDispose, ref, shallowRef, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from '#app'
 import { defaultSceneAudioMix } from '#shared/scene-audio'
 import type { SceneAudioMix, SceneAudioState } from '#shared/scene-audio'
@@ -64,9 +64,13 @@ const office = useOfficeExperiment(() => presenting && (wanted.value === 'office
 const { experiment } = office
 const station = ref<Station>(joined ? 'computer' : 'room')
 // `/projector?show` opens on the four MS Paint slides over the preloaded 3D office so one presenter clicker runs the whole act.
-const showMode = presenting && !joined && 'show' in route.query
+// Static prerendering has no query string, so `slide` opens on client mount to avoid an SSR hydration mismatch.
+const showMode = computed(() => presenting && !joined && ('show' in route.query || (import.meta.client && new URLSearchParams(window.location.search).has('show'))))
 const tuning = presenting && !joined && 'tune' in route.query
-const slide = ref<number | null>(showMode ? 0 : null)
+const slide = ref<number | null>(null)
+onMounted(() => {
+  if (showMode.value && !critical.value) slide.value = 0
+})
 // On a phone held upright the computer's screen fills the page. The scene behind it then draws nothing, and his lines wait for the room.
 const phone = useMediaQuery('(max-width: 640px) and (orientation: portrait)')
 const covered = computed(() => (phone.value && station.value === 'computer' && run.value !== null && shown.value === 'office' && !talking.value) || slide.value !== null)
@@ -129,18 +133,19 @@ if (presenting) {
     if (joined || talking.value || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return
     if (tuning && station.value === 'code' && event.key.startsWith('Arrow')) return
     const target = event.target
-    if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, button, [contenteditable]:not([contenteditable="false"])'))) return
+    // Do not exclude `button`: the 3D scene's full-viewport interaction layer is a `<button>` that holds focus after clicking to unlock audio.
+    if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), .scene-controls, dialog'))) return
     const key = readClickerKey(event.key)
     if (!key) return
     const state = run.value
     const criticalAge = state && state.criticalAt !== null ? (office.clock() - state.criticalAt) / 1000 : undefined
-    const action = clickerAction(key, { show: showMode, slide: slide.value, station: station.value, experiment: state, criticalAge })
+    const action = clickerAction(key, { show: showMode.value, slide: slide.value, station: station.value, experiment: state, criticalAge })
     if (action._tag === 'None') return
     event.preventDefault()
     if (action._tag === 'Slide') slide.value = action.index
     else if (action._tag === 'Station') station.value = action.station
     else office.reveal()
-  })
+  }, { capture: true })
 }
 
 // What he says over his head. A line stays for a few seconds and opens no dialog.
@@ -173,11 +178,15 @@ watch(() => sound.value.muted, (muted) => { if (muted) song?.stop(1) })
 watch(() => experiment.value?.run, (now, before) => {
   if (before === undefined || now === undefined || now === before) return
   song?.stop(1)
-  if (!joined && shown.value === 'lair') {
-    wanted.value = 'office'
-    snailed.value = false
-    party.value = null
-    keepParty()
+  if (!joined) {
+    if (shown.value === 'lair') {
+      wanted.value = 'office'
+      snailed.value = false
+      party.value = null
+      keepParty()
+    }
+    station.value = 'room'
+    if (showMode.value) slide.value = 0
   }
   if (joined) station.value = 'computer'
 })
@@ -266,7 +275,7 @@ function landed(kind: Creature) {
       <template #fallback><SceneLoading /></template>
     </ClientOnly>
     <template v-if="presenting">
-      <ShowSlides v-if="slide !== null" :slide="slide" />
+      <ClientOnly><ShowSlides v-if="slide !== null" :slide="slide" /></ClientOnly>
       <OfficeCounter v-if="run && shown === 'office'" :experiment="run" :connected="office.connected.value" :online="office.online.value" :shown="station === 'computer' && !talking && slide === null" :revealed="phoneRevealed" @tap="tap" @leave="station = 'room'" @enter="enterCaveFromPhone" />
       <BackToRoom :shown="station === 'code' && !talking && !critical && slide === null" @leave="station = 'room'" />
       <OverheadLine :text="talking || covered ? '' : line" />
