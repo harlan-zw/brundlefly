@@ -31,7 +31,7 @@ const milestones: readonly { share: number, text: (count: string, lead: Creature
   {
     share: 0.5,
     text: (_, lead) => ({
-      snail: 'Halfway. All these snails. Do not shake the jar.',
+      snail: 'Halfway. All these snails. He is still pretending to be calm.',
       fly: 'Halfway. That many flies and he will look like me.',
       beetle: 'Halfway. Enough beetles to crush the lab bench.',
       cricket: 'Halfway. So many crickets. My small hands are rubbing.',
@@ -40,12 +40,14 @@ const milestones: readonly { share: number, text: (count: string, lead: Creature
   },
   // The hum is the one thing he remembers of the machine. He stops to hear it.
   { share: 0.75, text: (_, lead) => `I know that hum. Too many ${plurals[lead]}. I went in alone. He is next.`, beat: 'He goes very still.' },
+  // From 80% the warning beacon spins faster and the floor shakes.
+  { share: 0.8, text: () => 'Red light. That is not supposed to shake. Do not stop now.', beat: 'His wings buzz once.' },
   // Which parts are still his: he looks at his own hand.
   {
     share: 0.9,
     text: (_, lead) => lead === 'snail'
-      ? 'Nearly. Almost all snails. Decide which parts you want to keep.'
-      : `Nearly. ${capitalizedPlurals[lead]} in the lead. Decide which parts you want to keep.`,
+      ? 'Nearly. Almost all snails. Hope he did not like having legs.'
+      : `Nearly. ${capitalizedPlurals[lead]} in the lead. Hope he is ready.`,
     beat: 'He checks an empty palm.',
   },
 ]
@@ -68,14 +70,14 @@ const leadShiftPool: Record<Creature, readonly string[]> = {
     'Flies pulling ahead. Welcome to the club, doctor.',
   ],
   beetle: [
-    'Beetles took the lead. Good luck with the shell.',
+    'Beetles took the lead. Hope he likes a hard shell.',
     'Beetles ahead again. Very shiny. Terrible posture.',
     'More beetles. He will rattle when he walks.',
   ],
   cricket: [
-    'Crickets took the lead. Hope you like jumping.',
+    'Crickets took the lead. Hope he likes jumping.',
     'Crickets back in front. The ceilings in here are low.',
-    'More crickets. Nobody is sleeping tonight.',
+    'More crickets. His knees are going to bend backwards.',
   ],
 }
 const tugOfWarLines: readonly ((prev: Creature, next: Creature) => string)[] = [
@@ -111,8 +113,8 @@ export function leadShiftLine(beforeLead: Creature, afterLead: Creature, share: 
   return { text: variants[occurrence % variants.length]!, beat: 'He leans closer.' }
 }
 
-/** Overhead greeting after turning the office lights on at the start of `/projector?show` (the entrance plays his Greet gesture, so `beat` stays empty). */
-export const showGreetingLine: Spoken = { text: 'Oh. Hello. Welcome to the Virtual Lab. Do not touch the chamber.', beat: '' }
+/** Overhead greeting after turning the office lights on at the start of `/projector` (the entrance plays his Greet gesture, so `beat` stays empty). */
+export const showGreetingLine: Spoken = { text: 'Oh, hello again, doctor. Welcome to the Virtual Lab. Please do not shake my jar.', beat: '' }
 
 /**
  * His lines in the critical scene, in seconds after the experiment went critical. `criticalAct` in the timeline moves him between them:
@@ -123,8 +125,8 @@ export const criticalLines: readonly TimedLine[] = [
   { at: criticalSpurtAt + 0.8, text: 'Uh oh. Those are all snails. That is not right.', beat: '' },
   // He is at the keys by now, and they do nothing.
   { at: criticalRushAt + 2.6, text: 'It is not stopping. Too many snails.', beat: '' },
-  // He gives up the keys and says the last thing to the visitor's face.
-  { at: criticalAddressAt + 0.2, text: 'You will remember the hum. Welcome to the 18th Dimension.', beat: '' },
+  // He gives up the keys and says the last thing to the room.
+  { at: criticalAddressAt + 0.2, text: 'Hold on, doctor. Welcome to the 18th Dimension.', beat: '' },
 ]
 
 /** The creature with the most specimens. A tie goes to the first in the order of the counter's keys. */
@@ -143,7 +145,7 @@ export function caveLines(experiment: Experiment): readonly TimedLine[] {
     ? `You voted ${plurals[lead]}. Snails came out anyway. Dance.`
     : 'Snails came out. Peak Earthling talent. Dance.'
   // He dances through the first line. For the second he leans to the visitor: it is their turn.
-  return [{ at: 1, text: 'Show me what you got, doctor.', beat: '' }, { at: 6, text: `${report}${outcome}`, beat: 'He leans closer.' }]
+  return [{ at: 1, text: 'Congratulations. A successful experiment. Show me what you got, doctor.', beat: '' }, { at: 6, text: `${report}${outcome}`, beat: 'He leans closer.' }]
 }
 
 /** Seconds a line stays over his head. A longer line stays longer. */

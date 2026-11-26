@@ -121,7 +121,7 @@ One tap adds one specimen. At the target the room goes critical for everyone, an
 The experiment uses `/projector` and `/join`. The public office at `/office` keeps its usual conversation and travel.
 
 1. Open `/presenter` on your own device. Choose **Reset experiment**, then set the target. The page is public. For a test alone, choose the quick target of 10.
-2. Open `/projector?show` on the projector for the full one-clicker act (five PenGPT pen-and-ink notebook slides, smooth fade into the 3D office, glowing beetle QR code, desk computer, and blackout reveal), or `/projector` for the office alone.
+2. Open `/projector` on the projector for the full one-clicker act (five PenGPT pen-and-ink notebook slides, smooth fade into the dark 3D office with Brundlefly turning on the lights, glowing beetle QR code, desk computer, zoom back out to the room, and blackout reveal), or `/projector?office` for the office alone.
 3. The audience scans the QR code on the glowing beetle glass. It opens `https://brundlefly.dev/join`, which puts each phone at the desk computer. The address is also shown in letters.
 4. Each key adds one specimen. The whiteboard, the computer screen, and the presenter page show the count. From 80% of the target the chamber is unstable: its warning light turns faster and throws red on the room, the room shakes now and then, and the tubes dip. From 90% all of that is stronger, and the computer warns.
 5. At the target, phones lock on the **CHAMBER OVERLOAD / LOOK UP NOW** alarm so every eye snaps to the room. Green arcs leap from the chamber, the chamber spits out snails, and the projector fades to pitch black and holds with a rising hum pulse.

@@ -578,6 +578,8 @@ watch(canvas, async (element) => {
   let workKey = ''
   let workAge = 0
   let typeTaps = 0
+  let criticalTypeWeight = 0
+  let criticalTypeAge = 0
   // The moment of the last green arc. A wing of his jumps at each one.
   let arcAt = Number.NEGATIVE_INFINITY
   let partyHeld = false
@@ -627,10 +629,10 @@ watch(canvas, async (element) => {
     // Free again, he takes up his loop from where he stands.
     if (entered.held && !act.held) { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
     // The experiment belongs to the office. Its critical scene dims the tubes, and every device times it from the server's clock.
-    // While the presenter holds the room in pitch black (`revealAt === null`), keep the final dark frame locked so the office never flashes back in.
+    // While the presenter holds the room in pitch black (and while waiting for `revealAt` to land), keep the final dark frame locked so the office never flashes back in.
     const run = standing.stage.name === 'office' ? experiment : null
     const criticalAge = run && run.criticalAt !== null ? Math.max(0, (serverClock() - run.criticalAt) / 1000) : undefined
-    const holding = Boolean(run && run.criticalAt !== null && run.revealAt === null && criticalAge !== undefined && criticalAge >= criticalSceneSeconds)
+    const holding = Boolean(run && run.criticalAt !== null && criticalAge !== undefined && criticalAge >= criticalSceneSeconds && (run.revealAt === null || serverClock() < run.revealAt))
     const critical = criticalAge !== undefined && (criticalAge < criticalSceneSeconds || holding) ? criticalFrame(Math.min(criticalAge, criticalSceneSeconds), !faceMotion) : undefined
     const over = criticalAge !== undefined && !critical
     // Near the target the chamber is not steady. Now and then the room shakes and the tubes dip, until the critical scene takes both over.
@@ -662,7 +664,9 @@ watch(canvas, async (element) => {
     if (travelPhase.value !== travel._tag) travelPhase.value = travel._tag
     // After the critical scene the cave comes up slowly out of the dark.
     if (arrival !== undefined) { arrival += delta; if (arrival >= arrivalTimes.settle || !faceMotion) arrival = undefined }
-    const dark = Math.max(cut && travel._tag === 'Leaving' ? 1 : travelShade(travel, !faceMotion), critical?.shade ?? 0, arrival === undefined ? 0 : 1 - smoothShare(arrival / (party ? partyReveal : arrivalTimes.reveal)))
+    // Keep the screen pitch black for every frame of a cut until the destination set has replaced the office.
+    const cutDark = cut && (standing.stage.name !== set || travel._tag === 'Leaving')
+    const dark = Math.max(cutDark ? 1 : travelShade(travel, !faceMotion), critical?.shade ?? 0, arrival === undefined ? 0 : 1 - smoothShare(arrival / (party ? partyReveal : arrivalTimes.reveal)))
     // The beats of the celebration since the chorus hit. He dances in the cave from the hit on.
     const beats = party && standing.stage.name === 'lair' ? (serverClock() - party.at) / 1000 * party.bpm / 60 : undefined
     const dancing = beats !== undefined && beats >= 0 && faceMotion
@@ -836,8 +840,8 @@ watch(canvas, async (element) => {
     // He walks to the switch at that pace too.
     // In the critical scene he runs.
     const walkSpeed = settings.value.walkSpeed * walkPace * (critical ? criticalPace : journey || act.held ? 1.7 : 1)
-    // In the dark he has noticed the visitor, and he waits. On his way to the switch a pointer that rests on him does not stop him.
-    const attentionNow = journey ? 'free' as const : talking ? 'talking' as const
+    // In the dark he has noticed the visitor, and he waits. On his way to the switch or during the critical scene a resting pointer never stops him.
+    const attentionNow = journey || Boolean(scripted) ? 'free' as const : talking ? 'talking' as const
       : entrance._tag === 'Dark' ? 'noticed' as const : act.held ? 'free' as const : hovered.value ? 'noticed' as const : 'free' as const
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
       pauses: journey || act.held || counting ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
@@ -868,8 +872,8 @@ watch(canvas, async (element) => {
     const ease = Math.min(1, delta * 4)
     // At the end of the critical scene he turns from the keys and speaks to the visitor.
     const addressing = scripted?.work === 'Address'
-    attention.weight = faceMotion ? attention.weight + (Number(talking || (hovered.value && !journey) || act.watches || addressing) - attention.weight) * ease : 0
-    attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused && !journey ? 0.07 : 0) - attention.tilt) * ease : 0
+    attention.weight = faceMotion ? attention.weight + (Number(talking || (hovered.value && !journey && !scripted) || act.watches || addressing) - attention.weight) * ease : 0
+    attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused && !journey && !scripted ? 0.07 : 0) - attention.tilt) * ease : 0
     const watch = { target: camera.position, weight: attention.weight, tilt: attention.tilt }
     if (mascot._tag === 'Mesh' && !meshPose) mascot.update(faceElapsed, watch)
     else {
@@ -931,14 +935,23 @@ watch(canvas, async (element) => {
           const since = criticalAge - criticalSpurtAt
           sided.push({ mannerism: { _tag: 'JawCatch' }, age: since, side }, { mannerism: { _tag: 'WingBuzz' }, age: since % 1.2, side }, { mannerism: { _tag: 'GlanceEggs' }, age: 1.1, side })
         }
-        // At the computer he hammers the keys to stop it, once he faces them. Each key clicks.
-        if (working === 'Type' && stage && Math.abs(turn.heading - stage.deskFacing) < keysFacingSlack) {
-          const age = 0.6 + workAge % 5.2
-          const taps = keyTaps(age)
-          if (taps > typeTaps) emit('action', 'KeyClick')
-          typeTaps = taps
-          sided.push({ mannerism: { _tag: 'TypeKeys' }, age, side })
+        // At the computer he hammers the keys to stop it once aligned. Smooth weight eases his arms onto and off the keyboard with no snap.
+        const typingNow = working === 'Type' && Boolean(stage) && Math.abs(turn.heading - stage!.deskFacing) < keysFacingSlack
+        criticalTypeWeight = Math.max(0, Math.min(1, criticalTypeWeight + (typingNow ? delta * 3.2 : -delta * 3.2)))
+        if (criticalTypeWeight > 0.01) {
+          criticalTypeAge += delta * 1.45
+          // Stay inside the active typing plateau (0.7s..2.3s of TypeKeys) so he types continuously without calm reading pauses or loop jolts.
+          const cycle = criticalTypeAge % 1.6
+          const age = 0.7 + cycle
+          if (typingNow) {
+            const taps = Math.floor(criticalTypeAge * 6.5)
+            if (taps > typeTaps) emit('action', 'KeyClick')
+            typeTaps = taps
+          }
+          sided.push({ mannerism: { _tag: 'TypeKeys' }, age, weight: criticalTypeWeight, side })
+          if (typingNow) sided.push({ mannerism: { _tag: 'WingBuzz' }, age: criticalTypeAge % 1.8, weight: criticalTypeWeight * 0.65, side })
         }
+        else { criticalTypeAge = 0; typeTaps = 0 }
         // The keys did nothing. He turns to the visitor and leans to them for his last line.
         if (scripted.work === 'Address') sided.push({ mannerism: { _tag: 'LeanIn' }, age: Math.min(criticalAge - criticalAddressAt, 1.2), side })
       }

@@ -246,8 +246,8 @@ const untilHit = computed(() => testHit.value === null ? null : (testHit.value -
       <header class="top">
         <h1>Presenter</h1>
         <div class="links">
-          <a href="/projector?show" target="_blank" rel="noopener">Open show<span class="hidden-label"> (opens in a new tab)</span></a>
-          <a href="/projector" target="_blank" rel="noopener">Open the office<span class="hidden-label"> (opens in a new tab)</span></a>
+          <a href="/projector" target="_blank" rel="noopener">Open show<span class="hidden-label"> (opens in a new tab)</span></a>
+          <a href="/projector?office" target="_blank" rel="noopener">Open the office<span class="hidden-label"> (opens in a new tab)</span></a>
         </div>
       </header>
       <p class="connection" role="status" :data-online="online">
@@ -465,7 +465,7 @@ const untilHit = computed(() => testHit.value === null ? null : (testHit.value -
           Slide photos
         </h2>
         <p class="help">
-          Optional photos for Slide 1, 2, and 4 on <a href="/projector?show" target="_blank" rel="noopener">the show page</a>. They stay in this browser and replace the sketched portraits.
+          Optional photos for Slide 1, 2, 4, and 5 on <a href="/projector" target="_blank" rel="noopener">the projector page</a>. They stay in this browser and replace the sketched portraits.
         </p>
         <div v-for="[slot, label] in ([['scientist', 'My photo'], ['brundle', 'Brundle before photo']] as const)" :key="slot" class="control">
           <label :for="`show-photo-${slot}`">{{ label }}</label>

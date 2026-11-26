@@ -213,19 +213,20 @@ Brundlefly speaks these lines over his head. They open no dialog.
 
 | Moment | Line | What he does |
 | --- | --- | --- |
-| Show entrance (lights on) | Oh. Hello. Welcome to the Virtual Lab. Do not touch the chamber. | Turns the office lights on at the switch, turns to the room, and waves without opening the dialog. |
+| Show entrance (lights on) | Oh, hello again, doctor. Welcome to the Virtual Lab. Please do not shake my jar. | Turns the office lights on at the switch, turns to the room, and waves without opening the dialog. |
 | First specimen | Names the creature picked first: “One snail. He told you not to pick that.”, “One fly. Look how well that worked out for me.”, “One beetle. Hard shell. Terrible for lab coats.”, or “One cricket. Loud legs. Already a mistake.” (Uses “{count}.” with the plural when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
 | Three twentieths of the target | {count}. He said it was safe last time too. Keep going. | He tilts his head. |
 | A quarter of the target | Adapts to what leads: “{count}. Mostly snails. He is going to be furious.”, “{count}. Mostly flies. You people have no imagination.”, “{count}. Mostly beetles. He will never fit through doors.”, or “{count}. Mostly crickets. Good luck sleeping tonight.” | He looks toward the light of the chamber. |
-| Half | Adapts to what leads: “Halfway. All these snails. Do not shake the jar.”, “Halfway. That many flies and he will look like me.”, “Halfway. Enough beetles to crush the lab bench.”, or “Halfway. So many crickets. My small hands are rubbing.” | His small hands rub together. |
+| Half | Adapts to what leads: “Halfway. All these snails. He is still pretending to be calm.”, “Halfway. That many flies and he will look like me.”, “Halfway. Enough beetles to crush the lab bench.”, or “Halfway. So many crickets. My small hands are rubbing.” | His small hands rub together. |
 | Three quarters | I know that hum. Too many {lead}. I went in alone. He is next. | He goes very still. |
-| Nine tenths | Adapts to what leads: “Nearly. Almost all snails. Decide which parts you want to keep.” or “Nearly. {Lead} in the lead. Decide which parts you want to keep.” | He checks an empty palm. |
+| Four fifths | Red light. That is not supposed to shake. Do not stop now. | His wings buzz once. |
+| Nine tenths | Adapts to what leads: “Nearly. Almost all snails. Hope he did not like having legs.” or “Nearly. {Lead} in the lead. Hope he is ready.” | He checks an empty palm. |
 | Lead change mid-run | Between 10% and 88% when a new species overtakes the lead (throttled, 3 variants per species plus 3 tug-of-war variations when two species trade the lead back and forth). | He leans closer. / He tilts his head. |
 | Critical | That is the number. Hold still, doctor. | He runs to the chamber, turns side-on to it, and leans in. |
 | The chamber spits snails | Uh oh. Those are all snails. That is not right. | His jaw catches and his wings buzz. |
 | The snails keep coming | It is not stopping. Too many snails. | He runs to the computer and hammers its keys. |
-| Before the tubes go out | You will remember the hum. Welcome to the 18th Dimension. | He gives up the keys, turns to the visitor, and leans closer. |
-| The cave, first | Show me what you got, doctor. | He dances. |
+| Before the tubes go out | Hold on, doctor. Welcome to the 18th Dimension. | He gives up the keys, turns to the room, and leans closer. |
+| The cave, first | Congratulations. A successful experiment. Show me what you got, doctor. | He dances. |
 | The cave, second | When snails won (or zero specimens): “{count} specimens went in. Snails came out. Peak Earthling talent. Dance.” When another species won: “{count} specimens went in. You voted {lead}. Snails came out anyway. Dance.” | He leans closer. |
 
 He is never idle while he speaks: each line has a gesture, and the scene performs it as the line appears.

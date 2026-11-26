@@ -63,10 +63,12 @@ const foundDark = ref(false)
 const office = useOfficeExperiment(() => presenting && (wanted.value === 'office' || shown.value === 'office'))
 const { experiment } = office
 const station = ref<Station>(joined ? 'computer' : 'room')
-// `/projector?show` opens on the four MS Paint slides over the preloaded 3D office so one presenter clicker runs the whole act.
+// `/projector` opens on the five PenGPT notebook slides over the preloaded 3D office so one presenter clicker runs the whole act.
+// Pass `?office` (or `?tune`) to open straight on the 3D office without slides.
 // Static prerendering has no query string, so `slide` opens on client mount to avoid an SSR hydration mismatch.
-const showMode = computed(() => presenting && !joined && ('show' in route.query || (import.meta.client && new URLSearchParams(window.location.search).has('show'))))
-const tuning = presenting && !joined && 'tune' in route.query
+const tuning = computed(() => presenting && !joined && ('tune' in route.query || (import.meta.client && new URLSearchParams(window.location.search).has('tune'))))
+const skipSlides = computed(() => tuning.value || 'office' in route.query || (import.meta.client && new URLSearchParams(window.location.search).has('office')))
+const showMode = computed(() => presenting && !joined && !skipSlides.value)
 const slide = ref<number | null>(null)
 const shownComputer = ref(false)
 onMounted(() => {
@@ -141,7 +143,7 @@ if (presenting) {
   useEventListener('keydown', (event: KeyboardEvent) => {
     if (event.key === 'Escape' && !talking.value) { station.value = 'room'; return }
     if (joined || talking.value || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return
-    if (tuning && station.value === 'code' && event.key.startsWith('Arrow')) return
+    if (tuning.value && station.value === 'code' && event.key.startsWith('Arrow')) return
     const target = event.target
     // Do not exclude `button`: the 3D scene's full-viewport interaction layer is a `<button>` that holds focus after clicking to unlock audio.
     if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), .scene-controls, dialog'))) return
@@ -254,6 +256,13 @@ const { pause: endScene, resume: playScene } = useIntervalFn(() => {
     audio.value?.playAction('HoldPulse')
   }
 }, 100, { immediate: false })
+watch(() => run.value?.revealAt ?? null, (revealAt) => {
+  const state = run.value
+  if (joined || revealAt === null || !state || state.criticalAt === null) return
+  const now = office.clock()
+  if (!sung && !sound.value.muted) { sung = true; song?.play((revealAt - now) / 1000) }
+  if ((now - state.criticalAt) / 1000 >= criticalDarkAt) leave(state)
+})
 const caveTimers: ReturnType<typeof setTimeout>[] = []
 // The run that sent this visitor to the cave, until they arrive there.
 let finished: Experiment | undefined
