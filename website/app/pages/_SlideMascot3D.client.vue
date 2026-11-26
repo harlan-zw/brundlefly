@@ -63,8 +63,9 @@ watch(canvas, async (element) => {
 
   const scene = new Scene()
   const camera = new PerspectiveCamera(35, 1, 0.1, 20)
-  camera.position.set(0, 0.08, 4.15)
-  camera.lookAt(0, 0.04, 0)
+  // Give generous headroom and footroom so wings and feet never clip as the model swings closer during a 360-degree turn.
+  camera.position.set(0, 0.06, 5.15)
+  camera.lookAt(0, 0.06, 0)
 
   scene.add(new AmbientLight('#fff5de', 2.0))
   const key = new DirectionalLight('#ffe8c4', 2.6)
