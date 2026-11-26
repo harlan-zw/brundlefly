@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { caveLines, countingLine, criticalLines, leadingCreature, lineSeconds } from '../shared/office-script.ts'
+import { caveLines, countingLine, criticalLines, leadingCreature, leadShiftLine, lineSeconds } from '../shared/office-script.ts'
 import { criticalAct, criticalAddressAt, criticalDarkAt, criticalSpurtAt, criticalTimes } from '../shared/office-critical.ts'
 import { beatMannerism } from '../layers/brand/shared/mannerism.ts'
 import { creatureKinds, criticalSceneSeconds, emptyExperiment } from '../shared/office-experiment.ts'
@@ -20,14 +20,39 @@ function walk(target: number, batches: readonly number[] = [1]): Spoken[] {
   return spoken
 }
 
-test('he speaks at the first specimen, at each quarter of the target, and near the end, once each', () => {
-  assert.deepEqual(walk(3000).map(({ count }) => count), [1, 750, 1500, 2250, 2700])
+test('he speaks at the first specimen, at 15%, at each quarter, at 80%, and near the end, once each', () => {
+  assert.deepEqual(walk(3000).map(({ count }) => count), [1, 450, 750, 1500, 2250, 2400, 2700])
   // At a small target the milestones fall between two counts. He speaks at the first count past each one.
-  assert.deepEqual(walk(50).map(({ count }) => count), [1, 13, 25, 38, 45])
+  assert.deepEqual(walk(50).map(({ count }) => count), [1, 8, 13, 25, 38, 40, 45])
   for (const target of [50, 3000, 20000]) {
     const lines = walk(target).map(({ line }) => line)
     assert.equal(new Set(lines).size, lines.length, `He repeated a line at a target of ${target}.`)
   }
+})
+
+test('his first line and milestones react to the leading creature, and mid-run lead shifts trigger an aside', () => {
+  for (const kind of creatureKinds) {
+    const one = countingLine(0, 1, 800, kind)!
+    const many = countingLine(0, 5, 800, kind)!
+    assert.match(one.text, new RegExp(`^One ${kind}\\.`, 'i'))
+    assert.match(many.text, /^5\./)
+    assert.notEqual(one.text, many.text)
+    // 25%, 50%, 75%, and 90% adapt to what leads.
+    assert.notEqual(countingLine(199, 200, 800, kind)!.text, countingLine(199, 200, 800, kind === 'fly' ? 'snail' : 'fly')!.text)
+    assert.notEqual(countingLine(399, 400, 800, kind)!.text, countingLine(399, 400, 800, kind === 'fly' ? 'snail' : 'fly')!.text)
+    assert.notEqual(countingLine(599, 600, 800, kind)!.text, countingLine(599, 600, 800, kind === 'fly' ? 'snail' : 'fly')!.text)
+    const shifted0 = leadShiftLine(kind === 'fly' ? 'snail' : 'fly', kind, 0.35, 0)!
+    const shifted1 = leadShiftLine(kind === 'fly' ? 'snail' : 'fly', kind, 0.45, 1)!
+    assert.ok(shifted0 && beatMannerism(shifted0.beat)._tag !== 'None')
+    assert.notEqual(shifted0.text, shifted1.text, `Repeated lead-shift line for ${kind}`)
+  }
+  const tug0 = leadShiftLine('beetle', 'fly', 0.4, 0, true)!
+  const tug1 = leadShiftLine('fly', 'beetle', 0.5, 1, true)!
+  assert.notEqual(tug0.text, tug1.text)
+  assert.ok(beatMannerism(tug0.beat)._tag !== 'None')
+  assert.equal(leadShiftLine('fly', 'fly', 0.35), undefined)
+  assert.equal(leadShiftLine('fly', 'snail', 0.05), undefined)
+  assert.equal(leadShiftLine('fly', 'snail', 0.9), undefined)
 })
 
 test('taps in batches give the same lines as single taps, each said once at the first batch past its milestone', () => {
@@ -95,19 +120,25 @@ test('the creature with the most specimens leads, and a tie goes to the first cr
   }
 })
 
-test('his last cave line names the real count, and says snails came out whatever led', () => {
+test('his last cave line names the real count and acknowledges the bait-and-switch when another species won', () => {
+  const plurals: Record<Creature, string> = { snail: 'snails', beetle: 'beetles', fly: 'flies', cricket: 'crickets' }
   for (const [index, kind] of creatureKinds.entries()) {
     const counts: Partial<Tally> = Object.fromEntries(creatureKinds.map(other => [other, other === kind ? 1200 + index : 1]))
     const last = caveLines(experiment(counts)).at(-1)!.text
     assert.match(last, new RegExp(`\\b1,${203 + index} specimens went in\\b`), last)
     assert.match(last, /\bSnails came out\b/, last)
-    // The creature that led has no part in what came out.
-    for (const other of ['beetles', 'flies', 'crickets']) assert.doesNotMatch(last, new RegExp(`\\b${other}\\b`), last)
+    if (kind === 'snail') {
+      assert.doesNotMatch(last, /\bYou voted\b/, last)
+    }
+    else {
+      assert.match(last, new RegExp(`\\bYou voted ${plurals[kind]}\\. Snails came out anyway\\.`), last)
+    }
   }
 })
 
 test('a run with one specimen or none still gets a cave line that reads right', () => {
-  assert.match(caveLines(experiment({ fly: 1 })).at(-1)!.text, /^One specimen went in\. Snails came out\./)
+  assert.match(caveLines(experiment({ snail: 1 })).at(-1)!.text, /^One specimen went in\. Snails came out\./)
+  assert.match(caveLines(experiment({ fly: 1 })).at(-1)!.text, /^One specimen went in\. You voted flies\. Snails came out anyway\./)
   const empty = caveLines(experiment({})).at(-1)!.text
   assert.doesNotMatch(empty, /specimen/)
   assert.match(empty, /^Snails came out\./)

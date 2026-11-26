@@ -84,5 +84,6 @@ export function useOfficeExperiment(active: () => boolean, role: 'visitor' | 'wa
     setParty: (settings: PartySettings) => send({ op: 'party', settings }),
     reset: () => send({ op: 'reset' }),
     setTarget: (value: number) => send({ op: 'target', value }),
-    goCritical: () => send({ op: 'critical' }) }
+    goCritical: () => send({ op: 'critical' }),
+    reveal: () => send({ op: 'reveal' }) }
 }

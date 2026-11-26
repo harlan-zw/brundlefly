@@ -195,14 +195,14 @@ Copy success uses “Copied.”
 ## Office experiment
 
 The desk computer shows the dashboard of a home lab. Its spoken name is “Specimen loader”.
-The header reads “chamber-01”, “loader”, and the presence line “{count} in the office”. During reconnection, the presence line reads “Reconnecting…”.
+The header reads “chamber-01”, “MISSION: IMPRESS ALIEN JAYDE (30)”, and the presence line “{count} in the office”. During reconnection, the presence line reads “Reconnecting…”.
 The load reads “{percent}%”, “of specimens loaded”, “{count} / {target}”, and the rate “+{count}/s”.
 Each key has the spoken label “Add a {creature}. {count} so far.”
 The log line reads “$ tail -f chamber.log”, then the last change, such as “+3 🪰”.
 From four fifths of the target the log reads “chamber: pressure above limit” in place of the last change. From nine tenths it reads “chamber: WARNING: containment at risk”.
-When the run goes critical, the screen fails with this text. Each line starts with the count in brackets, as a kernel’s clock:
-“chamber: load reached target”. “Kernel panic - not syncing: All specimens will be loaded at once.”
-“* Hold still.” “* Do not press any key. It will not help.” “Loading everything _”
+When the run goes critical, phones stay locked on an overload alarm so every eye looks up to the room:
+“CHAMBER OVERLOAD”. “LOOK UP NOW”. “[{count}.00000] Do not press any key. Chamber 01 is breaching.”
+Once the presenter triggers the cave reveal, phones add one button: “Enter the 18th Dimension”.
 The computer screen in the room shows the same dashboard and the same fault, in fewer words.
 The join code shows its address in letters: “brundlefly.dev/join”.
 At the computer or the join code, the scene’s keyboard action reads “Return to the room”.
@@ -213,17 +213,21 @@ Brundlefly speaks these lines over his head. They open no dialog.
 
 | Moment | Line | What he does |
 | --- | --- | --- |
-| First specimen | One. I count things now. Keep going. (“{count}.” when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
-| A quarter of the target | {count}. The chamber is warming up. | He looks toward the light of the chamber. |
-| Half | Halfway. My small hands are rubbing. Ignore them. | His small hands rub together. |
-| Three quarters | I know that hum. I went in alone. | He goes very still. |
-| Nine tenths | Nearly. Decide which parts you want to keep. | He checks an empty palm. |
-| Critical | That is the number. Hold still. | He runs to the chamber, turns side-on to it, and leans in. |
-| The chamber spits snails | Uh oh. That is not right. | His jaw catches and his wings buzz. |
-| The snails keep coming | It is not stopping. | He runs to the computer and hammers its keys. |
-| Before the tubes go out | You will remember the hum. Little else. | He gives up the keys, turns to the visitor, and leans closer. |
-| The cave, first | Congratulations. You did that. All of you. | He dances. |
-| The cave, second | {count} specimens went in. Snails came out. A perfect run. Your turn. | He leans closer. |
+| Show entrance (lights on) | Oh, hello again, doctor. Welcome to the Virtual Lab. Please do not shake my jar. | Turns the office lights on at the switch, turns to the room, and waves without opening the dialog. |
+| First specimen | Names the creature picked first: “One snail. He told you not to pick that.”, “One fly. Look how well that worked out for me.”, “One beetle. Hard shell. Terrible for lab coats.”, or “One cricket. Loud legs. Already a mistake.” (Uses “{count}.” with the plural when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
+| Three twentieths of the target | {count}. He said it was safe last time too. Keep going. | He tilts his head. |
+| A quarter of the target | Adapts to what leads: “{count}. Mostly snails. He is going to be furious.”, “{count}. Mostly flies. You people have no imagination.”, “{count}. Mostly beetles. He will never fit through doors.”, or “{count}. Mostly crickets. Good luck sleeping tonight.” | He looks toward the light of the chamber. |
+| Half | Adapts to what leads: “Halfway. All these snails. He is still pretending to be calm.”, “Halfway. That many flies and he will look like me.”, “Halfway. Enough beetles to crush the lab bench.”, or “Halfway. So many crickets. My small hands are rubbing.” | His small hands rub together. |
+| Three quarters | I know that hum. Too many {lead}. I went in alone. He is next. | He goes very still. |
+| Four fifths | Red light. That is not supposed to shake. Do not stop now. | His wings buzz once. |
+| Nine tenths | Adapts to what leads: “Nearly. Almost all snails. Hope he did not like having legs.” or “Nearly. {Lead} in the lead. Hope he is ready.” | He checks an empty palm. |
+| Lead change mid-run | Between 10% and 88% when a new species overtakes the lead (throttled, 3 variants per species plus 3 tug-of-war variations when two species trade the lead back and forth). | He leans closer. / He tilts his head. |
+| Critical | That is the number. Hold still, doctor. | He runs to the chamber, turns side-on to it, and leans in. |
+| The chamber spits snails | Uh oh. Those are all snails. That is not right. | His jaw catches and his wings buzz. |
+| The snails keep coming | It is not stopping. Too many snails. | He runs to the computer and hammers its keys. |
+| Before the tubes go out | Hold on, doctor. Welcome to the 18th Dimension. | He gives up the keys, turns to the room, and leans closer. |
+| The cave, first | Congratulations. A successful experiment. Show me what you got, doctor. | He dances. |
+| The cave, second | When snails won (or zero specimens): “{count} specimens went in. Snails came out. Peak Earthling talent. Dance.” When another species won: “{count} specimens went in. You voted {lead}. Snails came out anyway. Dance.” | He leans closer. |
 
 He is never idle while he speaks: each line has a gesture, and the scene performs it as the line appears.
 Between his lines he counts during the count: he looks up, reads his palm, writes in the air, glances at the chamber, and rubs his small hands.
@@ -232,15 +236,16 @@ A wing of his twitches at each green arc.
 A run with one specimen reads “One specimen went in.” A run with none omits the count.
 At the computer and at the join code, one button reads “Back to the room”.
 
-The presenter page is titled “Presenter”. Its link reads “Open the office”.
+The presenter page is titled “Presenter”. Its links read “Open show” and “Open the office”.
 Its connection line reads “Connected”, “Connecting…”, or “Reconnecting…”.
 Its sections are “Office experiment” and “Controls”. Its readout labels are “Run”, “Visitors”, “Specimens”, and “Target”.
-The phases are “Quiet”, “Counting”, “Critical”, and “Over”, with these notes:
-“No specimens yet.” “Visitors add specimens.” “The critical scene plays for everyone.” “The run is over. Reset the experiment to start a new run.”
+The phases are “Quiet”, “Counting”, “Critical”, “Holding”, and “Over”, with these notes:
+“No specimens yet.” “Visitors add specimens.” “The critical scene plays for the room.” “The room is dark. Reveal the cave when ready.” “The run is over. Reset the experiment to start a new run.”
 A lost connection marks the numbers “Last known values”. Before the first state it reads “No numbers yet. They appear when the connection opens.”
 The target field is “New target” with the action “Set target”. The quick targets are spoken as “Quick targets” and read as plain numbers.
 Its help reads “Use {least} to {most}. A target at or below the count sends the run critical at once.”
 After critical it reads “After critical, reset the experiment to change the target.”
+The reveal action is “Reveal cave now”. Its help reads “Leaves the blackout hold, starts the {seconds}-second song swell, and reveals the cave.”
 The guarded actions are “Go critical now” and “Reset experiment”. Armed, they read “Select again to go critical” and “Select again to reset”.
 Their help reads “Sends the run critical at the current count.” and “Starts a new run with zero specimens. The target stays.”
 
@@ -248,7 +253,7 @@ The presenter page has a section titled “Celebration track”. The presenter c
 Its help reads “The file stays in this browser and is never uploaded. Choose it in the browser that drives the projector. Phones in the room stay silent.”
 The file field is “Track file”. Without a file it reads “No track chosen. Choose a song to play when the cave appears.” Its notices are “Track stored.” and “Track removed.” Its action is “Remove track”.
 The settings are “Chorus starts at”, “Tempo (BPM)”, “Fade in (seconds)”, “Plays for (seconds)”, and “Fade out (seconds)”.
-The chorus help reads “Seconds, or minutes and seconds, for example 1:23.5.” The fade help reads “The chorus hits when the cave appears, {seconds} seconds after the run goes critical. A fade in longer than that is cut to it.”
+The chorus help reads “Seconds, or minutes and seconds, for example 1:23.5.” The fade help reads “The chorus hits when the cave appears, {reveal} seconds after you reveal from the blackout hold (at least {seconds} seconds after critical).”
 The tempo action is “Tap tempo”, with “Tap at least four times on the beat.”, “Keep tapping on the beat.”, and “{bpm} BPM”.
 The test actions are “Test from the fade” and “Stop”. The status reads “Ready.”, “Waiting to start.”, or “Playing.”
 During a test, a cue reads “The cave appears in {seconds} s.” and then “The cave is showing.”

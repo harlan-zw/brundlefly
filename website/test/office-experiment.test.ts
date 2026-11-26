@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { addTaps, criticalSceneSeconds, defaultParty, emptyExperiment, goCritical, loadedPercent, phase, readPartySettings, readCommand, readRoomMessage, resetExperiment, setTarget, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
+import { addTaps, criticalSceneSeconds, defaultParty, emptyExperiment, goCritical, loadedPercent, phase, readPartySettings, readCommand, readRoomMessage, resetExperiment, revealExperiment, revealSwellSeconds, setTarget, specimenCount, tapsPerSecond, targetLimits } from '../shared/office-experiment.ts'
 import type { Experiment, RoomMessage, Tally } from '../shared/office-experiment.ts'
 
 const tally = (counts: Partial<Tally>): Tally => ({ snail: 0, beetle: 0, fly: 0, cricket: 0, ...counts })
@@ -64,20 +64,34 @@ test('a forced critical keeps the target, so the next run counts to it', () => {
   assert.equal(addTaps(resetExperiment(goCritical(emptyExperiment(), 10)), 'fly', 1, 20).criticalAt, null, 'After a forced critical on an empty run, the first tap of the next run only counts')
 })
 
-test('phase follows the count and the critical scene', () => {
+test('phase follows the count, critical scene, blackout hold, and reveal', () => {
   assert.equal(phase(emptyExperiment(), 0), 'Quiet')
   assert.equal(phase(counting({ cricket: 1 }), 0), 'Counting')
   const critical = goCritical(counting({ cricket: 1 }), 1000)
   assert.equal(phase(critical, 1000), 'Critical')
   assert.equal(phase(critical, 1000 + criticalSceneSeconds * 1000 - 1), 'Critical')
-  assert.equal(phase(critical, 1000 + criticalSceneSeconds * 1000), 'Over')
+  assert.equal(phase(critical, 1000 + criticalSceneSeconds * 1000), 'Holding')
+  const revealed = revealExperiment(critical, 1000 + criticalSceneSeconds * 1000 + 5000)
+  assert.equal(revealed.revealAt, 1000 + criticalSceneSeconds * 1000 + 5000 + revealSwellSeconds * 1000)
+  assert.equal(phase(revealed, revealed.revealAt! - 1), 'Critical')
+  assert.equal(phase(revealed, revealed.revealAt!), 'Over')
 })
 
-test('readCommand accepts the four commands', () => {
+test('revealExperiment requires critical, is idempotent, and never cuts the critical scene short', () => {
+  const quiet = emptyExperiment()
+  assert.equal(revealExperiment(quiet, 5000), quiet)
+  const critical = goCritical(counting({ fly: 5 }), 1000)
+  const early = revealExperiment(critical, 5000)
+  assert.equal(early.revealAt, 1000 + criticalSceneSeconds * 1000)
+  assert.equal(revealExperiment(early, 999_999), early, 'A second reveal changes nothing')
+})
+
+test('readCommand accepts the five commands', () => {
   assert.deepEqual(readCommand('{"op":"tap","kind":"snail","taps":1}'), { op: 'tap', kind: 'snail', taps: 1 })
   assert.deepEqual(readCommand(`{"op":"tap","kind":"cricket","taps":${tapsPerSecond}}`), { op: 'tap', kind: 'cricket', taps: tapsPerSecond })
   assert.deepEqual(readCommand('{"op":"reset","extra":true}'), { op: 'reset' })
   assert.deepEqual(readCommand('{"op":"critical"}'), { op: 'critical' })
+  assert.deepEqual(readCommand('{"op":"reveal"}'), { op: 'reveal' })
   assert.deepEqual(readCommand('{"op":"target","value":4000}'), { op: 'target', value: 4000 })
   assert.deepEqual(readCommand('{"op":"target","value":1}'), { op: 'target', value: targetLimits.least }, 'A target outside the limits moves inside them')
 })
@@ -94,7 +108,7 @@ test('readCommand rejects malformed messages and taps out of range', () => {
   for (const message of rejected) assert.equal(readCommand(message), undefined, message)
 })
 
-const state: RoomMessage = { op: 'state', experiment: { run: 2, tally: tally({ fly: 3 }), target: 50, criticalAt: 99 }, connected: 4, now: 1000,
+const state: RoomMessage = { op: 'state', experiment: { run: 2, tally: tally({ fly: 3 }), target: 50, criticalAt: 99, revealAt: null }, connected: 4, now: 1000,
   party: { chorusAt: 52.5, bpm: 104, leadIn: 14, playFor: 30, fadeOut: 6 } }
 
 test('readRoomMessage reads a state and drops unknown fields', () => {

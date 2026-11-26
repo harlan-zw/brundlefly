@@ -50,8 +50,8 @@ import SceneLoading from './_SceneLoading.vue'
 // `cut` makes the next journey a cut in the dark, with no walk to the way out. `caveSnails` puts the snails of the experiment in the cave.
 // `covered` says the computer's screen fills the whole page, as it does on a phone: the scene then keeps its state and draws nothing, which leaves the phone free for the keys.
 // `party` is the celebration in the cave: the server time when the music's chorus hits, and its tempo. He and the snails dance to it from that moment.
-const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0, presenting = false, experiment = null, station = 'room', serverClock = Date.now, connected = 0, joined = false, cut = false, caveSnails = false, party = null, covered = false } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number, presenting?: boolean,
-  experiment?: Experiment | null, station?: Station, serverClock?: () => number, connected?: number, joined?: boolean, cut?: boolean, caveSnails?: boolean, party?: { at: number, bpm: number } | null, covered?: boolean }>()
+const { set = 'lair', paused = false, speaking = 0, mood = 'neutral', thinking = false, beat = '', reaction = 0, presenting = false, experiment = null, station = 'room', serverClock = Date.now, connected = 0, joined = false, cut = false, caveSnails = false, party = null, covered = false, holdEntrance = false } = defineProps<{ set?: SetName, paused?: boolean, speaking?: number, mood?: ConversationMood, thinking?: boolean, beat?: string, reaction?: number, presenting?: boolean,
+  experiment?: Experiment | null, station?: Station, serverClock?: () => number, connected?: number, joined?: boolean, cut?: boolean, caveSnails?: boolean, party?: { at: number, bpm: number } | null, covered?: boolean, holdEntrance?: boolean }>()
 const sceneSets = presenting ? { ...publicSets, office: experimentOfficeSet } : publicSets
 // `set` is the place the page wants him in. The scene reports the set that stands, and travels when the two differ.
 const shownSet = ref<SetName>(set)
@@ -96,7 +96,7 @@ const mascotMotion = ref<'posed' | 'clip' | 'sway'>()
 // `entrance` says whether this visit found the set dark. `action` names a short sound for something he does.
 // `station` asks for another view of the office. `landed` names a specimen that reached the pile. `view` says the picture is back after a journey.
 const emit = defineEmits<{ talk: [], mix: [value: SceneAudioMix], shown: [set: SetName, outcome: 'arrived' | 'stayed'], time: [seconds: number],
-  entrance: [dark: boolean], action: [sound: ActionSound], station: [station: Station], landed: [kind: Creature], view: [set: SetName] }>()
+  entrance: [dark: boolean], greet: [], action: [sound: ActionSound], station: [station: Station], landed: [kind: Creature], view: [set: SetName] }>()
 type Status = { _tag: 'Loading' } | { _tag: 'Ready' } | { _tag: 'Fallback', reason: 'context' | 'art' }
 const status = ref<Status>({ _tag: 'Loading' })
 const host = shallowRef<HTMLElement | null>(null)
@@ -225,7 +225,7 @@ useEventListener(canvas, 'webglcontextlost', (event) => {
   stationAt = undefined
   status.value = { _tag: 'Fallback', reason: 'context' }
 })
-watch(() => [experiment, station, cut, caveSnails, party, covered], () => refresh?.())
+watch(() => [experiment, station, cut, caveSnails, party, covered, holdEntrance], () => refresh?.())
 watch([animate, width, height], () => refresh?.())
 watch(settings, () => refresh?.(), { deep: true })
 watch(() => [speaking, mood, thinking, reaction], () => refresh?.())
@@ -476,8 +476,8 @@ watch(canvas, async (element) => {
   // the picture takes `reveal` seconds to come up, and the view takes `settle` seconds to draw back.
   let arrival: number | undefined
   const arrivalTimes = { reveal: 3.6, settle: 8 }
-  // A celebration waits in the dark for the chorus, and then the cave is there at once.
-  const partyReveal = 0.7
+  // With a celebration track, black slowly lifts over the final 5.5 seconds of the 8-second swell, reaching full bright cave right on the chorus hit.
+  const partyReveal = 5.5
   const smoothShare = (value: number) => { const share = Math.max(0, Math.min(1, value)); return share * share * (3 - 2 * share) }
   // The other set's artwork loads while he walks out, so the dark is short.
   let incoming: { name: SetName, art: Promise<SetArt> } | undefined
@@ -485,11 +485,20 @@ watch(canvas, async (element) => {
   // How far the wide view has turned to keep him clear of the open dialog during a journey, from 0 to 1.
   let lift = 0
   // A visitor who loads a set with an entrance finds it dark, once in a browser session. He waits in the dark and walks to the switch.
-  // A journey from another set arrives in a lit room, and so does every later load.
+  // In `/projector?show` (`holdEntrance`), the office starts dark behind the slides every time and plays the entrance when the slides fade out.
   const entry = standing.stage.layout.entrance
-  let entrance = startEntrance({ offered: entry !== undefined, arrival: joined ? 'Travel' : 'Load', seen: entranceSeen.value, still: !moving(), walks })
+  let entrance = startEntrance({ offered: entry !== undefined, arrival: joined ? 'Travel' : 'Load', seen: holdEntrance ? false : entranceSeen.value, still: !moving(), walks })
+  const stageEntrance = () => {
+    if (!entry) return
+    entrance = { _tag: 'Dark', age: 0 }
+    stroll = startStroll(entry.start, 0)
+    way = [entry.stand]
+    following = true
+    entrancePhase.value = 'Dark'
+    emit('entrance', true)
+  }
   if (entry && entrance._tag === 'Dark') {
-    entranceSeen.value = true
+    if (!holdEntrance) entranceSeen.value = true
     stroll = startStroll(entry.start, 0)
     way = [entry.stand]
   }
@@ -497,6 +506,9 @@ watch(canvas, async (element) => {
   emit('entrance', entrance._tag === 'Dark')
   // A narrow screen cannot show the switch. From the dark until he is back in the picture, the wide view turns to keep him in sight.
   let following = entrance._tag !== 'Lit'
+  watch(() => holdEntrance, (held) => {
+    if (held && entry && standing.stage.name === 'office' && walks && moving()) { stageEntrance(); refresh?.() }
+  })
   let follow: number | undefined
   // The side of him that the switch is on.
   const switchSide = entry && entry.facing < 0 ? -1 : 1
@@ -566,6 +578,8 @@ watch(canvas, async (element) => {
   let workKey = ''
   let workAge = 0
   let typeTaps = 0
+  let criticalTypeWeight = 0
+  let criticalTypeAge = 0
   // The moment of the last green arc. A wing of his jumps at each one.
   let arcAt = Number.NEGATIVE_INFINITY
   let partyHeld = false
@@ -597,23 +611,29 @@ watch(canvas, async (element) => {
     renderer.toneMappingExposure = settings.value.exposure
     const aspect = renderWidth / renderHeight
     const faceMotion = moving()
-    // The entrance in the dark. A visitor who asks for him, or who leaves for another set, ends it at once: the light comes and he is free.
+    // The entrance in the dark. A visitor who asks for him, moves to a station, starts an active count, or leaves ends it at once.
+    // While slides cover `/projector?show` (`holdEntrance`), hold the dark start frame until the slides fade out.
     const entered = entranceAct(entrance)
     const phaseBefore = entrance._tag
-    entrance = advanceEntrance(entrance, { delta, arrived: stroll.activity._tag === 'Pausing', skip: paused || Boolean(experiment) || set !== standing.stage.name, still: !faceMotion })
+    const skipEntrance = paused || station !== 'room' || set !== standing.stage.name
+      || (experiment !== null && (experiment.criticalAt !== null || specimenCount(experiment) > 0))
+    if (!holdEntrance) entrance = advanceEntrance(entrance, { delta, arrived: stroll.activity._tag === 'Pausing', skip: skipEntrance, still: !faceMotion })
     const act = entranceAct(entrance)
     if (entrance._tag !== phaseBefore) {
       entrancePhase.value = entrance._tag
       // The switch clicks as the light comes. The tubes ring only when they strike.
       if (entrance._tag === 'Striking' || entrance._tag === 'Hurrying') emit('action', 'LightSwitch')
       if (entrance._tag === 'Striking') emit('action', 'TubeStrike')
+      if (entrance._tag === 'Greeting') emit('greet')
     }
     // Free again, he takes up his loop from where he stands.
     if (entered.held && !act.held) { way = undefined; stroll = { ...stroll, destination: 0, activity: { _tag: 'Walking' } } }
     // The experiment belongs to the office. Its critical scene dims the tubes, and every device times it from the server's clock.
+    // While the presenter holds the room in pitch black (and while waiting for `revealAt` to land), keep the final dark frame locked so the office never flashes back in.
     const run = standing.stage.name === 'office' ? experiment : null
     const criticalAge = run && run.criticalAt !== null ? Math.max(0, (serverClock() - run.criticalAt) / 1000) : undefined
-    const critical = criticalAge !== undefined && criticalAge < criticalSceneSeconds ? criticalFrame(criticalAge, !faceMotion) : undefined
+    const holding = Boolean(run && run.criticalAt !== null && criticalAge !== undefined && criticalAge >= criticalSceneSeconds && (run.revealAt === null || serverClock() < run.revealAt))
+    const critical = criticalAge !== undefined && (criticalAge < criticalSceneSeconds || holding) ? criticalFrame(Math.min(criticalAge, criticalSceneSeconds), !faceMotion) : undefined
     const over = criticalAge !== undefined && !critical
     // Near the target the chamber is not steady. Now and then the room shakes and the tubes dip, until the critical scene takes both over.
     const tense = unrest(over ? null : run)
@@ -644,15 +664,20 @@ watch(canvas, async (element) => {
     if (travelPhase.value !== travel._tag) travelPhase.value = travel._tag
     // After the critical scene the cave comes up slowly out of the dark.
     if (arrival !== undefined) { arrival += delta; if (arrival >= arrivalTimes.settle || !faceMotion) arrival = undefined }
-    const dark = Math.max(cut && travel._tag === 'Leaving' ? 1 : travelShade(travel, !faceMotion), critical?.shade ?? 0, arrival === undefined ? 0 : 1 - smoothShare(arrival / (party ? partyReveal : arrivalTimes.reveal)))
+    // Keep the screen pitch black for every frame of a cut until the destination set has replaced the office.
+    const cutDark = cut && (standing.stage.name !== set || travel._tag === 'Leaving')
+    const arrivalShade = arrival === undefined ? 0
+      : party ? 1 - smoothShare((arrival + partyReveal) / partyReveal)
+        : 1 - smoothShare(arrival / arrivalTimes.reveal)
+    const dark = Math.max(cutDark ? 1 : travelShade(travel, !faceMotion), critical?.shade ?? 0, arrivalShade)
     // The beats of the celebration since the chorus hit. He dances in the cave from the hit on.
     const beats = party && standing.stage.name === 'lair' ? (serverClock() - party.at) / 1000 * party.bpm / 60 : undefined
     const dancing = beats !== undefined && beats >= 0 && faceMotion
     if (shade.value !== dark) shade.value = dark
     if (flash.value !== (critical?.flash ?? 0)) flash.value = critical?.flash ?? 0
-    // The visitor sees the new set from here. The page waits for this before he speaks to them.
+    // The visitor sees the new set from here. With a celebration track, wait until the chorus lands before triggering cave lines.
     if (travel._tag === 'Leaving' || travel._tag === 'Dark') hidden = true
-    else if (hidden && dark < 0.3) { hidden = false; emit('view', standing.stage.name) }
+    else if (hidden && dark < 0.3 && (!party || serverClock() >= party.at)) { hidden = false; emit('view', standing.stage.name) }
     const journey = travel._tag !== 'Home'
     // The conversation holds him and the close shot only while he is at home. On a journey the dialog stays open and the view goes wide.
     const talking = paused && !journey
@@ -818,8 +843,8 @@ watch(canvas, async (element) => {
     // He walks to the switch at that pace too.
     // In the critical scene he runs.
     const walkSpeed = settings.value.walkSpeed * walkPace * (critical ? criticalPace : journey || act.held ? 1.7 : 1)
-    // In the dark he has noticed the visitor, and he waits. On his way to the switch a pointer that rests on him does not stop him.
-    const attentionNow = journey ? 'free' as const : talking ? 'talking' as const
+    // In the dark he has noticed the visitor, and he waits. On his way to the switch or during the critical scene a resting pointer never stops him.
+    const attentionNow = journey || Boolean(scripted) ? 'free' as const : talking ? 'talking' as const
       : entrance._tag === 'Dark' ? 'noticed' as const : act.held ? 'free' as const : hovered.value ? 'noticed' as const : 'free' as const
     if (walks && faceMotion && visibility.value === 'visible') stroll = advanceStroll(stroll, { delta, route,
       pauses: journey || act.held || counting ? [600] : layout.walkPauses, walkSpeed, attention: attentionNow,
@@ -850,8 +875,8 @@ watch(canvas, async (element) => {
     const ease = Math.min(1, delta * 4)
     // At the end of the critical scene he turns from the keys and speaks to the visitor.
     const addressing = scripted?.work === 'Address'
-    attention.weight = faceMotion ? attention.weight + (Number(talking || (hovered.value && !journey) || act.watches || addressing) - attention.weight) * ease : 0
-    attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused && !journey ? 0.07 : 0) - attention.tilt) * ease : 0
+    attention.weight = faceMotion ? attention.weight + (Number(talking || (hovered.value && !journey && !scripted) || act.watches || addressing) - attention.weight) * ease : 0
+    attention.tilt = faceMotion ? attention.tilt + ((hovered.value && !paused && !journey && !scripted ? 0.07 : 0) - attention.tilt) * ease : 0
     const watch = { target: camera.position, weight: attention.weight, tilt: attention.tilt }
     if (mascot._tag === 'Mesh' && !meshPose) mascot.update(faceElapsed, watch)
     else {
@@ -913,14 +938,23 @@ watch(canvas, async (element) => {
           const since = criticalAge - criticalSpurtAt
           sided.push({ mannerism: { _tag: 'JawCatch' }, age: since, side }, { mannerism: { _tag: 'WingBuzz' }, age: since % 1.2, side }, { mannerism: { _tag: 'GlanceEggs' }, age: 1.1, side })
         }
-        // At the computer he hammers the keys to stop it, once he faces them. Each key clicks.
-        if (working === 'Type' && stage && Math.abs(turn.heading - stage.deskFacing) < keysFacingSlack) {
-          const age = 0.6 + workAge % 5.2
-          const taps = keyTaps(age)
-          if (taps > typeTaps) emit('action', 'KeyClick')
-          typeTaps = taps
-          sided.push({ mannerism: { _tag: 'TypeKeys' }, age, side })
+        // At the computer he hammers the keys to stop it once aligned. Smooth weight eases his arms onto and off the keyboard with no snap.
+        const typingNow = working === 'Type' && Boolean(stage) && Math.abs(turn.heading - stage!.deskFacing) < keysFacingSlack
+        criticalTypeWeight = Math.max(0, Math.min(1, criticalTypeWeight + (typingNow ? delta * 3.2 : -delta * 3.2)))
+        if (criticalTypeWeight > 0.01) {
+          criticalTypeAge += delta * 1.45
+          // Stay inside the active typing plateau (0.7s..2.3s of TypeKeys) so he types continuously without calm reading pauses or loop jolts.
+          const cycle = criticalTypeAge % 1.6
+          const age = 0.7 + cycle
+          if (typingNow) {
+            const taps = Math.floor(criticalTypeAge * 6.5)
+            if (taps > typeTaps) emit('action', 'KeyClick')
+            typeTaps = taps
+          }
+          sided.push({ mannerism: { _tag: 'TypeKeys' }, age, weight: criticalTypeWeight, side })
+          if (typingNow) sided.push({ mannerism: { _tag: 'WingBuzz' }, age: criticalTypeAge % 1.8, weight: criticalTypeWeight * 0.65, side })
         }
+        else { criticalTypeAge = 0; typeTaps = 0 }
         // The keys did nothing. He turns to the visitor and leans to them for his last line.
         if (scripted.work === 'Address') sided.push({ mannerism: { _tag: 'LeanIn' }, age: Math.min(criticalAge - criticalAddressAt, 1.2), side })
       }

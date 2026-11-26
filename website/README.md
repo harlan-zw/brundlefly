@@ -121,16 +121,16 @@ One tap adds one specimen. At the target the room goes critical for everyone, an
 The experiment uses `/projector` and `/join`. The public office at `/office` keeps its usual conversation and travel.
 
 1. Open `/presenter` on your own device. Choose **Reset experiment**, then set the target. The page is public. For a test alone, choose the quick target of 10.
-2. Open `/projector` on the projector. Select the window of the test chamber. Beetles gather on the lit glass and form the join code.
-3. The audience scans the swarm. It opens `https://brundlefly.dev/join`, which puts each phone at the desk computer. The address is also on the glass in letters.
+2. Open `/projector` on the projector for the full one-clicker act (five PenGPT pen-and-ink notebook slides, smooth fade into the dark 3D office with Brundlefly turning on the lights, glowing beetle QR code, desk computer, zoom back out to the room, and blackout reveal), or `/projector?office` for the office alone.
+3. The audience scans the QR code on the glowing beetle glass. It opens `https://brundlefly.dev/join`, which puts each phone at the desk computer. The address is also shown in letters.
 4. Each key adds one specimen. The whiteboard, the computer screen, and the presenter page show the count. From 80% of the target the chamber is unstable: its warning light turns faster and throws red on the room, the room shakes now and then, and the tubes dip. From 90% all of that is stronger, and the computer warns.
-5. At the target, the critical scene plays on every device at the same moment. Green arcs leap from the chamber, and the tubes dip with each one. The chamber takes every specimen and spits out snails, whatever went in. Then every device is in the cave, and so are some snails.
+5. At the target, phones lock on the **CHAMBER OVERLOAD / LOOK UP NOW** alarm so every eye snaps to the room. Green arcs leap from the chamber, the chamber spits out snails, and the projector fades to pitch black and holds with a rising hum pulse.
+6. When ready, press **Next** on the presenter clicker (or **Reveal cave now** on `/presenter`). The celebration track swells for 8 seconds in the dark while the cave slowly fades up into full brightness on the chorus drop with dancing snails. Phones unlock an **Enter the 18th Dimension** button after the reveal.
 
-A phone that joins after the critical scene goes straight to the cave.
 If the room is slow, **Go critical now** on the presenter page starts the scene at the current count.
-The initial target is 3,000. Thirty phones at three taps a second each reach it in about 33 seconds. Change the target at any time; the count stays.
+The initial target is 800. Change the target at any time; the count stays.
 The room accepts 20 taps a second from one device and drops the rest.
-A critical run clears itself after 30 minutes. A counting run clears itself after two hours with no tap.
+A critical or revealed run clears itself after 30 minutes. A counting run clears itself after two hours with no tap.
 A phone that came by the join code starts with the sound off.
 The experiment shows its cave on the same page. After finishing, visitors can travel between the cave and office there.
 
@@ -143,11 +143,10 @@ The up and down keys change how solid the glass is. The left and right keys chan
 When the cave appears, Brundlefly and the snails dance. A song can play on the projector.
 The site ships no song. On `/presenter`, in the browser that drives the projector, choose your own audio file under **Celebration track**.
 The file stays in that browser's storage. It is never uploaded, and **Remove track** deletes it.
-A new track takes the settings of the song of the first talk: the chorus word at 0:39.2, 124 BPM, 31 seconds of play, and a fade out of 4 seconds.
+A new track takes the defaults: chorus at 0:39.2, 124 BPM, 8 seconds of fade in, 22 seconds of play, and a fade out of 4 seconds.
 For another song, set where the chorus starts and tap the tempo. Choose **Test from the fade** to hear the result: a cue turns solid at the moment the cave would appear.
-The song fades in under the critical scene, and its chorus hits as the cave appears, 19.5 seconds after the run goes critical.
-The default fade runs for the whole scene. A fade longer than the scene is cut to it. The fade is quiet for most of its length and rises into the chorus.
-The room shares the tempo and the times with every device, so the phones dance in step. Phones play no sound.
-Before the talk, select anything on `/projector` once. A browser plays no sound on a page that nobody has touched.
+When you trigger reveal from the blackout hold, the song swells for 8 seconds and its chorus hits on the exact beat the cave reaches full brightness.
+The room shares the tempo and the times with every device. Phones play no sound.
+Before the talk, press a clicker key or select anything on `/projector` once. A browser plays no sound on a page that nobody has touched.
 
 The local Cloudflare preview runs the Durable Object. It needs a Cloudflare login for the AI binding.

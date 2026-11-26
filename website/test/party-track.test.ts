@@ -95,12 +95,11 @@ test('the level starts at 0, is full from the hit through the hold, ends at 0, n
   }
 })
 
-test('a long fade in rises over its whole length: still quiet at the halfway point, and still rising just before the hit', () => {
+test('a long fade in rises smoothly over its whole length: audible early, under a third halfway, and still rising into the hit', () => {
   const plan = partyPlan(track({ leadIn: 14, chorusAt: 72 }), 14)!
-  // The fade in stays under the scene: a murmur at the halfway point, and under half its level two thirds of the way in.
-  assert.ok(partyLevel(plan, 7) <= 0.15, 'Too loud at half the fade')
-  assert.ok(partyLevel(plan, 14 * 2 / 3) < 0.5, 'Too loud at two thirds of the fade')
-  assert.ok(partyLevel(plan, 3) > 0, 'Silent three seconds in')
+  assert.ok(partyLevel(plan, 7) <= 0.32, 'Too loud at half the fade')
+  assert.ok(partyLevel(plan, 14 * 2 / 3) < 0.55, 'Too loud at two thirds of the fade')
+  assert.ok(partyLevel(plan, 2) > 0.02, 'Too quiet two seconds in')
   assert.ok(partyLevel(plan, 12.6) < 0.9, 'Nearly full long before the hit')
   // Each second of the fade is louder than the one before it.
   for (let second = 1; second <= 14; second++) assert.ok(partyLevel(plan, second) > partyLevel(plan, second - 1), `No rise in second ${second}`)

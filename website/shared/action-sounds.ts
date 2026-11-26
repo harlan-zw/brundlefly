@@ -4,7 +4,7 @@ import { criticalStruckAt } from './office-critical.ts'
 import type { Shot, ShotPoint } from './audio-shot.ts'
 
 /** A short sound for something he does. The scene asks for the switch and the strike in the office entrance. Nothing asks for the others yet. */
-export type ActionSound = 'KeyClick' | 'MarkerSqueak' | 'JarBubbles' | 'LightSwitch' | 'TubeStrike' | 'FlyBuzz' | 'CricketChirp' | 'ChamberHum' | 'MachineThump' | 'ArcZap'
+export type ActionSound = 'KeyClick' | 'MarkerSqueak' | 'JarBubbles' | 'LightSwitch' | 'TubeStrike' | 'FlyBuzz' | 'CricketChirp' | 'ChamberHum' | 'HoldPulse' | 'MachineThump' | 'ArcZap'
 
 // Stage gains for the action sounds, set by offline rendering at the default mix. Each peaks between -38 and -29 dBFS, far below his voice.
 // The switch and the strike are set by ear against them, and no offline render has measured them.
@@ -132,8 +132,24 @@ export function chamberHum(seconds: number): Shot {
   ] }
 }
 
+/**
+ * A low, rising pulse played while the projector holds in the dark waiting for the presenter's clicker reveal.
+ * Each pulse swells smoothly and returns to silence, so repeated pulses keep tension alive without dead air.
+ */
+export function holdPulse(index: number): Shot {
+  const base = 52 + (index % 4) * 4
+  return { duration: 1, pan: 0, voices: [
+    { _tag: 'Tone', wave: 'sawtooth', pitch: [[0, base], [0.7, base * 1.18], [1, base * 1.05]],
+      level: [[0, 0], [0.18, 0.04], [0.7, 0.09], [1, 0]],
+      filter: { type: 'lowpass', frequency: [[0, 140], [0.7, 360], [1, 160]], q: 1.2 } },
+    { _tag: 'Tone', wave: 'sine', pitch: [[0, base * 2], [0.7, base * 2.36], [1, base * 2.1]],
+      level: [[0, 0], [0.22, 0.02], [0.7, 0.045], [1, 0]] },
+  ] }
+}
+
 /** The sound of each action, by name. */
 export const actionSounds: Record<ActionSound, (index: number) => Shot> = { KeyClick: keyClick, MarkerSqueak: markerSqueak, JarBubbles: jarBubbles, LightSwitch: lightSwitch, TubeStrike: tubeStrike,
   FlyBuzz: flyBuzz, CricketChirp: cricketChirp, MachineThump: machineThump, ArcZap: arcZap,
   // The hum ends as the last tube goes out in the critical scene.
-  ChamberHum: () => chamberHum(criticalStruckAt) }
+  ChamberHum: () => chamberHum(criticalStruckAt),
+  HoldPulse: holdPulse }

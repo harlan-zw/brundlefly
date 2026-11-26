@@ -20,27 +20,32 @@ export type Experiment = {
   target: number
   /** Server time when the count reached the target. Every device times the critical scene from it. */
   criticalAt: number | null
+  /** Server time when the cave appears and the celebration begins, or null while holding in the dark. */
+  revealAt: number | null
 }
 
 // The least target is small, so one person can run the whole experiment to its end in a few taps.
-export const targetLimits = { least: 5, most: 20000, initial: 3000 }
+export const targetLimits = { least: 5, most: 20000, initial: 800 }
 /** The most taps one visitor can add in one second. Faster input is dropped, never queued. */
 export const tapsPerSecond = 20
-/** Seconds from critical to the cave. A visitor who joins later goes straight to the cave. */
+/** Seconds from critical to the end of the critical scene. */
 export const criticalSceneSeconds = 19.5
+/** Seconds of song swell in the dark between the presenter's reveal trigger and the cave drop (4 bars at 124 BPM). */
+export const revealSwellSeconds = 8
 
 const emptyTally = (): Tally => ({ snail: 0, beetle: 0, fly: 0, cricket: 0 })
-export const emptyExperiment = (run = 0, target = targetLimits.initial): Experiment => ({ run, tally: emptyTally(), target, criticalAt: null })
+export const emptyExperiment = (run = 0, target = targetLimits.initial): Experiment => ({ run, tally: emptyTally(), target, criticalAt: null, revealAt: null })
 export const specimenCount = (experiment: Experiment) => creatureKinds.reduce((sum, kind) => sum + experiment.tally[kind], 0)
 /** The share of the target that is loaded, as a whole percent. It reads 100 only at the target. */
 export const loadedPercent = (experiment: Experiment) => Math.min(100, Math.floor(100 * specimenCount(experiment) / experiment.target))
 const clampTarget = (value: number) => Math.max(targetLimits.least, Math.min(targetLimits.most, Math.round(value)))
 
-/** `Quiet` has no specimens. `Counting` takes taps. `Critical` plays the scene. `Over` waits for a reset. */
-export type Phase = 'Quiet' | 'Counting' | 'Critical' | 'Over'
+/** `Quiet` has no specimens. `Counting` takes taps. `Critical` plays the scene or swell. `Holding` waits in the dark for the presenter's reveal. `Over` waits for a reset. */
+export type Phase = 'Quiet' | 'Counting' | 'Critical' | 'Holding' | 'Over'
 export function phase(experiment: Experiment, now: number): Phase {
-  if (experiment.criticalAt !== null) return now - experiment.criticalAt < criticalSceneSeconds * 1000 ? 'Critical' : 'Over'
-  return specimenCount(experiment) > 0 ? 'Counting' : 'Quiet'
+  if (experiment.criticalAt === null) return specimenCount(experiment) > 0 ? 'Counting' : 'Quiet'
+  if (experiment.revealAt !== null) return now < experiment.revealAt ? 'Critical' : 'Over'
+  return now - experiment.criticalAt < criticalSceneSeconds * 1000 ? 'Critical' : 'Holding'
 }
 
 /** Add `taps` specimens of one creature. The count stops at the target, and the tap that reaches it sets the critical time. */
@@ -66,6 +71,12 @@ export function setTarget(experiment: Experiment, value: number, now: number): E
 export const goCritical = (experiment: Experiment, now: number): Experiment =>
   experiment.criticalAt !== null ? experiment : { ...experiment, criticalAt: now }
 
+/** The presenter's reveal: leaves the blackout hold and schedules the cave after the song swell, never cutting the critical scene short. */
+export function revealExperiment(experiment: Experiment, now: number): Experiment {
+  if (experiment.criticalAt === null || experiment.revealAt !== null) return experiment
+  return { ...experiment, revealAt: Math.max(now + revealSwellSeconds * 1000, experiment.criticalAt + criticalSceneSeconds * 1000) }
+}
+
 /**
  * The settings of the celebration in the cave, which every device shares: the tempo of the dance and the times of the music.
  * The music itself is a file in the presenter's own browser. The room never holds it.
@@ -87,6 +98,7 @@ export type Command =
   | { op: 'reset' }
   | { op: 'target', value: number }
   | { op: 'critical' }
+  | { op: 'reveal' }
   | { op: 'party', settings: PartySettings }
 /** `connected` counts the visitors in the office. `now` is server time, for the offset of the visitor's clock. `party` holds the celebration settings. */
 export type RoomMessage = { op: 'state', experiment: Experiment, connected: number, now: number, party: PartySettings }
@@ -98,7 +110,7 @@ export function readCommand(message: string): Command | undefined {
   try { data = JSON.parse(message) }
   catch { return } // Wire input that is not JSON is no command.
   if (!data || typeof data !== 'object' || !('op' in data)) return
-  if (data.op === 'reset' || data.op === 'critical') return { op: data.op }
+  if (data.op === 'reset' || data.op === 'critical' || data.op === 'reveal') return { op: data.op }
   if (data.op === 'party' && 'settings' in data) {
     const settings = readPartySettings(data.settings)
     return settings && { op: 'party', settings }
@@ -113,10 +125,11 @@ const count = (value: unknown): value is number => Number.isInteger(value) && (v
 /** Parse an experiment from the wire or from storage. Anything else gives nothing. */
 export function readExperiment(value: unknown): Experiment | undefined {
   if (!value || typeof value !== 'object') return
-  const { run, tally, target, criticalAt } = value as Partial<Experiment>
+  const { run, tally, target, criticalAt, revealAt } = value as Partial<Experiment>
   if (!count(run) || !count(target) || (criticalAt !== null && typeof criticalAt !== 'number')) return
+  if (revealAt !== undefined && revealAt !== null && typeof revealAt !== 'number') return
   if (!tally || typeof tally !== 'object' || !creatureKinds.every(kind => count(tally[kind]))) return
-  return { run, target, criticalAt, tally: { snail: tally.snail, beetle: tally.beetle, fly: tally.fly, cricket: tally.cricket } }
+  return { run, target, criticalAt, revealAt: revealAt ?? null, tally: { snail: tally.snail, beetle: tally.beetle, fly: tally.fly, cricket: tally.cricket } }
 }
 
 /** Parse one message from the server. Anything else gives nothing. */
