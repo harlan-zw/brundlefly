@@ -8,7 +8,31 @@ import { useShowPhotos } from '../composables/useShowPhotos'
 const { slide } = defineProps<{ slide: number }>()
 const { photos } = useShowPhotos()
 const SlideMascot3D = defineAsyncComponent(() => import('./_SlideMascot3D.client.vue'))
+const SlideQuestion3D = defineAsyncComponent(() => import('./_SlideQuestion3D.client.vue'))
 const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
+
+type SpecimenOption = {
+  id: 'fly' | 'beetle' | 'cricket' | 'snail'
+  label: string
+  tag?: string
+  lame?: boolean
+}
+const specimenOptions: readonly SpecimenOption[] = [
+  { id: 'fly', label: 'Fly', tag: 'Aerial dominance' },
+  { id: 'beetle', label: 'Beetle', tag: 'Armored shell' },
+  { id: 'cricket', label: 'Cricket', tag: '30x leap' },
+  { id: 'snail', label: 'Snail', lame: true },
+]
+// Seamless vertical reel: [Snail peek, Fly, Beetle, Cricket, Snail, Fly wrap, Beetle peek].
+const reelItems: readonly SpecimenOption[] = [
+  specimenOptions[3]!,
+  specimenOptions[0]!,
+  specimenOptions[1]!,
+  specimenOptions[2]!,
+  specimenOptions[3]!,
+  specimenOptions[0]!,
+  specimenOptions[1]!,
+]
 </script>
 
 <template>
@@ -212,7 +236,7 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
         </div>
       </div>
 
-      <!-- Slide 5: Experiment 2 - Me -> one of 4 Specimen Cards (Snail = Lame - don't pick!) -->
+      <!-- Slide 5: Experiment 2 - Dr. Science + Vertical Specimen Carousel = Rotating 3D ? -->
       <div v-else class="page slide-five">
         <div class="exp2-head">
           <svg class="pen-title" :viewBox="lineView(penLines.exp2.w)" role="img" aria-label="Experiment 2: Source the Transformation">
@@ -223,8 +247,8 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
           </svg>
         </div>
 
-        <div class="transform-row">
-          <figure class="eq-item subject">
+        <div class="equation exp2-equation">
+          <figure class="eq-item">
             <div class="frame small headshot-frame">
               <img v-if="photos.scientist" :src="photos.scientist" alt="Dr. Science">
               <svg v-else class="sketch headshot" :viewBox="penSketches.scientist.box" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Sketched portrait of Dr. Science">
@@ -236,32 +260,35 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
             </svg>
           </figure>
 
-          <svg class="transform-arrow" viewBox="0 0 110 60" aria-hidden="true">
-            <path d="M6 30 L96 30 M76 12 L98 30 L76 48" />
-          </svg>
+          <span class="op" aria-hidden="true">+</span>
 
-          <div class="species">
-            <div class="card">
-              <svg class="sketch creature" :viewBox="penSketches.fly.box" aria-hidden="true"><path :d="penSketches.fly.d" /></svg>
-              <svg class="pen-label" :viewBox="lineView(penLines.fly.w)" role="img" aria-label="Fly"><path :d="penLines.fly.d" /></svg>
-              <span class="tag">Aerial dominance</span>
-            </div>
-            <div class="card">
-              <svg class="sketch creature" :viewBox="penSketches.beetle.box" aria-hidden="true"><path :d="penSketches.beetle.d" /></svg>
-              <svg class="pen-label" :viewBox="lineView(penLines.beetle.w)" role="img" aria-label="Beetle"><path :d="penLines.beetle.d" /></svg>
-              <span class="tag">Armored shell</span>
-            </div>
-            <div class="card">
-              <svg class="sketch creature" :viewBox="penSketches.cricket.box" aria-hidden="true"><path :d="penSketches.cricket.d" /></svg>
-              <svg class="pen-label" :viewBox="lineView(penLines.cricket.w)" role="img" aria-label="Cricket"><path :d="penLines.cricket.d" /></svg>
-              <span class="tag">30x leap</span>
-            </div>
-            <div class="card lame-card">
-              <svg class="sketch creature" :viewBox="penSketches.snail.box" aria-hidden="true"><path :d="penSketches.snail.d" /></svg>
-              <svg class="pen-label" :viewBox="lineView(penLines.snail.w)" role="img" aria-label="Snail"><path :d="penLines.snail.d" /></svg>
-              <svg class="pen-lame ink-red" :viewBox="lineView(penLines.lame.w)" role="img" aria-label="Lame - don't pick!"><path :d="penLines.lame.d" /></svg>
+          <div class="reel-wrap" role="region" aria-label="Specimen choices: Fly, Beetle, Cricket, or Snail (Lame - don't pick!)">
+            <div class="reel-track">
+              <div v-for="(item, idx) in reelItems" :key="`${item.id}-${idx}`" class="card reel-card" :class="{ 'lame-card': item.lame }">
+                <svg class="sketch creature" :viewBox="penSketches[item.id].box" aria-hidden="true">
+                  <path :d="penSketches[item.id].d" />
+                </svg>
+                <svg class="pen-label" :viewBox="lineView(penLines[item.id].w)" role="img" :aria-label="item.label">
+                  <path :d="penLines[item.id].d" />
+                </svg>
+                <svg v-if="item.lame" class="pen-lame ink-red" :viewBox="lineView(penLines.lame.w)" role="img" aria-label="Lame - don't pick!">
+                  <path :d="penLines.lame.d" />
+                </svg>
+                <span v-else class="tag">{{ item.tag }}</span>
+              </div>
             </div>
           </div>
+
+          <span class="op" aria-hidden="true">=</span>
+
+          <figure class="eq-item result">
+            <div class="frame brundle-3d">
+              <SlideQuestion3D />
+            </div>
+            <svg class="pen-label ink-red" :viewBox="lineView(penLines.mystery.w)" role="img" aria-label="Mystery evolution">
+              <path :d="penLines.mystery.d" />
+            </svg>
+          </figure>
         </div>
       </div>
     </div>
@@ -339,15 +366,47 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 
 .slide-five { justify-content: space-evenly; padding-top: 2.5vh; padding-bottom: 2.5vh; }
 .exp2-head { display: flex; flex-direction: column; align-items: center; gap: .6vh; text-align: center; }
-.transform-row { display: flex; align-items: center; justify-content: center; gap: clamp(16px, 2.5vw, 36px); width: 100%; max-width: 1240px; }
-.subject { flex: none; }
-.transform-arrow { flex: none; width: clamp(64px, 7vw, 110px); height: auto; overflow: visible; }
-.transform-arrow path { fill: none; stroke: #9bb8f0; stroke-width: 5; stroke-dasharray: 10 8; stroke-linecap: round; stroke-linejoin: round; }
+.exp2-equation { gap: clamp(16px, 2.8vw, 42px); }
 
-.species { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 1.5vw, 22px); flex: 1; max-width: 780px; }
-.card { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6px; padding: 1.5vh 1.2vw;
+/* Vertical slot-machine reel cycling smoothly through the 4 specimen options with peeking top/bottom cards. */
+.reel-wrap {
+  --card-h: clamp(235px, 34vh, 320px);
+  --card-gap: 18px;
+  --stride: calc(var(--card-h) + var(--card-gap));
+  --peek: clamp(46px, 7vh, 72px);
+  position: relative;
+  width: clamp(270px, 26vw, 370px);
+  height: calc(var(--card-h) + var(--peek) * 2);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+}
+.reel-track {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+  padding-top: var(--peek);
+  animation: specimen-reel 10s cubic-bezier(.65, 0, .35, 1) infinite;
+}
+.reel-card {
+  flex: none;
+  height: var(--card-h);
+  box-sizing: border-box;
+}
+@keyframes specimen-reel {
+  0%, 19% { transform: translateY(calc(var(--stride) * -1)); }
+  25%, 44% { transform: translateY(calc(var(--stride) * -2)); }
+  50%, 69% { transform: translateY(calc(var(--stride) * -3)); }
+  75%, 94% { transform: translateY(calc(var(--stride) * -4)); }
+  100% { transform: translateY(calc(var(--stride) * -5)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reel-track { animation: none; transform: translateY(calc(var(--stride) * -1)); }
+}
+
+.card { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6px; padding: 18px 16px;
   border: 2.5px solid #41516b; background: #18202d; box-shadow: 4px 5px 0 #00000055; text-align: center; }
-.creature { height: clamp(72px, 12vh, 118px); width: 100%; }
-.tag { font: 700 clamp(.9rem, 1.35vw, 1.2rem)/1.2 var(--font-mono, ui-monospace, monospace); color: #9bb8f0; text-transform: uppercase; letter-spacing: .04em; }
+.creature { height: clamp(92px, 14vh, 140px); width: 100%; }
+.tag { font: 700 clamp(.95rem, 1.35vw, 1.25rem)/1.2 var(--font-mono, ui-monospace, monospace); color: #9bb8f0; text-transform: uppercase; letter-spacing: .04em; }
 .lame-card { background: #2b161b; border: 3px dashed #ff6b6b; box-shadow: 4px 5px 0 #00000055; }
 </style>
