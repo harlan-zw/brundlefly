@@ -225,8 +225,8 @@ Brundlefly speaks these lines over his head. They open no dialog.
 | The chamber spits snails | Uh oh. Those are all snails. That is not right. | His jaw catches and his wings buzz. |
 | The snails keep coming | It is not stopping. Too many snails. | He runs to the computer and hammers its keys. |
 | Before the tubes go out | You will remember the hum. Welcome to the 18th Dimension. | He gives up the keys, turns to the visitor, and leans closer. |
-| The cave, first | Happy 30th, Jayde. Show me what you got, doctor. | He dances. |
-| The cave, second | {count} specimens went in. Snails came out. Peak Earthling talent. Dance. | He leans closer. |
+| The cave, first | Show me what you got, doctor. | He dances. |
+| The cave, second | When snails won (or zero specimens): “{count} specimens went in. Snails came out. Peak Earthling talent. Dance.” When another species won: “{count} specimens went in. You voted {lead}. Snails came out anyway. Dance.” | He leans closer. |
 
 He is never idle while he speaks: each line has a gesture, and the scene performs it as the line appears.
 Between his lines he counts during the count: he looks up, reads his palm, writes in the air, glances at the chamber, and rubs his small hands.

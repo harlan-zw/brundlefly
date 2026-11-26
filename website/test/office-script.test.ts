@@ -120,19 +120,25 @@ test('the creature with the most specimens leads, and a tie goes to the first cr
   }
 })
 
-test('his last cave line names the real count, and says snails came out whatever led', () => {
+test('his last cave line names the real count and acknowledges the bait-and-switch when another species won', () => {
+  const plurals: Record<Creature, string> = { snail: 'snails', beetle: 'beetles', fly: 'flies', cricket: 'crickets' }
   for (const [index, kind] of creatureKinds.entries()) {
     const counts: Partial<Tally> = Object.fromEntries(creatureKinds.map(other => [other, other === kind ? 1200 + index : 1]))
     const last = caveLines(experiment(counts)).at(-1)!.text
     assert.match(last, new RegExp(`\\b1,${203 + index} specimens went in\\b`), last)
     assert.match(last, /\bSnails came out\b/, last)
-    // The creature that led has no part in what came out.
-    for (const other of ['beetles', 'flies', 'crickets']) assert.doesNotMatch(last, new RegExp(`\\b${other}\\b`), last)
+    if (kind === 'snail') {
+      assert.doesNotMatch(last, /\bYou voted\b/, last)
+    }
+    else {
+      assert.match(last, new RegExp(`\\bYou voted ${plurals[kind]}\\. Snails came out anyway\\.`), last)
+    }
   }
 })
 
 test('a run with one specimen or none still gets a cave line that reads right', () => {
-  assert.match(caveLines(experiment({ fly: 1 })).at(-1)!.text, /^One specimen went in\. Snails came out\./)
+  assert.match(caveLines(experiment({ snail: 1 })).at(-1)!.text, /^One specimen went in\. Snails came out\./)
+  assert.match(caveLines(experiment({ fly: 1 })).at(-1)!.text, /^One specimen went in\. You voted flies\. Snails came out anyway\./)
   const empty = caveLines(experiment({})).at(-1)!.text
   assert.doesNotMatch(empty, /specimen/)
   assert.match(empty, /^Snails came out\./)
