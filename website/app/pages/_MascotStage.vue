@@ -11,7 +11,7 @@ import type { SceneVisit } from '#shared/travel'
 import { criticalSceneSeconds, phase, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment } from '#shared/office-experiment'
 import { criticalDarkAt } from '#shared/office-critical'
-import { caveLines, countingLine, criticalLines, lineSeconds } from '#shared/office-script'
+import { caveLines, countingLine, criticalLines, leadingCreature, lineSeconds } from '#shared/office-script'
 import type { Spoken } from '#shared/office-script'
 import { clickerAction, readClickerKey } from '#shared/show-deck'
 import type { ActionSound } from '#shared/action-sounds'
@@ -163,7 +163,7 @@ function say({ text, beat: gesture }: Spoken) {
 watch(run, (now, before) => {
   if (now && now.criticalAt === null) counted = now.run
   if (!now || !before || now.run !== before.run || now.criticalAt !== null) return
-  const spoken = countingLine(specimenCount(before), specimenCount(now), now.target)
+  const spoken = countingLine(specimenCount(before), specimenCount(now), now.target, leadingCreature(now))
   if (spoken && !talking.value) say(spoken)
 })
 // The critical scene, timed from the server's clock. His lines fall at their moments, and the cave follows the dark.

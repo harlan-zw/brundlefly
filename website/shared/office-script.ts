@@ -13,6 +13,7 @@ export type TimedLine = Spoken & { at: number }
 
 // The share of the target at which he speaks, what he says, and what he does. `{count}` is the specimen count at that moment.
 const milestones: readonly (readonly [share: number, text: string, beat: string])[] = [
+  [0.15, '{count}. He said it was safe last time too. Keep going.', 'He tilts his head.'],
   // He turns to the chamber: it is the thing that warms.
   [0.25, '{count}. The chamber is warming up. Do not shake the jar.', 'He looks toward the light.'],
   [0.5, 'Halfway. My small hands are rubbing. Ignore them.', 'His small hands rub together.'],
@@ -21,17 +22,25 @@ const milestones: readonly (readonly [share: number, text: string, beat: string]
   // Which parts are still his: he looks at his own hand.
   [0.9, 'Nearly. Decide which parts you want to keep. Not the snail.', 'He checks an empty palm.'],
 ]
-// The first state of a run can hold more than one specimen, so he says the count he has. He looks up: they fall from the ceiling.
-const first = { text: '{count}. He said it was safe last time too. Keep going.', beat: 'He listens to the ceiling.' }
+const firstLines: Record<Creature, { one: string, many: string }> = {
+  snail: { one: 'One snail. He told you not to pick that.', many: '{count}. Snails already. He told you not to pick that.' },
+  fly: { one: 'One fly. Look how well that worked out for me.', many: '{count}. Flies. Look how well that worked out for me.' },
+  beetle: { one: 'One beetle. Hard shell. Terrible for lab coats.', many: '{count}. Beetles. Hard shell. Terrible for lab coats.' },
+  cricket: { one: 'One cricket. Loud legs. Already a mistake.', many: '{count}. Crickets. Loud legs. Already a mistake.' },
+}
+const firstBeat = 'He listens to the ceiling.'
 
 /** His line when the count moves from `before` to `after`, or nothing. He speaks once at the first specimen and once at each milestone. */
-export function countingLine(before: number, after: number, target: number): Spoken | undefined {
+export function countingLine(before: number, after: number, target: number, picked: Creature = 'fly'): Spoken | undefined {
   if (after <= before || after >= target) return
   const crossed = milestones.findLast(([share]) => before < share * target && after >= share * target)
   // He says "One" for the first specimen, and the number for any other count.
   const count = after === 1 ? 'One' : after.toLocaleString('en')
   if (crossed) return { text: crossed[1].replace('{count}', count), beat: crossed[2] }
-  if (before === 0) return { text: first.text.replace('{count}', count), beat: first.beat }
+  if (before === 0) {
+    const line = after === 1 ? firstLines[picked].one : firstLines[picked].many.replace('{count}', count)
+    return { text: line, beat: firstBeat }
+  }
 }
 
 /**

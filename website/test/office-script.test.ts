@@ -20,13 +20,23 @@ function walk(target: number, batches: readonly number[] = [1]): Spoken[] {
   return spoken
 }
 
-test('he speaks at the first specimen, at each quarter of the target, and near the end, once each', () => {
-  assert.deepEqual(walk(3000).map(({ count }) => count), [1, 750, 1500, 2250, 2700])
+test('he speaks at the first specimen, at 15%, at each quarter of the target, and near the end, once each', () => {
+  assert.deepEqual(walk(3000).map(({ count }) => count), [1, 450, 750, 1500, 2250, 2700])
   // At a small target the milestones fall between two counts. He speaks at the first count past each one.
-  assert.deepEqual(walk(50).map(({ count }) => count), [1, 13, 25, 38, 45])
+  assert.deepEqual(walk(50).map(({ count }) => count), [1, 8, 13, 25, 38, 45])
   for (const target of [50, 3000, 20000]) {
     const lines = walk(target).map(({ line }) => line)
     assert.equal(new Set(lines).size, lines.length, `He repeated a line at a target of ${target}.`)
+  }
+})
+
+test('his first line reacts to the creature that was picked first', () => {
+  for (const kind of creatureKinds) {
+    const one = countingLine(0, 1, 800, kind)!
+    const many = countingLine(0, 5, 800, kind)!
+    assert.match(one.text, new RegExp(`^One ${kind}\\.`, 'i'))
+    assert.match(many.text, /^5\./)
+    assert.notEqual(one.text, many.text)
   }
 })
 

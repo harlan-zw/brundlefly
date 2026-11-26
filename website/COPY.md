@@ -213,7 +213,8 @@ Brundlefly speaks these lines over his head. They open no dialog.
 
 | Moment | Line | What he does |
 | --- | --- | --- |
-| First specimen | One. He said it was safe last time too. Keep going. (“{count}.” when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
+| First specimen | Names the creature picked first: “One snail. He told you not to pick that.”, “One fly. Look how well that worked out for me.”, “One beetle. Hard shell. Terrible for lab coats.”, or “One cricket. Loud legs. Already a mistake.” (Uses “{count}.” with the plural when the first state holds more than one.) | He listens to the ceiling, where they fall from. |
+| Three twentieths of the target | {count}. He said it was safe last time too. Keep going. | He tilts his head. |
 | A quarter of the target | {count}. The chamber is warming up. Do not shake the jar. | He looks toward the light of the chamber. |
 | Half | Halfway. My small hands are rubbing. Ignore them. | His small hands rub together. |
 | Three quarters | I know that hum. I went in alone. He is next. | He goes very still. |
