@@ -476,8 +476,8 @@ watch(canvas, async (element) => {
   // the picture takes `reveal` seconds to come up, and the view takes `settle` seconds to draw back.
   let arrival: number | undefined
   const arrivalTimes = { reveal: 3.6, settle: 8 }
-  // A celebration waits in the dark for the chorus, and then the cave is there at once.
-  const partyReveal = 0.7
+  // With a celebration track, black slowly lifts over the final 5.5 seconds of the 8-second swell, reaching full bright cave right on the chorus hit.
+  const partyReveal = 5.5
   const smoothShare = (value: number) => { const share = Math.max(0, Math.min(1, value)); return share * share * (3 - 2 * share) }
   // The other set's artwork loads while he walks out, so the dark is short.
   let incoming: { name: SetName, art: Promise<SetArt> } | undefined
@@ -666,15 +666,18 @@ watch(canvas, async (element) => {
     if (arrival !== undefined) { arrival += delta; if (arrival >= arrivalTimes.settle || !faceMotion) arrival = undefined }
     // Keep the screen pitch black for every frame of a cut until the destination set has replaced the office.
     const cutDark = cut && (standing.stage.name !== set || travel._tag === 'Leaving')
-    const dark = Math.max(cutDark ? 1 : travelShade(travel, !faceMotion), critical?.shade ?? 0, arrival === undefined ? 0 : 1 - smoothShare(arrival / (party ? partyReveal : arrivalTimes.reveal)))
+    const arrivalShade = arrival === undefined ? 0
+      : party ? 1 - smoothShare((arrival + partyReveal) / partyReveal)
+        : 1 - smoothShare(arrival / arrivalTimes.reveal)
+    const dark = Math.max(cutDark ? 1 : travelShade(travel, !faceMotion), critical?.shade ?? 0, arrivalShade)
     // The beats of the celebration since the chorus hit. He dances in the cave from the hit on.
     const beats = party && standing.stage.name === 'lair' ? (serverClock() - party.at) / 1000 * party.bpm / 60 : undefined
     const dancing = beats !== undefined && beats >= 0 && faceMotion
     if (shade.value !== dark) shade.value = dark
     if (flash.value !== (critical?.flash ?? 0)) flash.value = critical?.flash ?? 0
-    // The visitor sees the new set from here. The page waits for this before he speaks to them.
+    // The visitor sees the new set from here. With a celebration track, wait until the chorus lands before triggering cave lines.
     if (travel._tag === 'Leaving' || travel._tag === 'Dark') hidden = true
-    else if (hidden && dark < 0.3) { hidden = false; emit('view', standing.stage.name) }
+    else if (hidden && dark < 0.3 && (!party || serverClock() >= party.at)) { hidden = false; emit('view', standing.stage.name) }
     const journey = travel._tag !== 'Home'
     // The conversation holds him and the close shot only while he is at home. On a journey the dialog stays open and the view goes wide.
     const talking = paused && !journey

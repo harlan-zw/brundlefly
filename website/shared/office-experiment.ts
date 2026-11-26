@@ -30,8 +30,8 @@ export const targetLimits = { least: 5, most: 20000, initial: 800 }
 export const tapsPerSecond = 20
 /** Seconds from critical to the end of the critical scene. */
 export const criticalSceneSeconds = 19.5
-/** Seconds of song swell in the dark between the presenter's reveal trigger and the cave drop. */
-export const revealSwellSeconds = 4
+/** Seconds of song swell in the dark between the presenter's reveal trigger and the cave drop (4 bars at 124 BPM). */
+export const revealSwellSeconds = 8
 
 const emptyTally = (): Tally => ({ snail: 0, beetle: 0, fly: 0, cricket: 0 })
 export const emptyExperiment = (run = 0, target = targetLimits.initial): Experiment => ({ run, tally: emptyTally(), target, criticalAt: null, revealAt: null })

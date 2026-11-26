@@ -31,7 +31,7 @@ const curveRate = 60
 type Stored = { file: Blob, track: PartyTrack, storedAt: number }
 type Output = { _tag: 'Gain', context: AudioContext, gain: GainNode } | { _tag: 'Volume' }
 /** One playback. The level is a function of the file position, so the fade follows the music. */
-type Run = { hitAt: number, timer?: ReturnType<typeof setTimeout>, frame?: number, level?: (position: number) => number, end?: number }
+type Run = { hitAt: number, minLeadIn?: number, timer?: ReturnType<typeof setTimeout>, frame?: number, level?: (position: number) => number, end?: number }
 
 const ok: PartyResult = { _tag: 'Ok' }
 const err = (reason: PartyFailure): PartyResult => ({ _tag: 'Err', reason })
@@ -337,7 +337,8 @@ export function usePartyTrack(options: PartyOptions = {}) {
       if (run !== current) return
       if (!started) return refuse(current, 'The browser refused to play the celebration track. Select anything on the page once, then try again.', sink._tag === 'Gain' ? `The audio context is ${sink.context.state}.` : undefined)
       // The plan comes again here, so a late timer or a slow start still lands the chorus on the hit.
-      const plan = stored && partyPlan(stored.track, (current.hitAt - now()) / 1000)
+      const effective = stored && current.minLeadIn !== undefined ? { ...stored.track, leadIn: Math.max(stored.track.leadIn, current.minLeadIn) } : stored?.track
+      const plan = effective && partyPlan(effective, (current.hitAt - now()) / 1000)
       if (!plan) return finish(current)
       // The file waits near this position already. A seek costs start time, so a small difference stays. The level follows the file position anyway.
       if (Math.abs(media.currentTime - plan.startAt) > 0.05) media.currentTime = plan.startAt
@@ -353,16 +354,18 @@ export function usePartyTrack(options: PartyOptions = {}) {
 
   /**
    * Starts the celebration: the chorus hits `secondsUntilHit` seconds from now. It does nothing without a track.
+   * When `fullFade` is true, the fade starts immediately across the entire swell even if the stored `leadIn` is shorter.
    * A second call while one waits or plays is ignored.
    */
-  function play(secondsUntilHit: number) {
+  function play(secondsUntilHit: number, fullFade = false) {
     if (run || !Number.isFinite(secondsUntilHit) || (ready && !stored)) return
-    const current: Run = { hitAt: now() + secondsUntilHit * 1000 }
+    const current: Run = { hitAt: now() + secondsUntilHit * 1000, minLeadIn: fullFade ? secondsUntilHit : undefined }
     run = current
     status.value = 'Waiting'
     void loaded.then(() => {
       if (run !== current) return
-      const plan = stored && partyPlan(stored.track, (current.hitAt - now()) / 1000)
+      const effective = stored && current.minLeadIn !== undefined ? { ...stored.track, leadIn: Math.max(stored.track.leadIn, current.minLeadIn) } : stored?.track
+      const plan = effective && partyPlan(effective, (current.hitAt - now()) / 1000)
       if (!plan || !audio) return finish(current)
       // The file waits at its start position, so it starts at once.
       audio.currentTime = plan.startAt

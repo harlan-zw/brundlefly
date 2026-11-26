@@ -14,9 +14,9 @@ type Setting = Exclude<keyof PartyTrack, 'name'>
 
 /**
  * The settings of a new track. They fit the live show: the chorus hits at 39.2 seconds, the tempo is 124,
- * the fade swells for 4 seconds after the presenter triggers reveal, and the chorus plays for 22 seconds before fading out.
+ * the fade swells for 8 seconds (4 bars) after the presenter triggers reveal, and the chorus plays for 22 seconds before fading out.
  */
-export const partyDefaults: Omit<PartyTrack, 'name'> = { chorusAt: 39.2, bpm: 124, leadIn: 4, playFor: 22, fadeOut: 4 }
+export const partyDefaults: Omit<PartyTrack, 'name'> = { chorusAt: 39.2, bpm: 124, leadIn: 8, playFor: 22, fadeOut: 4 }
 /** The least and the most of each setting. Stored or typed values outside them are clamped. */
 export const partyLimits: Record<Setting, { least: number, most: number }> = {
   chorusAt: { least: 0, most: 3600 },
@@ -80,13 +80,12 @@ export const partyLength = (plan: PartyPlan) => plan.fadeIn + plan.hold + plan.f
 
 // The fade out is a squared curve. Loudness follows about the 0.6th power of the level, so the loudness falls almost evenly over the whole fade.
 const rise = (share: number) => share * share
-// The fade in is a cubed curve. The music is a murmur under the scene for the first half of the fade, at an eighth of its level at the middle,
-// and most of the rise comes in the last third, into the hit. A squared curve was heard too early. The level keeps rising until the fade ends.
-const creep = (share: number) => share * share * share
+// The fade in uses a 1.8 power curve so the song is audible right away from the blackout click and builds steadily into full volume on the chorus drop.
+const creep = (share: number) => share ** 1.8
 
 /**
  * The level of the music, from 0 to 1, `sinceStart` seconds after playback started.
- * The fade in is a cubed curve and the fade out a squared one. The level is 0 before the start and after the end.
+ * The fade in rises smoothly from silence into the chorus and the fade out follows a squared curve. The level is 0 before the start and after the end.
  */
 export function partyLevel(plan: PartyPlan, sinceStart: number): number {
   if (!(sinceStart >= 0) || sinceStart >= partyLength(plan)) return 0

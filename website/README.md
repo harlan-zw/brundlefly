@@ -125,7 +125,7 @@ The experiment uses `/projector` and `/join`. The public office at `/office` kee
 3. The audience scans the QR code on the glowing beetle glass. It opens `https://brundlefly.dev/join`, which puts each phone at the desk computer. The address is also shown in letters.
 4. Each key adds one specimen. The whiteboard, the computer screen, and the presenter page show the count. From 80% of the target the chamber is unstable: its warning light turns faster and throws red on the room, the room shakes now and then, and the tubes dip. From 90% all of that is stronger, and the computer warns.
 5. At the target, phones lock on the **CHAMBER OVERLOAD / LOOK UP NOW** alarm so every eye snaps to the room. Green arcs leap from the chamber, the chamber spits out snails, and the projector fades to pitch black and holds with a rising hum pulse.
-6. When ready, press **Next** on the presenter clicker (or **Reveal cave now** on `/presenter`). The celebration track swells for 4 seconds in the dark, and the cave snaps in with dancing snails on the chorus drop. Phones unlock an **Enter the 18th Dimension** button after the reveal.
+6. When ready, press **Next** on the presenter clicker (or **Reveal cave now** on `/presenter`). The celebration track swells for 8 seconds in the dark while the cave slowly fades up into full brightness on the chorus drop with dancing snails. Phones unlock an **Enter the 18th Dimension** button after the reveal.
 
 If the room is slow, **Go critical now** on the presenter page starts the scene at the current count.
 The initial target is 800. Change the target at any time; the count stays.
@@ -143,9 +143,9 @@ The up and down keys change how solid the glass is. The left and right keys chan
 When the cave appears, Brundlefly and the snails dance. A song can play on the projector.
 The site ships no song. On `/presenter`, in the browser that drives the projector, choose your own audio file under **Celebration track**.
 The file stays in that browser's storage. It is never uploaded, and **Remove track** deletes it.
-A new track takes the defaults: chorus at 0:39.2, 124 BPM, 4 seconds of fade in, 22 seconds of play, and a fade out of 4 seconds.
+A new track takes the defaults: chorus at 0:39.2, 124 BPM, 8 seconds of fade in, 22 seconds of play, and a fade out of 4 seconds.
 For another song, set where the chorus starts and tap the tempo. Choose **Test from the fade** to hear the result: a cue turns solid at the moment the cave would appear.
-When you trigger reveal from the blackout hold, the song swells for 4 seconds and its chorus hits on the exact beat the cave appears.
+When you trigger reveal from the blackout hold, the song swells for 8 seconds and its chorus hits on the exact beat the cave reaches full brightness.
 The room shares the tempo and the times with every device. Phones play no sound.
 Before the talk, press a clicker key or select anything on `/projector` once. A browser plays no sound on a page that nobody has touched.
 

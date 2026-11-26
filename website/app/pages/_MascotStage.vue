@@ -246,7 +246,7 @@ const { pause: endScene, resume: playScene } = useIntervalFn(() => {
   const age = (now - state.criticalAt) / 1000
   for (; spoken < criticalLines.length && age >= criticalLines[spoken]!.at; spoken++) if (age < criticalLines[spoken]!.at + 2) say(criticalLines[spoken]!)
   if (state.revealAt !== null) {
-    if (!sung && !sound.value.muted) { sung = true; song?.play((state.revealAt - now) / 1000) }
+    if (!sung && !sound.value.muted) { sung = true; song?.play((state.revealAt - now) / 1000, true) }
     if (age >= criticalDarkAt) leave(state)
     return
   }
@@ -260,7 +260,7 @@ watch(() => run.value?.revealAt ?? null, (revealAt) => {
   const state = run.value
   if (joined || revealAt === null || !state || state.criticalAt === null) return
   const now = office.clock()
-  if (!sung && !sound.value.muted) { sung = true; song?.play((revealAt - now) / 1000) }
+  if (!sung && !sound.value.muted) { sung = true; song?.play((revealAt - now) / 1000, true) }
   if ((now - state.criticalAt) / 1000 >= criticalDarkAt) leave(state)
 })
 const caveTimers: ReturnType<typeof setTimeout>[] = []
