@@ -9,23 +9,26 @@ test('readClickerKey maps USB presenter keys to Next and Prev', () => {
   for (const key of ['Escape', 'b', 'Enter']) assert.equal(readClickerKey(key), undefined)
 })
 
-test('show mode steps through slides 1 to 5, cuts to 3D office, then opens beetle QR', () => {
+test('show mode steps through slides 1 to 5, fades to 3D office, opens beetle QR, then moves to computer', () => {
   const idle = emptyExperiment()
   assert.deepEqual(clickerAction('Next', { show: true, slide: 0, station: 'room', experiment: idle, criticalAge: undefined }), { _tag: 'Slide', index: 1 })
   assert.deepEqual(clickerAction('Next', { show: true, slide: showSlideCount - 1, station: 'room', experiment: idle, criticalAge: undefined }), { _tag: 'Slide', index: null })
   assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'room', experiment: idle, criticalAge: undefined }), { _tag: 'Station', station: 'code' })
-  // Even if someone tapped early from Slide 4, Next from the office still summons the beetle QR.
+  // Even if someone tapped early, Next from the office still summons the beetle QR.
   const counting = addTaps(idle, 'fly', 3, 100)
   assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'room', experiment: counting, criticalAge: undefined }), { _tag: 'Station', station: 'code' })
-  // Once the beetle QR is showing, accidental Next clicks do nothing.
-  assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'code', experiment: counting, criticalAge: undefined }), { _tag: 'None' })
+  // From the beetle QR, Next advances to the desk computer.
+  assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'code', experiment: counting, criticalAge: undefined }), { _tag: 'Station', station: 'computer' })
+  // Once on the computer, accidental Next clicks do nothing.
+  assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'computer', experiment: counting, criticalAge: undefined }), { _tag: 'None' })
 })
 
-test('Prev backs up slides and returns from QR without interrupting active counting into slides', () => {
+test('Prev backs up slides and steps computer -> QR -> room without interrupting active counting into slides', () => {
   const idle = emptyExperiment()
   const counting = addTaps(idle, 'snail', 2, 100)
   assert.deepEqual(clickerAction('Prev', { show: true, slide: 0, station: 'room', experiment: idle, criticalAge: undefined }), { _tag: 'None' })
   assert.deepEqual(clickerAction('Prev', { show: true, slide: 2, station: 'room', experiment: idle, criticalAge: undefined }), { _tag: 'Slide', index: 1 })
+  assert.deepEqual(clickerAction('Prev', { show: true, slide: null, station: 'computer', experiment: counting, criticalAge: undefined }), { _tag: 'Station', station: 'code' })
   assert.deepEqual(clickerAction('Prev', { show: true, slide: null, station: 'code', experiment: counting, criticalAge: undefined }), { _tag: 'Station', station: 'room' })
   assert.deepEqual(clickerAction('Prev', { show: true, slide: null, station: 'room', experiment: idle, criticalAge: undefined }), { _tag: 'Slide', index: showSlideCount - 1 })
   assert.deepEqual(clickerAction('Prev', { show: true, slide: null, station: 'room', experiment: counting, criticalAge: undefined }), { _tag: 'None' })

@@ -33,7 +33,7 @@ export function readClickerKey(key: string): ClickerKey | undefined {
 
 /**
  * Pure state transition for one presenter clicker press on `/projector`.
- * In show mode, `Next` advances slides 1..4, cuts to the 3D office, opens the beetle QR, ignores presses during active counting,
+ * In show mode, `Next` advances slides 1..5, fades into the 3D office, opens the beetle QR, moves to the desk computer,
  * and triggers `Reveal` once the critical scene reaches its blackout window.
  */
 export function clickerAction(key: ClickerKey, context: ShowContext): ClickerAction {
@@ -53,11 +53,14 @@ export function clickerAction(key: ClickerKey, context: ShowContext): ClickerAct
 
   const counting = experiment !== null && specimenCount(experiment) > 0
   if (key === 'Next') {
-    return station === 'room' ? { _tag: 'Station', station: 'code' } : { _tag: 'None' }
+    if (station === 'room') return { _tag: 'Station', station: 'code' }
+    if (station === 'code') return { _tag: 'Station', station: 'computer' }
+    return { _tag: 'None' }
   }
 
-  // `Prev` returns from the QR/computer to the room, or steps back to the final slide when idle in show mode.
-  if (station !== 'room') return { _tag: 'Station', station: 'room' }
+  // `Prev` steps back computer -> QR -> room, or back to the final slide when idle in show mode.
+  if (station === 'computer') return { _tag: 'Station', station: 'code' }
+  if (station === 'code') return { _tag: 'Station', station: 'room' }
   if (show && !counting) return { _tag: 'Slide', index: showSlideCount - 1 }
   return { _tag: 'None' }
 }

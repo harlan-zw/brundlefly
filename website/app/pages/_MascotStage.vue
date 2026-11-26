@@ -127,6 +127,8 @@ function look(to: Station) {
   if (critical.value || (to === 'room' && station.value === 'computer' && performance.now() - lastTap < 1500)) return
   station.value = to
 }
+// Leaving the last slide fades out into the 3D office over 0.9s; guard Next briefly so an eager click doesn't skip the room reveal.
+let slideFadeUntil = 0
 if (presenting) {
   useEventListener('keydown', (event: KeyboardEvent) => {
     if (event.key === 'Escape' && !talking.value) { station.value = 'room'; return }
@@ -137,12 +139,16 @@ if (presenting) {
     if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), .scene-controls, dialog'))) return
     const key = readClickerKey(event.key)
     if (!key) return
+    if (key === 'Next' && slide.value === null && performance.now() < slideFadeUntil) { event.preventDefault(); return }
     const state = run.value
     const criticalAge = state && state.criticalAt !== null ? (office.clock() - state.criticalAt) / 1000 : undefined
     const action = clickerAction(key, { show: showMode.value, slide: slide.value, station: station.value, experiment: state, criticalAge })
     if (action._tag === 'None') return
     event.preventDefault()
-    if (action._tag === 'Slide') slide.value = action.index
+    if (action._tag === 'Slide') {
+      if (slide.value !== null && action.index === null) slideFadeUntil = performance.now() + 1000
+      slide.value = action.index
+    }
     else if (action._tag === 'Station') station.value = action.station
     else office.reveal()
   }, { capture: true })

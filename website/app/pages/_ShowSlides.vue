@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { joinAddress, joinCode, quietZone } from '#shared/join-code'
+import { defineAsyncComponent } from 'vue'
 import { penLines, penSketches } from '#shared/show-slides-art'
 import { useShowPhotos } from '../composables/useShowPhotos'
 
@@ -7,20 +7,14 @@ import { useShowPhotos } from '../composables/useShowPhotos'
 // Advancing past Slide 5 fades the notebook out cleanly into the live 3D office.
 const { slide } = defineProps<{ slide: number }>()
 const { photos } = useShowPhotos()
-const qr = joinCode()
-const qrView = `${-quietZone} ${-quietZone} ${qr.size + quietZone * 2} ${qr.size + quietZone * 2}`
+const SlideMascot3D = defineAsyncComponent(() => import('./_SlideMascot3D.client.vue'))
 const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 </script>
 
 <template>
   <section class="slides" aria-label="Science presentation">
-    <div class="notebook-bar" aria-hidden="true">
-      <span>LAB NOTEBOOK // FRONTIERS OF HUMAN SCIENCE</span>
-      <span>Slide {{ slide + 1 }} / 5</span>
-    </div>
-
     <div class="sheet">
-      <!-- Slide 1: Company Name + Photo of Me + Photo of Coworker Brundle (before) -->
+      <!-- Slide 1: Company Name + Photo of Me + Photo of Dr Brundle (before) -->
       <div v-if="slide === 0" class="page slide-one">
         <div class="title-row">
           <svg class="pen-title" :viewBox="lineView(penLines.company.w)" role="img" aria-label="Frontiers of Human Science">
@@ -51,21 +45,21 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 
           <figure class="polaroid tilt-right">
             <div class="frame">
-              <img v-if="photos.brundle" :src="photos.brundle" alt="Coworker Brundle before experiment">
-              <svg v-else class="sketch" :viewBox="penSketches.coworker.box" role="img" aria-label="Sketched portrait of coworker Brundle before transformation">
+              <img v-if="photos.brundle" :src="photos.brundle" alt="Dr Brundle before experiment">
+              <svg v-else class="sketch" :viewBox="penSketches.coworker.box" role="img" aria-label="Sketched portrait of Dr Brundle before transformation">
                 <path :d="penSketches.coworker.d" />
               </svg>
             </div>
             <figcaption>
-              <svg class="pen-label" :viewBox="lineView(penLines.brundleBefore.w)" role="img" aria-label="Brundle before">
-                <path :d="penLines.brundleBefore.d" />
+              <svg class="pen-label" :viewBox="lineView(penLines.drBrundle.w)" role="img" aria-label="Dr Brundle">
+                <path :d="penLines.drBrundle.d" />
               </svg>
             </figcaption>
           </figure>
         </div>
       </div>
 
-      <!-- Slide 2: Experiment 1: Brundle + Fly = REAL BRUNDLEFLY -->
+      <!-- Slide 2: Experiment 1: Brundle + Fly = Rotating 3D Brundlefly -->
       <div v-else-if="slide === 1" class="page slide-two">
         <svg class="pen-title" :viewBox="lineView(penLines.exp1.w)" role="img" aria-label="Experiment 1: Human + Fly">
           <path :d="penLines.exp1.d" />
@@ -74,8 +68,8 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
         <div class="equation">
           <figure class="eq-item">
             <div class="frame small">
-              <img v-if="photos.brundle" :src="photos.brundle" alt="Brundle before">
-              <svg v-else class="sketch" :viewBox="penSketches.coworker.box" role="img" aria-label="Brundle">
+              <img v-if="photos.brundle" :src="photos.brundle" alt="Dr Brundle before">
+              <svg v-else class="sketch" :viewBox="penSketches.coworker.box" role="img" aria-label="Dr Brundle">
                 <path :d="penSketches.coworker.d" />
               </svg>
             </div>
@@ -101,7 +95,7 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 
           <figure class="eq-item result">
             <div class="frame brundle-frame">
-              <img src="/brand/character.png" alt="Brundlefly">
+              <SlideMascot3D />
             </div>
             <svg class="pen-label ink-red" :viewBox="lineView(penLines.brundlefly.w)" role="img" aria-label="Brundlefly">
               <path :d="penLines.brundlefly.d" />
@@ -129,8 +123,8 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
           <span class="op" aria-hidden="true">=</span>
 
           <figure class="eq-item unstable-box">
-            <svg class="bolt" viewBox="0 0 120 140" aria-hidden="true">
-              <path d="M72 8 L26 76 L60 76 L42 132 L98 60 L64 60 Z" />
+            <svg class="sketch lightning" :viewBox="penSketches.lightning.box" aria-hidden="true">
+              <path :d="penSketches.lightning.d" />
             </svg>
             <svg class="pen-label ink-red" :viewBox="lineView(penLines.unstable.w)" role="img" aria-label="Unstable">
               <path :d="penLines.unstable.d" />
@@ -152,7 +146,7 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
         </div>
       </div>
 
-      <!-- Slide 4: Virtual Lab with Brundlefly and Me underneath -->
+      <!-- Slide 4: Virtual Lab with Brundlefly, Me, and Audience underneath -->
       <div v-else-if="slide === 3" class="page slide-four">
         <svg class="pen-title" :viewBox="lineView(penLines.virtualLab.w)" role="img" aria-label="The Virtual Lab">
           <path :d="penLines.virtualLab.d" />
@@ -163,9 +157,10 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
             <path :d="penSketches.computer.d" />
           </svg>
           <div class="arrows" aria-hidden="true">
-            <svg viewBox="0 0 420 70">
-              <path d="M190 4 L75 62 M75 62 L92 48 M75 62 L96 63" />
-              <path d="M230 4 L345 62 M345 62 L328 48 M345 62 L324 63" />
+            <svg viewBox="0 0 680 76">
+              <path d="M295 4 L95 66 M95 66 L114 52 M95 66 L118 68" />
+              <path d="M340 4 L340 66 M340 66 L328 50 M340 66 L352 50" />
+              <path d="M385 4 L585 66 M585 66 L566 52 M585 66 L562 68" />
             </svg>
           </div>
           <div class="under-lab">
@@ -189,28 +184,30 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
                 <path :d="penLines.meVolunteer.d" />
               </svg>
             </figure>
+
+            <figure class="eq-item">
+              <div class="frame compact">
+                <svg class="sketch" :viewBox="penSketches.audience.box" role="img" aria-label="Audience phone sketch">
+                  <path :d="penSketches.audience.d" />
+                </svg>
+              </div>
+              <svg class="pen-label" :viewBox="lineView(penLines.audience.w)" role="img" aria-label="Audience">
+                <path :d="penLines.audience.d" />
+              </svg>
+            </figure>
           </div>
         </div>
       </div>
 
-      <!-- Slide 5: Experiment 2 - Source the Transformation + Top QR + Snail = Lame - don't pick! -->
+      <!-- Slide 5: Experiment 2 - Source the Transformation + 4 Specimen Cards (Snail = Lame - don't pick!) -->
       <div v-else class="page slide-five">
-        <div class="join-top">
-          <div class="qr-box">
-            <svg :viewBox="qrView" shape-rendering="crispEdges" role="img" :aria-label="`QR code for ${joinAddress}`">
-              <rect :x="-quietZone" :y="-quietZone" :width="qr.size + quietZone * 2" :height="qr.size + quietZone * 2" fill="#fff" />
-              <rect v-for="cell in qr.cells" :key="`${cell.x}-${cell.y}`" :x="cell.x" :y="cell.y" width="1" height="1" fill="#000" />
-            </svg>
-          </div>
-          <div class="join-copy">
-            <svg class="pen-title left" :viewBox="lineView(penLines.exp2.w)" role="img" aria-label="Experiment 2: Source the Transformation">
-              <path :d="penLines.exp2.d" />
-            </svg>
-            <svg class="pen-sub" :viewBox="lineView(penLines.sourceSub.w)" role="img" aria-label="Tap specimens to fuel Chamber 01 to 100%">
-              <path :d="penLines.sourceSub.d" />
-            </svg>
-            <p class="join-url">{{ joinAddress }}</p>
-          </div>
+        <div class="exp2-head">
+          <svg class="pen-title" :viewBox="lineView(penLines.exp2.w)" role="img" aria-label="Experiment 2: Source the Transformation">
+            <path :d="penLines.exp2.d" />
+          </svg>
+          <svg class="pen-sub" :viewBox="lineView(penLines.sourceSub.w)" role="img" aria-label="Tap specimens to fuel Chamber 01 to 100%">
+            <path :d="penLines.sourceSub.d" />
+          </svg>
         </div>
 
         <div class="species">
@@ -242,21 +239,18 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 
 <style scoped>
 .slides { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; background: #fcfaf3; color: #1a237e; user-select: none; }
-.notebook-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 18px; background: #1a237e; color: #fcfaf3;
-  font: 600 13px/1.2 var(--font-mono, ui-monospace, monospace); letter-spacing: .06em; }
 .sheet { flex: 1; position: relative; display: flex; overflow: hidden;
   background-color: #fcfaf3;
   background-image:
     linear-gradient(90deg, transparent 58px, #ebb8b8 58px, #ebb8b8 60px, transparent 60px),
     repeating-linear-gradient(0deg, transparent 0, transparent 41px, #dce6f2 41px, #dce6f2 42px);
 }
-.page { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 2.5vh 5vw 3vh 80px; gap: 2vh; min-width: 0; }
+.page { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 3vh 5vw 3vh 80px; gap: 2vh; min-width: 0; }
 
 /* Real PenGPT handwriting + sketch SVG strokes (sized large for back-row projector legibility) */
 .pen-title { height: clamp(4.2rem, 10.5vh, 7.2rem); max-width: 90vw; width: auto; overflow: visible; }
 .pen-title path { fill: none; stroke: #1a237e; stroke-width: .03; stroke-linecap: round; stroke-linejoin: round; }
-.pen-title.left { align-self: flex-start; height: clamp(3.2rem, 7.6vh, 5.4rem); }
-.pen-sub { height: clamp(2.5rem, 5.2vh, 3.8rem); max-width: 100%; width: auto; align-self: flex-start; overflow: visible; }
+.pen-sub { height: clamp(2.8rem, 6vh, 4.4rem); max-width: 90vw; width: auto; overflow: visible; }
 .pen-sub path { fill: none; stroke: #3949ab; stroke-width: .028; stroke-linecap: round; stroke-linejoin: round; }
 .pen-label { height: clamp(2.6rem, 5.4vh, 3.9rem); max-width: 100%; width: auto; overflow: visible; }
 .pen-label path { fill: none; stroke: #1a237e; stroke-width: .028; stroke-linecap: round; stroke-linejoin: round; }
@@ -282,36 +276,32 @@ const lineView = (w: number) => `-0.08 -0.34 ${(w + 0.16).toFixed(2)} 0.54`
 .frame { width: 100%; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; padding: 14px; background: #faf8f0; border: 1.5px solid #c9c3b4; overflow: hidden; }
 .frame img { width: 100%; height: 100%; object-fit: cover; }
 .frame.small { width: clamp(160px, 21vw, 270px); aspect-ratio: 1; background: #fff; border: 2px solid #2b2b2b; box-shadow: 4px 5px 0 #1a237e18; }
-.frame.brundle-frame { width: clamp(190px, 24vw, 310px); aspect-ratio: 1; background: radial-gradient(circle at 50% 45%, #233329, #0c120e); border: 3px solid #141414; box-shadow: 5px 6px 0 #c6282833; padding: 8px; }
+.frame.compact { width: clamp(140px, 16vw, 210px); aspect-ratio: 1; background: #fff; border: 2px solid #2b2b2b; }
+.frame.brundle-frame { width: clamp(210px, 25vw, 330px); aspect-ratio: 1; background: radial-gradient(circle at 50% 45%, #233329, #0c120e); border: 3px solid #141414; box-shadow: 5px 6px 0 #c6282833; padding: 6px; }
 .frame.brundle-frame img { object-fit: contain; }
-.frame.compact { width: clamp(150px, 18vw, 230px); aspect-ratio: 1; background: #fff; border: 2px solid #2b2b2b; }
-.frame.brundle-frame.compact { width: clamp(150px, 18vw, 230px); }
+.frame.brundle-frame.compact { width: clamp(140px, 16vw, 210px); }
 
 .equation { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 2.4vw, 34px); width: 100%; max-width: 1240px; }
 .eq-item { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .op { font: 700 clamp(2.8rem, 5.5vw, 5rem)/1 var(--font-mono, ui-monospace, monospace); color: #1a237e; }
-.unstable-box { padding: 16px 22px; border: 3px dashed #c62828; background: #fff2f2; transform: rotate(-2deg); }
-.bolt { width: clamp(72px, 8vw, 110px); height: auto; }
-.bolt path { fill: #ffe082; stroke: #c62828; stroke-width: 5; stroke-linejoin: round; }
+.unstable-box { padding: 16px 26px; border: 3px dashed #c62828; background: #fff2f2; transform: rotate(-2deg); }
+.lightning { width: clamp(92px, 10vw, 136px); height: clamp(92px, 10vw, 136px); }
+.lightning path { stroke: #c62828; stroke-width: .028; }
 
-.lab-hub { display: flex; flex-direction: column; align-items: center; gap: 1vh; width: 100%; max-width: 820px; }
-.computer { width: clamp(170px, 22vw, 280px); height: clamp(135px, 19vh, 210px); }
-.arrows svg { width: clamp(260px, 34vw, 440px); height: clamp(46px, 7vh, 72px); }
+.lab-hub { display: flex; flex-direction: column; align-items: center; gap: 1vh; width: 100%; max-width: 1020px; }
+.computer { width: clamp(165px, 20vw, 260px); height: clamp(130px, 18vh, 195px); }
+.arrows { width: min(740px, 76vw); }
+.arrows svg { display: block; width: 100%; height: clamp(48px, 7.5vh, 76px); }
 .arrows path { fill: none; stroke: #1a237e; stroke-width: 4; stroke-dasharray: 9 7; stroke-linecap: round; stroke-linejoin: round; }
-.under-lab { display: flex; align-items: flex-start; justify-content: center; gap: clamp(36px, 8vw, 120px); }
+.under-lab { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; justify-items: center; gap: clamp(20px, 4vw, 64px); width: min(920px, 88vw); }
 
-.slide-five { justify-content: space-between; padding-top: 2vh; padding-bottom: 3vh; }
-.join-top { display: flex; align-items: center; justify-content: center; gap: 3.5vw; width: 100%; max-width: 1220px; }
-.qr-box { flex: none; width: min(33vh, 28vw, 310px); aspect-ratio: 1; border: 5px solid #141414; background: #fff; box-shadow: 6px 6px 0 #1a237e26; }
-.qr-box svg { display: block; width: 100%; height: 100%; }
-.join-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 1.2vh; min-width: 0; }
-.join-url { margin: 4px 0 0; padding: 8px 18px; background: #fff59d; color: #111; border: 3px solid #141414;
-  font: 800 clamp(1.35rem, 2.8vw, 2.4rem)/1.1 var(--font-mono, ui-monospace, monospace); }
+.slide-five { justify-content: space-evenly; padding-top: 3vh; padding-bottom: 3vh; }
+.exp2-head { display: flex; flex-direction: column; align-items: center; gap: 1vh; text-align: center; }
 
 .species { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5vw; width: 100%; max-width: 1220px; }
-.card { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 8px; padding: 1.8vh 1.2vw;
+.card { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 10px; padding: 2.2vh 1.2vw;
   border: 2.5px solid #2b2b2b; background: #fff; box-shadow: 4px 5px 0 #1a237e14; text-align: center; }
-.creature { height: clamp(82px, 14vh, 136px); width: 100%; }
+.creature { height: clamp(96px, 17vh, 160px); width: 100%; }
 .tag { font: 700 clamp(.9rem, 1.35vw, 1.2rem)/1.2 var(--font-mono, ui-monospace, monospace); color: #3949ab; text-transform: uppercase; letter-spacing: .04em; }
 .lame-card { background: #fff0f0; border: 3px dashed #c62828; box-shadow: 4px 5px 0 #c6282822; }
 </style>
