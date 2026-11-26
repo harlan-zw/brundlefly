@@ -1,8 +1,8 @@
 import { specimenCount } from './office-experiment.ts'
 import type { Experiment } from './office-experiment.ts'
 
-/** Total MS Paint slides in `/projector?show`. */
-export const showSlideCount = 4
+/** Total slides in `/projector?show`. */
+export const showSlideCount = 5
 /** Minimum seconds into the critical scene before a clicker press triggers reveal, preventing accidental early clicks. */
 export const clickerRevealAfterSeconds = 10
 

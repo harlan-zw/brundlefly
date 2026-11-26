@@ -275,7 +275,11 @@ function landed(kind: Creature) {
       <template #fallback><SceneLoading /></template>
     </ClientOnly>
     <template v-if="presenting">
-      <ClientOnly><ShowSlides v-if="slide !== null" :slide="slide" /></ClientOnly>
+      <ClientOnly>
+        <Transition name="slides-fade">
+          <ShowSlides v-if="slide !== null" :slide="slide" />
+        </Transition>
+      </ClientOnly>
       <OfficeCounter v-if="run && shown === 'office'" :experiment="run" :connected="office.connected.value" :online="office.online.value" :shown="station === 'computer' && !talking && slide === null" :revealed="phoneRevealed" @tap="tap" @leave="station = 'room'" @enter="enterCaveFromPhone" />
       <BackToRoom :shown="station === 'code' && !talking && !critical && slide === null" @leave="station = 'room'" />
       <OverheadLine :text="talking || covered ? '' : line" />
@@ -283,3 +287,10 @@ function landed(kind: Creature) {
     <SpeechDialog :open="talking" :place="shown" :found-dark="foundDark" :travelling="wanted !== shown" :muted="sound.muted" :sound-available="sound.status._tag !== 'Unavailable'" :cave-open="caveOpen" @close="talking = false; mood = 'neutral'" @reply="replyLength = $event.length; replies++" @reaction="mood = $event.mood; beat = $event.beat; reaction++" @pending="thinking = $event" @sound="audio?.toggle()" @travel="wanted = $event" />
   </main>
 </template>
+
+<style scoped>
+.slides-fade-leave-active { transition: opacity .9s ease-in-out; pointer-events: none; }
+.slides-fade-leave-to { opacity: 0; }
+.slides-fade-enter-active { transition: opacity .35s ease-out; }
+.slides-fade-enter-from { opacity: 0; }
+</style>

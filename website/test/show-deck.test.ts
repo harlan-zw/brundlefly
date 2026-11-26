@@ -9,7 +9,7 @@ test('readClickerKey maps USB presenter keys to Next and Prev', () => {
   for (const key of ['Escape', 'b', 'Enter']) assert.equal(readClickerKey(key), undefined)
 })
 
-test('show mode steps through slides 1 to 4, cuts to 3D office, then opens beetle QR', () => {
+test('show mode steps through slides 1 to 5, cuts to 3D office, then opens beetle QR', () => {
   const idle = emptyExperiment()
   assert.deepEqual(clickerAction('Next', { show: true, slide: 0, station: 'room', experiment: idle, criticalAge: undefined }), { _tag: 'Slide', index: 1 })
   assert.deepEqual(clickerAction('Next', { show: true, slide: showSlideCount - 1, station: 'room', experiment: idle, criticalAge: undefined }), { _tag: 'Slide', index: null })
