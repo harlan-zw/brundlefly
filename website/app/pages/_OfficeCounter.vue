@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useIntervalFn, useVibrate } from '@vueuse/core'
+import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
+import { useIntervalFn, useTimeoutFn, useVibrate } from '@vueuse/core'
 import { creatureKinds, creatures, loadedPercent, specimenCount } from '#shared/office-experiment'
 import type { Creature, Experiment, Tally } from '#shared/office-experiment'
+import { leadingCreature } from '#shared/office-script'
 import { unrest } from '#shared/office-unrest'
 
 // The desk computer's screen: the dashboard of a home lab that runs one service, the specimen loader.
@@ -14,17 +15,110 @@ const digits = new Intl.NumberFormat('en')
 const count = computed(() => specimenCount(experiment))
 const percent = computed(() => loadedPercent(experiment))
 const critical = computed(() => experiment.criticalAt !== null)
+const leader = computed<Creature | null>(() => count.value > 0 ? leadingCreature(experiment) : null)
+const leaderNames: Record<Creature, string> = { snail: 'SNAIL', beetle: 'BEETLE', fly: 'FLY', cricket: 'CRICKET' }
 // Near the target the chamber is not steady, and its log says so. COPY.md owns the two lines.
 const stage = computed(() => unrest(experiment).stage)
 const warnings = { Calm: '', Unstable: 'chamber: pressure above limit', Warning: 'chamber: WARNING: containment at risk' }
+const snailQuips = [
+  'WARNING: snail DNA detected',
+  'STOP PICKING SNAIL',
+  'doctor will remember this',
+  'mucus levels rising',
+  'control group contaminated',
+]
 const { vibrate } = useVibrate({ pattern: 8 })
+
+// Interactive CRT effects: live key pulses, rising +N particles, Snail glitch, milestone RGB surge, CRT warm-up bloom, and local mash combo heat.
+type TapPop = { id: number, kind: Creature, text: string, x: number }
+const pops = ref<TapPop[]>([])
+const lit = reactive<Record<Creature, boolean>>({ snail: false, beetle: false, fly: false, cricket: false })
+const snailGlitch = ref(false)
+const surge = ref(false)
+const warming = ref(false)
+const heat = ref(0)
+const localTaps: number[] = []
+const activeTimers = new Set<ReturnType<typeof setTimeout>>()
+let popSeq = 0
+let snailQuipIndex = 0
+let lastLocalKind: Creature | undefined
+let lastLocalAt = 0
+
+function scheduleClear(fn: () => void, ms: number) {
+  const timer = setTimeout(() => { activeTimers.delete(timer); fn() }, ms)
+  activeTimers.add(timer)
+}
+onScopeDispose(() => {
+  for (const timer of activeTimers) clearTimeout(timer)
+  activeTimers.clear()
+})
+
+const { start: stopGlitch } = useTimeoutFn(() => { snailGlitch.value = false }, 240, { immediate: false })
+const { start: stopSurge } = useTimeoutFn(() => { surge.value = false }, 400, { immediate: false })
+const { start: stopWarm } = useTimeoutFn(() => { warming.value = false }, 280, { immediate: false })
+const { start: coolHeat } = useTimeoutFn(() => { heat.value = 0 }, 900, { immediate: false })
+
+function triggerKeyEffect(kind: Creature, amount: number) {
+  lit[kind] = true
+  scheduleClear(() => { lit[kind] = false }, 180)
+  const id = ++popSeq
+  const x = 18 + (id * 29) % 64
+  pops.value = [...pops.value.slice(-13), { id, kind, text: `+${amount} ${creatures[kind]}`, x }]
+  scheduleClear(() => { pops.value = pops.value.filter(item => item.id !== id) }, 650)
+  if (kind === 'snail') {
+    snailGlitch.value = true
+    stopGlitch()
+  }
+}
+
 function press(kind: Creature) {
   if (!online || critical.value) return
+  const now = performance.now()
+  lastLocalKind = kind
+  lastLocalAt = now
+  localTaps.push(now)
+  while (localTaps.length && now - localTaps[0]! > 1200) localTaps.shift()
+  heat.value = Math.min(1, localTaps.length / 8)
+  coolHeat()
+  triggerKeyEffect(kind, 1)
+  if (kind === 'snail') {
+    snailLog.value = true
+    last.value = `+1 ${creatures.snail}  ${snailQuips[snailQuipIndex++ % snailQuips.length]!}`
+  }
+  else {
+    snailLog.value = false
+    last.value = `+1 ${creatures[kind]}`
+  }
   emit('tap', kind)
   vibrate()
 }
 // A pointer presses on the way down, so two thumbs can work the keys. The keyboard and a screen reader press with a click.
 const click = (kind: Creature, event: MouseEvent) => { if (event.detail === 0) press(kind) }
+
+// CRT tube warm-up bloom whenever the screen enters view.
+watch(() => shown, (next, prev) => {
+  if (next && !prev) {
+    warming.value = true
+    stopWarm()
+  }
+})
+
+// Milestone CRT phosphor RGB split + scanline sweep at 25%, 50%, 75%, 80%, 90%.
+const surgeMarks = [25, 50, 75, 80, 90]
+let lastSurgeRun = experiment.run
+let lastPercent = percent.value
+watch([() => experiment.run, percent], ([run, next]) => {
+  if (run !== lastSurgeRun) {
+    lastSurgeRun = run
+    lastPercent = next
+    return
+  }
+  if (surgeMarks.some(mark => lastPercent < mark && next >= mark)) {
+    surge.value = true
+    stopSurge()
+  }
+  lastPercent = next
+})
 
 // Once a second the dashboard reads the room: the people in the office, and the specimens each creature gained in that second.
 // Every chart on the screen draws these readings, so nothing on it is decoration.
@@ -56,11 +150,26 @@ const totalLine = computed(() => line(smooth(total.value), 8))
 const shared = computed(() => Math.max(4, ...creatureKinds.flatMap(kind => smooth(rates.value[kind]))))
 const kindLine = (kind: Creature) => line(smooth(rates.value[kind]), shared.value)
 
-// The last change of the count, as one line of a log.
+// The last change of the count, as one line of a log, plus live remote tap flashes and cheeky snail warnings.
 const last = ref('')
+const snailLog = ref(false)
 watch(() => experiment.tally, (now, before) => {
-  const gained = creatureKinds.filter(kind => now[kind] > before[kind]).map(kind => `+${now[kind] - before[kind]} ${creatures[kind]}`)
-  if (gained.length) last.value = gained.join('  ')
+  const deltas = creatureKinds.map(kind => [kind, now[kind] - before[kind]] as const).filter(([, diff]) => diff > 0)
+  if (!deltas.length) return
+  const timestamp = performance.now()
+  const remoteDeltas = deltas.filter(([kind, diff]) => !(diff === 1 && kind === lastLocalKind && timestamp - lastLocalAt < 260))
+  if (!remoteDeltas.length) return
+  for (const [kind, diff] of remoteDeltas) triggerKeyEffect(kind, diff)
+  const snailDelta = remoteDeltas.find(([kind]) => kind === 'snail')
+  if (snailDelta) {
+    snailLog.value = true
+    const quip = snailQuips[snailQuipIndex++ % snailQuips.length]!
+    last.value = `+${snailDelta[1]} ${creatures.snail}  ${quip}`
+  }
+  else {
+    snailLog.value = false
+    last.value = remoteDeltas.map(([kind, diff]) => `+${diff} ${creatures[kind]}`).join('  ')
+  }
 })
 // The fault names the count at which the run went critical, as a kernel names its clock.
 const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}]`
@@ -68,7 +177,7 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
 
 <template>
   <div class="computer">
-  <section class="counter" :class="{ shown }" :data-stage="stage" aria-label="Specimen loader" :inert="!shown">
+  <section class="counter" :class="{ shown, surge, warming }" :style="{ '--heat': heat.toFixed(2) }" :data-stage="stage" aria-label="Specimen loader" :inert="!shown">
     <!-- The run goes critical: lock phones on an unmistakable in-world alarm so every eye snaps up to the room. -->
     <div v-if="critical" class="panic" role="alert">
       <p class="alarm-badge">CHAMBER OVERLOAD</p>
@@ -90,7 +199,10 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
         <p class="percent" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="percent" :aria-valuetext="`${percent}% of specimens loaded`">
           <strong>{{ percent }}<small>%</small></strong>
         </p>
-        <p class="detail"><span>of specimens loaded</span><span>{{ digits.format(count) }} / {{ digits.format(experiment.target) }}</span></p>
+        <p class="detail">
+          <span>{{ leader ? `DOMINANT: ${leaderNames[leader]}` : 'of specimens loaded' }}</span>
+          <span>{{ digits.format(count) }} / {{ digits.format(experiment.target) }}</span>
+        </p>
         <p class="rate" aria-hidden="true">
           <svg viewBox="0 0 100 20" preserveAspectRatio="none"><polygon :points="`0,20 ${totalLine} 100,20`" /><polyline :points="totalLine" /></svg>
           <span>+{{ rate }}/s</span>
@@ -98,16 +210,21 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
         <div class="bar" aria-hidden="true"><i :style="{ width: `${Math.min(100, 100 * count / experiment.target)}%` }" /></div>
       </div>
       <div class="keys">
-        <button v-for="kind in creatureKinds" :key="kind" type="button" :data-kind="kind" :disabled="!online" :aria-label="`Add a ${kind}. ${experiment.tally[kind]} so far.`"
+        <button v-for="kind in creatureKinds" :key="kind" type="button" :data-kind="kind"
+          :class="{ lit: lit[kind], leading: leader === kind, glitch: kind === 'snail' && snailGlitch }"
+          :disabled="!online" :aria-label="`Add a ${kind}. ${experiment.tally[kind]} so far.`"
           @pointerdown.prevent="press(kind)" @click="click(kind, $event)">
+          <span v-if="leader === kind" class="lead-badge" aria-hidden="true">LEAD</span>
           <span class="key-head" aria-hidden="true"><span class="glyph">{{ creatures[kind] }}</span><strong>{{ digits.format(experiment.tally[kind]) }}</strong></span>
           <svg viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><polygon :points="`0,20 ${kindLine(kind)} 100,20`" /><polyline :points="kindLine(kind)" /></svg>
+          <span v-for="pop in pops.filter(p => p.kind === kind)" :key="pop.id" class="tap-pop" :style="{ left: `${pop.x}%` }" aria-hidden="true">{{ pop.text }}</span>
         </button>
       </div>
       <!-- A warning takes the whole line, so a phone shows all of it. -->
       <p v-if="stage !== 'Calm'" class="log"><strong class="warn" role="status">{{ warnings[stage] }}</strong></p>
-      <p v-else class="log" aria-hidden="true"><span>$ tail -f chamber.log</span>{{ last }}</p>
+      <p v-else class="log" :class="{ 'snail-log': snailLog }" aria-hidden="true"><span>$ tail -f chamber.log</span>{{ last }}</p>
     </div>
+    <div v-if="surge" class="surge-scan" aria-hidden="true" />
     <div class="static" aria-hidden="true" />
   </section>
   <!-- The way back to the room stands under the glass, on the monitor's own plastic, where a thumb finds it. -->
@@ -117,14 +234,37 @@ const stamp = (step: number) => `[${String(count.value).padStart(5)}.0000${step}
 
 <style scoped>
 /* The screen fills the glass, so its sizes follow the width of the glass. Without WebGL it stands in the middle of the page. */
-.counter { --ground: #0a100e; --panel: #101a16; --rule: #24382f; --text: #cfe3d2; --dim: #7d9584; --green: #7ee787; --amber: #e3b341; --cyan: #56d4dd; --rose: #ff8b7e;
+.counter { --ground: #0a100e; --panel: #101a16; --rule: #24382f; --text: #cfe3d2; --dim: #7d9584; --green: #7ee787; --amber: #e3b341; --cyan: #56d4dd; --rose: #ff8b7e; --heat: 0;
   position: fixed; z-index: 3; left: var(--crt-left, calc(50vw - min(40vw, 17rem))); top: var(--crt-top, 30vh); width: var(--crt-width, min(80vw, 34rem)); height: var(--crt-height, auto);
-  container-type: inline-size; box-sizing: border-box; display: flex; overflow: hidden; color: var(--text); background: var(--ground); border-radius: 2.5% / 3.5%; box-shadow: inset 0 0 1rem #05140b99;
-  font-family: var(--font-mono, ui-monospace, monospace); opacity: 0; pointer-events: none; transition: opacity .2s ease-out; }
+  container-type: inline-size; box-sizing: border-box; display: flex; overflow: hidden; color: var(--text); background: var(--ground); border-radius: 2.5% / 3.5%;
+  box-shadow: inset 0 0 calc(1rem + var(--heat) * 2.5rem) color-mix(in srgb, var(--green) calc(var(--heat) * 28%), #05140b99);
+  font-family: var(--font-mono, ui-monospace, monospace); opacity: 0; pointer-events: none; transition: opacity .2s ease-out, box-shadow .25s ease-out; }
 .counter.shown { opacity: var(--crt-ready, 1); pointer-events: auto; }
+/* CRT tube warm-up bloom when zooming into the computer. */
+.counter.warming .board { animation: crt-warmup .26s cubic-bezier(.16, 1, .3, 1); }
+@keyframes crt-warmup {
+  0% { transform: scaleY(.06) scaleX(1.04); filter: brightness(2.4); }
+  55% { transform: scaleY(1.02) scaleX(.99); filter: brightness(1.35); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+/* Milestone phosphor RGB split + percent pop + bright scanline sweep. */
+.counter.surge .board { animation: crt-surge .38s steps(2); }
+.counter.surge .percent strong { display: inline-block; animation: percent-pop .38s ease-out; }
+@keyframes crt-surge {
+  0% { text-shadow: -3px 0 #ff4d4d, 3px 0 #56d4dd; translate: .7cqw 0; }
+  35% { text-shadow: 3px 0 #ff4d4d, -3px 0 #7ee787; translate: -.5cqw .2cqw; }
+  70% { text-shadow: -2px 0 #e3b341, 2px 0 #56d4dd; translate: .2cqw -.1cqw; }
+  100% { text-shadow: 0 0 1.4cqw color-mix(in srgb, currentColor 40%, transparent); translate: 0 0; }
+}
+@keyframes percent-pop { 0% { transform: scale(1); } 35% { transform: scale(1.11); } 100% { transform: scale(1); } }
+.surge-scan { position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: linear-gradient(transparent 0%, color-mix(in srgb, var(--green) 36%, transparent) 50%, transparent 100%);
+  height: 22%; animation: surge-sweep .38s ease-out forwards; }
+@keyframes surge-sweep { from { transform: translateY(-100%); opacity: .95; } to { transform: translateY(520%); opacity: 0; } }
+
 /* The tube is old. Fine static jumps over the picture a few times a second. The static is its own drawing, so no image loads. */
 .static { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
-.static::before { content: ''; position: absolute; inset: -50%; opacity: .1; mix-blend-mode: screen; animation: counter-static .56s steps(1) infinite;
+.static::before { content: ''; position: absolute; inset: -50%; opacity: calc(.1 + var(--heat) * .08); mix-blend-mode: screen; animation: counter-static .56s steps(1) infinite;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.5 -.4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 @keyframes counter-static { 0% { translate: 0 0; } 12% { translate: -7% 4%; } 25% { translate: 5% -9%; } 37% { translate: -11% -3%; } 50% { translate: 8% 7%; } 62% { translate: -4% 11%; } 75% { translate: 10% -6%; } 87% { translate: -9% 9%; } }
 /* Scan lines lie over the picture, and a faint band of light rolls down the tube. Their pitch follows the size of the glass. */
@@ -176,11 +316,49 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .bar { grid-column: 1 / -1; height: 3cqw; background: #18261f; mask-image: repeating-linear-gradient(90deg, #000 0 1.5cqw, transparent 1.5cqw 2cqw); }
 .bar i { display: block; height: 100%; background: var(--level); transition: width .15s linear; }
 .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6cqw; }
-.keys button { display: flex; flex-direction: column; justify-content: space-between; gap: 1cqw; min-width: 0; min-height: 44px; height: 21cqw; padding: 1.6cqw 1.8cqw 1.4cqw; color: var(--kind); background: var(--panel);
-  border: 1px solid var(--rule); border-bottom-color: color-mix(in srgb, var(--kind) 55%, var(--rule)); border-radius: 1.6cqw; font: inherit; cursor: pointer; touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent; }
+.keys button { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 1cqw; min-width: 0; min-height: 44px; height: 21cqw; padding: 1.6cqw 1.8cqw 1.4cqw; color: var(--kind); background: var(--panel);
+  border: 1px solid var(--rule); border-bottom-color: color-mix(in srgb, var(--kind) 55%, var(--rule)); border-radius: 1.6cqw; font: inherit; cursor: pointer; touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent;
+  transition: border-color .14s ease-out, background-color .14s ease-out, box-shadow .14s ease-out; }
 .keys button[data-kind='snail'] { --kind: var(--amber); } .keys button[data-kind='beetle'] { --kind: var(--green); } .keys button[data-kind='fly'] { --kind: var(--cyan); } .keys button[data-kind='cricket'] { --kind: var(--rose); }
-/* A pressed key lights in its creature's colour. */
-.keys button:active:enabled { translate: 0 1px; border-color: var(--kind); background: color-mix(in srgb, var(--kind) 18%, var(--panel)); }
+/* Live pulse on local or remote taps, plus combo heat glow. */
+.keys button.lit, .keys button:active:enabled {
+  border-color: var(--kind);
+  background: color-mix(in srgb, var(--kind) calc(20% + var(--heat) * 14%), var(--panel));
+  box-shadow: 0 0 calc(1.8cqw + var(--heat) * 2.2cqw) color-mix(in srgb, var(--kind) 55%, transparent);
+}
+.keys button:active:enabled { translate: 0 1px; }
+/* Dominant species leader highlight. */
+.keys button.leading {
+  border-color: color-mix(in srgb, var(--kind) 75%, var(--rule));
+  box-shadow: inset 0 0 1.4cqw color-mix(in srgb, var(--kind) 24%, transparent), 0 0 1.2cqw color-mix(in srgb, var(--kind) 28%, transparent);
+}
+.lead-badge {
+  position: absolute; right: 1.2cqw; top: -1.4cqw; padding: .25cqw 1cqw; border-radius: 99px;
+  background: var(--kind); color: var(--ground); font-size: 1.9cqw; font-weight: 800; letter-spacing: .06em; line-height: 1.1; text-shadow: none; pointer-events: none;
+}
+/* Snail guilt-trip micro-glitch. */
+.keys button.glitch {
+  border-color: var(--rose);
+  background: color-mix(in srgb, var(--rose) 28%, var(--panel));
+  animation: snail-glitch .24s steps(2);
+}
+@keyframes snail-glitch {
+  0% { translate: -1.4px 0; }
+  33% { translate: 2px -1px; }
+  66% { translate: -1px 1px; }
+  100% { translate: 0 0; }
+}
+/* Floating +N particle rising out of the tapped key. */
+.tap-pop {
+  position: absolute; top: 15%; z-index: 4; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
+  color: var(--kind); font-size: 2.8cqw; font-weight: 800; text-shadow: 0 0 1cqw var(--ground), 0 0 1.2cqw var(--kind);
+  animation: tap-rise .65s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+@keyframes tap-rise {
+  0% { transform: translate(-50%, 0) scale(.85); opacity: 1; }
+  30% { transform: translate(-50%, -18px) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -48px) scale(.95); opacity: 0; }
+}
 .keys button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 .keys button:disabled { cursor: default; opacity: .55; }
 .key-head { display: flex; align-items: center; justify-content: space-between; gap: 1cqw; }
@@ -189,6 +367,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .keys button svg { width: 100%; height: 6.4cqw; }
 .log { display: flex; gap: 2cqw; overflow: hidden; color: var(--text); font-size: 2.7cqw; white-space: nowrap; }
 .log span { color: var(--dim); }
+.log.snail-log { color: var(--amber); }
 .log .warn { color: var(--amber); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 /* The warning blinks once a second. */
 .counter[data-stage='Warning'] .log .warn { color: var(--rose); animation: counter-warn 1s steps(1) infinite; }
@@ -230,12 +409,14 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   .bar { height: 12px; mask-image: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); }
   /* The keys take the lower half of the screen, where thumbs reach. On a short screen they give up height first. */
   .keys { flex: 0 1 50dvh; min-height: 0; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .keys button { height: auto; min-height: 72px; gap: 6px; padding: 12px 14px 10px; overflow: hidden; border-bottom-width: 3px; border-radius: 10px; }
+  .keys button { height: auto; min-height: 72px; gap: 6px; padding: 12px 14px 10px; border-bottom-width: 3px; border-radius: 10px; }
+  .lead-badge { right: 8px; top: -8px; padding: 2px 7px; font-size: 10px; }
+  .tap-pop { font-size: 16px; }
   .key-head { flex-direction: column; align-items: flex-start; gap: 4px; }
   .glyph { font-size: clamp(36px, 12cqw, 56px); }
   .key-head strong { font-size: clamp(24px, 8cqw, 36px); }
   .keys button svg { flex: 1 1 0; min-height: 16px; max-height: 50%; height: auto; }
-  .log { gap: 10px; font-size: max(13px, 3.6cqw); }
+  .log { gap: 6px; font-size: max(12px, 3.1cqw); }
   .panic { gap: 18px; padding: max(24px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
     font-size: clamp(15px, 4.4cqw, 19px); line-height: 1.4; overflow-wrap: anywhere; }
   .alarm-badge { padding: 6px 14px; font-size: clamp(16px, 5cqw, 22px); }
@@ -249,5 +430,8 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   .glyph { font-size: clamp(30px, 9cqw, 40px); }
   .key-head strong { font-size: clamp(22px, 7cqw, 30px); }
 }
-@media (prefers-reduced-motion: reduce) { .counter, .leave, .bar i { transition: none; } .static::before, .static::after, .lamp.live, .board, .log .warn, .alarm-badge { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  .counter, .leave, .bar i, .keys button { transition: none; }
+  .static::before, .static::after, .lamp.live, .board, .log .warn, .alarm-badge, .percent strong, .surge-scan, .tap-pop, .keys button.glitch { animation: none !important; }
+}
 </style>
