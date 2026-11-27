@@ -197,7 +197,7 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     const sources = new Set<AudioScheduledSourceNode>()
     const own = <T extends AudioNode>(node: T) => { nodes.add(node); return node }
     const master = own(context.createGain())
-    master.gain.value = mix.master
+    master.gain.value = muted || !visible ? 0 : mix.master
     // A safety limiter. Calibrated stages stay near or below its threshold.
     const limiter = own(context.createDynamicsCompressor())
     limiter.threshold.value = -3
@@ -485,10 +485,12 @@ export function createSceneAudio(dependencies: SceneAudioDependencies) {
     if (!shouldRun) {
       stopTimer()
       dependencies.onVoice(0)
-      current.master.gain.setTargetAtTime(0, current.context.currentTime, 0.008)
-      await fadeBeforeSuspend()
-      if (disposed || graph !== current) return
-      if (visible && !muted) return reconcile()
+      if (current.master.gain.value > 0) {
+        current.master.gain.setTargetAtTime(0, current.context.currentTime, 0.008)
+        await fadeBeforeSuspend()
+        if (disposed || graph !== current) return
+        if (visible && !muted) return reconcile()
+      }
       clearShortSounds(current)
       await current.context.suspend()
     }

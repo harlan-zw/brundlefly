@@ -71,6 +71,7 @@ const skipSlides = computed(() => tuning.value || 'office' in route.query || (im
 const showMode = computed(() => presenting && !joined && !skipSlides.value)
 const slide = ref<number | null>(null)
 const shownComputer = ref(false)
+const ended = ref(false)
 onMounted(() => {
   if (showMode.value && !critical.value) slide.value = 0
 })
@@ -152,7 +153,9 @@ if (presenting) {
     if (key === 'Next' && slide.value === null && performance.now() < slideFadeUntil) { event.preventDefault(); return }
     const state = run.value
     const criticalAge = state && state.criticalAt !== null ? (office.clock() - state.criticalAt) / 1000 : undefined
-    const action = clickerAction(key, { show: showMode.value, slide: slide.value, station: station.value, shownComputer: shownComputer.value, experiment: state, criticalAge })
+    const revealAt = experiment.value?.revealAt ?? null
+    const revealedAge = revealAt !== null ? (office.clock() - revealAt) / 1000 : undefined
+    const action = clickerAction(key, { show: showMode.value, slide: slide.value, station: station.value, set: wanted.value, ended: ended.value, shownComputer: shownComputer.value, experiment: state, criticalAge, revealedAge })
     if (action._tag === 'None') return
     event.preventDefault()
     if (action._tag === 'Slide') {
@@ -161,6 +164,7 @@ if (presenting) {
       slide.value = action.index
     }
     else if (action._tag === 'Station') station.value = action.station
+    else if (action._tag === 'End') endShow()
     else office.reveal()
   }, { capture: true })
 }
@@ -170,6 +174,7 @@ const line = ref('')
 const { start: holdLine, stop: dropLine } = useTimeoutFn(() => { line.value = '' }, () => lineSeconds(line.value) * 1000, { immediate: false })
 // He never speaks with still hands: each line names a gesture, and the scene performs it as the line appears.
 function say({ text, beat: gesture }: Spoken) {
+  if (ended.value || slide.value !== null) return
   line.value = text
   holdLine()
   audio.value?.speak(text.length)
@@ -219,11 +224,24 @@ let spoken = 0
 // A phone holds no song, so this does nothing there.
 const song = presenting ? usePartyTrack() : undefined
 const songActive = computed(() => song?.status.value === 'Waiting' || song?.status.value === 'Playing')
+const sceneAudioSuspended = computed(() => songActive.value || slide.value !== null || ended.value)
 let sung = false
+function endShow() {
+  if (ended.value) return
+  ended.value = true
+  song?.stop(2.5)
+  party.value = null
+  keepParty()
+  caveTimers.splice(0).forEach(clearTimeout)
+  line.value = ''
+  dropLine()
+  talking.value = false
+}
 // A visitor who turns the sound off, and a presenter who starts a new run, both end the song.
 watch(() => sound.value.muted, (muted) => { if (muted) song?.stop(1) })
 watch(() => experiment.value?.run, (now, before) => {
   if (before === undefined || now === undefined || now === before) return
+  ended.value = false
   song?.stop(1)
   if (!joined) {
     if (shown.value === 'lair') {
@@ -315,6 +333,7 @@ onScopeDispose(() => caveTimers.forEach(clearTimeout))
 const landings: Record<Creature, ActionSound> = { snail: 'JarBubbles', beetle: 'KeyClick', fly: 'FlyBuzz', cricket: 'CricketChirp' }
 let lastLanding = 0
 function landed(kind: Creature) {
+  if (ended.value || slide.value !== null) return
   if (performance.now() - lastLanding < 70) return
   lastLanding = performance.now()
   audio.value?.playAction(landings[kind])
@@ -326,7 +345,7 @@ function landed(kind: Creature) {
     <ClientOnly>
       <WorldScene :set="wanted" :paused="talking" :speaking="voice" :mood="mood" :thinking="thinking" :beat="beat" :reaction="reaction" :presenting="presenting" :experiment="run" :station="station" :server-clock="office.clock" :connected="office.connected.value" :joined="joined" :cut="cut" :cave-snails="snailed" :party="party" :covered="covered" :hold-entrance="showMode && slide !== null"
         @talk="talk" @mix="mix = $event" @shown="arrive" @time="audio?.keepTime($event)" @entrance="foundDark = $event" @greet="greetShow" @action="audio?.playAction($event)" @station="look" @landed="landed" @view="viewed" />
-      <SceneAudio ref="audio" :quiet="joined" :suspended="songActive" :set="shown" :talking="talking" :reply-count="replies" :reply-length="replyLength" :mix="mix" @state="sound = $event" @voice="voice = $event" />
+      <SceneAudio ref="audio" :quiet="joined" :suspended="sceneAudioSuspended" :set="shown" :talking="talking" :reply-count="replies" :reply-length="replyLength" :mix="mix" @state="sound = $event" @voice="voice = $event" />
       <template #fallback><SceneLoading /></template>
     </ClientOnly>
     <template v-if="presenting">
@@ -337,7 +356,8 @@ function landed(kind: Creature) {
       </ClientOnly>
       <OfficeCounter v-if="run && shown === 'office'" :experiment="run" :connected="office.connected.value" :online="office.online.value" :shown="station === 'computer' && !talking && slide === null" :revealed="phoneRevealed" @tap="tap" @leave="station = 'room'" @enter="enterCaveFromPhone" />
       <BackToRoom :shown="station === 'code' && !talking && !critical && slide === null" @leave="station = 'room'" />
-      <OverheadLine :text="talking || covered ? '' : line" />
+      <OverheadLine :text="talking || covered || ended ? '' : line" />
+      <div v-if="!joined" class="show-curtain" :class="{ active: ended }" aria-hidden="true" />
     </template>
     <SpeechDialog :open="talking" :place="shown" :found-dark="foundDark" :travelling="wanted !== shown" :muted="sound.muted" :sound-available="sound.status._tag !== 'Unavailable'" :cave-open="caveOpen" @close="talking = false; mood = 'neutral'" @reply="replyLength = $event.length; replies++" @reaction="mood = $event.mood; beat = $event.beat; reaction++" @pending="thinking = $event" @sound="audio?.toggle()" @travel="wanted = $event" />
   </main>
@@ -348,4 +368,6 @@ function landed(kind: Creature) {
 .slides-fade-leave-to { opacity: 0; }
 .slides-fade-enter-active { transition: opacity .35s ease-out; }
 .slides-fade-enter-from { opacity: 0; }
+.show-curtain { position: fixed; inset: 0; z-index: 50; background: #000; opacity: 0; pointer-events: none; transition: opacity 2.5s ease-in-out; }
+.show-curtain.active { opacity: 1; pointer-events: auto; }
 </style>

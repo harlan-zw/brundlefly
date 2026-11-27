@@ -181,3 +181,39 @@ test('the voice sound follows the envelope that drives the face', async () => {
     `Sound and face must rise and fall together, measured sound ${level} for face ${face}.`)
   await audio.dispose()
 })
+
+test('activating while hidden stays silent at zero gain and suspends immediately', async () => {
+  const gains: { value: number }[] = []
+  let suspended = 0
+  let resumed = 0
+  const node = () => {
+    const param = { value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime(v: number) { param.value = v }, setValueCurveAtTime() {}, cancelScheduledValues() {} }
+    return { gain: param, frequency: param, Q: param, pan: param, threshold: param, knee: param, ratio: param, attack: param, release: param, connect(target: unknown) { return target }, disconnect() {}, start() {}, stop() {} }
+  }
+  const context = {
+    currentTime: 0, sampleRate: 20, destination: node(), state: 'running',
+    createGain: () => { const g = node(); gains.push(g.gain); return g },
+    createDynamicsCompressor: node, createBiquadFilter: node, createOscillator: node, createBufferSource: node,
+    createStereoPanner: node, createConvolver: node, createWaveShaper: node,
+    createBuffer: (_channels: number, length: number) => ({ length, getChannelData: () => new Float32Array(length) }),
+    async resume() { resumed++ },
+    async suspend() { suspended++ },
+    async close() {},
+  }
+  const statuses: string[] = []
+  const audio = createSceneAudio({
+    createContext: () => context as unknown as AudioContext, random: () => 0.5,
+    schedule: () => 1, cancel: () => {},
+    onState: value => statuses.push(value.status._tag), onVoice: () => {}, onError: error => { throw error },
+  })
+  audio.setVisible(false)
+  await audio.activate()
+  assert.equal(gains[0]!.value, 0, 'Master gain must start at 0 while hidden so slides emit zero sound.')
+  assert.equal(suspended, 1, 'Hidden activation must suspend the context immediately.')
+  assert.equal(statuses.at(-1), 'Suspended')
+  audio.setVisible(true)
+  await new Promise(resolve => setTimeout(resolve, 0))
+  assert.equal(resumed, 1, 'Making the scene visible must resume the unlocked context.')
+  assert.equal(statuses.at(-1), 'Running')
+  await audio.dispose()
+})

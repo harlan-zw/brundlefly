@@ -83,9 +83,9 @@ const reelItems: readonly SpecimenOption[] = [
         </div>
       </div>
 
-      <!-- Slide 2: Experiment 1: Brundle + Fly = Rotating 3D Brundlefly -->
+      <!-- Slide 2: Experiment 1: Fuse Human + Fly = Rotating 3D Brundlefly -->
       <div v-else-if="slide === 1" class="page slide-two">
-        <svg class="pen-title" :viewBox="lineView(penLines.exp1.w)" role="img" aria-label="Experiment 1: Human + Fly">
+        <svg class="pen-title" :viewBox="lineView(penLines.exp1.w)" role="img" aria-label="Experiment 1: Fuse Human + Fly">
           <path :d="penLines.exp1.d" />
         </svg>
 
@@ -159,13 +159,18 @@ const reelItems: readonly SpecimenOption[] = [
 
           <figure class="eq-item">
             <div class="frame small">
-              <svg class="sketch" :viewBox="penSketches.jar.box" role="img" aria-label="Glass stasis jar sketch">
+              <svg class="sketch" :viewBox="penSketches.jar.box" role="img" aria-label="Chamber 01 glass stasis jar sketch">
                 <path :d="penSketches.jar.d" />
               </svg>
             </div>
-            <svg class="pen-label ink-red" :viewBox="lineView(penLines.inAJar.w)" role="img" aria-label="In a jar now">
-              <path :d="penLines.inAJar.d" />
-            </svg>
+            <div class="jar-labels">
+              <svg class="pen-label ink-green" :viewBox="lineView(penLines.chamber01.w)" role="img" aria-label="Chamber 01">
+                <path :d="penLines.chamber01.d" />
+              </svg>
+              <svg class="pen-label ink-red jar-sub" :viewBox="lineView(penLines.inAJar.w)" role="img" aria-label="In a jar now">
+                <path :d="penLines.inAJar.d" />
+              </svg>
+            </div>
           </figure>
         </div>
       </div>
@@ -212,13 +217,13 @@ const reelItems: readonly SpecimenOption[] = [
 
             <figure class="eq-item">
               <div class="frame compact headshot-frame">
-                <img v-if="photos.scientist" :src="photos.scientist" alt="Me neural-linked">
-                <svg v-else class="sketch headshot" :viewBox="penSketches.scientist.box" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Me">
+                <img v-if="photos.scientist" :src="photos.scientist" alt="Test subject">
+                <svg v-else class="sketch headshot" :viewBox="penSketches.scientist.box" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Test subject">
                   <path :d="penSketches.scientist.d" />
                 </svg>
               </div>
-              <svg class="pen-label" :viewBox="lineView(penLines.meVolunteer.w)" role="img" aria-label="Me neural-linked">
-                <path :d="penLines.meVolunteer.d" />
+              <svg class="pen-label" :viewBox="lineView(penLines.testSubject.w)" role="img" aria-label="Test subject">
+                <path :d="penLines.testSubject.d" />
               </svg>
             </figure>
 
@@ -228,8 +233,8 @@ const reelItems: readonly SpecimenOption[] = [
                   <path :d="penSketches.audience.d" />
                 </svg>
               </div>
-              <svg class="pen-label" :viewBox="lineView(penLines.audience.w)" role="img" aria-label="Audience">
-                <path :d="penLines.audience.d" />
+              <svg class="pen-label ink-green" :viewBox="lineView(penLines.controlsToYou.w)" role="img" aria-label="Controls to you">
+                <path :d="penLines.controlsToYou.d" />
               </svg>
             </figure>
           </div>
@@ -239,11 +244,11 @@ const reelItems: readonly SpecimenOption[] = [
       <!-- Slide 5: Experiment 2 - Dr. Science + Vertical Specimen Carousel = Rotating 3D ? -->
       <div v-else class="page slide-five">
         <div class="exp2-head">
-          <svg class="pen-title" :viewBox="lineView(penLines.exp2.w)" role="img" aria-label="Experiment 2: Source the Transformation">
+          <svg class="pen-title" :viewBox="lineView(penLines.exp2.w)" role="img" aria-label="Experiment 2: Fuse My DNA">
             <path :d="penLines.exp2.d" />
           </svg>
-          <svg class="pen-sub" :viewBox="lineView(penLines.sourceSub.w)" role="img" aria-label="Tap specimens to fuel Chamber 01 to 100%">
-            <path :d="penLines.sourceSub.d" />
+          <svg class="pen-sub" :viewBox="lineView(penLines.chooseSpecies.w)" role="img" aria-label="You choose the species">
+            <path :d="penLines.chooseSpecies.d" />
           </svg>
         </div>
 
@@ -347,6 +352,8 @@ const reelItems: readonly SpecimenOption[] = [
 .eq-item { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .op { font: 700 clamp(2.8rem, 5.5vw, 5rem)/1 var(--font-mono, ui-monospace, monospace); color: #9bb8f0; }
 .unstable-box { padding: 16px 26px; border: 3px dashed #ff6b6b; background: #2d161b; transform: rotate(-2deg); }
+.jar-labels { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.jar-sub { height: clamp(2rem, 4.1vh, 3rem); }
 .lightning { width: clamp(92px, 10vw, 136px); height: clamp(92px, 10vw, 136px); }
 .lightning path { stroke: #ff6b6b; stroke-width: .028; }
 
