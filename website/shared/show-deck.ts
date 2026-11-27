@@ -5,6 +5,8 @@ import type { Experiment } from './office-experiment.ts'
 export const showSlideCount = 5
 /** Minimum seconds into the critical scene before a clicker press triggers reveal, preventing accidental early clicks. */
 export const clickerRevealAfterSeconds = 10
+/** Minimum seconds after the cave reveal chorus lands before a final clicker press fades the show to black. */
+export const clickerEndAfterSeconds = 3
 
 export type ClickerKey = 'Next' | 'Prev'
 export type ShowStation = 'room' | 'computer' | 'code'
@@ -14,11 +16,17 @@ export type ShowContext = {
   /** Current 0-based slide index, or `null` when showing the live 3D scene. */
   slide: number | null
   station: ShowStation
+  /** Active set on stage (`'office'` during presentation and voting, `'lair'` once revealed). */
+  set?: 'office' | 'lair'
+  /** Whether the final click has already faded the show to black. */
+  ended?: boolean
   /** Whether the clicker has already visited the desk computer in this run, so returning to `room` holds on the falling critters. */
   shownComputer?: boolean
   experiment: Experiment | null
   /** Seconds since `criticalAt`, or `undefined` when not critical. */
   criticalAge: number | undefined
+  /** Seconds since `revealAt` (0 is the chorus drop), or `undefined` before reveal. */
+  revealedAge?: number | undefined
 }
 
 export type ClickerAction =
@@ -26,6 +34,7 @@ export type ClickerAction =
   | { _tag: 'Slide', index: number | null }
   | { _tag: 'Station', station: ShowStation }
   | { _tag: 'Reveal' }
+  | { _tag: 'End' }
 
 /** Maps standard USB presenter clicker keys (`ArrowRight`, `ArrowDown`, `PageDown`, `Space`, `ArrowLeft`, `ArrowUp`, `PageUp`) to Next or Prev. */
 export function readClickerKey(key: string): ClickerKey | undefined {
@@ -36,10 +45,16 @@ export function readClickerKey(key: string): ClickerKey | undefined {
 /**
  * Pure state transition for one presenter clicker press on `/projector`.
  * In show mode, `Next` advances slides 1..5, fades into the 3D office, opens the beetle QR, moves to the desk computer,
- * zooms back out to the office to watch specimens fall, and triggers `Reveal` once the critical scene reaches its blackout window.
+ * zooms back out to the office to watch specimens fall, triggers `Reveal` once the critical scene reaches its blackout window,
+ * and triggers `End` in the cave after the chorus has landed to fade out visuals and stop all audio.
  */
 export function clickerAction(key: ClickerKey, context: ShowContext): ClickerAction {
-  const { show, slide, station, shownComputer = false, experiment, criticalAge } = context
+  const { show, slide, station, set = 'office', ended = false, shownComputer = false, experiment, criticalAge, revealedAge } = context
+  if (ended) return { _tag: 'None' }
+  if (set === 'lair') {
+    if (key === 'Next' && (revealedAge === undefined || revealedAge >= clickerEndAfterSeconds)) return { _tag: 'End' }
+    return { _tag: 'None' }
+  }
   const critical = experiment !== null && experiment.criticalAt !== null
   if (critical) {
     if (key === 'Next' && experiment.revealAt === null && criticalAge !== undefined && criticalAge >= clickerRevealAfterSeconds) {

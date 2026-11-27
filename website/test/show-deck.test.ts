@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { addTaps, emptyExperiment, goCritical, revealExperiment } from '../shared/office-experiment.ts'
-import { clickerAction, clickerRevealAfterSeconds, readClickerKey, showSlideCount } from '../shared/show-deck.ts'
+import { clickerAction, clickerEndAfterSeconds, clickerRevealAfterSeconds, readClickerKey, showSlideCount } from '../shared/show-deck.ts'
 
 test('readClickerKey maps USB presenter keys to Next and Prev', () => {
   for (const key of ['ArrowRight', 'ArrowDown', 'PageDown', ' ']) assert.equal(readClickerKey(key), 'Next')
@@ -44,4 +44,12 @@ test('during critical, Next triggers reveal only after the guard window and only
   assert.deepEqual(clickerAction('Prev', { show: true, slide: null, station: 'room', experiment: critical, criticalAge: 22 }), { _tag: 'None' })
   const revealed = revealExperiment(critical, 25_000)
   assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'room', experiment: revealed, criticalAge: 25 }), { _tag: 'None' })
+})
+
+test('in the cave, a final Next click fades out after the post-chorus guard window and stays ended', () => {
+  assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'room', set: 'lair', experiment: null, criticalAge: undefined, revealedAge: -4 }), { _tag: 'None' })
+  assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'room', set: 'lair', experiment: null, criticalAge: undefined, revealedAge: clickerEndAfterSeconds - 0.1 }), { _tag: 'None' })
+  assert.deepEqual(clickerAction('Prev', { show: true, slide: null, station: 'room', set: 'lair', experiment: null, criticalAge: undefined, revealedAge: clickerEndAfterSeconds + 5 }), { _tag: 'None' })
+  assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'room', set: 'lair', experiment: null, criticalAge: undefined, revealedAge: clickerEndAfterSeconds }), { _tag: 'End' })
+  assert.deepEqual(clickerAction('Next', { show: true, slide: null, station: 'room', set: 'lair', ended: true, experiment: null, criticalAge: undefined, revealedAge: 20 }), { _tag: 'None' })
 })
